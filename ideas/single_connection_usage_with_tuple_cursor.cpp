@@ -4,7 +4,9 @@ boost::asio::spawn(io_service, [&] (boost::asio::yield_context yield) {
     auto connection_provider = apq::make_connection_provider(io_service);
     apq::cursor<std::tuple<std::string>> cursor;
     apq::binary_protocol::request(connection_provider, cursor, "SELECT pg_is_in_recovery()", yield);
-    std::cout << std::get<0>(cursor.next(yield)) << '\n';
+    std::tuple<std::string> data;
+    apq::binary_protocol::request(cursor, data, yield);
+    std::cout << std::get<std::string>(data) << '\n';
 });
 
 io_service.run();
