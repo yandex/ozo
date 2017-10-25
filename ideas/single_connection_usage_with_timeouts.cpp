@@ -6,7 +6,7 @@ boost::asio::spawn(io_service, [&] (boost::asio::yield_context yield) {
     connection_timeouts timeouts;
     timeouts.connect = 100ms;
     timeouts.request = 200ms;
-    apq::text_protocol::request(connection, cursor, apq::make_query("SELECT pg_is_in_recovery()", timeouts), yield);
+    apq::text_protocol::request(connection, apq::make_query("SELECT pg_is_in_recovery()", timeouts), cursor, yield);
     apq::row row;
     apq::text_protocol::fetch(cursor, row, yield);
     std::cout << row.at(0) << '\n';
