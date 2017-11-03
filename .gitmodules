@@ -1,0 +1,3 @@
+[submodule "contrib/resource_pool"]
+	path = contrib/resource_pool
+	url = git@github.com:elsid/resource_pool.git
