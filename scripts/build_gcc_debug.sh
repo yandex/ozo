@@ -1,0 +1,15 @@
+#!/bin/bash -ex
+
+export CC='ccache gcc'
+export CXX='ccache g++'
+
+BUILD_DIR=${BUILD_PREFIX}build_gcc_debug
+mkdir -p ${BUILD_DIR}
+cd ${BUILD_DIR}
+cmake \
+    -DCMAKE_CXX_FLAGS='-std=c++17 -Wall -Wextra -pedantic -Werror' \
+    -DCMAKE_BUILD_TYPE=Debug \
+    -DAPQ_BUILD_TESTS=ON \
+    ..
+make -j$(nproc)
+ctest -V
