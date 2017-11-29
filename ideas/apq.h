@@ -30,7 +30,7 @@ struct connection {
 
 	// Connection can be ConnectionProvider, so it provides itself
 	template <typename Handler>
-	friend void get_connection_impl(connection c, Handler&& h) const {
+	friend void get_connection(connection c, Handler&& h) const {
 		asio_handler_invoke([&]{ h(error_code{}, c);}, std::addressof(h));
 	}
 };
@@ -41,15 +41,6 @@ struct connection {
 * is described below
 */
 
-namespace detail {
-
-template <typename ConnectionProvider, typename Handler>
-void get_connection_impl(ConnectionProvider&& p, Handler&& h) {
-	p(std::forward<Handler>(h));
-}
-
-} // detail
-
 /**
 * Function to get connection from provider. This customization point allows
 * us to work with different kinds of connection providing. E.g. single
@@ -58,9 +49,8 @@ void get_connection_impl(ConnectionProvider&& p, Handler&& h) {
 */
 template <typename ConnectionProvider, typename CompletionToken>
 auto get_connection(ConnectionProvider&& p, CompletionToken&& token) {
-	using detail::get_connection_impl;
 	detail::async_result_init<CompletionToken, void (error_code, connection)> init(std::move(token));
-	get_connection_impl(std::forward<ConnectionProvider>(p), init.handler);
+	p(std::forward<ConnectionProvider>(p), init.handler);
 	return init.result.get();
 }
 
@@ -109,17 +99,17 @@ struct basic_protocol {
 	* fetching data are separated which removes a lot of problems of the cursor design which appear with
 	* single function approach.
 	*/
-	template <typename ConnectionProvider, typename T, typename CompletionToken>
-	static auto request(ConnectionProvider provider, query q, cursor<T>& c, CompletionToken token);
+	template <typename ConnectionProvider, typename Query, typename T, typename CompletionToken>
+	static auto request(ConnectionProvider provider, Query&& q, cursor<T>& c, CompletionToken token);
 
 	template <typename T, typename CompletionToken>
 	static auto fetch(cursor<T>& c, T& t, CompletionToken token);
 
-	template <typename ConnectionProvider, typename CompletionToken>
-	static auto update(ConnectionProvider provider, query q, CompletionToken token);
+	template <typename ConnectionProvider, typename Query, typename CompletionToken>
+	static auto update(ConnectionProvider provider, Query&& q, CompletionToken token);
 
-	template <typename ConnectionProvider, typename CompletionToken>
-	static auto execute(ConnectionProvider provider, query q, CompletionToken token);
+	template <typename ConnectionProvider, typename Query, typename CompletionToken>
+	static auto execute(ConnectionProvider provider, Query q, CompletionToken token);
 
 	template <typename ConnectionProvider, typename CompletionToken>
 	static auto begin(ConnectionProvider provider, CompletionToken token); // Begin transaction
@@ -159,8 +149,8 @@ using text_protocol = basic_protocol<parameters_transfer_mode::text>;
 
 
 template <parameters_transfer_mode prm>
-template <typename ConnectionProvider, typename Inserter, typename CompletionToken>
-inline auto basic_protocol<prm>::request(ConnectionProvider provider, query q, Inserter ins, CompletionToken token) {
+template <typename ConnectionProvider, typename Query, typename Inserter, typename CompletionToken>
+inline auto basic_protocol<prm>::request(ConnectionProvider provider, Query&& q, Inserter ins, CompletionToken token) {
 	detail::async_result_init<CompletionToken, void (error_code, size_type)> init(std::move(token));
 
 	get_connection(provider, [q, ins, h = init.handler] (error_code ec, connection conn) {
@@ -175,8 +165,8 @@ inline auto basic_protocol<prm>::request(ConnectionProvider provider, query q, I
 }
 
 template <parameters_transfer_mode prm>
-template <typename ConnectionProvider, typename T, typename CompletionToken>
-inline auto basic_protocol<prm>::request(ConnectionProvider provider, query q, cursor<T>& c, CompletionToken token) {
+template <typename ConnectionProvider, typename Query, typename T, typename CompletionToken>
+inline auto basic_protocol<prm>::request(ConnectionProvider provider, Query&& q, cursor<T>& c, CompletionToken token) {
 	detail::async_result_init<CompletionToken, void (error_code)> init(std::move(token));
 
 	get_connection(provider, [q, &c, h = init.handler] (error_code ec, connection conn) {
@@ -205,8 +195,8 @@ inline auto basic_protocol<prm>::fetch(cursor<T>& c, T& t, CompletionToken token
 }
 
 template <parameters_transfer_mode prm>
-template <typename ConnectionProvider, typename CompletionToken>
-inline auto basic_protocol<prm>::update(ConnectionProvider provider, query q, CompletionToken token) {
+template <typename ConnectionProvider, typename Query, typename CompletionToken>
+inline auto basic_protocol<prm>::update(ConnectionProvider provider, Query&& q, CompletionToken token) {
 	detail::async_result_init<CompletionToken, void (error_code, size_type)> init(std::move(token));
 
 	get_connection(provider, [q, h = init.handler] (error_code ec, connection conn) {
@@ -221,8 +211,8 @@ inline auto basic_protocol<prm>::update(ConnectionProvider provider, query q, Co
 }
 
 template <parameters_transfer_mode prm>
-template <typename ConnectionProvider, typename CompletionToken>
-inline auto basic_protocol<prm>::execute(ConnectionProvider provider, query q, CompletionToken token) {
+template <typename ConnectionProvider, typename Query, typename CompletionToken>
+inline auto basic_protocol<prm>::execute(ConnectionProvider provider, Query q, CompletionToken token) {
 	detail::async_result_init<CompletionToken, void (error_code)> init(std::move(token));
 
 	get_connection(provider, [q, h = init.handler] (error_code ec, connection conn) {
@@ -283,3 +273,90 @@ using my_query = query<"SELECT name FROM my_table WHERE id=:id  AND sid=:sid"_sq
 */
 using my_query = query<"my_query"_query, my_query_params>;
 
+enum class debug_mode {off, on};
+
+/******************************************************
+* Minimal query interface definition.
+*******************************************************/
+
+/**
+* Function returns text part of the query
+*/
+template <typename Query>
+inline auto query_text(const Query& q) {
+    return q.text();
+}
+
+/**
+* Returns an adapted sequence (or tuple) with values
+*/
+template <typename Query>
+inline auto query_values(const Query& q) {
+    return q.values();
+}
+
+/**
+* returns query execution time limitation
+*/
+template <typename Query>
+inline std::chrono::steady_clock::duration query_timeout(const Query& q) {
+    return q.timeout();
+}
+
+/**
+* Returns query execute strategy - the object to determine execution and
+* retries. May be added later. But this must be one of the key features.
+*/
+template <typename Query>
+inline auto query_execute_strategy(const Query& q) {
+    return q.strategy();
+}
+
+
+/***********************************************
+* Type mapping traits
+***********************************************/
+template <typename T>
+struct type_traits;
+
+using oid_t = int64_t; // ????
+
+template <typename T>
+constexpr auto get_type_traits(const T&) noexcept {
+    return type_traits<std::decay_t<T>>{};
+}
+
+template <typename T>
+constexpr auto type_name(const T& v) noexcept {
+    return get_type_traits(v)::name();
+}
+
+template <typename T>
+constexpr std::size_t type_size(const T& v) noexcept {
+    return get_type_traits(v)::size;
+}
+
+// Overload trait for std::string for example
+template <>
+inline std::size_t type_size(const std::string& v) noexcept {
+    return v.size();
+}
+
+/**
+* Oid acquisition for types must looks like (simplified):
+* auto oid = type_oid(v, [oid_map](const auto& v) {
+*         return oid_map.at(type_name(v));
+*     });
+*/
+
+// Oid acquisition for built-in PostgreSQL types
+template <typename T>
+constexpr std::enable_if_t<is_built_in_v<T>, oid_t> type_oid(const T& v, ...) noexcept {
+    return get_type_traits(v)::oid;
+}
+
+// Oid acquisition for custom types
+template <typename T, typename OidProvider>
+inline std::enable_if_t<!is_built_in_v<T>, oid_t> type_oid(const T& v, OidProvider get) {
+    return get(v);
+}
