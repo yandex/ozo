@@ -1,6 +1,6 @@
 #pragma once
 
-namespace apq {
+namespace libapq {
 
 class connection {
 public:

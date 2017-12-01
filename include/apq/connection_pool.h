@@ -3,7 +3,7 @@
 #include <apq/connection.h>
 #include <yamail/resource_pool/async/pool.hpp>
 
-namespace apq {
+namespace libapq {
 
 class connection_pool {
 public:
