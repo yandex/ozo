@@ -5,6 +5,7 @@ project(apq)
 option(APQ_BUILD_TESTS "Enable apq tests build" OFF)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DBOOST_COROUTINES_NO_DEPRECATION_WARNING")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DBOOST_HANA_CONFIG_ENABLE_STRING_UDL")
 
 include_directories(contrib/resource_pool/include)
 include_directories(include)
