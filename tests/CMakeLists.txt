@@ -3,6 +3,9 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic -Werror")
 find_package(Boost COMPONENTS system thread REQUIRED)
 include_directories(SYSTEM "${Boost_INCLUDE_DIRS}")
 
+find_package(PostgreSQL)
+include_directories(SYSTEM "${PostgreSQL_INCLUDE_DIRS}")
+
 include(ExternalProject)
 ExternalProject_Add(
     GUnit
@@ -25,6 +28,7 @@ link_directories("${source_dir}/libs/gherkin-cpp")
 
 set(SOURCES
     connection_pool.cpp
+    type_traits.cpp
 )
 
 set(LIBRARIES
