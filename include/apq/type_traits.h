@@ -176,14 +176,14 @@ struct type_traits_helper {
 };
 
 /**
-* By default all non specialized types become with unspecified name, name
+* By default all non specialized types have unspecified name, name
 * oid and size.
 */
 template <typename T>
 struct type_traits : type_traits_helper<void> {};
 
 /**
-* Condition indicates if the specified typr is built-in for PG
+* Condition indicates if the specified type is built-in for PG
 */
 template <typename T>
 struct is_built_in : std::integral_constant<bool,
