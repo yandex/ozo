@@ -27,8 +27,12 @@ include_directories(SYSTEM "${source_dir}/libs/json/src")
 link_directories("${source_dir}/libs/gherkin-cpp")
 
 set(SOURCES
+    bind.cpp
+    async_connect.cpp
     connection_pool.cpp
     type_traits.cpp
+    connection.cpp
+    connection_info.cpp
 )
 
 set(LIBRARIES
@@ -36,6 +40,7 @@ set(LIBRARIES
     gmock_main
     gherkin-cpp
     ${Boost_LIBRARIES}
+    ${PostgreSQL_LIBRARIES}
 )
 
 add_executable(apq_tests ${SOURCES})

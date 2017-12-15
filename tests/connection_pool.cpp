@@ -2,6 +2,8 @@
 
 #include <GUnit/GTest.h>
 
-GTEST("libapq::connection_pool", "[constructor should not throw]") {
-    EXPECT_NO_THROW(libapq::connection_pool());
+GTEST("libapq::make_connection_pool") {
+    SHOULD("not throw") {
+        EXPECT_NO_THROW(libapq::make_connection_pool("conn info string", 1, 1));
+    }
 }

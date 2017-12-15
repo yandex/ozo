@@ -276,6 +276,8 @@ constexpr decltype(auto) register_types() noexcept {
     );
 }
 
+using empty_oid_map = std::decay_t<decltype(register_types<>())>;
+
 /**
 * Function sets oid for type in oid map.
 */
