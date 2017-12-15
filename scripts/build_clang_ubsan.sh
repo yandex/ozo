@@ -12,6 +12,7 @@ cmake \
     -DCMAKE_CXX_FLAGS="-std=c++17 -Wall -Wextra -pedantic -Werror ${UBSAN_CXX_FLAGS}" \
     -DCMAKE_BUILD_TYPE=Debug \
     -DAPQ_BUILD_TESTS=ON \
+    -DPostgreSQL_TYPE_INCLUDE_DIR=/usr/include/postgresql/ \
     ..
 make -j$(nproc)
 ctest -V
