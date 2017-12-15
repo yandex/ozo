@@ -15,6 +15,7 @@ cmake \
     -DCMAKE_CXX_FLAGS_RELWITHDEBINFO="-g -O1 ${ASAN_CXX_FLAGS}" \
     -DCMAKE_BUILD_TYPE=RelWithDebInfo \
     -DAPQ_BUILD_TESTS=ON \
+    -DPostgreSQL_TYPE_INCLUDE_DIR=/usr/include/postgresql/ \
     ..
 make -j$(nproc)
 ctest -V
