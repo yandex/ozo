@@ -1,4 +1,8 @@
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic -Werror -Wno-ignored-optimization-argument -fno-devirtualize")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic -Werror -fno-devirtualize")
+
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-ignored-optimization-argument")
+endif()
 
 find_package(Boost COMPONENTS system thread REQUIRED)
 include_directories(SYSTEM "${Boost_INCLUDE_DIRS}")
@@ -27,12 +31,15 @@ include_directories(SYSTEM "${source_dir}/libs/json/src")
 link_directories("${source_dir}/libs/gherkin-cpp")
 
 set(SOURCES
-    bind.cpp
     async_connect.cpp
-    connection_pool.cpp
-    type_traits.cpp
+    binary_query.cpp
+    binary_serialization.cpp
+    bind.cpp
     connection.cpp
     connection_info.cpp
+    connection_pool.cpp
+    query_builder.cpp
+    type_traits.cpp
 )
 
 set(LIBRARIES
