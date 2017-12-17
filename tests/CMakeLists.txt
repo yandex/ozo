@@ -41,6 +41,8 @@ set(SOURCES
     query_builder.cpp
     query_conf.cpp
     type_traits.cpp
+    result.cpp
+    value.cpp
 )
 
 set(LIBRARIES
