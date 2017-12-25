@@ -11,7 +11,7 @@ boost::asio::spawn(io_service, [&] (boost::asio::yield_context yield) {
     Summand summands;
     summands.first = 13;
     summands.second = 42;
-    auto query = apq::query("SELECT :first + :second", summands);
+    auto query = apq::make_query("SELECT :first + :second", summands);
     apq::text_protocol::request(connection_provider, cursor, query, yield);
     apq::row row;
     apq::text_protocol::fetch(cursor, row, yield);
