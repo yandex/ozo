@@ -14,7 +14,7 @@ struct Summands {
     int second;
 };
 
-const auto query_repository = apq::register_queries<SumIntegers>();
+const auto query_repository = apq::register_queries<SumIntegers>(std::ifstream("query_conf.sql"));
 
 boost::asio::io_service io_service;
 
