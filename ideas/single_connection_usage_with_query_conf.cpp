@@ -5,13 +5,14 @@
 
 using namespace boost::hana::literals;
 
-struct SumIntegers {
-    static constexpr auto name = "sum_integers"_s;
-};
-
 struct Summands {
     int first;
     int second;
+};
+
+struct SumIntegers {
+    static constexpr auto name = "sum_integers"_s;
+    using arguments_type = Summands;
 };
 
 const auto query_repository = apq::register_queries<SumIntegers>(std::ifstream("query_conf.sql"));
