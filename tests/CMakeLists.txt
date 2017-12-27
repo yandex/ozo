@@ -42,3 +42,14 @@ add_executable(apq_tests ${SOURCES})
 add_dependencies(apq_tests GUnit)
 target_link_libraries(apq_tests ${LIBRARIES})
 add_test(apq_tests apq_tests)
+
+if(APQ_COVERAGE AND CMAKE_COMPILER_IS_GNUCXX)
+    include(CodeCoverage)
+    APPEND_COVERAGE_COMPILER_FLAGS()
+    set(COVERAGE_EXCLUDES 'tests/*' 'contrib/*' 'boost/*' 'c++/*')
+    SETUP_TARGET_FOR_COVERAGE(
+        NAME apq_coverage
+        EXECUTABLE apq_tests
+        DEPENDENCIES apq_tests
+    )
+endif()

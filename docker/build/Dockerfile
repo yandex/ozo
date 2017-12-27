@@ -1,6 +1,6 @@
 FROM ubuntu:17.10
 
-RUN apt-get update && apt-get install -y ccache clang-5.0 libpq-dev llvm-5.0 cmake g++-7 git wget && \
+RUN apt-get update && apt-get install -y ccache clang-5.0 libpq-dev llvm-5.0 cmake g++-7 lcov git python-pip python-yaml wget && \
     rm -rf /var/lib/apt/lists/*
 
 RUN update-alternatives --install /usr/bin/clang clang /usr/bin/clang-5.0 100 && \
@@ -23,6 +23,8 @@ RUN wget -qO boost_1_64_0.tar.gz https://sourceforge.net/projects/boost/files/bo
         debug-symbols=on \
         warnings=off \
     install
+
+RUN pip install cpp-coveralls pyopenssl
 
 VOLUME /ccache
 VOLUME /code
