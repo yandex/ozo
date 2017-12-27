@@ -38,5 +38,12 @@ matrix:
   - before_install: *before_install
     env: BUILD_SCRIPT=scripts/build_clang_ubsan.sh
 
+  - before_install: *before_install
+    env: BUILD_SCRIPT=scripts/build_gcc_coverage.sh
+
 script:
 - scripts/build_inside_docker_container.sh ${BUILD_SCRIPT}
+- |
+  if [[ "${BUILD_SCRIPT}" = "scripts/build_gcc_coverage.sh" ]]; then
+    scripts/build_inside_docker_container.sh coveralls --include include/apq
+  fi
