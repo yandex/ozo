@@ -39,6 +39,7 @@ set(SOURCES
     connection_info.cpp
     connection_pool.cpp
     query_builder.cpp
+    query_conf.cpp
     type_traits.cpp
 )
 
