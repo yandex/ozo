@@ -1,7 +1,7 @@
 # apq
 
 [![Build Status](https://travis-ci.org/elsid/apq.svg?branch=master)](https://travis-ci.org/elsid/apq)
-[![Coverage Status](https://coveralls.io/repos/github/elsid/apq/badge.svg?branch=master)](https://coveralls.io/github/elsid/apq?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/elsid/apq/badge.svg?branch=HEAD)](https://coveralls.io/github/elsid/apq?branch=HEAD)
 
 ## Build
 
