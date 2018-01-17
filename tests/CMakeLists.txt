@@ -1,4 +1,4 @@
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic -Werror")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic -Werror -Wno-ignored-optimization-argument -fno-devirtualize")
 
 find_package(Boost COMPONENTS system thread REQUIRED)
 include_directories(SYSTEM "${Boost_INCLUDE_DIRS}")
