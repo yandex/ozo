@@ -145,3 +145,49 @@ struct hana_adapted {
 GTEST("ozo::is_composite<adapted>", "[with Boost.Hana adapted structure returns true]") {
     EXPECT_TRUE(ozo::is_composite<testing::hana_adapted>::value);
 }
+
+GTEST("libapq::is_forward_iterator<T>", "[returns true for a std iterator]") {
+    EXPECT_TRUE(libapq::is_forward_iterator<std::vector<int>::iterator>::value);
+}
+
+namespace iterability_test {
+
+struct foo {
+    class iterator
+        : public std::iterator<std::forward_iterator_tag, foo, long, const foo*, foo&>{
+
+    // TODO: is it necessary to test for operators?
+    // public:
+    //     iterator& operator++();
+    //     bool operator==(iterator other) const;
+    //     bool operator!=(iterator other) const;
+    //     reference operator*() const;
+    };
+};
+
+foo::iterator begin(const foo&) { return foo::iterator(); }
+foo::iterator end(const foo&) { return foo::iterator(); }
+
+struct bar {};
+
+}
+
+GTEST("libapq::is_forward_iterator<T>", "[returns true for a suitable custom iterator]") {
+    EXPECT_TRUE(libapq::is_forward_iterator<iterability_test::foo::iterator>::value);
+}
+
+GTEST("libapq::is_forward_iterator<T>", "[returns false for an unsuitable type]") {
+    EXPECT_FALSE(libapq::is_forward_iterator<iterability_test::bar>::value);
+}
+
+GTEST("libapq::is_iterable<T>", "[returns true for a std container]") {
+    EXPECT_TRUE(libapq::is_iterable<std::vector<int>>::value);
+}
+
+GTEST("libapq::is_iterable<T>", "[returns true for suitable custom types]") {
+    EXPECT_TRUE(libapq::is_iterable<iterability_test::foo>::value);
+}
+
+GTEST("libapq::is_iterable<T>", "[returns false for unsuitable custom types]") {
+    EXPECT_FALSE(libapq::is_iterable<iterability_test::bar>::value);
+}

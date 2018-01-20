@@ -333,4 +333,34 @@ inline bool accepts_oid(const oid_map_t<MapImplT>& map, const T& v, oid_t oid) n
     return type_oid(map, v) == oid;
 }
 
+/**
+* This trait determines whether T has begin and end
+* methods, which return forward iterators
+*/
+template <typename T, typename Enable = void>
+struct is_forward_iterator : std::false_type {};
+
+template <typename T>
+struct is_forward_iterator<T, typename std::enable_if<
+    std::is_base_of<
+        std::forward_iterator_tag,
+        typename std::iterator_traits<T>::iterator_category
+    >::value
+>::type>
+: std::true_type {};
+
+/**
+ * This trait determines whether T can be iterated through
+ * via begin() end() functions
+ */
+template <typename T, typename Enable = void>
+struct is_iterable : std::false_type {};
+
+template <typename T>
+struct is_iterable<T, typename std::enable_if<
+    is_forward_iterator<decltype(begin(std::declval<T>()))>::value &&
+        is_forward_iterator<decltype(end(std::declval<T>()))>::value
+>::type>
+: std::true_type {};
+
 } // namespace ozo
