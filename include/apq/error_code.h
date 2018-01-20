@@ -11,11 +11,12 @@ enum errc
 {
     success = 0,
     type_mismatch,
-    size_mismatch
+    size_mismatch,
+    index_out_of_range
 };
 
 namespace {
- 
+
 struct error_category : boost::system::error_category
 {
     const char* name() const noexcept override
@@ -30,11 +31,12 @@ struct error_category : boost::system::error_category
         case success: return "success";
         case type_mismatch: return "type_mismatch";
         case size_mismatch: return "size_mismatch";
+        case index_out_of_range: return "index out of range";
         default: return "unknown";
         }
     }
 };
- 
+
 const error_category error_category_ {};
 
 } // namespace

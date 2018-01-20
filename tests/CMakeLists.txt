@@ -42,6 +42,7 @@ set(SOURCES
     query_conf.cpp
     type_traits.cpp
     result.cpp
+    row.cpp
     value.cpp
 )
 
