@@ -2,10 +2,10 @@
 
 #include <boost/asio.hpp>
 
-namespace libapq {
+namespace ozo {
 
 namespace asio = ::boost::asio;
 
 using io_context = asio::io_service;
 
-} // namespace libapq
+} // namespace ozo

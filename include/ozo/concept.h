@@ -2,7 +2,7 @@
 
 #include <typeinfo>
 
-namespace libapq {
+namespace ozo {
 
 /**
 * This is requirement simulation type, which is the alias to std::enable_if_t
@@ -21,4 +21,4 @@ struct has_operator_not<T, std::void_t<decltype(!std::declval<T>())>>
 template <typename T>
 constexpr auto OperatorNot = has_operator_not<std::decay_t<T>>::value;
 
-} // namespace libapq
+} // namespace ozo

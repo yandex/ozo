@@ -1,10 +1,10 @@
 #pragma once
 
-#include <apq/asio.h>
+#include <ozo/asio.h>
 
 #include <GUnit/GTest.h>
 
-namespace libapq {
+namespace ozo {
 namespace testing {
 
 template <typename Handler>
@@ -27,7 +27,7 @@ struct socket_mock {
 
 template <typename ... Args>
 struct callback_mock {
-    virtual void call(libapq::error_code, Args...) const = 0;
+    virtual void call(ozo::error_code, Args...) const = 0;
     virtual void context_preserved() const = 0;
     virtual ~callback_mock() = default;
 };
@@ -37,7 +37,7 @@ struct callback_handler{
     M& mock_;
 
     template <typename ...Args>
-    void operator() (libapq::error_code ec, Args&&... args) const {
+    void operator() (ozo::error_code ec, Args&&... args) const {
         mock_.call(ec, std::forward<Args>(args)...);
     }
 
@@ -55,4 +55,4 @@ inline callback_handler<typename T::type> wrap(T& mock) {
 
 
 } // namespace testing
-} // namespace libapq
+} // namespace ozo

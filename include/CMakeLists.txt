@@ -1,1 +1,1 @@
-install(DIRECTORY apq DESTINATION include)
+install(DIRECTORY ozo DESTINATION include)

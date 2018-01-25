@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 2.8)
 
-project(apq)
+project(ozo)
 
-option(APQ_BUILD_TESTS "Enable apq tests build" OFF)
+option(APQ_BUILD_TESTS "Enable tests build" OFF)
 option(APQ_COVERAGE "Enable tests coverage" OFF)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DBOOST_COROUTINES_NO_DEPRECATION_WARNING")

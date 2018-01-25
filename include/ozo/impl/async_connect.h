@@ -1,11 +1,11 @@
 #pragma once
 
-#include <apq/connection.h>
-#include <apq/error.h>
-#include <apq/detail/bind.h>
+#include <ozo/connection.h>
+#include <ozo/error.h>
+#include <ozo/detail/bind.h>
 #include <libpq-fe.h>
 
-namespace libapq {
+namespace ozo {
 namespace impl {
 namespace pq {
 
@@ -161,4 +161,4 @@ inline void async_connect(const std::string& conninfo, Connection& conn,
 }
 
 } // namespace impl
-} // namespace libapq
+} // namespace ozo

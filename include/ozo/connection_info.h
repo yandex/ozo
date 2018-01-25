@@ -1,11 +1,11 @@
 #pragma once
 
-#include <apq/connection.h>
-#include <apq/async_connect.h>
+#include <ozo/connection.h>
+#include <ozo/async_connect.h>
 
 #include <chrono>
 
-namespace libapq {
+namespace ozo {
 
 template <
     typename OidMap = empty_oid_map, 
@@ -36,4 +36,4 @@ static_assert(
     ConnectionProvider<connection_info<>>,
     "connection_info does not fit ConnectionProvider concept");
 
-} // namespace libapq
+} // namespace ozo

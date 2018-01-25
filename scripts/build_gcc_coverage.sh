@@ -14,4 +14,4 @@ cmake \
     -DPostgreSQL_TYPE_INCLUDE_DIR=/usr/include/postgresql/ \
     ..
 make -j$(nproc)
-make apq_coverage
+make ozo_coverage

@@ -2,9 +2,9 @@
 
 #include <boost/asio/async_result.hpp>
 #include <utility>
-#include <apq/asio.h>
+#include <ozo/asio.h>
 
-namespace libapq {
+namespace ozo {
 
 //We can reuse boost::asio::async_result since it is not binded to error code type
 using asio::async_result;
@@ -20,10 +20,10 @@ struct async_completion {
       result(completion_handler) {
     }
 
-    using completion_handler_type = typename libapq::handler_type<CompletionToken, Signature>::type;
+    using completion_handler_type = typename ozo::handler_type<CompletionToken, Signature>::type;
 
     completion_handler_type completion_handler;
     async_result<completion_handler_type> result;
 };
 
-} // namespace libapq
+} // namespace ozo
