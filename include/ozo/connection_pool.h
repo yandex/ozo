@@ -1,11 +1,11 @@
 #pragma once
 
-#include <apq/impl/async_connect.h>
-#include <apq/connection_info.h>
-#include <apq/connection.h>
+#include <ozo/impl/async_connect.h>
+#include <ozo/connection_info.h>
+#include <ozo/connection.h>
 #include <yamail/resource_pool/async/pool.hpp>
 
-namespace libapq {
+namespace ozo {
 namespace impl {
 
 template <typename ...Ts>
@@ -165,4 +165,4 @@ inline auto make_provider(T& pool, io_context& io,
     };
 }
 
-} // namespace apq
+} // namespace ozo

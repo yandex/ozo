@@ -1,4 +1,4 @@
-#include <apq/connection.h>
+#include <ozo/connection.h>
 
 #include <boost/make_shared.hpp>
 #include <boost/fusion/adapted/std_tuple.hpp>
@@ -17,13 +17,13 @@ namespace hana = ::boost::hana;
 
 enum class native_handle { bad, good };
 
-using libapq::testing::socket_mock;
+using ozo::testing::socket_mock;
 
 inline bool connection_status_bad(const native_handle* h) {
     return *h == native_handle::bad;
 }
 
-using libapq::empty_oid_map;
+using ozo::empty_oid_map;
 
 template <typename OidMap = empty_oid_map>
 struct connection {
@@ -63,66 +63,66 @@ struct connection {
 template <typename ...Ts>
 using connection_ptr = std::shared_ptr<connection<Ts...>>;
 
-static_assert(libapq::Connection<connection<>>,
+static_assert(ozo::Connection<connection<>>,
     "connection does not meet Connection requirements");
-static_assert(libapq::ConnectionWrapper<connection_ptr<>>,
+static_assert(ozo::ConnectionWrapper<connection_ptr<>>,
     "connection_ptr does not meet ConnectionWrapper requirements");
-static_assert(libapq::Connectable<connection<>>,
+static_assert(ozo::Connectable<connection<>>,
     "connection does not meet Connectable requirements");
-static_assert(libapq::Connectable<connection_ptr<>>,
+static_assert(ozo::Connectable<connection_ptr<>>,
     "connection_ptr does not meet Connectable requirements");
 
-static_assert(!libapq::Connection<int>,
+static_assert(!ozo::Connection<int>,
     "int meets Connection requirements unexpectedly");
-static_assert(!libapq::ConnectionWrapper<int>,
+static_assert(!ozo::ConnectionWrapper<int>,
     "int meets ConnectionWrapper requirements unexpectedly");
-static_assert(!libapq::Connectable<int>,
+static_assert(!ozo::Connectable<int>,
     "int meets Connectable requirements unexpectedly");
 
-GTEST("libapq::connection_good()") {
+GTEST("ozo::connection_good()") {
     SHOULD("for object with bad handle returns false") {
         auto conn = std::make_shared<connection<>>();
         *(conn->handle_) = native_handle::bad;
-        EXPECT_FALSE(libapq::connection_good(conn));
+        EXPECT_FALSE(ozo::connection_good(conn));
     }
 
     SHOULD("for object with nullptr returns false") {
         connection_ptr<> conn;
-        EXPECT_FALSE(libapq::connection_good(conn));
+        EXPECT_FALSE(ozo::connection_good(conn));
     }
 
     SHOULD("for object with good handle returns true") {
         auto conn = std::make_shared<connection<>>();
         *(conn->handle_) = native_handle::good;
-        EXPECT_TRUE(libapq::connection_good(conn));
+        EXPECT_TRUE(ozo::connection_good(conn));
     }
 }
 
-GTEST("libapq::connection_bad()") {
+GTEST("ozo::connection_bad()") {
     SHOULD("for object with bad handle returns true") {
         auto conn = std::make_shared<connection<>>();
         *(conn->handle_) = native_handle::bad;
-        EXPECT_TRUE(libapq::connection_bad(conn));
+        EXPECT_TRUE(ozo::connection_bad(conn));
     }
 
     SHOULD("for object with nullptr returns true") {
         connection_ptr<> conn;
-        EXPECT_FALSE(libapq::connection_good(conn));
+        EXPECT_FALSE(ozo::connection_good(conn));
     }
 
     SHOULD("for object with good handle returns false") {
         auto conn = std::make_shared<connection<>>();
         *(conn->handle_) = native_handle::good;
-        EXPECT_FALSE(libapq::connection_bad(conn));
+        EXPECT_FALSE(ozo::connection_bad(conn));
     }
 }
 
-GTEST("libapq::unwrap_connection()") {
+GTEST("ozo::unwrap_connection()") {
     SHOULD("for wrapped connection returns connection reference") {
         auto conn = std::make_shared<connection<>>();
 
         EXPECT_EQ(
-            std::addressof(libapq::unwrap_connection(conn)),
+            std::addressof(ozo::unwrap_connection(conn)),
             conn.get()
         );
     }
@@ -131,45 +131,45 @@ GTEST("libapq::unwrap_connection()") {
         auto conn = connection<>();
 
         EXPECT_EQ(
-            std::addressof(libapq::unwrap_connection(conn)),
+            std::addressof(ozo::unwrap_connection(conn)),
             std::addressof(conn)
         );
     }
 }
 
-GTEST("libapq::get_error_context()") {
+GTEST("ozo::get_error_context()") {
     SHOULD("for connection returns reference to error_context_") {
         auto conn = std::make_shared<connection<>>();
 
         EXPECT_EQ(
-            std::addressof(libapq::get_error_context(conn)),
+            std::addressof(ozo::get_error_context(conn)),
             std::addressof(conn->error_context_)
         );
     }
 }
 
-GTEST("libapq::set_error_context()") {
+GTEST("ozo::set_error_context()") {
     SHOULD("for connection sets error_context_") {
         auto conn = std::make_shared<connection<>>();
-        libapq::set_error_context(conn, "brand new super context");
+        ozo::set_error_context(conn, "brand new super context");
 
         EXPECT_EQ(conn->error_context_, "brand new super context");
     }
 }
 
-GTEST("libapq::reset_error_context()") {
+GTEST("ozo::reset_error_context()") {
     SHOULD("for connection resets error_context_ into empty string") {
         auto conn = std::make_shared<connection<>>();
         conn->error_context_ = "brand new super context";
-        libapq::reset_error_context(conn);
+        ozo::reset_error_context(conn);
         EXPECT_TRUE(conn->error_context_.empty());
     }
 }
 
-GTEST("libapq::get_connection()") {
-    using callback_mock = libapq::testing::callback_mock<std::shared_ptr<connection<>>>;
-    using libapq::testing::wrap;
-    using libapq::error_code;
+GTEST("ozo::get_connection()") {
+    using callback_mock = ozo::testing::callback_mock<std::shared_ptr<connection<>>>;
+    using ozo::testing::wrap;
+    using ozo::error_code;
     using namespace ::testing;
 
     SHOULD("pass through the connection to handler") {
@@ -177,13 +177,13 @@ GTEST("libapq::get_connection()") {
         StrictGMock<callback_mock> cb_mock{};
         EXPECT_INVOKE(cb_mock, context_preserved);
         EXPECT_CALL(cb_mock, (call)(error_code{}, conn));
-        libapq::get_connection(conn, wrap(cb_mock));
+        ozo::get_connection(conn, wrap(cb_mock));
     }
 
     SHOULD("resets connection error context") {
         auto conn = std::make_shared<connection<>>();
         conn->error_context_ = "some context here";
-        libapq::get_connection(conn, [](error_code, auto conn) {
+        ozo::get_connection(conn, [](error_code, auto conn) {
             EXPECT_TRUE(conn->error_context_.empty());
         });
     }

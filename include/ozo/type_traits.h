@@ -1,6 +1,6 @@
 #pragma once
 
-#include <apq/detail/pg_type.h>
+#include <ozo/detail/pg_type.h>
 
 #include <boost/hana/at_key.hpp>
 #include <boost/hana/insert.hpp>
@@ -24,7 +24,7 @@
 #include <set>
 #include <type_traits>
 
-namespace libapq {
+namespace ozo {
 
 namespace hana = ::boost::hana;
 using namespace hana::literals;
@@ -220,12 +220,12 @@ inline auto size_of(const T& v) noexcept -> typename std::enable_if<
     return v.size();
 }
 
-} // namespace libapq
+} // namespace ozo
 
 #define LIBAPQ__TYPE_NAME_TYPE(Name) decltype(Name##_s)
 
 #define LIBAPQ_PG_DEFINE_TYPE(Type, Name, Oid, Size) \
-    namespace libapq {\
+    namespace ozo {\
         template <>\
         struct type_traits<Type> : type_traits_helper<\
             LIBAPQ__TYPE_NAME_TYPE(Name), \
@@ -235,7 +235,7 @@ inline auto size_of(const T& v) noexcept -> typename std::enable_if<
     }
 
 #define LIBAPQ_PG_DEFINE_CUSTOM_TYPE(Type, Name, Size) \
-    namespace libapq {\
+    namespace ozo {\
         template <>\
         struct type_traits<Type> : type_traits_helper<\
             LIBAPQ__TYPE_NAME_TYPE(Name), \
@@ -267,7 +267,7 @@ LIBAPQ_PG_DEFINE_TYPE(std::string, "text", TEXTOID, dynamic_size)
 LIBAPQ_PG_DEFINE_TYPE(std::vector<std::string>, "text[]", TEXTARRAYOID, dynamic_size)
 
 
-namespace libapq {
+namespace ozo {
 
 template <typename ... T>
 constexpr decltype(auto) register_types() noexcept {
@@ -316,4 +316,4 @@ inline bool accepts_oid(const Map& map, const T& v, oid_t oid) noexcept {
     return type_oid(map, v) == oid;
 }
 
-} // namespace libapq
+} // namespace ozo

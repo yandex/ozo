@@ -2,13 +2,13 @@
 
 #include <libpq-fe.h>
 
-#include <apq/asio.h>
+#include <ozo/asio.h>
 #include <boost/algorithm/string/trim.hpp>
 #include <string>
 #include <sstream>
 
 
-namespace libapq {
+namespace ozo {
 
 namespace impl {
 
@@ -115,4 +115,4 @@ inline error_code rebind_connection_io_context(Connection& conn, io_context& io)
 }
 
 } // namespace impl
-} // namespace libapq
+} // namespace ozo

@@ -2,7 +2,7 @@
 
 #include <boost/system/system_error.hpp>
 
-namespace libapq {
+namespace ozo {
 
 using error_code = ::boost::system::error_code;
 using system_error = ::boost::system::system_error;
@@ -21,18 +21,18 @@ enum code {
 const error_category& category() noexcept;
 
 } // namespace error
-} // namespace libapq
+} // namespace ozo
 
 namespace boost {
 namespace system {
 
 template <>
-struct is_error_code_enum<libapq::error::code> : std::true_type {};
+struct is_error_code_enum<ozo::error::code> : std::true_type {};
 
 } // namespace system
 } // namespace boost
 
-namespace libapq {
+namespace ozo {
 namespace error {
 
 inline auto make_error_code(const code e) {
@@ -43,7 +43,7 @@ namespace impl {
 
 class category : public error_category {
 public:
-    const char* name() const throw() { return "libapq::error::category"; }
+    const char* name() const throw() { return "ozo::error::category"; }
 
     std::string message(int value) const {
         switch (code(value)) {
@@ -70,4 +70,4 @@ inline const error_category& category() noexcept {
 }
 
 } // namespace error
-} // namespace libapq
+} // namespace ozo

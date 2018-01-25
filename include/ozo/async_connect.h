@@ -1,9 +1,9 @@
 #pragma once
 
-#include <apq/connection.h>
-#include <apq/impl/async_connect.h>
+#include <ozo/connection.h>
+#include <ozo/impl/async_connect.h>
 
-namespace libapq {
+namespace ozo {
 namespace detail {
 
 template <typename Handler, typename Connection>
@@ -42,4 +42,4 @@ inline Require<Connectable<T>> async_connect(std::string conn_info, T&& conn,
                 std::forward<T>(conn)));
 }
 
-} // namespace libapq
+} // namespace ozo

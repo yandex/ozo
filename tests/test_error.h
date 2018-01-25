@@ -2,7 +2,7 @@
 
 #include <boost/system/system_error.hpp>
 
-namespace libapq {
+namespace ozo {
 namespace testing {
 namespace error {
 
@@ -39,18 +39,18 @@ inline const error_category& get_category() {
 
 } // namespace error
 } // namespace testing
-} // namespace libapq
+} // namespace ozo
 
 namespace boost {
 namespace system {
 
 template <>
-struct is_error_code_enum<libapq::testing::error::code> : std::true_type {};
+struct is_error_code_enum<ozo::testing::error::code> : std::true_type {};
 
 } // namespace system
 } // namespace boost
 
-namespace libapq {
+namespace ozo {
 namespace testing {
 namespace error {
 
@@ -60,4 +60,4 @@ inline auto make_error_code(const code e) {
 
 } // namespace error
 } // namespace testing
-} // namespace libapq
+} // namespace ozo

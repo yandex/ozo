@@ -1,16 +1,16 @@
 #pragma once
 #include <iostream>
 
-#include <apq/async_result.h>
-#include <apq/error.h>
-#include <apq/type_traits.h>
-#include <apq/asio.h>
-#include <apq/concept.h>
+#include <ozo/async_result.h>
+#include <ozo/error.h>
+#include <ozo/type_traits.h>
+#include <ozo/asio.h>
+#include <ozo/concept.h>
 
-#include <apq/detail/bind.h>
-#include <apq/impl/connection.h>
+#include <ozo/detail/bind.h>
+#include <ozo/impl/connection.h>
 
-namespace libapq {
+namespace ozo {
 
 using impl::pg_conn_handle;
 
@@ -373,4 +373,4 @@ auto get_connection(T&& provider, CompletionToken&& token) {
     return init.result.get();
 }
 
-} // namespace libapq
+} // namespace ozo

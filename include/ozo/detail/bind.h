@@ -4,7 +4,7 @@
 #include <utility>
 #include <boost/asio/handler_invoke_hook.hpp>
 
-namespace libapq {
+namespace ozo {
 namespace detail {
 
 /**
@@ -42,4 +42,4 @@ inline auto bind(Handler&& h, Args&& ... args) {
 }
 
 } // namespace detail
-} // namespace libapq
+} // namespace ozo

@@ -7,4 +7,4 @@ else
 fi
 
 # https://github.com/google/sanitizers/issues/764
-docker run -ti --rm --user "$(id -u):$(id -g)" --privileged -v ${HOME}/.ccache:/ccache -v ${PWD}:/code apq_build env BUILD_PREFIX=docker_ ${BUILD_SCRIPT}
+docker run -ti --rm --user "$(id -u):$(id -g)" --privileged -v ${HOME}/.ccache:/ccache -v ${PWD}:/code ozo_build env BUILD_PREFIX=docker_ ${BUILD_SCRIPT}

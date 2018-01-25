@@ -1,4 +1,4 @@
-#include <apq/detail/bind.h>
+#include <ozo/detail/bind.h>
 #include <GUnit/GTest.h>
 
 template <typename Handler>
@@ -31,7 +31,7 @@ inline auto wrap(callback_mock& mock) {
     return callback_handler{mock};
 }
 
-GTEST("libapq::detail::bind()") {
+GTEST("ozo::detail::bind()") {
     SHOULD("preserve handler context") {
         using namespace ::testing;
         StrictGMock<callback_mock> cb_mock{};
@@ -39,7 +39,7 @@ GTEST("libapq::detail::bind()") {
         EXPECT_INVOKE(cb_mock, context_preserved);
         EXPECT_INVOKE(cb_mock, call, _);
 
-        asio_post(libapq::detail::bind(wrap(object(cb_mock)), 42));
+        asio_post(ozo::detail::bind(wrap(object(cb_mock)), 42));
     }
 
     SHOULD("forward binded value") {
@@ -49,6 +49,6 @@ GTEST("libapq::detail::bind()") {
         EXPECT_INVOKE(cb_mock, context_preserved);
         EXPECT_INVOKE(cb_mock, call, 42);
 
-        asio_post(libapq::detail::bind(wrap(object(cb_mock)), 42));
+        asio_post(ozo::detail::bind(wrap(object(cb_mock)), 42));
     }
 }
