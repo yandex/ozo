@@ -1,7 +1,7 @@
-# apq
+# ozo
 
-[![Build Status](https://travis-ci.org/elsid/apq.svg?branch=master)](https://travis-ci.org/elsid/apq)
-[![Coverage Status](https://coveralls.io/repos/github/elsid/apq/badge.svg?branch=HEAD)](https://coveralls.io/github/elsid/apq?branch=HEAD)
+[![Build Status](https://travis-ci.org/YandexMail/ozo.svg?branch=master)](https://travis-ci.org/YandexMail/ozo)
+[![Coverage Status](https://coveralls.io/repos/github/YandexMail/ozo/badge.svg?branch=HEAD)](https://coveralls.io/github/YandexMail/ozo?branch=HEAD)
 
 ## Build
 
