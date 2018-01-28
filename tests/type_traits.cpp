@@ -146,8 +146,8 @@ GTEST("ozo::is_composite<adapted>", "[with Boost.Hana adapted structure returns 
     EXPECT_TRUE(ozo::is_composite<testing::hana_adapted>::value);
 }
 
-GTEST("libapq::is_forward_iterator<T>", "[returns true for a std iterator]") {
-    EXPECT_TRUE(libapq::is_forward_iterator<std::vector<int>::iterator>::value);
+GTEST("ozo::is_forward_iterator<T>", "[returns true for a std iterator]") {
+    EXPECT_TRUE(ozo::is_forward_iterator<std::vector<int>::iterator>::value);
 }
 
 namespace iterability_test {
@@ -172,22 +172,22 @@ struct bar {};
 
 }
 
-GTEST("libapq::is_forward_iterator<T>", "[returns true for a suitable custom iterator]") {
-    EXPECT_TRUE(libapq::is_forward_iterator<iterability_test::foo::iterator>::value);
+GTEST("ozo::is_forward_iterator<T>", "[returns true for a suitable custom iterator]") {
+    EXPECT_TRUE(ozo::is_forward_iterator<iterability_test::foo::iterator>::value);
 }
 
-GTEST("libapq::is_forward_iterator<T>", "[returns false for an unsuitable type]") {
-    EXPECT_FALSE(libapq::is_forward_iterator<iterability_test::bar>::value);
+GTEST("ozo::is_forward_iterator<T>", "[returns false for an unsuitable type]") {
+    EXPECT_FALSE(ozo::is_forward_iterator<iterability_test::bar>::value);
 }
 
-GTEST("libapq::is_iterable<T>", "[returns true for a std container]") {
-    EXPECT_TRUE(libapq::is_iterable<std::vector<int>>::value);
+GTEST("ozo::is_iterable<T>", "[returns true for a std container]") {
+    EXPECT_TRUE(ozo::is_iterable<std::vector<int>>::value);
 }
 
-GTEST("libapq::is_iterable<T>", "[returns true for suitable custom types]") {
-    EXPECT_TRUE(libapq::is_iterable<iterability_test::foo>::value);
+GTEST("ozo::is_iterable<T>", "[returns true for suitable custom types]") {
+    EXPECT_TRUE(ozo::is_iterable<iterability_test::foo>::value);
 }
 
-GTEST("libapq::is_iterable<T>", "[returns false for unsuitable custom types]") {
-    EXPECT_FALSE(libapq::is_iterable<iterability_test::bar>::value);
+GTEST("ozo::is_iterable<T>", "[returns false for unsuitable custom types]") {
+    EXPECT_FALSE(ozo::is_iterable<iterability_test::bar>::value);
 }

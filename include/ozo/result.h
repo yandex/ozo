@@ -1,16 +1,16 @@
 #pragma once
 
-#include "apq/row.h"
-#include "apq/error_code.h"
+#include "ozo/row.h"
+#include "ozo/error.h"
 
-namespace apq {
+namespace ozo {
 
 struct empty_result {};
 
 template <typename Rows, typename Result>
 error_code convert_rows(const Rows&, Result&)
 {
-    return error_code{};
+    return error::ok;
 }
 
-} // namespace apq
+} // namespace ozo

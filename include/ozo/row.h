@@ -1,9 +1,9 @@
 #pragma once
 
-#include "apq/value.h"
-#include "apq/error_code.h"
+#include "ozo/value.h"
+#include "ozo/error.h"
 
-namespace apq {
+namespace ozo {
 
 template <typename RowData, typename ValueConverter, typename TypeMap>
 class basic_row
@@ -17,7 +17,7 @@ public:
     error_code at(std::size_t i, T& value)
     {
         if (i >= row_data_.size()) {
-            return index_out_of_range;
+            return error::row_index_out_of_range;
         }
 
         const auto& value_data = row_data_.at(i);
@@ -49,7 +49,7 @@ struct pg_value_converter
 
 } // namespace detail
 
-template <typename RowData, typename TypeMap = decltype(libapq::register_types<>())>
+template <typename RowData, typename TypeMap = decltype(ozo::register_types<>())>
 using row = basic_row<RowData, detail::pg_value_converter, TypeMap>;
 
-} // namespace apq
+} // namespace ozo

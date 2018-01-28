@@ -14,8 +14,11 @@ enum code {
     ok, // to do not use error code 0
     pq_connection_start_failed, // PQConnectionStart function failed
     pq_socket_failed, // PQSocket returned -1 as fd - it seems like there is no connection
-    pq_connection_status_bad, // PQstatus returned CONNECTION_BAD 
+    pq_connection_status_bad, // PQstatus returned CONNECTION_BAD
     pq_connect_poll_failed, // PQconnectPoll function failed
+    oid_type_mismatch, // no conversion possible from oid to user-supplied type
+    integer_value_size_mismatch, // size obtained from db does not match user-supplied type size
+    row_index_out_of_range, // there is no column with this index in the row
 };
 
 const error_category& category() noexcept;
@@ -57,6 +60,12 @@ public:
                 return "pq_connection_status_bad - PQstatus returned CONNECTION_BAD";
             case pq_connect_poll_failed:
                 return "pq_connect_poll_failed - PQconnectPoll function failed";
+            case oid_type_mismatch:
+                return "no conversion possible from oid to user-supplied type";
+            case integer_value_size_mismatch:
+                return "size obtained from db does not match user-supplied type size";
+            case row_index_out_of_range:
+                return "there is no column with this index in the row";
         }
         return "no message for value: " + std::to_string(value);
     }
