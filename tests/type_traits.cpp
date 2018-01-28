@@ -70,11 +70,11 @@ namespace testing {
         }
     };
     struct builtin_type {};
-} 
+}
 }
 
-LIBAPQ_PG_DEFINE_CUSTOM_TYPE(ozo::testing::some_type, "some_type", dynamic_size)
-LIBAPQ_PG_DEFINE_TYPE(ozo::testing::builtin_type, "builtin_type", 5, bytes<8>)
+OZO_PG_DEFINE_CUSTOM_TYPE(ozo::testing::some_type, "some_type", dynamic_size)
+OZO_PG_DEFINE_TYPE(ozo::testing::builtin_type, "builtin_type", 5, bytes<8>)
 
 auto oid_map = ozo::register_types<ozo::testing::some_type>();
 

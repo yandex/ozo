@@ -112,7 +112,7 @@ struct is_string<std::basic_string<C, T, A>> : std::true_type {};
 * Indicates if type is adapted for introspection with Boost.Fusion
 */
 template <typename T>
-using is_fusion_adapted = std::integral_constant<bool, 
+using is_fusion_adapted = std::integral_constant<bool,
     ::boost::fusion::traits::is_sequence<T>::value
 >;
 
@@ -126,7 +126,7 @@ using is_hana_adapted = std::integral_constant<bool,
 >;
 
 /**
-* Indicates if type is a composite. In general we suppose that composite 
+* Indicates if type is a composite. In general we suppose that composite
 * is a type being adapted for introspection via Boost.Fusion or Boost.Hana,
 * including tuples and compile-time sequences.
 */
@@ -222,49 +222,49 @@ inline auto size_of(const T& v) noexcept -> typename std::enable_if<
 
 } // namespace ozo
 
-#define LIBAPQ__TYPE_NAME_TYPE(Name) decltype(Name##_s)
+#define OZO__TYPE_NAME_TYPE(Name) decltype(Name##_s)
 
-#define LIBAPQ_PG_DEFINE_TYPE(Type, Name, Oid, Size) \
+#define OZO_PG_DEFINE_TYPE(Type, Name, Oid, Size) \
     namespace ozo {\
         template <>\
         struct type_traits<Type> : type_traits_helper<\
-            LIBAPQ__TYPE_NAME_TYPE(Name), \
+            OZO__TYPE_NAME_TYPE(Name), \
             std::integral_constant<oid_t, Oid>, \
             Size\
         >{};\
     }
 
-#define LIBAPQ_PG_DEFINE_CUSTOM_TYPE(Type, Name, Size) \
+#define OZO_PG_DEFINE_CUSTOM_TYPE(Type, Name, Size) \
     namespace ozo {\
         template <>\
         struct type_traits<Type> : type_traits_helper<\
-            LIBAPQ__TYPE_NAME_TYPE(Name), \
+            OZO__TYPE_NAME_TYPE(Name), \
             null_oid_t, \
             Size\
         >{};\
     }
 
-LIBAPQ_PG_DEFINE_TYPE(bool, "bool", BOOLOID, bytes<1>)
-LIBAPQ_PG_DEFINE_TYPE(char, "char", CHAROID, bytes<1>)
-LIBAPQ_PG_DEFINE_TYPE(std::vector<char>, "bytea", BYTEAOID, dynamic_size)
+OZO_PG_DEFINE_TYPE(bool, "bool", BOOLOID, bytes<1>)
+OZO_PG_DEFINE_TYPE(char, "char", CHAROID, bytes<1>)
+OZO_PG_DEFINE_TYPE(std::vector<char>, "bytea", BYTEAOID, dynamic_size)
 
-LIBAPQ_PG_DEFINE_TYPE(boost::uuids::uuid, "uuid", UUIDOID, bytes<16>)
-LIBAPQ_PG_DEFINE_TYPE(std::vector<boost::uuids::uuid>, "uuid[]", 2951, dynamic_size)
+OZO_PG_DEFINE_TYPE(boost::uuids::uuid, "uuid", UUIDOID, bytes<16>)
+OZO_PG_DEFINE_TYPE(std::vector<boost::uuids::uuid>, "uuid[]", 2951, dynamic_size)
 
-LIBAPQ_PG_DEFINE_TYPE(int64_t, "int8", INT8OID, bytes<8>)
-LIBAPQ_PG_DEFINE_TYPE(std::vector<int64_t>, "int8[]", 1016, dynamic_size)
-LIBAPQ_PG_DEFINE_TYPE(int32_t, "int4", INT4OID, bytes<4>)
-LIBAPQ_PG_DEFINE_TYPE(std::vector<int32_t>, "int4[]", INT4ARRAYOID, dynamic_size)
-LIBAPQ_PG_DEFINE_TYPE(int16_t, "int2", INT2OID, bytes<2>)
-LIBAPQ_PG_DEFINE_TYPE(std::vector<int16_t>, "int2[]", INT2ARRAYOID, dynamic_size)
+OZO_PG_DEFINE_TYPE(int64_t, "int8", INT8OID, bytes<8>)
+OZO_PG_DEFINE_TYPE(std::vector<int64_t>, "int8[]", 1016, dynamic_size)
+OZO_PG_DEFINE_TYPE(int32_t, "int4", INT4OID, bytes<4>)
+OZO_PG_DEFINE_TYPE(std::vector<int32_t>, "int4[]", INT4ARRAYOID, dynamic_size)
+OZO_PG_DEFINE_TYPE(int16_t, "int2", INT2OID, bytes<2>)
+OZO_PG_DEFINE_TYPE(std::vector<int16_t>, "int2[]", INT2ARRAYOID, dynamic_size)
 
-LIBAPQ_PG_DEFINE_TYPE(double, "float8", FLOAT8OID, bytes<8>)
-LIBAPQ_PG_DEFINE_TYPE(std::vector<double>, "float8[]", 1022, dynamic_size)
-LIBAPQ_PG_DEFINE_TYPE(float, "float4", FLOAT4OID, bytes<4>)
-LIBAPQ_PG_DEFINE_TYPE(std::vector<float>, "float4[]", FLOAT4ARRAYOID, dynamic_size)
+OZO_PG_DEFINE_TYPE(double, "float8", FLOAT8OID, bytes<8>)
+OZO_PG_DEFINE_TYPE(std::vector<double>, "float8[]", 1022, dynamic_size)
+OZO_PG_DEFINE_TYPE(float, "float4", FLOAT4OID, bytes<4>)
+OZO_PG_DEFINE_TYPE(std::vector<float>, "float4[]", FLOAT4ARRAYOID, dynamic_size)
 
-LIBAPQ_PG_DEFINE_TYPE(std::string, "text", TEXTOID, dynamic_size)
-LIBAPQ_PG_DEFINE_TYPE(std::vector<std::string>, "text[]", TEXTARRAYOID, dynamic_size)
+OZO_PG_DEFINE_TYPE(std::string, "text", TEXTOID, dynamic_size)
+OZO_PG_DEFINE_TYPE(std::vector<std::string>, "text[]", TEXTARRAYOID, dynamic_size)
 
 
 namespace ozo {

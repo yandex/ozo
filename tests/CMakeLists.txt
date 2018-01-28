@@ -48,7 +48,7 @@ add_dependencies(ozo_tests GUnit)
 target_link_libraries(ozo_tests ${LIBRARIES})
 add_test(ozo_tests ozo_tests)
 
-if(APQ_COVERAGE AND CMAKE_COMPILER_IS_GNUCXX)
+if(OZO_COVERAGE AND CMAKE_COMPILER_IS_GNUCXX)
     include(CodeCoverage)
     APPEND_COVERAGE_COMPILER_FLAGS()
     set(COVERAGE_EXCLUDES 'tests/*' 'contrib/*' 'boost/*' 'c++/*')

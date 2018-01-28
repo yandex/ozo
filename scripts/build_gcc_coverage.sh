@@ -9,8 +9,8 @@ cd ${BUILD_DIR}
 cmake \
     -DCMAKE_CXX_FLAGS='-std=c++17 -Wall -Wextra -pedantic -Werror' \
     -DCMAKE_BUILD_TYPE=Debug \
-    -DAPQ_BUILD_TESTS=ON \
-    -DAPQ_COVERAGE=ON \
+    -DOZO_BUILD_TESTS=ON \
+    -DOZO_COVERAGE=ON \
     -DPostgreSQL_TYPE_INCLUDE_DIR=/usr/include/postgresql/ \
     ..
 make -j$(nproc)
