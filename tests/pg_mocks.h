@@ -21,13 +21,13 @@ using mock_pg_row = std::array<mock_pg_value, Length>;
 
 struct mock_pg_converter
 {
-    static std::size_t& times_called() { static std::size_t t; return t; }
-    static ozo::error_code& ec() { static ozo::error_code e; return e; }
+    std::size_t times_called = 0;
+    ozo::error_code ec;
 
-    template <typename TypeMap, typename T>
-    inline ozo::error_code operator()(ozo::oid_t, const char*, std::size_t, const TypeMap&, T&)
+    template <typename T>
+    inline ozo::error_code operator()(ozo::oid_t, const char*, std::size_t, T&)
     {
-        ++ times_called();
-        return ec();
+        ++ times_called;
+        return ec;
     }
 };

@@ -5,13 +5,15 @@
 
 namespace ozo {
 
-template <typename RowData, typename ValueConverter, typename TypeMap>
+template <typename RowData, typename ValueConverter>
 class basic_row
 {
 public:
     basic_row() = default;
-    basic_row(const RowData& row_data) : row_data_(row_data) {}
-    basic_row(RowData&& row_data) : row_data_(std::move(row_data)) {}
+    basic_row(const RowData& row_data, ValueConverter converter = ValueConverter{})
+        : row_data_(row_data), value_converter_(converter) {}
+    basic_row(RowData&& row_data, ValueConverter converter = ValueConverter{})
+        : row_data_(std::move(row_data)), value_converter_(converter) {}
 
     template <typename T>
     error_code at(std::size_t i, T& value)
@@ -22,26 +24,28 @@ public:
 
         const auto& value_data = row_data_.at(i);
 
-        return ValueConverter{}(
+        return value_converter_(
             value_data.oid(),
             value_data.bytes(),
             value_data.size(),
-            type_map_,
             value
         );
     }
 
 private:
     RowData row_data_;
-    TypeMap type_map_;
+    ValueConverter value_converter_;
 };
 
 namespace detail {
 
+template <typename TypeMap>
 struct pg_value_converter
 {
-    template <typename TypeMap, typename T>
-    inline error_code operator()(oid_t oid, const char* bytes, std::size_t size, const TypeMap& type_map, T& value)
+    const TypeMap& type_map;
+
+    template <typename T>
+    inline error_code operator()(oid_t oid, const char* bytes, std::size_t size, T& value)
     {
         return convert_value(oid, bytes, size, type_map, value);
     }
@@ -49,7 +53,7 @@ struct pg_value_converter
 
 } // namespace detail
 
-template <typename RowData, typename TypeMap = decltype(ozo::register_types<>())>
-using row = basic_row<RowData, detail::pg_value_converter, TypeMap>;
+template <typename RowData>
+using row = basic_row<RowData, detail::pg_value_converter<decltype(ozo::register_types<>())>>;
 
 } // namespace ozo
