@@ -19,6 +19,7 @@ enum code {
     oid_type_mismatch, // no conversion possible from oid to user-supplied type
     integer_value_size_mismatch, // size obtained from db does not match user-supplied type size
     row_index_out_of_range, // there is no column with this index in the row
+    row_type_mismatch, // no conversion possible from db row to user-supplied type
 };
 
 const error_category& category() noexcept;
@@ -66,6 +67,8 @@ public:
                 return "size obtained from db does not match user-supplied type size";
             case row_index_out_of_range:
                 return "there is no column with this index in the row";
+            case row_type_mismatch:
+                return "no conversion possible from db row to user-supplied type";
         }
         return "no message for value: " + std::to_string(value);
     }

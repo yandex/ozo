@@ -25,9 +25,10 @@ struct mock_pg_converter
     ozo::error_code ec;
 
     template <typename T>
-    inline ozo::error_code operator()(ozo::oid_t, const char*, std::size_t, T&)
+    inline ozo::error_code operator()(ozo::oid_t, const char* bytes, std::size_t size, T& value)
     {
         ++ times_called;
+        value = boost::lexical_cast<T>(std::string(bytes, size));
         return ec;
     }
 };
