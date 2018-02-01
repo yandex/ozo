@@ -3,8 +3,10 @@
 #include "ozo/value.h"
 #include "ozo/error.h"
 
-#include <boost/hana.hpp>
-#include <boost/hana/ext/std.hpp>
+#include <boost/fusion/adapted.hpp>
+#include <boost/fusion/sequence.hpp>
+#include <boost/fusion/support/is_sequence.hpp>
+#include <boost/fusion/include/is_sequence.hpp>
 
 namespace ozo {
 
@@ -63,7 +65,7 @@ struct row_converter
 template <typename RowData, typename Row, typename ValueConverter>
 struct row_converter<RowData, Row, ValueConverter,
     typename std::enable_if<
-        is_iterable<RowData>::value && hana::Foldable<Row>::value
+        is_iterable<RowData>::value && boost::fusion::traits::is_sequence<Row>::value
     >::type
 >
 {
@@ -73,7 +75,7 @@ struct row_converter<RowData, Row, ValueConverter,
         auto data_it = begin(row_data);
         auto data_end = end(row_data);
 
-        boost::hana::for_each(row, [&](auto& value) {
+        boost::fusion::for_each(row, [&](auto& value) {
             if (ec) {
                 return;
             }

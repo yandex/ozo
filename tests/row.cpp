@@ -33,6 +33,17 @@ GTEST("ozo::row") {
     }
 }
 
+struct fusion_adapted
+{
+    std::string a;
+    int b;
+};
+
+// TODO: maybe we should try to hide this behind OZO_ADAPT_STRUCT or something?
+// In order to hide usage of fusion or hana as an implementation detail.
+// Would involve a bunch of generated code, though.
+BOOST_FUSION_ADAPT_STRUCT(fusion_adapted, a, b)
+
 GTEST("ozo::convert_row") {
     mock_pg_converter value_converter;
     auto converter_func = [&](oid_t oid, const char* bytes, std::size_t size, auto& value) {
@@ -47,6 +58,18 @@ GTEST("ozo::convert_row") {
         EXPECT_EQ(2, value_converter.times_called);
         EXPECT_EQ("123", std::get<0>(r));
         EXPECT_EQ(456, std::get<1>(r));
+    }
+
+    // Impossible to use hana because of https://github.com/boostorg/hana/issues/175
+    // Hana structs are immutable, but fusion ones are not.
+    // Once hana structs become mutable, we will be able to check
+    // parameter names, not only types
+    SHOULD("[convert pg row to a suitable fusion-adapted struct]") {
+        fusion_adapted r;
+        EXPECT_EQ(value_converter.ec, convert_row(data, r, converter_func));
+        EXPECT_EQ(2, value_converter.times_called);
+        EXPECT_EQ("123", r.a);
+        EXPECT_EQ(456, r.b);
     }
 
     SHOULD("[fail with converter ec if converter returns one]") {
