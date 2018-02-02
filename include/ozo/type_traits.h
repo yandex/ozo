@@ -269,11 +269,28 @@ OZO_PG_DEFINE_TYPE(std::vector<std::string>, "text[]", TEXTARRAYOID, dynamic_siz
 
 namespace ozo {
 
+template <typename ImplT>
+struct oid_map_t {
+    using impl_type = ImplT;
+
+    impl_type impl;
+};
+
+namespace detail {
+
 template <typename ... T>
 constexpr decltype(auto) register_types() noexcept {
     return hana::make_map(
-        hana::make_pair(hana::type_c<T>, null_oid())...
+        hana::make_pair(hana::type_c<T>, null_oid()) ...
     );
+}
+
+} // namespace detail
+
+template <typename ... T>
+constexpr decltype(auto) register_types() noexcept {
+    using impl_type = decltype(detail::register_types<T ...>());
+    return oid_map_t<impl_type> {detail::register_types<T ...>()};
 }
 
 using empty_oid_map = std::decay_t<decltype(register_types<>())>;
@@ -281,29 +298,29 @@ using empty_oid_map = std::decay_t<decltype(register_types<>())>;
 /**
 * Function sets oid for type in oid map.
 */
-template <typename T, typename Map>
-inline void set_type_oid(Map&& map, oid_t oid) noexcept {
+template <typename T, typename MapImplT>
+inline void set_type_oid(oid_map_t<MapImplT>& map, oid_t oid) noexcept {
     static_assert(!is_built_in<T>::value, "type must not be built-in");
-    map[hana::type_c<T>] = oid;
+    map.impl[hana::type_c<T>] = oid;
 }
 
 /**
 * Function returns oid for type from oid map.
 */
-template <typename T, typename Map>
-inline auto type_oid(const Map& map) noexcept
+template <typename T, typename MapImplT>
+inline auto type_oid(const oid_map_t<MapImplT>& map) noexcept
         -> std::enable_if_t<!is_built_in<T>::value, oid_t> {
-    return map[hana::type_c<T>];
+    return map.impl[hana::type_c<T>];
 }
 
-template <typename T, typename Map>
-constexpr auto type_oid(const Map&) noexcept
+template <typename T, typename MapImplT>
+constexpr auto type_oid(const oid_map_t<MapImplT>&) noexcept
         -> std::enable_if_t<is_built_in<T>::value, oid_t> {
     return typename type_traits<T>::oid();
 }
 
-template <typename T, typename Map>
-inline auto type_oid(const Map& map, const T&) noexcept{
+template <typename T, typename MapImplT>
+inline auto type_oid(const oid_map_t<MapImplT>& map, const T&) noexcept{
     return type_oid<std::decay_t<T>>(map);
 }
 
@@ -311,8 +328,8 @@ inline auto type_oid(const Map& map, const T&) noexcept{
 * Function returns true if type can be obtained from DB response with
 * specified oid.
 */
-template <typename T, typename Map>
-inline bool accepts_oid(const Map& map, const T& v, oid_t oid) noexcept {
+template <typename T, typename MapImplT>
+inline bool accepts_oid(const oid_map_t<MapImplT>& map, const T& v, oid_t oid) noexcept {
     return type_oid(map, v) == oid;
 }
 
