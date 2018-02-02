@@ -1,5 +1,4 @@
 #pragma once
-#include <iostream>
 
 #include <ozo/async_result.h>
 #include <ozo/error.h>
