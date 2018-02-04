@@ -334,8 +334,8 @@ inline bool accepts_oid(const oid_map_t<MapImplT>& map, const T& v, oid_t oid) n
 }
 
 /**
-* This trait determines whether T has begin and end
-* methods, which return forward iterators
+* This trait determines whether T is tagged
+* as a forward iterator
 */
 template <typename T, typename Enable = void>
 struct is_forward_iterator : std::false_type {};
