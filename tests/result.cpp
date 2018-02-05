@@ -8,30 +8,43 @@
 using namespace ozo;
 using namespace ozo::error;
 
-template <unsigned NumRows, unsigned NumColumns>
-class mock_pg_result
-{
-public:
-    using row_t = std::array<mock_pg_value, NumColumns>;
+GTEST("ozo::convert_rows") {
+    std::array<std::string, 2> mock_pg_rows {{
+        "unconverted 1",
+        "unconverted 2"
+    }};
 
-    mock_pg_result(std::array<row_t, NumRows>&& rows)
-    : rows(std::move(rows)) {}
+    mock_row_converter<std::string, 2> row_converter { {{
+        "converted 1",
+        "converted 2"
+    }}, {}, {} };
 
- private:
-    std::array<row_t, NumRows> rows;
-};
+    auto converter_call = [&](auto&& row, auto& result) {
+        return row_converter(row, result);
+    };
 
-GTEST("ozo::result", "[empty set of rows converts to empty_result]") {
-    mock_pg_result<0, 0> rows { {} };
-    ozo::empty_result empty;
-    EXPECT_EQ(ozo::convert_rows(rows, empty), ok);
+    SHOULD("[call supplied converter and write result to output iterator for each row]") {
+        std::array<std::string, 2> result;
+        EXPECT_EQ(row_converter.ec, convert_rows(mock_pg_rows, result.begin(), converter_call));
+        EXPECT_EQ(row_converter.times_called, 2);
+        EXPECT_EQ(row_converter.result, result);
+    }
+
+    SHOULD("[fail with converter ec if converter returns one]") {
+        std::array<std::string, 2> result;
+        row_converter.ec = error::oid_type_mismatch;
+        EXPECT_EQ(row_converter.ec, convert_rows(mock_pg_rows, result.begin(), converter_call));
+        EXPECT_EQ(row_converter.times_called, 1);
+    }
+
+    SHOULD("[accept back insert iterator as output]") {
+        std::vector<std::string> result_storage;
+        auto row_factory = [](){ return std::string{}; };
+        EXPECT_EQ(row_converter.ec, convert_rows(mock_pg_rows,
+                std::back_inserter(result_storage), converter_call, row_factory));
+        EXPECT_EQ(row_converter.times_called, 2);
+        EXPECT_EQ(row_converter.result[0], result_storage[0]);
+        EXPECT_EQ(row_converter.result[1], result_storage[1]);
+        EXPECT_EQ(result_storage.size(), 2);
+    }
 }
-
-GTEST("ozo::result", "[empty set of rows fails to convert to another type]") {
-    mock_pg_result<0, 0> rows { {} };
-    int other = 0;
-    EXPECT_NE(ozo::convert_rows(rows, other), ok);
-}
-
-GTEST("ozo::result", "[multiple rows convert to a type that provides back_inserter via traits]") { EXPECT_TRUE(false); }
-

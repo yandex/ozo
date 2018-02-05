@@ -334,6 +334,36 @@ inline bool accepts_oid(const oid_map_t<MapImplT>& map, const T& v, oid_t oid) n
 }
 
 /**
+* This trait determines whether T is an iterator
+*/
+template <typename T, typename Enable = void>
+struct is_iterator : std::false_type {};
+
+template <typename T>
+struct is_iterator<T, typename std::enable_if<
+    std::is_class<
+        typename std::iterator_traits<T>
+    >::value
+>::type>
+: std::true_type {};
+
+/**
+* This trait determines whether T is tagged
+* as a output iterator
+*/
+template <typename T, typename Enable = void>
+struct is_output_iterator : std::false_type {};
+
+template <typename T>
+struct is_output_iterator<T, typename std::enable_if<
+    std::is_base_of<
+        std::output_iterator_tag,
+        typename std::iterator_traits<T>::iterator_category
+    >::value
+>::type>
+: std::true_type {};
+
+/**
 * This trait determines whether T is tagged
 * as a forward iterator
 */

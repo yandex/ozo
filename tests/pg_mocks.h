@@ -32,3 +32,24 @@ struct mock_pg_converter
         return ec;
     }
 };
+
+template <std::size_t Rows, std::size_t Columns>
+using mock_pg_result = std::array<mock_pg_row<Columns>, Rows>;
+
+// Returns next row from result each time
+// operator() is called. Throws if out of rows.
+template <typename Row, std::size_t NumRows>
+struct mock_row_converter
+{
+    std::array<Row, NumRows> result;
+
+    std::size_t times_called = 0;
+    ozo::error_code ec;
+
+    template <typename RowData>
+    inline ozo::error_code operator()(RowData, Row& row)
+    {
+        row = result.at(times_called++);
+        return ec;
+    }
+};
