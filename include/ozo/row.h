@@ -47,7 +47,7 @@ namespace detail {
 template <typename TypeMap>
 struct pg_value_converter
 {
-    const TypeMap& type_map;
+    const TypeMap type_map;
 
     template <typename T>
     inline error_code operator()(oid_t oid, const char* bytes, std::size_t size, T& value)
