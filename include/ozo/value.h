@@ -49,7 +49,7 @@ struct recv<T, typename std::enable_if_t<std::is_integral<T>::value>>
 template <typename T, typename TypeMap>
 error_code convert_value(oid_t oid, const char* bytes, std::size_t size, const TypeMap& type_map, T& value)
 {
-    if (!accepts_oid(type_map, value, oid)) {
+    if (!accepts_oid(ozo::oid_map_t<TypeMap> {type_map}, value, oid)) {
         return error::oid_type_mismatch;
     }
 

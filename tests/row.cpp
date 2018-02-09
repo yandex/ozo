@@ -14,7 +14,7 @@ GTEST("ozo::row") {
         return value_converter(oid, bytes, size, value);
     };
 
-    test_row<1, decltype(converter_func)> r{ {oid_t{}, "123"}, converter_func };
+    test_row<1, decltype(converter_func)> r{ {{{oid_t{}, "123"}}}, converter_func };
     int unimportant_value;
 
     SHOULD("[perform value conversion only on demand]") {

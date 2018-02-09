@@ -2,6 +2,8 @@
 
 #include <ozo/detail/pg_type.h>
 
+#include <libpq-fe.h>
+
 #include <boost/hana/at_key.hpp>
 #include <boost/hana/insert.hpp>
 #include <boost/hana/string.hpp>
@@ -31,7 +33,7 @@ using namespace hana::literals;
 /**
 * PostgreSQL OID type - object identificator
 */
-using oid_t = int32_t;
+using oid_t = ::Oid;
 
 /**
 * Type for non initialized OID

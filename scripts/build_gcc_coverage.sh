@@ -11,6 +11,7 @@ cmake \
     -DCMAKE_BUILD_TYPE=Debug \
     -DOZO_BUILD_TESTS=ON \
     -DOZO_COVERAGE=ON \
+    -DOZO_BUILD_EXAMPLES=ON \
     -DPostgreSQL_TYPE_INCLUDE_DIR=/usr/include/postgresql/ \
     ..
 make -j$(nproc)
