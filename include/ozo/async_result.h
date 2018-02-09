@@ -6,9 +6,15 @@
 
 namespace ozo {
 
-//We can reuse boost::asio::async_result since it is not binded to error code type
+// We can reuse boost::asio::async_result since it is not binded to error code type
 using asio::async_result;
 using asio::handler_type;
+
+#if (BOOST_ASIO_VERSION >= 101200)
+
+using asio::async_completion;
+
+#else
 
 /**
 * This is a part of compatibility layer with Boos.Asio 1.66
@@ -25,5 +31,7 @@ struct async_completion {
     completion_handler_type completion_handler;
     async_result<completion_handler_type> result;
 };
+
+#endif
 
 } // namespace ozo
