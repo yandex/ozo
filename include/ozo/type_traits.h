@@ -19,6 +19,7 @@
 #include <boost/fusion/support/is_sequence.hpp>
 #include <boost/fusion/include/is_sequence.hpp>
 
+#include <ozo/optional.h>
 #include <memory>
 #include <string>
 #include <list>
@@ -53,8 +54,12 @@ struct is_nullable : ::std::false_type {};
 */
 template <typename T>
 struct is_nullable<::boost::optional<T>> : ::std::true_type {};
+
+#ifdef __OZO_STD_OPTIONAL
 template <typename T>
-struct is_nullable<::std::optional<T>> : ::std::true_type {};
+struct is_nullable<__OZO_STD_OPTIONAL<T>> : ::std::true_type {};
+#endif
+
 template <typename T>
 struct is_nullable<::boost::scoped_ptr<T>> : ::std::true_type {};
 template <typename T, typename Deleter>

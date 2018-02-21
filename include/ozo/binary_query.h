@@ -2,6 +2,7 @@
 #include <ozo/concept.h>
 #include <ozo/query.h>
 #include <ozo/type_traits.h>
+#include <ozo/optional.h>
 
 #include <boost/hana/for_each.hpp>
 #include <boost/hana/tuple.hpp>
@@ -11,7 +12,6 @@
 #include <array>
 #include <iterator>
 #include <memory>
-#include <optional>
 #include <string_view>
 #include <vector>
 
@@ -168,7 +168,7 @@ private:
     }
 
     template <std::size_t field>
-    static constexpr void write_meta(const oid_map_type&, std::nullopt_t, field_proxy<field>& result) noexcept {
+    static constexpr void write_meta(const oid_map_type&, __OZO_NULLOPT_T, field_proxy<field>& result) noexcept {
         write_null_meta(null_oid_t::value, result);
     }
 
