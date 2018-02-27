@@ -3,6 +3,7 @@
 #include <ozo/native_result_handle.h>
 #include <ozo/connection.h>
 #include <ozo/error.h>
+#include <ozo/binary_query.h>
 #include <ozo/detail/bind.h>
 #include <libpq-fe.h>
 
@@ -14,6 +15,34 @@ enum class result_format : int {
     binary = 1,
 };
 
+/**
+* Query states. The values similar to PQflush function results.
+* This state is used to synchrinaize async query parameters
+* send process with async query result receiving process.
+*/
+enum class query_state : int {
+    error = -1,
+    send_finish = 0,
+    send_in_progress = 1
+};
+
+inline const char* get_result_status_name(ExecStatusType status) {
+#define __OZO_CASE_RETURN(item) case item: return #item;
+    switch (status) {
+        __OZO_CASE_RETURN(PGRES_SINGLE_TUPLE)
+        __OZO_CASE_RETURN(PGRES_TUPLES_OK)
+        __OZO_CASE_RETURN(PGRES_COMMAND_OK)
+        __OZO_CASE_RETURN(PGRES_COPY_OUT)
+        __OZO_CASE_RETURN(PGRES_COPY_IN)
+        __OZO_CASE_RETURN(PGRES_COPY_BOTH)
+        __OZO_CASE_RETURN(PGRES_NONFATAL_ERROR)
+        __OZO_CASE_RETURN(PGRES_BAD_RESPONSE)
+        __OZO_CASE_RETURN(PGRES_EMPTY_QUERY)
+        __OZO_CASE_RETURN(PGRES_FATAL_ERROR)
+    }
+#undef __OZO_CASE_RETURN
+    return "unknown";
+}
 namespace pq {
 
 template <typename T, typename Handler, typename = Require<Connectable<T>>>
@@ -97,6 +126,55 @@ inline int pq_ntuples(const PGresult& res) noexcept {
     return PQntuples(std::addressof(res));
 }
 
+template <typename T, typename ...Ts, typename = Require<Connectable<T>>>
+inline int pq_send_query_params(T& conn, const binary_query<Ts...>& q) noexcept {
+    return PQsendQueryParams(get_native_handle(conn),
+                q.text(),
+                q.params_count,
+                q.types(),
+                q.values(),
+                q.lengths(),
+                q.formats(),
+                int(result_format::binary)
+            );
+}
+
+template <typename T, typename = Require<Connectable<T>>>
+inline int pq_set_nonblocking(T& conn) noexcept {
+    return PQsetnonblocking(get_native_handle(conn), 1);
+}
+
+template <typename T, typename = Require<Connectable<T>>>
+inline int pq_consume_input(T& conn) noexcept {
+    return PQconsumeInput(get_native_handle(conn));
+}
+
+template <typename T, typename = Require<Connectable<T>>>
+inline bool pq_is_busy(T& conn) noexcept {
+    return PQisBusy(get_native_handle(conn));
+}
+
+template <typename T, typename = Require<Connectable<T>>>
+inline query_state pq_flush_output(T& conn) noexcept {
+    return static_cast<query_state>(PQflush(get_native_handle(conn)));
+}
+
+template <typename T, typename = Require<Connectable<T>>>
+inline native_result_handle pq_get_result(T& conn) noexcept {
+    return native_result_handle(PQgetResult(get_native_handle(conn)));
+}
+
+inline ExecStatusType pq_result_status(const PGresult& res) noexcept {
+    return PQresultStatus(std::addressof(res));
+}
+
+inline error_code pq_result_error(const PGresult& res) noexcept {
+    if (auto s = PQresultErrorField(std::addressof(res), PG_DIAG_SQLSTATE)) {
+        return sqlstate::make_error_code(std::strtol(s, NULL, 36));
+    }
+    return error::no_sql_state_found;
+}
+
 } // namespace pq
 
 template <typename T, typename = Require<Connectable<T>>>
@@ -121,6 +199,12 @@ template <typename T, typename Handler, typename = Require<Connectable<T>>>
 inline void read_poll(T& conn, Handler&& h) {
     using pq::pq_read_poll;
     pq_read_poll(unwrap_connection(conn), std::forward<Handler>(h));
+}
+
+// Shortcut for post operation with connection associated executor
+template <typename T, typename Oper, typename = Require<Connectable<T>>>
+inline void post(T& conn, Oper&& op) {
+    get_io_context(conn).post(std::forward<Oper>(op));
 }
 
 template <typename T, typename = Require<Connectable<T>>>
@@ -175,6 +259,60 @@ template <typename T>
 inline int ntuples(T&& res) noexcept {
     using pq::pq_ntuples;
     return pq_ntuples(std::forward<T>(res));
+}
+
+template <typename T, typename Query, typename = Require<Connectable<T>>>
+inline decltype(auto) send_query_params(T& conn, Query&& q) noexcept {
+    using pq::pq_send_query_params;
+    return pq_send_query_params(unwrap_connection(conn), std::forward<Query>(q));
+}
+
+template <typename T, typename = Require<Connectable<T>>>
+inline error_code set_nonblocking(T& conn) noexcept {
+    using pq::pq_set_nonblocking;
+    if (pq_set_nonblocking(unwrap_connection(conn))) {
+        return error::pg_set_nonblocking_failed;
+    }
+    return {};
+}
+
+template <typename T, typename = Require<Connectable<T>>>
+inline error_code consume_input(T& conn) noexcept {
+    using pq::pq_consume_input;
+    if (!pq_consume_input(unwrap_connection(conn))) {
+        return error::pg_consume_input_failed;
+    }
+    return {};
+}
+
+template <typename T, typename = Require<Connectable<T>>>
+inline bool is_busy(T& conn) noexcept {
+    using pq::pq_is_busy;
+    return pq_is_busy(unwrap_connection(conn));
+}
+
+template <typename T, typename = Require<Connectable<T>>>
+inline query_state flush_output(T& conn) noexcept {
+    using pq::pq_flush_output;
+    return pq_flush_output(unwrap_connection(conn));
+}
+
+template <typename T, typename = Require<Connectable<T>>>
+inline decltype(auto) get_result(T& conn) noexcept {
+    using pq::pq_get_result;
+    return pq_get_result(unwrap_connection(conn));
+}
+
+template <typename T>
+inline ExecStatusType result_status(T&& res) noexcept {
+    using pq::pq_result_status;
+    return pq_result_status(std::forward<T>(res));
+}
+
+template <typename T>
+inline error_code result_error(T&& res) noexcept {
+    using pq::pq_result_error;
+    return pq_result_error(std::forward<T>(res));
 }
 
 } // namespace impl
