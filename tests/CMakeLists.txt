@@ -62,10 +62,10 @@ add_test(ozo_tests ozo_tests)
 if(OZO_COVERAGE AND CMAKE_COMPILER_IS_GNUCXX)
     include(CodeCoverage)
     APPEND_COVERAGE_COMPILER_FLAGS()
-    set(COVERAGE_EXCLUDES 'tests/*' 'contrib/*' 'boost/*' 'c++/*')
-    SETUP_TARGET_FOR_COVERAGE(
+    set(COVERAGE_EXCLUDES "'.*/(tests|contrib)/.*'")
+    SETUP_TARGET_FOR_COVERAGE_GCOVR(
         NAME ozo_coverage
-        EXECUTABLE ozo_tests
+        EXECUTABLE ctest
         DEPENDENCIES ozo_tests
     )
 endif()

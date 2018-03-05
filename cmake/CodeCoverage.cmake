@@ -231,6 +231,54 @@ function(SETUP_TARGET_FOR_COVERAGE_COBERTURA)
 
 endfunction() # SETUP_TARGET_FOR_COVERAGE_COBERTURA
 
+function(SETUP_TARGET_FOR_COVERAGE_GCOVR)
+
+    set(options NONE)
+    set(oneValueArgs NAME)
+    set(multiValueArgs EXECUTABLE EXECUTABLE_ARGS DEPENDENCIES)
+    cmake_parse_arguments(Coverage "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+
+    if(NOT SIMPLE_PYTHON_EXECUTABLE)
+        message(FATAL_ERROR "python not found! Aborting...")
+    endif() # NOT SIMPLE_PYTHON_EXECUTABLE
+
+    if(NOT GCOVR_PATH)
+        message(FATAL_ERROR "gcovr not found! Aborting...")
+    endif() # NOT GCOVR_PATH
+
+    message(STATUS "CMAKE_SOURCE_DIR: ${CMAKE_SOURCE_DIR}")
+    message(STATUS "GCOVR_EXCLUDES: ${GCOVR_EXCLUDES}")
+
+    add_custom_target(${Coverage_NAME}
+
+        # Run tests
+        ${Coverage_EXECUTABLE}
+
+        # Cleanup
+        COMMAND rm -rf ${Coverage_NAME}
+
+        # Prepare environment
+        COMMAND mkdir -p ${Coverage_NAME}
+
+        # Running gcovr
+        COMMAND python2 ${GCOVR_PATH}
+            --html --html-details
+            -e "${COVERAGE_EXCLUDES}"
+            --root "${CMAKE_SOURCE_DIR}/"
+            --output "${CMAKE_BINARY_DIR}/${Coverage_NAME}/index.html"
+        WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+        DEPENDS ${Coverage_DEPENDENCIES}
+        COMMENT "Running gcovr to produce Cobertura code coverage report."
+    )
+
+    # Show info where to find the report
+    add_custom_command(TARGET ${Coverage_NAME} POST_BUILD
+        COMMAND ;
+        COMMENT "Gcovr html code coverage report saved in ${Coverage_NAME}/index.html"
+    )
+
+endfunction() # SETUP_TARGET_FOR_COVERAGE_GCOVR
+
 function(APPEND_COVERAGE_COMPILER_FLAGS)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${COVERAGE_COMPILER_FLAGS}" PARENT_SCOPE)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COVERAGE_COMPILER_FLAGS}" PARENT_SCOPE)
