@@ -24,7 +24,7 @@ RUN wget -qO boost_1_66_0.tar.gz https://sourceforge.net/projects/boost/files/bo
         warnings=off \
     install
 
-RUN pip install cpp-coveralls
+RUN pip install cpp-coveralls gcovr
 
 VOLUME /ccache
 VOLUME /code
