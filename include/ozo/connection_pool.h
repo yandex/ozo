@@ -13,7 +13,7 @@ using connection_pool = yamail::resource_pool::async::pool<connection<Ts...>>;
 
 template <typename ...Ts>
 struct pooled_connection {
-    using handle_type = yamail::resource_pool::handle<connection_pool<Ts...>>;
+    using handle_type = typename connection_pool<Ts...>::handle;
 
     handle_type handle_;
 
