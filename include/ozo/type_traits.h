@@ -130,8 +130,8 @@ using is_fusion_adapted = std::integral_constant<bool,
 */
 template <typename T>
 using is_hana_adapted = std::integral_constant<bool,
-    ::boost::hana::Sequence<T>::value ||
-    ::boost::hana::Struct<T>::value
+    hana::Sequence<T>::value ||
+    hana::Struct<T>::value
 >;
 
 /**
