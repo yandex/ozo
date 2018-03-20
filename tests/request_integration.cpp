@@ -13,14 +13,20 @@ struct custom_type {};
 
 OZO_PG_DEFINE_CUSTOM_TYPE(ozo::testing::custom_type, "custom_type", dynamic_size)
 
+namespace {
+
+namespace hana = ::boost::hana;
+
 template <typename ...Ts>
 using rows_of = std::vector<std::tuple<Ts...>>;
+
+}
 
 GTEST("ozo::request") {
     using namespace ::testing;
     SHOULD("return error and bad connect for invalid connection info") {
         using namespace ozo::literals;
-        using namespace boost::hana::literals;
+        using namespace hana::literals;
 
         ozo::io_context io;
         ozo::connection_info<> conn_info(io, "invalid connection info");
@@ -37,7 +43,7 @@ GTEST("ozo::request") {
 
     SHOULD("return selected variable") {
         using namespace ozo::literals;
-        using namespace boost::hana::literals;
+        using namespace hana::literals;
 
         ozo::io_context io;
         ozo::connection_info<> conn_info(io, OZO_PG_TEST_CONNINFO);
@@ -58,7 +64,7 @@ GTEST("ozo::request") {
 
     SHOULD("return selected string array") {
         using namespace ozo::literals;
-        using namespace boost::hana::literals;
+        using namespace hana::literals;
 
         ozo::io_context io;
         ozo::connection_info<> conn_info(io, OZO_PG_TEST_CONNINFO);
@@ -79,7 +85,7 @@ GTEST("ozo::request") {
 
     SHOULD("return selected int array") {
         using namespace ozo::literals;
-        using namespace boost::hana::literals;
+        using namespace hana::literals;
 
         ozo::io_context io;
         ozo::connection_info<> conn_info(io, OZO_PG_TEST_CONNINFO);

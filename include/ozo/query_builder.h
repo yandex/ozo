@@ -13,7 +13,7 @@ namespace detail {
 
 template <std::size_t, char ... c>
 struct concat_query_element_result {
-    using string_type = boost::hana::string<c ...>;
+    using string_type = hana::string<c ...>;
 
     constexpr string_type string() noexcept {
         return string_type();
@@ -21,13 +21,13 @@ struct concat_query_element_result {
 };
 
 template <std::size_t n, char ... c>
-constexpr auto make_concat_query_element_result(boost::hana::string<c ...>) noexcept {
+constexpr auto make_concat_query_element_result(hana::string<c ...>) noexcept {
     return concat_query_element_result<n, c ...>();
 }
 
 template <std::size_t value>
 constexpr auto digit_to_string(std::integral_constant<std::size_t, value>) noexcept {
-    return boost::hana::string_c<'0' + value>;
+    return hana::string_c<'0' + value>;
 }
 
 template <std::size_t value>
@@ -39,7 +39,7 @@ constexpr auto to_string_head(std::integral_constant<std::size_t, value>) noexce
 }
 
 constexpr auto to_string_head(std::integral_constant<std::size_t, 0>) noexcept {
-    return boost::hana::string_c<>;
+    return hana::string_c<>;
 }
 
 template <std::size_t value>
@@ -69,7 +69,7 @@ constexpr auto concat_query_text(concat_query_element_result<next_param_number, 
 
 template <class T, std::size_t next_param_number, char ... c>
 constexpr auto concat_query_text(concat_query_element_result<next_param_number, c ...>, const query_element<T, query_param_tag>&) noexcept {
-    using namespace boost::hana::literals;
+    using namespace hana::literals;
     using s_type = concat_query_element_result<next_param_number, c ...>;
     return make_concat_query_element_result<next_param_number + 1>(
         typename s_type::string_type() + "$"_s + to_string<next_param_number>()
@@ -77,12 +77,12 @@ constexpr auto concat_query_text(concat_query_element_result<next_param_number, 
 }
 
 template <class T, class ... ValuesT>
-constexpr auto concat_query_params(boost::hana::tuple<ValuesT ...>&& result, const query_element<T, query_text_tag>&) noexcept {
+constexpr auto concat_query_params(hana::tuple<ValuesT ...>&& result, const query_element<T, query_text_tag>&) noexcept {
     return result;
 }
 
 template <class T, class ... ValuesT>
-constexpr auto concat_query_params(boost::hana::tuple<ValuesT ...>&& result, const query_element<T, query_param_tag>& element) {
+constexpr auto concat_query_params(hana::tuple<ValuesT ...>&& result, const query_element<T, query_param_tag>& element) {
     return hana::concat(std::move(result), hana::make_tuple(element.value));
 }
 
@@ -127,16 +127,16 @@ template <typename T>
 constexpr auto QueryBuilder = is_query_builder<std::decay_t<T>>::value;
 
 template <char ... c>
-constexpr auto make_query_builder(boost::hana::string<c ...>) {
+constexpr auto make_query_builder(hana::string<c ...>) {
     using namespace detail;
     using elements_tuple = hana::tuple<query_element<hana::string<c ...>, query_text_tag>>;
     return query_builder<elements_tuple> {elements_tuple()};
 }
 
 template <class ... ElementsT>
-constexpr auto make_query_builder(boost::hana::tuple<ElementsT ...>&& elements) {
+constexpr auto make_query_builder(hana::tuple<ElementsT ...>&& elements) {
     using namespace detail;
-    return query_builder<boost::hana::tuple<ElementsT ...>> {std::move(elements)};
+    return query_builder<hana::tuple<ElementsT ...>> {std::move(elements)};
 }
 
 template <class ElementsT, class OtherElementsT>
