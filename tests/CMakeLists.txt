@@ -42,6 +42,10 @@ set(SOURCES
     type_traits.cpp
 )
 
+if(OZO_BUILD_PG_TESTS)
+    add_definitions(-DOZO_PG_TEST_CONNINFO="${OZO_PG_TEST_CONNINFO}")
+endif()
+
 set(LIBRARIES
     pthread
     gmock_main
