@@ -15,6 +15,8 @@ cmake \
     -DCMAKE_CXX_FLAGS_RELWITHDEBINFO="-g -O1 ${ASAN_CXX_FLAGS}" \
     -DCMAKE_BUILD_TYPE=RelWithDebInfo \
     -DOZO_BUILD_TESTS=ON \
+    -DOZO_BUILD_PG_TESTS=$OZO_BUILD_PG_TESTS \
+    -DOZO_PG_TEST_CONNINFO="$OZO_PG_TEST_CONNINFO" \
     -DPostgreSQL_TYPE_INCLUDE_DIR=/usr/include/postgresql/ \
     ..
 make -j$(nproc)
