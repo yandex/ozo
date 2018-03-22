@@ -136,10 +136,10 @@ GTEST("ozo::is_composite<adapted>", "[with Boost.Fusion adapted structure return
 namespace testing {
 
 struct hana_adapted {
-  BOOST_HANA_DEFINE_STRUCT(hana_adapted,
-    (std::string, brand),
-    (std::string, model)
-  );
+    BOOST_HANA_DEFINE_STRUCT(hana_adapted,
+        (std::string, brand),
+        (std::string, model)
+    );
 };
 
 } // namespace testing
