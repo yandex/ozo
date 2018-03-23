@@ -1,7 +1,7 @@
 # ozo
 
 [![Build Status](https://travis-ci.org/YandexMail/ozo.svg?branch=master)](https://travis-ci.org/YandexMail/ozo)
-[![Coverage Status](https://coveralls.io/repos/github/YandexMail/ozo/badge.svg?branch=HEAD)](https://coveralls.io/github/YandexMail/ozo?branch=HEAD)
+[![Coverage Status](https://coveralls.io/repos/github/YandexMail/ozo/badge.svg?branch=master)](https://coveralls.io/github/YandexMail/ozo?branch=master)
 
 ## Build
 
