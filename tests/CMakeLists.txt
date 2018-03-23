@@ -14,7 +14,7 @@ include(ExternalProject)
 ExternalProject_Add(
     GUnit
     GIT_REPOSITORY "https://github.com/elsid/GUnit.git"
-    GIT_TAG dev
+    GIT_TAG dev3
     CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}
     UPDATE_COMMAND ""
     LOG_DOWNLOAD ON
