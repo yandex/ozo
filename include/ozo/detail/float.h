@@ -10,12 +10,12 @@ struct floating_point_integral {};
 
 template <>
 struct floating_point_integral<float> {
-    using type = std::uint32_t;
+    using type = std::int32_t;
 };
 
 template <>
 struct floating_point_integral<double> {
-    using type = std::uint64_t;
+    using type = std::int64_t;
 };
 
 template <class T>

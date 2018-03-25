@@ -33,4 +33,14 @@ constexpr Require<endian::native == endian::big, T> convert_to_big_endian(T valu
     return value;
 }
 
+template <class T, class U = std::make_unsigned_t<T>>
+constexpr Require<endian::native == endian::little, U> convert_from_big_endian(T value) {
+    return byte_order_swap<U>(value, std::make_index_sequence<sizeof(T)> {});
+}
+
+template <class T>
+constexpr Require<endian::native == endian::big, T> convert_from_big_endian(T value) {
+    return value;
+}
+
 }

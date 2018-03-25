@@ -31,6 +31,8 @@ namespace ozo {
 
 namespace hana = ::boost::hana;
 using namespace hana::literals;
+
+namespace fusion = ::boost::fusion;
 /**
 * PostgreSQL OID type - object identificator
 */
@@ -336,8 +338,13 @@ inline auto type_oid(const oid_map_t<MapImplT>& map, const T&) noexcept{
 * specified oid.
 */
 template <typename T, typename MapImplT>
-inline bool accepts_oid(const oid_map_t<MapImplT>& map, const T& v, oid_t oid) noexcept {
-    return type_oid(map, v) == oid;
+inline bool accepts_oid(const oid_map_t<MapImplT>& map, oid_t oid) noexcept {
+    return type_oid<T>(map) == oid;
+}
+
+template <typename T, typename MapImplT>
+inline bool accepts_oid(const oid_map_t<MapImplT>& map, const T&, oid_t oid) noexcept {
+    return accepts_oid<std::decay_t<T>>(map, oid);
 }
 
 } // namespace ozo

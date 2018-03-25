@@ -4,6 +4,7 @@
 #include <ozo/type_traits.h>
 #include <ozo/detail/endian.h>
 #include <ozo/detail/float.h>
+#include <ozo/detail/array.h>
 
 #include <libpq-fe.h>
 
@@ -19,21 +20,6 @@
 
 namespace ozo {
 namespace detail {
-
-struct pg_array {
-    BOOST_HANA_DEFINE_STRUCT(pg_array,
-        (std::int32_t, dimensions_count),
-        (std::int32_t, dataoffset),
-        (::Oid, elemtype)
-    );
-};
-
-struct pg_array_dimension {
-    BOOST_HANA_DEFINE_STRUCT(pg_array_dimension,
-        (std::int32_t, size),
-        (std::int32_t, index)
-    );
-};
 
 template <class T, class OutIteratorT>
 constexpr Require<std::is_integral_v<T>, OutIteratorT> write(T value, OutIteratorT out) {
@@ -76,9 +62,6 @@ template <class T, class OidMapT, class OutIteratorT>
 constexpr Require<MultiByteIntegral<T>, OutIteratorT> send(T value, const OidMapT&, OutIteratorT out) {
     return detail::write(detail::convert_to_big_endian(value), out);
 }
-
-template <typename T>
-constexpr auto FloatingPoint = std::is_floating_point_v<T> && (sizeof(T) == 4 || sizeof(T) == 8);
 
 template <class T, class OidMapT, class OutIteratorT>
 constexpr Require<FloatingPoint<T>, OutIteratorT> send(T value, const OidMapT&, OutIteratorT out) {

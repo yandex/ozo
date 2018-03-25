@@ -54,6 +54,7 @@ link_directories("${source_dir}/libs/gherkin-cpp")
 
 set(SOURCES
     async_connect.cpp
+    binary_deserialization.cpp
     binary_query.cpp
     binary_serialization.cpp
     bind.cpp
@@ -62,9 +63,15 @@ set(SOURCES
     connection_pool.cpp
     query_builder.cpp
     type_traits.cpp
+    concept.cpp
+    result.cpp
 )
 
 if(OZO_BUILD_PG_TESTS)
+    set(SOURCES
+        ${SOURCES}
+        result_integration.cpp
+    )
     add_definitions(-DOZO_PG_TEST_CONNINFO="${OZO_PG_TEST_CONNINFO}")
 endif()
 
