@@ -214,17 +214,17 @@ constexpr auto type_name(const T&) noexcept {
 * Function returns object size.
 */
 template <typename T>
-inline auto size_of(const T&) noexcept  -> typename std::enable_if<
+constexpr auto size_of(T&&) noexcept  -> typename std::enable_if<
         !is_dynamic_size<std::decay_t<T>>::value,
         typename type_traits<std::decay_t<T>>::size>::type {
     return {};
 }
 
 template <typename T>
-inline auto size_of(const T& v) noexcept -> typename std::enable_if<
+constexpr auto size_of(const T& v) noexcept -> typename std::enable_if<
         is_dynamic_size<std::decay_t<T>>::value,
-        decltype(std::declval<T>().size())>::type {
-    return v.size();
+        decltype(std::size(std::declval<T>()))>::type {
+    return std::size(v) ? std::size(v) * size_of(*std::begin(v)) : 0;
 }
 
 } // namespace ozo
