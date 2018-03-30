@@ -19,6 +19,7 @@
 #include <boost/fusion/support/is_sequence.hpp>
 #include <boost/fusion/include/is_sequence.hpp>
 
+#include <ozo/optional.h>
 #include <memory>
 #include <string>
 #include <list>
@@ -53,8 +54,12 @@ struct is_nullable : ::std::false_type {};
 */
 template <typename T>
 struct is_nullable<::boost::optional<T>> : ::std::true_type {};
+
+#ifdef __OZO_STD_OPTIONAL
 template <typename T>
-struct is_nullable<::std::optional<T>> : ::std::true_type {};
+struct is_nullable<__OZO_STD_OPTIONAL<T>> : ::std::true_type {};
+#endif
+
 template <typename T>
 struct is_nullable<::boost::scoped_ptr<T>> : ::std::true_type {};
 template <typename T, typename Deleter>
@@ -209,17 +214,17 @@ constexpr auto type_name(const T&) noexcept {
 * Function returns object size.
 */
 template <typename T>
-inline auto size_of(const T&) noexcept  -> typename std::enable_if<
+constexpr auto size_of(T&&) noexcept  -> typename std::enable_if<
         !is_dynamic_size<std::decay_t<T>>::value,
         typename type_traits<std::decay_t<T>>::size>::type {
     return {};
 }
 
 template <typename T>
-inline auto size_of(const T& v) noexcept -> typename std::enable_if<
+constexpr auto size_of(const T& v) noexcept -> typename std::enable_if<
         is_dynamic_size<std::decay_t<T>>::value,
-        decltype(std::declval<T>().size())>::type {
-    return v.size();
+        decltype(std::size(std::declval<T>()))>::type {
+    return std::size(v) ? std::size(v) * size_of(*std::begin(v)) : 0;
 }
 
 } // namespace ozo

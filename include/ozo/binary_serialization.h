@@ -29,8 +29,7 @@ struct pg_array {
 struct pg_array_dimension {
     BOOST_HANA_DEFINE_STRUCT(pg_array_dimension,
         (std::int32_t, size),
-        (std::int32_t, index),
-        (std::int32_t, begin)
+        (std::int32_t, index)
     );
 };
 
@@ -83,16 +82,6 @@ constexpr Require<std::is_floating_point_v<T>, OutIteratorT> write(T value, OutI
     return write(data.output, out);
 }
 
-template <class T>
-constexpr Require<std::is_arithmetic_v<T>, std::size_t> get_size(const T&) noexcept {
-    return sizeof(T);
-}
-
-template <class T>
-constexpr Require<!std::is_arithmetic_v<T>, std::size_t> get_size(const T& value) noexcept {
-    return std::size(value);
-}
-
 template <class OutIteratorT>
 auto make_writer(OutIteratorT& out) {
     return [&] (auto v) { out = write(v, out); };
@@ -136,12 +125,13 @@ constexpr OutIteratorT send(const std::basic_string<CharT, TraitsT, AllocatorT>&
 }
 
 template <class OidMapT, class OutIteratorT, class T, class AllocatorT>
-constexpr Require<std::is_arithmetic_v<T>, OutIteratorT> send(const std::vector<T, AllocatorT>& value, const OidMapT& oid_map, OutIteratorT out) {
-    out = send(detail::pg_array {1, 0, ::Oid(type_oid<std::decay_t<T>>(oid_map))}, oid_map, out);
-    out = send(detail::pg_array_dimension {std::int32_t(std::size(value)), 0, 1}, oid_map, out);
+constexpr OutIteratorT send(const std::vector<T, AllocatorT>& value, const OidMapT& oid_map, OutIteratorT out) {
+    using value_type = std::decay_t<T>;
+    out = send(detail::pg_array {1, 0, ::Oid(type_oid<value_type>(oid_map))}, oid_map, out);
+    out = send(detail::pg_array_dimension {std::int32_t(std::size(value)), 0}, oid_map, out);
     boost::for_each(value,
         [&] (const auto& v) {
-            out = send(std::int32_t(detail::get_size(v)), oid_map, out);
+            out = send(std::int32_t(size_of(v)), oid_map, out);
             out = send(v, oid_map, out);
         });
     return out;

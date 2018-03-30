@@ -38,7 +38,7 @@ GTEST("ozo::binary_query::types") {
     }
 
     SHOULD("null std::optional<std::int32_t> type should be equal to std::int32_t oid") {
-        const auto query = ozo::make_binary_query("", std::optional<std::int32_t>());
+        const auto query = ozo::make_binary_query("", __OZO_STD_OPTIONAL<std::int32_t>());
         EXPECT_EQ(query.types()[0], ozo::type_traits<std::int32_t>::oid());
     }
 
@@ -100,18 +100,18 @@ GTEST("ozo::binary_query::values") {
     }
 
     SHOULD("nullopt value should be equal to nullptr") {
-        const auto query = ozo::make_binary_query("", std::nullopt);
+        const auto query = ozo::make_binary_query("", __OZO_NULLOPT);
         EXPECT_EQ(query.values()[0], nullptr);
     }
 
     SHOULD("null std::optional<std::int32_t> value should be equal to nullptr") {
-        const auto query = ozo::make_binary_query("", std::optional<std::int32_t>());
+        const auto query = ozo::make_binary_query("", __OZO_STD_OPTIONAL<std::int32_t>());
         EXPECT_EQ(query.values()[0], nullptr);
     }
 
     SHOULD("not null std::optional<std::string> value should be equal to input") {
         using namespace ::testing;
-        const auto query = ozo::make_binary_query("", std::optional<std::string>("string"));
+        const auto query = ozo::make_binary_query("", __OZO_STD_OPTIONAL<std::string>("string"));
         EXPECT_THAT(std::vector<char>(query.values()[0], query.values()[0] + 6),
             ElementsAre('s', 't', 'r', 'i', 'n', 'g'));
     }

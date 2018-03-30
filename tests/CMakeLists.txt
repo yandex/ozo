@@ -1,7 +1,29 @@
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic -Werror -fno-devirtualize")
 
+execute_process(COMMAND echo "int main() { return 0;}" OUTPUT_FILE test.cpp)
+execute_process(COMMAND ${CMAKE_CXX} -std=c++17 test.cpp -o a.out RESULT_VARIABLE CPP17_READY_RESULT)
+execute_process(COMMAND rm test.cpp OUTPUT_QUIET ERROR_QUIET)
+execute_process(COMMAND rm a.out OUTPUT_QUIET ERROR_QUIET)
+
+if ("${CPP17_READY_RESULT}" STREQUAL "0")
+    set(CPP17_READY 1)
+else()
+    set(CPP17_NOT_READY 1)
+endif()
+
+if (CPP17_READY)
+    message(STATUS "compiler supports -std=c++17")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
+else()
+    message(STATUS "compiler does not support -std=c++17, using -std=c++1z instead")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++1z")
+endif()
+
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-ignored-optimization-argument")
+    if (CPP17_NOT_READY)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-gnu-string-literal-operator-template")
+    endif()
 endif()
 
 find_package(Boost COMPONENTS system thread REQUIRED)

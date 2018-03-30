@@ -65,21 +65,8 @@ struct is_connection<T, std::void_t<
 >> : std::true_type {};
 
 
-template <typename, typename = std::void_t<>>
-struct is_connection_wrapper : std::false_type {};
-
-template <typename T>
-struct is_connection_wrapper<::std::shared_ptr<T>> : std::true_type {};
-template <typename T, typename D>
-struct is_connection_wrapper<::std::unique_ptr<T, D>> : std::true_type {};
-template <typename T>
-struct is_connection_wrapper<::std::optional<T>> : std::true_type {};
-template <typename T>
-struct is_connection_wrapper<::boost::shared_ptr<T>> : std::true_type {};
-template <typename T>
-struct is_connection_wrapper<::boost::scoped_ptr<T>> : std::true_type {};
-template <typename T>
-struct is_connection_wrapper<::boost::optional<T>> : std::true_type {};
+template <typename T, typename = std::void_t<>>
+struct is_connection_wrapper : is_nullable<T> {};
 
 template <typename T>
 constexpr auto ConnectionWrapper = is_connection_wrapper<std::decay_t<T>>::value;
@@ -99,7 +86,7 @@ struct connection_traits {
 };
 
 /**
-* Connection public access functions section 
+* Connection public access functions section
 */
 
 /**
@@ -107,7 +94,7 @@ struct connection_traits {
 * Returns connection object itself.
 */
 template <typename T>
-inline decltype(auto) unwrap_connection(T&& conn, 
+inline decltype(auto) unwrap_connection(T&& conn,
         Require<!ConnectionWrapper<T>>* = 0) noexcept {
     return std::forward<T>(conn);
 }
@@ -117,7 +104,7 @@ inline decltype(auto) unwrap_connection(T&& conn,
 * Returns unwrapped connection object.
 */
 template <typename T>
-inline decltype(auto) unwrap_connection(T&& conn, 
+inline decltype(auto) unwrap_connection(T&& conn,
         Require<ConnectionWrapper<T>>* = 0) noexcept {
     return unwrap_connection(*conn);
 }
@@ -191,7 +178,7 @@ inline error_code rebind_io_context(T& conn, io_context& io) {
 */
 template <typename T>
 inline Require<Connectable<T> && !OperatorNot<T>,
-bool> connection_bad(const T& conn) noexcept { 
+bool> connection_bad(const T& conn) noexcept {
     using impl::connection_status_bad;
     return connection_status_bad(get_native_handle(conn));
 }
@@ -317,10 +304,10 @@ template <typename T>
 constexpr auto ConnectionProviderFunctor = is_connection_provider_functor<std::decay_t<T>>::value;
 
 /**
-* Function to get connection from provider asynchronously via callback. 
+* Function to get connection from provider asynchronously via callback.
 * This is customization point which allows to work with different kinds
-* of connection providing. E.g. single connection, get connection from 
-* pool, lazy connection, retriable connection and so on. 
+* of connection providing. E.g. single connection, get connection from
+* pool, lazy connection, retriable connection and so on.
 */
 template <typename T, typename Handler>
 inline Require<ConnectionProviderFunctor<T>>
@@ -351,7 +338,7 @@ template <typename T>
 constexpr auto ConnectionProvider = is_connection_provider<std::decay_t<T>>::value;
 
 /**
-* Function to get a connection from provider. 
+* Function to get a connection from provider.
 * Accepts:
 *   provider - connection provider which will be asked for connection
 *   token - completion token which determine the continuation of operation
@@ -366,7 +353,7 @@ auto get_connection(T&& provider, CompletionToken&& token) {
     using signature_t = void (error_code, connectiable_type<T>);
     async_completion<std::decay_t<CompletionToken>, signature_t> init(token);
 
-    async_get_connection(std::forward<T>(provider), 
+    async_get_connection(std::forward<T>(provider),
             std::move(init.completion_handler));
 
     return init.result.get();

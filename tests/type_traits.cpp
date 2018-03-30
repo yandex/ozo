@@ -68,6 +68,8 @@ namespace testing {
         std::size_t size() const {
             return 1000;
         }
+        decltype(auto) begin() const { return std::addressof(v_);}
+        char v_;
     };
     struct builtin_type {};
 }
