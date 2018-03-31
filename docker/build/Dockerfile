@@ -1,10 +1,23 @@
 FROM ubuntu:17.10
 
-RUN apt-get update && apt-get install -y\
-    ccache clang-5.0 libpq-dev postgresql-server-dev-all postgresql-client\
-    llvm-5.0 cmake g++-7 lcov git\
-    python-openssl python-pip python-yaml wget \
-    && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && \
+    apt-get install -y \
+        ccache \
+        clang-5.0 \
+        cmake \
+        curl \
+        g++-7 \
+        git \
+        libpq-dev \
+        llvm-5.0 \
+        postgresql-client \
+        postgresql-server-dev-all \
+        python-openssl \
+        python-pip \
+        python-yaml \
+        wget \
+        && \
+    rm -rf /var/lib/apt/lists/*
 
 RUN update-alternatives --install /usr/bin/clang clang /usr/bin/clang-5.0 100 && \
     update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-5.0 100 && \
@@ -27,7 +40,9 @@ RUN wget -qO boost_1_66_0.tar.gz https://sourceforge.net/projects/boost/files/bo
         warnings=off \
     install
 
-RUN pip install cpp-coveralls gcovr
+RUN pip install gcovr
+
+RUN wget -qO /codecov.sh https://codecov.io/bash && chmod +x /codecov.sh
 
 VOLUME /ccache
 VOLUME /code

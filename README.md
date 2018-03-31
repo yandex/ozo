@@ -1,7 +1,7 @@
 # ozo
 
 [![Build Status](https://travis-ci.org/YandexMail/ozo.svg?branch=master)](https://travis-ci.org/YandexMail/ozo)
-[![Coverage Status](https://coveralls.io/repos/github/YandexMail/ozo/badge.svg)](https://coveralls.io/github/YandexMail/ozo)
+[![codecov](https://codecov.io/gh/YandexMail/ozo/branch/master/graph/badge.svg)](https://codecov.io/gh/YandexMail/ozo)
 
 ## Dependencies
 
