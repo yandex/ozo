@@ -32,7 +32,6 @@ matrix:
 before_install:
 - sed -i 's;git@github.com:;https://github.com/;' .gitmodules
 - git submodule update --init
-- git submodule foreach --recursive "sed -i 's;git@github.com:;https://github.com/;' .gitmodules; git submodule update --init"
 - docker pull ubuntu:17.10
 - scripts/build_docker_image_build.sh
 
