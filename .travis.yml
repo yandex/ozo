@@ -28,6 +28,8 @@ matrix:
   - env: BUILD_SCRIPT='clang ubsan'
 
   - env: BUILD_SCRIPT='gcc coverage'
+    after_success:
+    - scripts/build_inside_docker_container.sh coveralls --include include/ozo
 
 before_install:
 - sed -i 's;git@github.com:;https://github.com/;' .gitmodules
@@ -37,7 +39,3 @@ before_install:
 
 script:
 - scripts/build.sh docker ${BUILD_SCRIPT}
-- |
-  if [[ "${BUILD_SCRIPT}" = "gcc coverage" ]]; then
-    scripts/build_inside_docker_container.sh coveralls --include include/ozo
-  fi
