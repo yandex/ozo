@@ -29,7 +29,9 @@ matrix:
 
   - env: BUILD_SCRIPT='gcc coverage'
     after_success:
-    - scripts/build_inside_docker_container.sh coveralls --include include/ozo
+    - >
+      docker run -ti --rm -v ${PWD}:/code -e TRAVIS_JOB_ID="${TRAVIS_JOB_ID}" -e TRAVIS_BRANCH="${TRAVIS_BRANCH}"
+      ozo_build coveralls --include include/ozo
 
 before_install:
 - sed -i 's;git@github.com:;https://github.com/;' .gitmodules
