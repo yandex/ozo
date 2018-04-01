@@ -15,35 +15,29 @@ services:
 
 matrix:
   include:
-  - before_install: &before_install
-    - sed -i 's;git@github.com:;https://github.com/;' .gitmodules
-    - git submodule update --init
-    - git submodule foreach --recursive "sed -i 's;git@github.com:;https://github.com/;' .gitmodules; git submodule update --init"
-    - docker pull ubuntu:17.10
-    - scripts/build_docker_image_build.sh
-    env: BUILD_SCRIPT='gcc debug'
+  - env: BUILD_SCRIPT='gcc debug'
 
-  - before_install: *before_install
-    env: BUILD_SCRIPT='gcc release'
+  - env: BUILD_SCRIPT='gcc release'
 
-  - before_install: *before_install
-    env: BUILD_SCRIPT='clang debug'
+  - env: BUILD_SCRIPT='clang debug'
 
-  - before_install: *before_install
-    env: BUILD_SCRIPT='clang release'
+  - env: BUILD_SCRIPT='clang release'
 
-  - before_install: *before_install
-    env: BUILD_SCRIPT='clang asan'
+  - env: BUILD_SCRIPT='clang asan'
 
-  - before_install: *before_install
-    env: BUILD_SCRIPT='clang ubsan'
+  - env: BUILD_SCRIPT='clang ubsan'
 
-  - before_install: *before_install
-    env: BUILD_SCRIPT='gcc coverage'
+  - env: BUILD_SCRIPT='gcc coverage'
+    after_success:
+    - >
+      docker run -ti --rm -v ${PWD}:/code -e TRAVIS_JOB_ID="${TRAVIS_JOB_ID}" -e TRAVIS_BRANCH="${TRAVIS_BRANCH}"
+      ozo_build coveralls --include include/ozo
+
+before_install:
+- sed -i 's;git@github.com:;https://github.com/;' .gitmodules
+- git submodule update --init
+- docker pull ubuntu:17.10
+- scripts/build_docker_image_build.sh
 
 script:
 - scripts/build.sh docker ${BUILD_SCRIPT}
-- |
-  if [[ "${BUILD_SCRIPT}" = "gcc coverage" ]]; then
-    scripts/build_inside_docker_container.sh coveralls --include include/ozo
-  fi
