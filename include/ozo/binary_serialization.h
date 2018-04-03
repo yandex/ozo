@@ -22,7 +22,7 @@ namespace ozo {
 namespace detail {
 
 template <class T, class OutIteratorT>
-constexpr Require<std::is_integral_v<T>, OutIteratorT> write(T value, OutIteratorT out) {
+constexpr Require<Integral<T>, OutIteratorT> write(T value, OutIteratorT out) {
     hana::for_each(
         hana::to<hana::tuple_tag>(hana::make_range(hana::size_c<0>, hana::size_c<sizeof(T)>)),
         [&] (auto i) { *out++ = value >> decltype(i)::value * CHAR_BIT & std::numeric_limits<std::uint8_t>::max(); }
@@ -47,20 +47,14 @@ auto make_sender(const OidMapT& oid_map, OutIteratorT& out) {
 
 } // namespace detail
 
-template <typename T>
-constexpr auto SingleByteIntegral = std::is_integral_v<T> && sizeof(T) == 1;
-
 template <class T, class OidMapT, class OutIteratorT>
-constexpr Require<SingleByteIntegral<T>, OutIteratorT> send(T value, const OidMapT&, OutIteratorT out) {
-    return detail::write(value, out);
+constexpr Require<Integral<T>, OutIteratorT> send(T value, const OidMapT&, OutIteratorT out) {
+    return detail::write(detail::convert_to_big_endian(value), out);
 }
 
-template <typename T>
-constexpr auto MultiByteIntegral = std::is_integral_v<T> && (sizeof(T) == 2 || sizeof(T) == 4 || sizeof(T) == 8);
-
-template <class T, class OidMapT, class OutIteratorT>
-constexpr Require<MultiByteIntegral<T>, OutIteratorT> send(T value, const OidMapT&, OutIteratorT out) {
-    return detail::write(detail::convert_to_big_endian(value), out);
+template <class OidMapT, class OutIteratorT>
+constexpr OutIteratorT send(bool value, const OidMapT&, OutIteratorT out) {
+    return detail::write(char(value), out);
 }
 
 template <class T, class OidMapT, class OutIteratorT>
