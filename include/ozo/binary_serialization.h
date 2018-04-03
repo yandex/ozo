@@ -46,7 +46,7 @@ constexpr Require<std::is_integral_v<T>, OutIteratorT> write(T value, OutIterato
 
 template <class T, class OutIteratorT>
 constexpr Require<std::is_floating_point_v<T>, OutIteratorT> write(T value, OutIteratorT out) {
-    return write(to_integral(value), out);
+    return write(detail::convert_to_big_endian(to_integral(value)), out);
 }
 
 template <class OutIteratorT>
