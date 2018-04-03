@@ -3,6 +3,7 @@
 #include <ozo/concept.h>
 #include <ozo/type_traits.h>
 #include <ozo/detail/endian.h>
+#include <ozo/detail/float.h>
 
 #include <libpq-fe.h>
 
@@ -43,29 +44,9 @@ constexpr Require<std::is_integral_v<T>, OutIteratorT> write(T value, OutIterato
     return out;
 }
 
-template <class T>
-struct floating_point_integral {};
-
-template <>
-struct floating_point_integral<float> {
-    using type = std::uint32_t;
-};
-
-template <>
-struct floating_point_integral<double> {
-    using type = std::uint64_t;
-};
-
-template <class T>
-using floating_point_integral_t = typename floating_point_integral<T>::type;
-
 template <class T, class OutIteratorT>
 constexpr Require<std::is_floating_point_v<T>, OutIteratorT> write(T value, OutIteratorT out) {
-    union {
-        T input;
-        floating_point_integral_t<T> output;
-    } data {value};
-    return write(data.output, out);
+    return write(to_integral(value), out);
 }
 
 template <class OutIteratorT>
