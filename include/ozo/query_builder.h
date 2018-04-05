@@ -21,7 +21,7 @@ struct concat_query_element_result {
 };
 
 template <std::size_t n, char ... c>
-auto make_concat_query_element_result(boost::hana::string<c ...>) noexcept {
+constexpr auto make_concat_query_element_result(boost::hana::string<c ...>) noexcept {
     return concat_query_element_result<n, c ...>();
 }
 

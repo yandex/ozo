@@ -122,3 +122,20 @@ GTEST("ozo::query_builder::build") {
         EXPECT_EQ(decltype(hana::size(params))::value, 1);
     }
 }
+
+namespace {
+
+namespace hana = boost::hana;
+
+using namespace ozo::literals;
+using namespace hana::literals;
+
+constexpr auto query = "SELECT "_SQL + 42 + " + "_SQL + 13;
+
+static_assert(query.text() == "SELECT $1 + $2"_s,
+              "query_builder should generate text in compile time");
+
+static_assert(query.params() == hana::tuple<int, int>(42, 13),
+              "query_builder should generate params in compile time");
+
+} // namespace
