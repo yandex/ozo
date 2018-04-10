@@ -52,7 +52,9 @@ matrix:
     - BUILD_SCRIPT='gcc coverage'
     - CMD_PREFIX=pg
     after_success:
-    - docker run -ti --rm -v ${PWD}:/code $(bash <(curl -s https://codecov.io/env)) ozo_build /codecov.sh -f "!*tests*"
+    - >
+      docker run -ti --rm -v ${PWD}:/code $(bash <(curl -s https://codecov.io/env)) \
+        ozo_build /codecov.sh -f "!*tests*" -f "!*error.h*"
 
 before_install:
 - sed -i 's;git@github.com:;https://github.com/;' .gitmodules
