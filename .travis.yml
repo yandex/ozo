@@ -10,34 +10,57 @@ cache:
   directories:
   - ${HOME}/.ccache
 
+addons:
+  apt:
+    packages:
+    - python3-pip
+
 services:
 - docker
 
 matrix:
   include:
-  - env: BUILD_SCRIPT='gcc debug'
+  - env:
+    - BUILD_SCRIPT='gcc debug'
+    - CMD_PREFIX=pg
 
-  - env: BUILD_SCRIPT='gcc release'
+  - env:
+    - BUILD_SCRIPT='gcc release'
+    - CMD_PREFIX=pg
 
-  - env: BUILD_SCRIPT='clang debug'
+  - env:
+    - BUILD_SCRIPT='clang debug'
+    - CMD_PREFIX=pg
 
-  - env: BUILD_SCRIPT='clang release'
+  - env:
+    - BUILD_SCRIPT='clang release'
+    - CMD_PREFIX=pg
 
-  - env: BUILD_SCRIPT='clang asan'
+  - env:
+    - BUILD_SCRIPT='clang asan'
+    - CMD_PREFIX=pg
 
-  - env: BUILD_SCRIPT='clang ubsan'
+  - env:
+    - BUILD_SCRIPT='clang ubsan'
+    - CMD_PREFIX=pg
 
-  - env: BUILD_SCRIPT='clang tsan'
+  - env:
+    - BUILD_SCRIPT='clang tsan'
+    - CMD_PREFIX=pg
 
-  - env: BUILD_SCRIPT='gcc coverage'
+  - env:
+    - BUILD_SCRIPT='gcc coverage'
+    - CMD_PREFIX=pg
     after_success:
     - docker run -ti --rm -v ${PWD}:/code $(bash <(curl -s https://codecov.io/env)) ozo_build /codecov.sh -f "!*tests*"
 
 before_install:
 - sed -i 's;git@github.com:;https://github.com/;' .gitmodules
 - git submodule update --init
-- docker pull ubuntu:17.10
-- scripts/build_docker_image_build.sh
+
+install:
+- pip3 install --user --upgrade pip
+- pip3 install --user docker-compose
 
 script:
-- scripts/build.sh docker ${BUILD_SCRIPT}
+- scripts/build.sh ${CMD_PREFIX} docker ${BUILD_SCRIPT}

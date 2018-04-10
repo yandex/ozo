@@ -12,6 +12,10 @@ These things are needed:
 * **Boost** >= 1.66
 * **libpq** >= 9.3
 
+If you want to run integration tests and/or build inside Docker container:
+* **Docker** >= 1.13.0
+* **Docker Compose** >= 1.10.0
+
 ## Build
 
 The library is header-only, but if you want to build and run unit-tests you can do it as listed below.
@@ -75,16 +79,10 @@ brew install cmake boost libpq postresql
 
 ### Build and run tests within Docker
 
-First of all build docker image:
-
-```bash
-scripts/build_docker_image_build.sh
-```
-
 To build code and run tests inside docker container:
 
 ```bash
-scripts/build_inside_docker.sh <script to build>
+scripts/build.sh docker <script to build>
 ```
 
 ### Test against a local postgres

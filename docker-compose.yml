@@ -1,0 +1,40 @@
+version: '3'
+
+services:
+  ozo_build:
+    build: docker/build
+    image: ozo_build
+    privileged: true # https://github.com/google/sanitizers/issues/764
+    environment:
+      BASE_BUILD_DIR: build/docker
+    volumes:
+    - ~/.ccache:/ccache
+    - .:/code
+  ozo_postgres:
+    image: postgres:alpine
+    environment:
+       POSTGRES_DB: &POSTGRES_DB ozo_test_db
+       POSTGRES_USER: &POSTGRES_USER ozo_test_user
+       POSTGRES_PASSWORD: &POSTGRES_PASSWORD 'v4Xpkocl~5l6h219Ynk1lJbM61jIr!ca'
+    networks:
+    - ozo
+  ozo_build_with_pg_tests:
+    build: docker/build
+    image: ozo_build
+    privileged: true # https://github.com/google/sanitizers/issues/764
+    environment:
+      BASE_BUILD_DIR: build/docker_with_pg_tests
+      OZO_BUILD_PG_TESTS: 'ON'
+      POSTGRES_HOST: ozo_postgres
+      POSTGRES_DB: *POSTGRES_DB
+      POSTGRES_USER: *POSTGRES_USER
+      POSTGRES_PASSWORD: *POSTGRES_PASSWORD
+    depends_on:
+    - ozo_postgres
+    volumes:
+    - ~/.ccache:/ccache
+    - .:/code
+    networks:
+    - ozo
+networks:
+  ozo: {}

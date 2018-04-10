@@ -1,4 +1,4 @@
-#!/bin/bash -ex
+#!/bin/bash -e
 
 TARGET=$2
 
@@ -71,7 +71,9 @@ usage() {
             - for gcc   : debug | release | coverage
             - for clang : debug | release | asan | ubsan
         '$NAME' docker [all | <compiler> <target>]
-        Build inside docker' 1>&2
+        Build inside Docker
+        '$NAME' pg [docker] [all | <compiler> <target>]
+        Build with PostgreSQL integration tests' 1>&2
     exit 1
 }
 
@@ -86,7 +88,12 @@ build_all() {
 }
 
 build() {
-    BUILD_DIR=${BUILD_PREFIX}build/${COMPILER}_${TARGET}
+    echo "BASE_BUILD_DIR: ${BASE_BUILD_DIR}"
+    if ! [[ "${BASE_BUILD_DIR}" ]]; then
+        BASE_BUILD_DIR=build
+    fi
+    SOURCE_DIR=${PWD}
+    BUILD_DIR=${BASE_BUILD_DIR}/${COMPILER}_${TARGET}
     mkdir -p ${BUILD_DIR}
     cd ${BUILD_DIR}
     cmake \
@@ -96,13 +103,12 @@ build() {
         -DOZO_BUILD_TESTS=ON \
         -DOZO_COVERAGE=$OZO_COVERAGE\
         -DOZO_BUILD_PG_TESTS=$OZO_BUILD_PG_TESTS \
-        -DOZO_PG_TEST_CONNINFO="$OZO_PG_TEST_CONNINFO" \
-        ../..
+        -DOZO_PG_TEST_CONNINFO="host=${POSTGRES_HOST} port=5432 dbname=${POSTGRES_DB} user=${POSTGRES_USER} password=${POSTGRES_PASSWORD}" \
+        ${SOURCE_DIR}
     make -j$(nproc)
-    if [[ $OZO_BUILD_PG_TESTS = "ON" ]]
-    then
-        while ! pg_isready -h localhost -p 5432; do
-            echo "waiting until local postgres is accepting connections..."
+    if [[ $OZO_BUILD_PG_TESTS == "ON" ]]; then
+        while ! pg_isready -h ${POSTGRES_HOST} -p 5432 -U ${POSTGRES_USER}; do
+            echo "waiting until postgres at ${POSTGRES_HOST}:5432 is accepting connections..."
             sleep 1
         done
     fi
@@ -113,35 +119,47 @@ build() {
 }
 
 launch_in_docker() {
-    docker run -ti --net=host --rm --user "$(id -u):$(id -g)" --privileged -v ${HOME}/.ccache:/ccache -v ${PWD}:/code ozo_build env BUILD_PREFIX=docker_ env OZO_BUILD_PG_TESTS=${OZO_BUILD_PG_TESTS} env OZO_PG_TEST_CONNINFO="${OZO_PG_TEST_CONNINFO}" $0 $*
+    if [[ "${OZO_BUILD_PG_TESTS}" == "ON" ]]; then
+        SERVICE=ozo_build_with_pg_tests
+    else
+        SERVICE=ozo_build
+    fi
+    if ! [[ "${BASE_BUILD_DIR}" ]]; then
+        export BASE_BUILD_DIR=build
+    fi
+    BASE_BUILD_DIR=${BASE_BUILD_DIR}/docker
+    docker-compose run --rm \
+        --user "$(id -u):$(id -g)" \
+        ${SERVICE} $0 $*
 }
 
 launch_with_pg() {
-    PG_CONTAINER_ID=$(docker run -d \
-    --name ozo-test-postgres \
-    -e POSTGRES_DB=ozo_test_db \
-    -e POSTGRES_USER=ozo_test_user \
-    -e POSTGRES_PASSWORD=123 \
-    -p 5432:5432/tcp \
-    postgres:alpine)
-
+    docker-compose up -d ozo_postgres
+    ID=$(docker-compose ps -q ozo_postgres)
+    export POSTGRES_HOST=$(docker inspect --format '{{ .NetworkSettings.Networks.ozo_ozo.IPAddress }}' ${ID})
+    export POSTGRES_DB=ozo_test_db
+    export POSTGRES_USER=ozo_test_user
+    export POSTGRES_PASSWORD='v4Xpkocl~5l6h219Ynk1lJbM61jIr!ca'
     export OZO_BUILD_PG_TESTS=ON
-    export OZO_PG_TEST_CONNINFO='host=0.0.0.0 port=5432 dbname=ozo_test_db user=ozo_test_user password=123'
-
-    $* && docker stop $PG_CONTAINER_ID && docker rm $PG_CONTAINER_ID \
-       || (docker stop $PG_CONTAINER_ID && docker rm $PG_CONTAINER_ID)
+    export BASE_BUILD_DIR=build/pg
+    $*
+    docker-compose stop ozo_postgres
+    docker-compose rm -f ozo_postgres
 }
 
 case "$1" in
     gcc|clang|all)
+        set -x
         build_${1}
         exit 0
     ;;
     docker)
+        set -x
         launch_in_docker $2 $3 $4 $5
         exit 0
     ;;
     pg)
+        set -x
         launch_with_pg $0 $2 $3 $4 $5
         exit 0
     ;;
