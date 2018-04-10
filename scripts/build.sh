@@ -107,6 +107,9 @@ build() {
         done
     fi
     ctest -V
+    if [[ ${OZO_COVERAGE} == "ON" ]]; then
+        make ozo_coverage
+    fi
 }
 
 launch_in_docker() {
