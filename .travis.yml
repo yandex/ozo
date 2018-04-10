@@ -27,6 +27,8 @@ matrix:
 
   - env: BUILD_SCRIPT='clang ubsan'
 
+  - env: BUILD_SCRIPT='clang tsan'
+
   - env: BUILD_SCRIPT='gcc coverage'
     after_success:
     - docker run -ti --rm -v ${PWD}:/code $(bash <(curl -s https://codecov.io/env)) ozo_build /codecov.sh -f "!*tests*"

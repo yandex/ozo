@@ -28,6 +28,11 @@ build_clang() {
             CMAKE_CXX_FLAGS='-fno-omit-frame-pointer -fsanitize=undefined'
             build
         ;;
+        tsan)
+            CMAKE_BUILD_TYPE=RelWithDebInfo
+            CMAKE_CXX_FLAGS_RELWITHDEBINFO='-g -O2 -fno-omit-frame-pointer -fsanitize=thread'
+            build
+        ;;
         *) usage "bad clang target '$TARGET'";;
     esac
 }
