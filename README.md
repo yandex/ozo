@@ -60,8 +60,9 @@ For **clang**:
 
 * **debug** - for debug build and tests
 * **release** - for release build and tests
-* **asan** - for address sanitaizer launch
-* **ubsan** - for UB sanitaizer launch
+* **asan** - for [AddressSanitizer](https://clang.llvm.org/docs/AddressSanitizer.html) launch
+* **ubsan** - for [UndefinedBehaviorSanitizer](https://clang.llvm.org/docs/UndefinedBehaviorSanitizer.html) launch
+* **tsan** - for [ThreadSanitizer](https://clang.llvm.org/docs/ThreadSanitizer.html) launch
 
 ```bash
 scripts/build.sh all
@@ -82,23 +83,29 @@ brew install cmake boost libpq postresql
 To build code and run tests inside docker container:
 
 ```bash
-scripts/build.sh docker <script to build>
+scripts/build.sh docker <compiler> <target>
 ```
 
 ### Test against a local postgres
 
-You can use scripts/with_live_pg_tests.sh from project root like this:
+You can use `scripts/build.sh` but add `pg` first:
 
 ```bash
-scripts/with_live_pg_tests.sh scripts/build.sh gcc debug
+scripts/build.sh pg <compiler> <target>
 ```
 
-This will attempt to launch postgres/alpine from your Docker registry.
+or if you want build code in docker:
+
+```bash
+scripts/build.sh pg docker <compiler> <target>
+```
+
+This will attempt to launch postgres:alpine from your Docker registry.
 Or you can point ozo tests to a postgres of your choosing by setting these environment variables prior to building:
 
 ```bash
 export OZO_BUILD_PG_TESTS=ON
 export OZO_PG_TEST_CONNINFO='your conninfo (connection string)'
 
-scripts/build_gcc_debug.sh
+scripts/build.sh gcc debug
 ```
