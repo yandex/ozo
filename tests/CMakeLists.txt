@@ -65,12 +65,16 @@ set(SOURCES
     type_traits.cpp
     concept.cpp
     result.cpp
+    async_send_query_params.cpp
+    async_get_result.cpp
+    base36.cpp
 )
 
 if(OZO_BUILD_PG_TESTS)
     set(SOURCES
         ${SOURCES}
         result_integration.cpp
+        request_integration.cpp
     )
     add_definitions(-DOZO_PG_TEST_CONNINFO="${OZO_PG_TEST_CONNINFO}")
 endif()

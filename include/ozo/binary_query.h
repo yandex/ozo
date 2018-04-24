@@ -1,3 +1,5 @@
+#pragma once
+
 #include <ozo/binary_serialization.h>
 #include <ozo/concept.h>
 #include <ozo/query.h>
@@ -242,6 +244,11 @@ auto make_binary_query(const BufferAllocatorT& buffer_allocator, const oid_map_t
             return make_binary_query(buffer_allocator, get_text(query), oid_map, params ...);
         }
     );
+}
+
+template <typename T, typename ...Ts>
+inline decltype(auto) make_binary_query(const oid_map_t<T>&, binary_query<Ts...> query) {
+    return std::move(query);
 }
 
 } // namespace ozo

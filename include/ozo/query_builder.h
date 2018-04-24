@@ -116,6 +116,16 @@ struct query_builder {
     }
 };
 
+
+template <typename T>
+struct is_query_builder : std::false_type {};
+
+template <typename T>
+struct is_query_builder<query_builder<T>> : std::true_type {};
+
+template <typename T>
+constexpr auto QueryBuilder = is_query_builder<std::decay_t<T>>::value;
+
 template <char ... c>
 constexpr auto make_query_builder(boost::hana::string<c ...>) {
     using namespace detail;
