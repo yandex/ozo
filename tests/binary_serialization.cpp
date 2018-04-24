@@ -35,7 +35,7 @@ GTEST("ozo::send") {
         using namespace testing;
         std::vector<char> buffer;
         ozo::send(42.13f, ozo::register_types<>(), std::back_inserter(buffer));
-        EXPECT_THAT(buffer, ElementsAre(0x1F, 0x85, 0x28, 0x42));
+        EXPECT_THAT(buffer, ElementsAre(0x42, 0x28, 0x85, 0x1F));
     }
 
     SHOULD("with std::string should return bytes in same order") {
@@ -56,7 +56,7 @@ GTEST("ozo::send") {
             0, 0, 0, 1,
             0, 0, 0, 0,
             0, 0, 0, 4,
-            0x1F, char(0x85), 0x28, 0x42,
+            0x42, 0x28, char(0x85), 0x1F,
         }));
     }
 }

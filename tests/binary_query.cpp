@@ -56,12 +56,6 @@ GTEST("ozo::binary_query::types") {
         const auto query = ozo::make_binary_query("", std::weak_ptr<std::int32_t>());
         EXPECT_EQ(query.types()[0], ozo::type_traits<std::int32_t>::oid());
     }
-
-    SHOULD("std::vector<float> type should be equal to std::vector<float> oid") {
-        const auto value = 42.13f;
-        const auto query = ozo::make_binary_query("", std::cref(value));
-        EXPECT_EQ(*reinterpret_cast<const float*>(query.values()[0]), 42.13f);
-    }
 }
 
 GTEST("ozo::binary_query::formats", "format of the param should be equal to 1") {
@@ -82,10 +76,6 @@ GTEST("ozo::binary_query::lengths") {
 }
 
 GTEST("ozo::binary_query::values") {
-    SHOULD("value of the floating point type param should be equal to input") {
-        const auto query = ozo::make_binary_query("", 42.13f);
-        EXPECT_EQ(*reinterpret_cast<const float*>(query.values()[0]), 42.13f);
-    }
 
     SHOULD("string value should be equal to input") {
         using namespace ::testing;
@@ -153,9 +143,11 @@ GTEST("ozo::binary_query::values") {
             ElementsAre('s', 't', 'r', 'i', 'n', 'g'));
     }
 
-    SHOULD("std::reference_wrapper<std::int8_t> value should be equal to input") {
-        const auto value = 42.13f;
+    SHOULD("std::reference_wrapper<std::string> value should be equal to input") {
+        using namespace ::testing;
+        const auto value = std::string("string");
         const auto query = ozo::make_binary_query("", std::cref(value));
-        EXPECT_EQ(*reinterpret_cast<const float*>(query.values()[0]), 42.13f);
+        EXPECT_THAT(std::vector<char>(query.values()[0], query.values()[0] + 6),
+            ElementsAre('s', 't', 'r', 'i', 'n', 'g'));
     }
 }
