@@ -29,7 +29,7 @@ struct send_impl<std::vector<T, Alloc>> {
     template <typename M>
     static ostream& apply(ostream& out, const oid_map_t<M>& oid_map, const std::vector<T, Alloc>& in) {
         using value_type = std::decay_t<T>;
-        write(out, detail::pg_array {1, 0, ::Oid(type_oid<value_type>(oid_map))});
+        write(out, detail::pg_array {1, 0, type_oid<value_type>(oid_map)});
         write(out, detail::pg_array_dimension {std::int32_t(std::size(in)), 0});
         boost::for_each(in,
             [&] (const auto& v) {

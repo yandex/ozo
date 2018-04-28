@@ -6,6 +6,52 @@
 
 namespace hana = ::boost::hana;
 
+namespace {
+
+struct fixed_size_struct {
+    BOOST_HANA_DEFINE_STRUCT(fixed_size_struct,
+        (std::int64_t, value)
+    );
+};
+
+struct dynamic_size_struct {
+    BOOST_HANA_DEFINE_STRUCT(dynamic_size_struct,
+        (std::string, value)
+    );
+};
+
+} // namespace
+
+namespace ozo {
+
+template <>
+struct send_impl<fixed_size_struct> {
+    template <typename M>
+    static ostream& apply(ostream& out, const oid_map_t<M>& oid_map, const fixed_size_struct& in) {
+        using ozo::size_of;
+        send(out, oid_map, std::int32_t(1));
+        send(out, oid_map, ozo::type_oid(oid_map, in.value));
+        send(out, oid_map, std::int32_t(sizeof(in.value)));
+        send(out, oid_map, in.value);
+        return out;
+    }
+};
+
+template <>
+struct send_impl<dynamic_size_struct> {
+    template <typename M>
+    static ostream& apply(ostream& out, const oid_map_t<M>& oid_map, const dynamic_size_struct& in) {
+        using ozo::size_of;
+        send(out, oid_map, std::int32_t(1));
+        send(out, oid_map, ozo::type_oid(oid_map, in.value));
+        send(out, oid_map, std::int32_t(size_of(in.value)));
+        send(out, oid_map, in.value);
+        return out;
+    }
+};
+
+} // namespace ozo
+
 GTEST("ozo::binary_query::params_count", "without parameters should be equal to 0") {
     const auto query = ozo::make_binary_query("", hana::make_tuple());
     EXPECT_EQ(query.params_count, 0);
@@ -58,6 +104,13 @@ GTEST("ozo::binary_query::types") {
         const auto query = ozo::make_binary_query("", hana::make_tuple(std::weak_ptr<std::int32_t>()));
         EXPECT_EQ(query.types()[0], ozo::type_traits<std::int32_t>::oid());
     }
+
+    SHOULD("custom struct type should be equal to oid from map") {
+        auto oid_map = ozo::register_types<fixed_size_struct>();
+        ozo::set_type_oid<fixed_size_struct>(oid_map, 100500);
+        const auto query = ozo::make_binary_query("", hana::make_tuple(fixed_size_struct {42}), oid_map);
+        EXPECT_EQ(query.types()[0], 100500);
+    }
 }
 
 GTEST("ozo::binary_query::formats", "format of the param should be equal to 1") {
@@ -74,6 +127,21 @@ GTEST("ozo::binary_query::lengths") {
     SHOULD("string length should be equal to number of chars") {
         const auto query = ozo::make_binary_query("", hana::make_tuple(std::string("std::string")));
         EXPECT_EQ(query.lengths()[0], 11);
+    }
+
+    SHOULD("fixed struct length should be equal to size of type") {
+        auto oid_map = ozo::register_types<fixed_size_struct>();
+        ozo::set_type_oid<fixed_size_struct>(oid_map, 100500);
+        const auto query = ozo::make_binary_query("", hana::make_tuple(fixed_size_struct {42}), oid_map);
+        EXPECT_EQ(query.lengths()[0], 20);
+    }
+
+    SHOULD("dynamic struct length should be equal to size of content") {
+        auto oid_map = ozo::register_types<dynamic_size_struct>();
+        ozo::set_type_oid<dynamic_size_struct>(oid_map, 100500);
+        const dynamic_size_struct value {"Lorem ipsum dolor sit amet, consectetur adipiscing elit"};
+        const auto query = ozo::make_binary_query("", hana::make_tuple(value), oid_map);
+        EXPECT_EQ(query.lengths()[0], 67);
     }
 }
 
