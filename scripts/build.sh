@@ -85,6 +85,7 @@ build_all() {
     $0 clang release
     $0 clang asan
     $0 clang ubsan
+    $0 clang tsan
 }
 
 build() {
