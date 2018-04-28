@@ -104,16 +104,14 @@ build() {
         -DCMAKE_CXX_FLAGS_RELWITHDEBINFO="$CMAKE_CXX_FLAGS_RELWITHDEBINFO" \
         -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
         -DOZO_BUILD_TESTS=ON \
+        -DOZO_BUILD_EXAMPLES=ON \
         -DOZO_COVERAGE=$OZO_COVERAGE\
         -DOZO_BUILD_PG_TESTS=$OZO_BUILD_PG_TESTS \
         -DOZO_PG_TEST_CONNINFO="host=${POSTGRES_HOST} port=5432 dbname=${POSTGRES_DB} user=${POSTGRES_USER} password=${POSTGRES_PASSWORD}" \
         ${SOURCE_DIR}
     make -j$(nproc)
     if [[ $OZO_BUILD_PG_TESTS == "ON" ]]; then
-        while ! pg_isready -h ${POSTGRES_HOST} -p 5432 -U ${POSTGRES_USER}; do
-            echo "waiting until postgres at ${POSTGRES_HOST}:5432 is accepting connections..."
-            sleep 1
-        done
+        ${SOURCE_DIR}/scripts/wait_postgres.sh
     fi
     ctest -V
     if [[ ${OZO_COVERAGE} == "ON" ]]; then
