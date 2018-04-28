@@ -351,10 +351,9 @@ constexpr auto ConnectionProvider = is_connection_provider<std::decay_t<T>>::val
 template <typename T, typename CompletionToken, typename = Require<ConnectionProvider<T>>>
 auto get_connection(T&& provider, CompletionToken&& token) {
     using signature_t = void (error_code, connectiable_type<T>);
-    async_completion<std::decay_t<CompletionToken>, signature_t> init(token);
+    async_completion<CompletionToken, signature_t> init(token);
 
-    async_get_connection(std::forward<T>(provider),
-            std::move(init.completion_handler));
+    async_get_connection(std::forward<T>(provider), init.completion_handler);
 
     return init.result.get();
 }
