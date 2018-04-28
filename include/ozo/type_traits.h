@@ -267,6 +267,9 @@ OZO_PG_DEFINE_TYPE(std::vector<int32_t>, "int4[]", INT4ARRAYOID, dynamic_size)
 OZO_PG_DEFINE_TYPE(int16_t, "int2", INT2OID, bytes<2>)
 OZO_PG_DEFINE_TYPE(std::vector<int16_t>, "int2[]", INT2ARRAYOID, dynamic_size)
 
+OZO_PG_DEFINE_TYPE(ozo::oid_t, "oid", OIDOID, bytes<4>)
+OZO_PG_DEFINE_TYPE(std::vector<ozo::oid_t>, "oid[]", OIDARRAYOID, dynamic_size)
+
 OZO_PG_DEFINE_TYPE(double, "float8", FLOAT8OID, bytes<8>)
 OZO_PG_DEFINE_TYPE(std::vector<double>, "float8[]", 1022, dynamic_size)
 OZO_PG_DEFINE_TYPE(float, "float4", FLOAT4OID, bytes<4>)
