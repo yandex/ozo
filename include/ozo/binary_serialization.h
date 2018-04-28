@@ -70,8 +70,10 @@ constexpr OutIteratorT send(const std::basic_string<CharT, TraitsT, AllocatorT>&
 
 template <class OidMapT, class OutIteratorT, class T, class AllocatorT>
 constexpr OutIteratorT send(const std::vector<T, AllocatorT>& value, const OidMapT& oid_map, OutIteratorT out) {
+    using ozo::send;
+    using ozo::size_of;
     using value_type = std::decay_t<T>;
-    out = send(detail::pg_array {1, 0, ::Oid(type_oid<value_type>(oid_map))}, oid_map, out);
+    out = send(detail::pg_array {1, 0, type_oid<value_type>(oid_map)}, oid_map, out);
     out = send(detail::pg_array_dimension {std::int32_t(std::size(value)), 0}, oid_map, out);
     boost::for_each(value,
         [&] (const auto& v) {
