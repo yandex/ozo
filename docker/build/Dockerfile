@@ -8,6 +8,7 @@ RUN apt-get update && \
         curl \
         g++-7 \
         git \
+        gdb \
         libpq-dev \
         llvm-5.0 \
         postgresql-client \
