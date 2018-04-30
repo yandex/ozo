@@ -4,20 +4,28 @@
 
 #include <boost/hana/size.hpp>
 
+#include <limits>
+
 GTEST("ozo::detail::to_string") {
     SHOULD("with 0 returns \"0\"_s") {
         using namespace boost::hana::literals;
-        EXPECT_EQ(ozo::detail::to_string<std::size_t(0)>(), "0"_s);
+        EXPECT_EQ(ozo::detail::to_string(boost::hana::size_c<0>), "0"_s);
     }
 
     SHOULD("with one digit number returns string with same digit") {
         using namespace boost::hana::literals;
-        EXPECT_EQ(ozo::detail::to_string<std::size_t(7)>(), "7"_s);
+        EXPECT_EQ(ozo::detail::to_string(boost::hana::size_c<7>), "7"_s);
     }
 
     SHOULD("with two digits number returns string with digits in same order") {
         using namespace boost::hana::literals;
-        EXPECT_EQ(ozo::detail::to_string<std::size_t(42)>(), "42"_s);
+        EXPECT_EQ(ozo::detail::to_string(boost::hana::size_c<42>), "42"_s);
+    }
+
+    SHOULD("with max size value") {
+        using namespace boost::hana::literals;
+        EXPECT_EQ(ozo::detail::to_string(boost::hana::size_c<std::numeric_limits<std::size_t>::max()>),
+                  "18446744073709551615"_s);
     }
 }
 
@@ -44,6 +52,17 @@ GTEST("ozo::query_builder::text") {
         using namespace ozo::literals;
         using namespace boost::hana::literals;
         EXPECT_EQ(("SELECT "_SQL + std::int32_t(42) + " + "_SQL + std::int32_t(42)).text(), "SELECT $1 + $2"_s);
+    }
+
+    SHOULD("with string text returns string text") {
+        namespace hana = boost::hana;
+        EXPECT_EQ(ozo::make_query_builder(hana::make_tuple(ozo::make_query_text(std::string("SELECT 1")))).text(), "SELECT 1");
+    }
+
+    SHOULD("with string text and params returns string text with with placeholders for each param") {
+        namespace hana = boost::hana;
+        EXPECT_EQ((ozo::make_query_text(std::string("SELECT ")) + std::int32_t(42)
+                   + ozo::make_query_text(std::string(" + ")) + std::int32_t(42)).text(), "SELECT $1 + $2");
     }
 }
 
@@ -102,10 +121,10 @@ GTEST("ozo::query_builder::build") {
         EXPECT_EQ(("SELECT "_SQL + std::cref(value)).build().params, hana::make_tuple(std::cref(value)));
     }
 
-    SHOULD("with text and not null std::unique_ptr param element returns query with 1 param") {
+    SHOULD("with text and ref to not null std::unique_ptr param element returns query with 1 param") {
         using namespace ozo::literals;
         const auto ptr = std::make_unique<float>(42.13f);
-        const auto params = ("SELECT "_SQL + ptr).build().params;
+        const auto params = ("SELECT "_SQL + std::cref(ptr)).build().params;
         EXPECT_EQ(decltype(hana::size(params))::value, 1);
     }
 
