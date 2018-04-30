@@ -320,6 +320,10 @@ constexpr auto size_of(const T& v) noexcept -> typename std::enable_if<
     return std::size(v) ? std::size(v) * size_of(*std::begin(v)) : 0;
 }
 
+struct name_oid {
+    std::string value;
+};
+
 } // namespace ozo
 
 #define OZO__TYPE_NAME_TYPE(Name) decltype(Name##_s)
@@ -396,6 +400,7 @@ OZO_PG_DEFINE_TYPE_AND_ARRAY(float, "float4", FLOAT4OID, FLOAT4ARRAYOID, decltyp
 
 OZO_PG_DEFINE_TYPE_AND_ARRAY(std::string, "text", TEXTOID, TEXTARRAYOID, dynamic_size)
 
+OZO_PG_DEFINE_TYPE(ozo::name_oid, "nameoid", NAMEOID, dynamic_size)
 
 namespace ozo {
 
