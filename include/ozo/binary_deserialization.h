@@ -119,6 +119,14 @@ struct recv_impl<std::vector<Out>> {
     }
 };
 
+template <>
+struct recv_impl<name_oid> {
+    template <typename M>
+    static istream& apply(istream& in, int32_t size, const oid_map_t<M>& oid_map, name_oid& out) {
+        return recv_impl<decltype(out.value)>::apply(in, size, oid_map, out.value);
+    }
+};
+
 template <typename T, typename M, typename Out>
 inline void recv(const value<T>& in, const oid_map_t<M>& oids, Out& out) {
     if (!accepts_oid(oids, out, in.oid())) {

@@ -9,12 +9,15 @@ using detail::istream;
 
 template <typename T>
 inline Require<Integral<T>, istream&> read(istream& in, T& out) {
-    T tmp;
-    in.read(reinterpret_cast<char*>(std::addressof(tmp)), sizeof out);
+    union {
+        T output;
+        char input[sizeof(T)];
+    } tmp;
+    in.read(tmp.input, sizeof out);
     if (!in) {
         throw system_error(error::unexpected_eof);
     }
-    out = detail::convert_from_big_endian(tmp);
+    out = detail::convert_from_big_endian(tmp.output);
     return in;
 }
 

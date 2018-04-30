@@ -123,7 +123,10 @@ template <typename T, typename = std::void_t<>>
 struct is_raw_data_writable : std::false_type {};
 
 template <typename T>
-struct is_raw_data_writable<T, std::void_t<decltype(std::declval<T&>().data())>> : std::true_type {};
+struct is_raw_data_writable<T, std::void_t<
+    decltype(std::declval<T&>().data()),
+    decltype(std::declval<T&>().size())
+>> : std::integral_constant<bool, std::is_same_v<decltype(std::declval<T&>().data()), char*>> {};
 
 template <typename T>
 constexpr auto RawDataWritable = is_raw_data_writable<std::decay_t<T>>::value;

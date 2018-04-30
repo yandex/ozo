@@ -43,3 +43,6 @@ set(LIBRARIES
 
 add_executable(ozo_request request.cpp)
 target_link_libraries(ozo_request ${LIBRARIES})
+
+add_executable(ozo_benchmark benchmark.cpp)
+target_link_libraries(ozo_benchmark ${LIBRARIES})
