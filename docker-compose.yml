@@ -36,5 +36,33 @@ services:
     - .:/code
     networks:
     - ozo
+  asyncpg:
+    build: docker/asyncpg
+    image: asyncpg
+    environment:
+      POSTGRES_HOST: ozo_postgres
+      POSTGRES_DB: *POSTGRES_DB
+      POSTGRES_USER: *POSTGRES_USER
+      POSTGRES_PASSWORD: *POSTGRES_PASSWORD
+    depends_on:
+    - ozo_postgres
+    volumes:
+    - .:/code
+    networks:
+    - ozo
+  aiopg:
+    build: docker/aiopg
+    image: aiopg
+    environment:
+      POSTGRES_HOST: ozo_postgres
+      POSTGRES_DB: *POSTGRES_DB
+      POSTGRES_USER: *POSTGRES_USER
+      POSTGRES_PASSWORD: *POSTGRES_PASSWORD
+    depends_on:
+    - ozo_postgres
+    volumes:
+    - .:/code
+    networks:
+    - ozo
 networks:
   ozo: {}

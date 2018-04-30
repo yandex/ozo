@@ -24,3 +24,7 @@ endif()
 if(OZO_BUILD_EXAMPLES)
     add_subdirectory(examples)
 endif()
+
+if(OZO_BUILD_BENCHMARKS)
+    add_subdirectory(benchmarks)
+endif()
