@@ -4,8 +4,8 @@ TARGET=$2
 
 build_clang() {
     COMPILER=clang
-    export CC='ccache clang'
-    export CXX='ccache clang++'
+    CC_COMPILER=clang
+    CXX_COMPILER=clang++
     case "$TARGET" in
         debug)
             CMAKE_BUILD_TYPE=Debug
@@ -38,8 +38,8 @@ build_clang() {
 
 build_gcc() {
     COMPILER=gcc
-    export CC='ccache gcc'
-    export CXX='ccache g++'
+    CC_COMPILER=gcc
+    CXX_COMPILER=g++
     case "$TARGET" in
         debug)
             CMAKE_BUILD_TYPE=Debug
@@ -97,6 +97,8 @@ build() {
     mkdir -p ${BUILD_DIR}
     cd ${BUILD_DIR}
     cmake \
+        -DCMAKE_C_COMPILER="${CC_COMPILER}" \
+        -DCMAKE_CXX_COMPILER="${CXX_COMPILER}" \
         -DCMAKE_CXX_FLAGS="$CMAKE_CXX_FLAGS"\
         -DCMAKE_CXX_FLAGS_RELWITHDEBINFO="$CMAKE_CXX_FLAGS_RELWITHDEBINFO" \
         -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
