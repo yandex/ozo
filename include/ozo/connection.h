@@ -110,17 +110,17 @@ inline decltype(auto) unwrap_connection(T&& conn,
 }
 
 template <typename, typename = std::void_t<>>
-struct is_connectiable : std::false_type {};
+struct is_connectable : std::false_type {};
 
 template <typename T>
-struct is_connectiable <T, std::void_t<
+struct is_connectable <T, std::void_t<
     decltype(unwrap_connection(std::declval<T&>()))
 >>: std::integral_constant<bool, Connection<
     decltype(unwrap_connection(std::declval<T&>()))
 >> {};
 
 template <typename T>
-constexpr auto Connectable = is_connectiable<std::decay_t<T>>::value;
+constexpr auto Connectable = is_connectable<std::decay_t<T>>::value;
 
 /**
 * Function to get connection traits type from object
@@ -277,19 +277,19 @@ inline void set_type_oid(C&& conn, oid_t oid) noexcept {
 
 
 template <typename ConnectionProvider, typename Enable = void>
-struct get_connectiable_type {
-    using type = typename std::decay_t<ConnectionProvider>::connectiable_type;
+struct get_connectable_type {
+    using type = typename std::decay_t<ConnectionProvider>::connectable_type;
 };
 
 template <typename ConnectionProvider>
-using connectiable_type = typename get_connectiable_type<ConnectionProvider>::type;
+using connectable_type = typename get_connectable_type<ConnectionProvider>::type;
 
 /**
 * Connection is Connection Provider itself, so we need to define connection
 * type it provides.
 */
 template <typename T>
-struct get_connectiable_type<T, Require<Connectable<T>>> {
+struct get_connectable_type<T, Require<Connectable<T>>> {
     using type = std::decay_t<T>;
 };
 
@@ -297,7 +297,7 @@ template <typename, typename = std::void_t<>>
 struct is_connection_provider_functor : std::false_type {};
 template <typename T>
 struct is_connection_provider_functor<T, std::void_t<
-    decltype( std::declval<T>() (std::declval<void(error_code, connectiable_type<T>)>()) )
+    decltype( std::declval<T>() (std::declval<void(error_code, connectable_type<T>)>()) )
 >> : std::true_type {};
 
 template <typename T>
@@ -330,7 +330,7 @@ template <typename T>
 struct is_connection_provider<T, std::void_t<decltype(
     async_get_connection(
         std::declval<T&>(),
-        std::declval<std::function<void(error_code, connectiable_type<T>)>>()
+        std::declval<std::function<void(error_code, connectable_type<T>)>>()
     )
 )>> : std::true_type {};
 
@@ -350,11 +350,10 @@ constexpr auto ConnectionProvider = is_connection_provider<std::decay_t<T>>::val
 */
 template <typename T, typename CompletionToken, typename = Require<ConnectionProvider<T>>>
 auto get_connection(T&& provider, CompletionToken&& token) {
-    using signature_t = void (error_code, connectiable_type<T>);
-    async_completion<std::decay_t<CompletionToken>, signature_t> init(token);
+    using signature_t = void (error_code, connectable_type<T>);
+    async_completion<CompletionToken, signature_t> init(token);
 
-    async_get_connection(std::forward<T>(provider),
-            std::move(init.completion_handler));
+    async_get_connection(std::forward<T>(provider), init.completion_handler);
 
     return init.result.get();
 }
