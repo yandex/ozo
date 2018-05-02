@@ -85,6 +85,7 @@ build_all() {
     $0 clang release
     $0 clang asan
     $0 clang ubsan
+    $0 clang tsan
 }
 
 build() {
@@ -103,6 +104,7 @@ build() {
         -DCMAKE_CXX_FLAGS_RELWITHDEBINFO="$CMAKE_CXX_FLAGS_RELWITHDEBINFO" \
         -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
         -DOZO_BUILD_TESTS=ON \
+        -DOZO_BUILD_EXAMPLES=ON \
         -DOZO_COVERAGE=$OZO_COVERAGE\
         -DOZO_BUILD_PG_TESTS=$OZO_BUILD_PG_TESTS \
         -DOZO_PG_TEST_CONNINFO="host=${POSTGRES_HOST} port=5432 dbname=${POSTGRES_DB} user=${POSTGRES_USER} password=${POSTGRES_PASSWORD}" \

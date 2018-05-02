@@ -22,7 +22,7 @@ struct pooled_connection {
     decltype(auto) empty() const {return handle_.empty();}
 
     void reset(typename handle_type::value_type&& v) {
-        reset(std::move(v));
+        handle_.reset(std::move(v));
     }
 
     ~pooled_connection() {
@@ -41,26 +41,33 @@ struct pooled_connection {
 template <typename ...Ts>
 using pooled_connection_ptr = std::shared_ptr<pooled_connection<Ts...>>;
 
-template <typename Connector, typename OidMap, typename Statistics, typename Handler>
+template <typename P, typename OidMap, typename Statistics, typename Handler>
 struct pooled_connection_wrapper {
     io_context& io_;
-    Connector connector_;
+    P& provider_;
     Statistics statistics_;
     Handler handler_;
 
     template <typename Handle>
     void operator ()(error_code ec, Handle&& handle) {
+        using boost::asio::asio_handler_invoke;
+
         if (ec) {
             return handler_(std::move(ec), pooled_connection_ptr<OidMap, Statistics>{});
         }
 
-        auto conn = std::make_shared<pooled_connection<OidMap, Statistics>>(std::move(handle));
+        auto conn = std::make_shared<pooled_connection<OidMap, Statistics>>(std::forward<Handle>(handle));
         if (!conn->empty() && connection_good(conn)) {
             return handler_(std::move(ec), std::move(conn));
         }
 
         conn->reset({io_, statistics_});
-        connector_(std::move(conn), std::move<Handler>(handler_));
+        get_connection(provider_, [h = std::move(handler_), pooled_conn = std::move(conn)] (error_code ec, auto conn) mutable {
+            if (!ec) {
+                pooled_conn->handle_.reset(std::move(unwrap_connection(std::move(conn))));
+            }
+            h(std::move(ec), std::move(pooled_conn));
+        });
     }
 
     template <typename Func>
@@ -70,36 +77,17 @@ struct pooled_connection_wrapper {
     }
 };
 
-template <typename Connector, typename OidMap, typename Statistics, typename Handler>
-auto wrap_pooled_connection_handler(io_context& io, Connector&& connector,
+template <typename P, typename OidMap, typename Statistics, typename Handler>
+auto wrap_pooled_connection_handler(io_context& io, P& provider,
     Statistics&& stat, Handler&& handler) {
-    return pooled_connection_wrapper<std::decay_t<Connector>, OidMap,
+    static_assert(ConnectionProvider<P>, "is not a ConnectionProvider");
+    return pooled_connection_wrapper<std::decay_t<P>, OidMap,
             std::decay_t<Statistics>, std::decay_t<Handler>>{
-        io, std::forward<Connector>(connector), std::forward<Statistics>(stat),
+        io, provider, std::forward<Statistics>(stat),
         std::forward<Handler>(handler)};
 }
 
 } // namespace impl
-
-struct async_connector {
-    std::string conn_info_;
-    template <typename T, typename Handler>
-    Require<Connectable<T>> operator()(T&& conn, Handler&& handler) const {
-        async_connect(conn_info_, std::forward<T>(conn),
-            std::forward<Handler>(handler));
-    }
-};
-
-// struct async_timed_connector {
-//     std::string conn_info_;
-//     std::chrono::steady_clock::duration timeout_;
-//     template <typename T, typename Handler>
-//     Require<Connectable<T>> operator()(T&& conn, Handler&& handler) const {
-//         decltype(auto) socket = get_socket(conn);
-//         async_connect(conn_info_, std::forward<T>(conn),
-//             with_timeout(socket, timeout_, std::forward<Handler>(handler)));
-//     }
-// };
 
 static_assert(Connectable<impl::pooled_connection_ptr<empty_oid_map, no_statistics>>,
     "pooled_connection_ptr is not a Connectable concept");
@@ -107,30 +95,31 @@ static_assert(Connectable<impl::pooled_connection_ptr<empty_oid_map, no_statisti
 static_assert(ConnectionProvider<impl::pooled_connection_ptr<empty_oid_map, no_statistics>>,
     "pooled_connection_ptr is not a ConnectionProvider concept");
 
-template <typename Connector, typename OidMap, typename Statistics>
+template <typename P, typename OidMap, typename Statistics>
 class connection_pool {
 public:
-    connection_pool(Connector connector, std::size_t capacity,
+    connection_pool(P provider, std::size_t capacity,
          std::size_t queue_capacity, Statistics statistics)
-    : impl_(capacity, queue_capacity), connector_(std::move(connector)),
-      statistics_(std::move(statistics)) {}
+        : impl_(capacity, queue_capacity), provider_(std::move(provider)),
+          statistics_(std::move(statistics)) {}
 
     using oid_map_type = OidMap;
     using statistics_type = Statistics;
     using duration = yamail::resource_pool::time_traits::duration;
     using time_point = yamail::resource_pool::time_traits::time_point;
+    using connectable_type = impl::pooled_connection_ptr<oid_map_type, statistics_type>;
 
     template <typename Handler>
     void get_connection(io_context& io, duration timeout, Handler&& handler) {
         impl_.get_auto_recycle(io,
-            impl::wrap_pooled_connection_handler(
-                io, connector_, statistics_, std::forward<Handler>(handler)),
+            impl::wrap_pooled_connection_handler<P, oid_map_type>(
+                io, provider_, statistics_, std::forward<Handler>(handler)),
             timeout);
     }
 
 private:
     impl::connection_pool<OidMap, Statistics> impl_;
-    Connector connector_;
+    P provider_;
     Statistics statistics_;
 };
 
@@ -144,25 +133,46 @@ template <typename T>
 constexpr auto ConnectionPool = is_connection_pool<std::decay_t<T>>::value;
 
 template <
-    typename Connector = async_connector,
+    typename P,
     typename OidMap = empty_oid_map,
     typename Statistics = no_statistics>
-auto make_connection_pool(Connector&& connector, std::size_t capacity,
+auto make_connection_pool(P&& provider, std::size_t capacity,
          std::size_t queue_capacity, OidMap&& = OidMap{},
         Statistics&& statistics = Statistics{}) {
-    return connection_pool<std::decay_t<Connector>,
+    static_assert(ConnectionProvider<P>, "is not a ConnectionProvider");
+    return connection_pool<std::decay_t<P>,
             std::decay_t<OidMap>, std::decay_t<Statistics>>{
-        std::forward<Connector>(connector), capacity, queue_capacity,
+        std::forward<P>(provider), capacity, queue_capacity,
         std::forward<Statistics>(statistics)};
 }
 
+template <typename Pool>
+class connection_pool_provider {
+public:
+    connection_pool_provider(Pool& pool, io_context& io,
+                             Require<ConnectionPool<Pool>, typename Pool::duration> timeout = Pool::duration::max())
+        : pool_(pool), io_(io), timeout_(timeout) {}
+
+    using oid_map_type = typename Pool::oid_map_type;
+    using statistics_type = typename Pool::statistics_type;
+    using connectable_type = typename Pool::connectable_type;
+
+    template <typename Handler>
+    friend void async_get_connection(connection_pool_provider& self, Handler&& h) {
+        self.pool_.get_connection(self.io_, self.timeout_, std::forward<Handler>(h));
+    }
+
+private:
+    Pool& pool_;
+    io_context& io_;
+    typename Pool::duration timeout_;
+};
+
 template <typename T>
 inline auto make_provider(T& pool, io_context& io,
-    Require<ConnectionPool<T>, typename T::duration> timeout = T::time_point::max()) {
-
-    return [&pool, &io, timeout](auto handler) {
-        pool.get_connection(io, timeout, std::move(handler));
-    };
+    Require<ConnectionPool<T>, typename T::duration> timeout = T::duration::max()) {
+    static_assert(ConnectionPool<T>, "is not a ConnectionPool");
+    return connection_pool_provider<std::decay_t<T>> {pool, io, timeout};
 }
 
 } // namespace ozo
