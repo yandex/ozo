@@ -25,9 +25,9 @@ RUN update-alternatives --install /usr/bin/clang clang /usr/bin/clang-5.0 100 &&
     update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-7 100 && \
     update-alternatives --install /usr/bin/llvm-symbolizer llvm-symbolizer /usr/bin/llvm-symbolizer-5.0 100
 
-RUN wget -qO boost_1_66_0.tar.gz https://sourceforge.net/projects/boost/files/boost/1.66.0/boost_1_66_0.tar.gz/download && \
-    tar xzf boost_1_66_0.tar.gz && \
-    cd boost_1_66_0 && \
+RUN wget -qO boost_1_67_0.tar.gz https://sourceforge.net/projects/boost/files/boost/1.67.0/boost_1_67_0.tar.gz/download && \
+    tar xzf boost_1_67_0.tar.gz && \
+    cd boost_1_67_0 && \
     ./bootstrap.sh --with-libraries=system,thread,chrono,date_time,context,coroutine && \
     ./b2 \
         -j $(nproc) \
