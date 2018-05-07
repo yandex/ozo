@@ -206,11 +206,16 @@ using is_dynamic_size = std::is_same<typename type_traits<T>::size, dynamic_size
 * define this name.
 */
 template <typename T>
-constexpr auto type_name(const T&) noexcept {
-    constexpr auto name = typename type_traits<std::decay_t<T>>::name{};
+constexpr auto type_name() noexcept {
+    static_assert(!std::is_void<typename type_traits<T>::name>::value,
+        "no type_traits found for the type");
+    constexpr auto name = typename type_traits<T>::name{};
     constexpr char const* retval = hana::to<char const*>(name);
     return retval;
 }
+
+template <typename T>
+constexpr auto type_name(const T&) noexcept {return type_name<T>();}
 
 /**
 * Function returns object size.
