@@ -328,6 +328,24 @@ GTEST("ozo::recv_result") {
         EXPECT_EQ(got[1].text, "test");
     }
 
+    SHOULD("convert INT4OID to vector via iterator") {
+
+        const char int32_bytes[] = { 0x00, 0x00, 0x00, 0x07 };
+
+        EXPECT_INVOKE(mock, nfields).WillRepeatedly(Return(1));
+        EXPECT_INVOKE(mock, ntuples).WillRepeatedly(Return(2));
+
+        EXPECT_INVOKE(mock, field_number, Eq("digit")).WillRepeatedly(Return(0));
+        EXPECT_INVOKE(mock, field_type, 0).WillRepeatedly(Return(INT4OID));
+        EXPECT_INVOKE(mock, get_value, _, 0).WillRepeatedly(Return(int32_bytes));
+        EXPECT_INVOKE(mock, get_length, _, 0).WillRepeatedly(Return(4));
+
+        std::vector<int32_t> got;
+        got.resize(2);
+        ozo::recv_result(res, oid_map, got.begin());
+        EXPECT_THAT(got, ElementsAre(7, 7));
+    }
+
     SHOULD("returns result result requested") {
         ::ozo::basic_result<pg_result_mock*> got;
         ozo::recv_result(res, oid_map, got);
