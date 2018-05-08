@@ -56,7 +56,7 @@ struct request_oid_map_op {
     template <typename Connection>
     void perform(Connection&& conn) {
         using ozo::async_request;
-        async_request(conn, make_oids_query(get_oid_map(conn)), std::back_inserter(*res_), *this);
+        async_request(std::forward<Connection>(conn), make_oids_query(get_oid_map(conn)), std::back_inserter(*res_), *this);
     }
 
     template <typename Connection>
