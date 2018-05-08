@@ -2,6 +2,9 @@
 
 #include <ozo/connection.h>
 #include <ozo/impl/async_connect.h>
+#include <ozo/impl/request_oid_map.h>
+
+#include <boost/hana/empty.hpp>
 
 namespace ozo {
 namespace detail {
@@ -12,7 +15,12 @@ struct connection_binder {
     Connection conn_;
 
     void operator() (error_code ec) {
-        handler_(std::move(ec), std::move(conn_));
+        using namespace hana::literals;
+        if (ec || empty(get_oid_map(conn_))) {
+            handler_(std::move(ec), std::move(conn_));
+        } else {
+            impl::make_async_request_oid_map_op(std::move(handler_)).perform(std::move(conn_));
+        }
     }
 
     template <typename Func>

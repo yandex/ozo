@@ -1,7 +1,13 @@
-#include <ozo/impl/async_connect.h>
+#include <ozo/async_connect.h>
 #include "test_error.h"
 #include "test_asio.h"
 #include <GUnit/GTest.h>
+
+namespace ozo::testing {
+    struct custom_type {};
+} // namespace ozo::testing
+
+OZO_PG_DEFINE_CUSTOM_TYPE(ozo::testing::custom_type, "custom_type", dynamic_size)
 
 namespace {
 
@@ -25,6 +31,7 @@ struct connection_mock {
     virtual int connect_poll() const = 0;
     virtual ozo::error_code start_connection(const std::string&) = 0;
     virtual ozo::error_code assign_socket() = 0;
+    virtual void async_request() = 0;
     virtual ~connection_mock() = default;
 };
 
@@ -92,6 +99,11 @@ struct connection {
     friend ozo::error_code pq_assign_socket(connection& c) {
         return c.mock_->assign_socket();
     }
+
+    template <typename Q, typename Out, typename Handler>
+    friend void async_request(std::shared_ptr<connection>&& provider, Q&&, Out&&, Handler&&) {
+        provider->mock_->async_request();
+    }
 };
 
 template <typename ...Ts>
@@ -106,11 +118,12 @@ static_assert(ozo::Connectable<connection<>>,
 static_assert(ozo::Connectable<connection_ptr<>>,
     "connection_ptr does not meet Connectable requirements");
 
-inline auto make_connection(connection_mock& mock) {
-    return std::make_shared<connection<>>(connection<>{
+template <typename OidMapT = empty_oid_map>
+inline auto make_connection(connection_mock& mock, OidMapT oid_map = {}) {
+    return std::make_shared<connection<std::decay_t<OidMapT>>>(connection<std::decay_t<OidMapT>>{
             std::make_unique<native_handle>(native_handle::bad),
             socket_mock{},
-            empty_oid_map{},
+            std::move(oid_map),
             std::addressof(mock),
             ""
         });
@@ -291,6 +304,41 @@ GTEST("ozo::async_connect()") {
         EXPECT_INVOKE(cb_mock, context_preserved);
         EXPECT_INVOKE(cb_mock, call, error_code{ozo::testing::error::error});
         ozo::impl::async_connect("conninfo", conn, wrap(cb_mock));
+    }
+}
+
+GTEST("ozo::detail::connection_binder") {
+    using namespace testing;
+    using ozo::error_code;
+
+    SHOULD("request for oid when oid map is not empty") {
+        StrictGMock<connection_mock> conn_mock{};
+        auto conn = make_connection(object(conn_mock), ozo::register_types<ozo::testing::custom_type>());
+        StrictGMock<ozo::testing::callback_mock<std::decay_t<decltype(conn)>>> cb_mock{};
+        *(conn->handle_) = native_handle::good;
+
+        EXPECT_INVOKE(conn_mock, async_request);
+        ozo::detail::bind_connection_handler(wrap(cb_mock), std::move(conn))(error_code{});
+    }
+
+    SHOULD("request for oid when there is an error adn oid map is not empty") {
+        StrictGMock<connection_mock> conn_mock{};
+        auto conn = make_connection(object(conn_mock), ozo::register_types<ozo::testing::custom_type>());
+        StrictGMock<ozo::testing::callback_mock<std::decay_t<decltype(conn)>>> cb_mock{};
+        *(conn->handle_) = native_handle::good;
+
+        EXPECT_INVOKE(cb_mock, call, error_code{ozo::testing::error::error}, _);
+        ozo::detail::bind_connection_handler(wrap(cb_mock), std::move(conn))(ozo::testing::error::error);
+    }
+
+    SHOULD("not request for oid and call handler when oid map is empty") {
+        StrictGMock<connection_mock> conn_mock{};
+        auto conn = make_connection(object(conn_mock), ozo::register_types<>());
+        StrictGMock<ozo::testing::callback_mock<std::decay_t<decltype(conn)>>> cb_mock{};
+        *(conn->handle_) = native_handle::good;
+
+        EXPECT_INVOKE(cb_mock, call, error_code{}, _);
+        ozo::detail::bind_connection_handler(wrap(cb_mock), std::move(conn))(error_code{});
     }
 }
 

@@ -31,7 +31,7 @@ if(CCACHE_FOUND)
     set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
 endif()
 
-find_package(Boost COMPONENTS system thread REQUIRED)
+find_package(Boost COMPONENTS coroutine context system thread REQUIRED)
 include_directories(SYSTEM "${Boost_INCLUDE_DIRS}")
 
 find_package(PostgreSQL)

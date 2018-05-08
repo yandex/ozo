@@ -355,4 +355,9 @@ inline bool accepts_oid(const oid_map_t<MapImplT>& map, const T&, oid_t oid) noe
     return accepts_oid<std::decay_t<T>>(map, oid);
 }
 
+template <typename MapImplT>
+inline constexpr bool empty(const oid_map_t<MapImplT>& map) noexcept {
+    return hana::length(map.impl) == hana::size_c<0>;
+}
+
 } // namespace ozo
