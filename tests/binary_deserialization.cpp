@@ -267,6 +267,13 @@ GTEST("ozo::recv_row") {
 
         EXPECT_THROW(ozo::recv_row(row, oid_map, out), std::range_error);
     }
+
+    SHOULD("throw range_error if row is unadapted and number of rows more than one") {
+        std::int32_t out;
+        EXPECT_INVOKE(mock, nfields).WillRepeatedly(Return(2));
+
+        EXPECT_THROW(ozo::recv_row(row, oid_map, out), std::range_error);
+    }
 }
 
 GTEST("ozo::recv_result") {

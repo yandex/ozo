@@ -73,6 +73,7 @@ set(SOURCES
     async_send_query_params.cpp
     async_get_result.cpp
     base36.cpp
+    request_oid_map.cpp
 )
 
 if(OZO_BUILD_PG_TESTS)

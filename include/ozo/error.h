@@ -30,6 +30,7 @@ enum code {
     result_status_unexpected, // got unexpected status from query result
     result_status_empty_query, // the string sent to the server was empty
     result_status_bad_response, // the server's response was not understood
+    oid_request_failed, // error during request oids from a database
 };
 
 const error_category& category() noexcept;
@@ -363,6 +364,8 @@ public:
                 return "result_status_empty_query - the string sent to the server was empty";
             case result_status_bad_response:
                 return "result_status_bad_response - the server's response was not understood";
+            case oid_request_failed:
+                return "error during request oids from a database";
 
         }
         return "no message for value: " + std::to_string(value);
