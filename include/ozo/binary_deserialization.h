@@ -133,6 +133,17 @@ inline void recv(const value<T>& in, const oid_map_t<M>& oids, Out& out) {
 }
 
 template <typename T, typename M, typename Out>
+Require<!FusionSequence<Out> && !FusionAdaptedStruct<Out>>
+recv_row(const row<T>& in, const oid_map_t<M>& oid_map, Out& out) {
+    if (std::size(in) != 1) {
+        throw std::range_error("row size " + std::to_string(std::size(in))
+            + " does not equal 1 for single column result");
+    }
+
+    recv(*(in.begin()), oid_map, out);
+}
+
+template <typename T, typename M, typename Out>
 Require<FusionSequence<Out> && !FusionAdaptedStruct<Out>>
 recv_row(const row<T>& in, const oid_map_t<M>& oid_map, Out& out) {
 
@@ -172,26 +183,29 @@ recv_row(const row<T>& in, const oid_map_t<M>& oid_map, Out& out) {
 }
 
 template <typename T, typename M, typename Out>
-Require<ForwardIterator<Out>>
+Require<ForwardIterator<Out>, Out>
 recv_result(const basic_result<T>& in, const oid_map_t<M>& oid_map, Out out) {
     for (auto row : in) {
         recv_row(row, oid_map, *out++);
     }
+    return out;
 }
 
 template <typename T, typename M, typename Out>
-Require<InsertIterator<Out>>
+Require<InsertIterator<Out>, Out>
 recv_result(const basic_result<T>& in, const oid_map_t<M>& oid_map, Out out) {
     for (auto row : in) {
         typename Out::container_type::value_type v{};
         recv_row(row, oid_map, v);
         *out++ = std::move(v);
     }
+    return out;
 }
 
 template <typename T, typename M>
-void recv_result(basic_result<T>& in, const oid_map_t<M>&, basic_result<T>& out) {
+basic_result<T>& recv_result(basic_result<T>& in, const oid_map_t<M>&, basic_result<T>& out) {
     out = std::move(in);
+    return out;
 }
 
 } // namespace ozo
