@@ -187,6 +187,49 @@ GTEST("ozo::recv") {
         std::vector<std::string> got;
         EXPECT_THROW(ozo::recv(value, oid_map, got), std::range_error);
     }
+
+    SHOULD("throw exception when size of integral differs from given") {
+        const char bytes[] = { true };
+
+        EXPECT_INVOKE(mock, field_type, _).WillRepeatedly(Return(BOOLOID));
+        EXPECT_INVOKE(mock, get_value, _, _).WillRepeatedly(Return(bytes));
+        EXPECT_INVOKE(mock, get_length, _, _).WillRepeatedly(Return(sizeof(bytes) + 1));
+
+        bool got = false;
+        EXPECT_THROW(ozo::recv(value, oid_map, got), std::range_error);
+    }
+
+    SHOULD("read nothing when dimensions count is zero") {
+        const char bytes[] = {
+            0x00, 0x00, 0x00, 0x00, // dimention count
+            0x00, 0x00, 0x00, 0x00, // data offset
+            0x00, 0x00, 0x00, 0x19, // Oid
+        };
+        EXPECT_INVOKE(mock, field_type, _).WillRepeatedly(Return(TEXTARRAYOID));
+        EXPECT_INVOKE(mock, get_value, _, _).WillRepeatedly(Return(bytes));
+        EXPECT_INVOKE(mock, get_length, _, _).WillRepeatedly(Return(sizeof bytes));
+
+        std::vector<std::string> got;
+        ozo::recv(value, oid_map, got);
+        EXPECT_THAT(got, ElementsAre());
+    }
+
+    SHOULD("read nothing when dimension size is zero") {
+        const char bytes[] = {
+            0x00, 0x00, 0x00, 0x01, // dimention count
+            0x00, 0x00, 0x00, 0x00, // data offset
+            0x00, 0x00, 0x00, 0x19, // Oid
+            0x00, 0x00, 0x00, 0x00, // dimention size
+            0x00, 0x00, 0x00, 0x01, // dimention index
+        };
+        EXPECT_INVOKE(mock, field_type, _).WillRepeatedly(Return(TEXTARRAYOID));
+        EXPECT_INVOKE(mock, get_value, _, _).WillRepeatedly(Return(bytes));
+        EXPECT_INVOKE(mock, get_length, _, _).WillRepeatedly(Return(sizeof bytes));
+
+        std::vector<std::string> got;
+        ozo::recv(value, oid_map, got);
+        EXPECT_THAT(got, ElementsAre());
+    }
 }
 
 
