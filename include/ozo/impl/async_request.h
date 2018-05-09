@@ -76,11 +76,13 @@ inline void done(const operation_context_ptr<Ts...>& ctx) {
 
 template <typename Continuation, typename ...Ts>
 inline void write_poll(const operation_context_ptr<Ts...>& ctx, Continuation&& c) {
+    using asio::bind_executor;
     write_poll(get_connection(ctx), bind_executor(ctx->strand, std::forward<Continuation>(c)));
 }
 
 template <typename Continuation, typename ...Ts>
 inline void read_poll(const operation_context_ptr<Ts...>& ctx, Continuation&& c) {
+    using asio::bind_executor;
     read_poll(get_connection(ctx), bind_executor(ctx->strand, std::forward<Continuation>(c)));
 }
 
