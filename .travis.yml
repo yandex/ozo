@@ -2,9 +2,6 @@ language: cpp
 
 sudo: required
 
-git:
-  submodules: false
-
 cache:
   ccache: true
   directories:
@@ -55,10 +52,6 @@ matrix:
     - >
       docker run -ti --rm -v ${PWD}:/code $(bash <(curl -s https://codecov.io/env)) \
         ozo_build /codecov.sh -f "!*tests*" -f "!*error.h*"
-
-before_install:
-- sed -i 's;git@github.com:;https://github.com/;' .gitmodules
-- git submodule update --init
 
 install:
 - pip3 install --user --upgrade pip
