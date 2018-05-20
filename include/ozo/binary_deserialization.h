@@ -76,7 +76,7 @@ struct recv_impl<std::vector<Out>> {
         read(in, array_header);
 
         if (array_header.dimensions_count > 1) {
-            throw std::range_error("multiply dimention count is not supported: "
+            throw std::range_error("multiply dimension count is not supported: "
                  + std::to_string(array_header.dimensions_count));
         }
 
