@@ -57,7 +57,6 @@ GTEST("ozo::is_null<boost::weak_ptr>()", "[for uninitialized pointer returns fal
     EXPECT_TRUE(ozo::is_null(ptr));
 }
 
-
 GTEST("ozo::is_null<not nullable>()", "[for int returns false]") {
     EXPECT_TRUE(!ozo::is_null(int()));
 }
