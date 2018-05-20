@@ -185,7 +185,7 @@ GTEST("ozo::recv") {
         EXPECT_INVOKE(mock, get_length, _, _).WillRepeatedly(Return(sizeof bytes));
 
         std::vector<std::string> got;
-        EXPECT_THROW(ozo::recv(value, oid_map, got), std::range_error);
+        EXPECT_THROW(ozo::recv(value, oid_map, got), std::invalid_argument);
     }
 
     SHOULD("throw exception when size of integral differs from given") {
