@@ -19,9 +19,6 @@
 
 namespace ozo {
 
-template <class T>
-constexpr auto Nullable = is_nullable<std::decay_t<T>>::value;
-
 template <class BufferAllocatorT, class OidMapImplT, class ... ParamsT>
 class binary_query {
 public:

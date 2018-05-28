@@ -104,11 +104,11 @@ struct recv_impl<std::vector<Out>> {
             int32_t size = 0;
             read(in, size);
             if (size == -1) {
-                if constexpr (!is_nullable<item_type>::value) {
+                if constexpr (!Nullable<item_type>) {
                     throw std::invalid_argument("unexpected NULL");
                 }
             } else {
-                if constexpr (!is_nullable<item_type>::value) {
+                if constexpr (!Nullable<item_type>) {
                     recv(in, size, oids, item);
                 } else {
                     throw std::invalid_argument("arrays with nullable are not supported yet.");

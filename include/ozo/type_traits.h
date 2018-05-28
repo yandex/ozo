@@ -77,6 +77,9 @@ struct is_nullable<::boost::weak_ptr<T>> : ::std::true_type {};
 template <typename T>
 struct is_nullable<::std::weak_ptr<T>> : ::std::true_type {};
 
+template <class T>
+constexpr auto Nullable = is_nullable<std::decay_t<T>>::value;
+
 template <typename T>
 inline auto is_null(const T& v) noexcept ->
     std::enable_if_t<is_nullable<std::decay_t<T>>::value, bool> {
