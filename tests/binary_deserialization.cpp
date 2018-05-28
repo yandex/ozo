@@ -20,6 +20,7 @@ GTEST("ozo::recv") {
     ::ozo::value<pg_result_mock> value({object(mock), 0, 0});
 
     SHOULD("throw system_error if oid does not match the type") {
+        EXPECT_INVOKE(mock, get_isnull, _, _).WillRepeatedly(Return(false));
         EXPECT_INVOKE(mock, field_type, _).WillRepeatedly(Return(TEXTOID));
 
         int x;
@@ -32,6 +33,7 @@ GTEST("ozo::recv") {
         EXPECT_INVOKE(mock, field_type, _).WillRepeatedly(Return(BOOLOID));
         EXPECT_INVOKE(mock, get_value, _, _).WillRepeatedly(Return(bytes));
         EXPECT_INVOKE(mock, get_length, _, _).WillRepeatedly(Return(sizeof(bytes)));
+        EXPECT_INVOKE(mock, get_isnull, _, _).WillRepeatedly(Return(false));
 
         bool got = false;
         ozo::recv(value, oid_map, got);
@@ -44,6 +46,7 @@ GTEST("ozo::recv") {
         EXPECT_INVOKE(mock, field_type, _).WillRepeatedly(Return(FLOAT4OID));
         EXPECT_INVOKE(mock, get_value, _, _).WillRepeatedly(Return(bytes));
         EXPECT_INVOKE(mock, get_length, _, _).WillRepeatedly(Return(4));
+        EXPECT_INVOKE(mock, get_isnull, _, _).WillRepeatedly(Return(false));
 
         float got = 0.0;
         ozo::recv(value, oid_map, got);
@@ -56,6 +59,7 @@ GTEST("ozo::recv") {
         EXPECT_INVOKE(mock, field_type, _).WillRepeatedly(Return(INT2OID));
         EXPECT_INVOKE(mock, get_value, _, _).WillRepeatedly(Return(bytes));
         EXPECT_INVOKE(mock, get_length, _, _).WillRepeatedly(Return(sizeof(bytes)));
+        EXPECT_INVOKE(mock, get_isnull, _, _).WillRepeatedly(Return(false));
 
         int16_t got = 0;
         ozo::recv(value, oid_map, got);
@@ -69,6 +73,7 @@ GTEST("ozo::recv") {
         EXPECT_INVOKE(mock, field_type, _).WillRepeatedly(Return(INT4OID));
         EXPECT_INVOKE(mock, get_value, _, _).WillRepeatedly(Return(bytes));
         EXPECT_INVOKE(mock, get_length, _, _).WillRepeatedly(Return(sizeof(bytes)));
+        EXPECT_INVOKE(mock, get_isnull, _, _).WillRepeatedly(Return(false));
 
         int32_t got = 0;
         ozo::recv(value, oid_map, got);
@@ -82,6 +87,7 @@ GTEST("ozo::recv") {
         EXPECT_INVOKE(mock, field_type, _).WillRepeatedly(Return(INT8OID));
         EXPECT_INVOKE(mock, get_value, _, _).WillRepeatedly(Return(bytes));
         EXPECT_INVOKE(mock, get_length, _, _).WillRepeatedly(Return(sizeof(bytes)));
+        EXPECT_INVOKE(mock, get_isnull, _, _).WillRepeatedly(Return(false));
 
         int64_t got = 0;
         ozo::recv(value, oid_map, got);
@@ -93,6 +99,7 @@ GTEST("ozo::recv") {
         EXPECT_INVOKE(mock, field_type, _).WillRepeatedly(Return(TEXTOID));
         EXPECT_INVOKE(mock, get_value, _, _).WillRepeatedly(Return(bytes));
         EXPECT_INVOKE(mock, get_length, _, _).WillRepeatedly(Return(4));
+        EXPECT_INVOKE(mock, get_isnull, _, _).WillRepeatedly(Return(false));
 
         std::string got;
         ozo::recv(value, oid_map, got);
@@ -145,6 +152,7 @@ GTEST("ozo::recv") {
         EXPECT_INVOKE(mock, field_type, _).WillRepeatedly(Return(TEXTARRAYOID));
         EXPECT_INVOKE(mock, get_value, _, _).WillRepeatedly(Return(bytes));
         EXPECT_INVOKE(mock, get_length, _, _).WillRepeatedly(Return(sizeof bytes));
+        EXPECT_INVOKE(mock, get_isnull, _, _).WillRepeatedly(Return(false));
 
         std::vector<std::string> got;
         ozo::recv(value, oid_map, got);
@@ -168,6 +176,7 @@ GTEST("ozo::recv") {
         EXPECT_INVOKE(mock, field_type, _).WillRepeatedly(Return(TEXTARRAYOID));
         EXPECT_INVOKE(mock, get_value, _, _).WillRepeatedly(Return(bytes));
         EXPECT_INVOKE(mock, get_length, _, _).WillRepeatedly(Return(sizeof bytes));
+        EXPECT_INVOKE(mock, get_isnull, _, _).WillRepeatedly(Return(false));
 
         std::vector<std::string> got;
         ;
@@ -191,6 +200,7 @@ GTEST("ozo::recv") {
         EXPECT_INVOKE(mock, field_type, _).WillRepeatedly(Return(TEXTARRAYOID));
         EXPECT_INVOKE(mock, get_value, _, _).WillRepeatedly(Return(bytes));
         EXPECT_INVOKE(mock, get_length, _, _).WillRepeatedly(Return(sizeof bytes));
+        EXPECT_INVOKE(mock, get_isnull, _, _).WillRepeatedly(Return(false));
 
         std::vector<std::string> got;
         EXPECT_THROW(ozo::recv(value, oid_map, got), ozo::system_error);
@@ -212,6 +222,7 @@ GTEST("ozo::recv") {
         EXPECT_INVOKE(mock, field_type, _).WillRepeatedly(Return(TEXTARRAYOID));
         EXPECT_INVOKE(mock, get_value, _, _).WillRepeatedly(Return(bytes));
         EXPECT_INVOKE(mock, get_length, _, _).WillRepeatedly(Return(sizeof bytes));
+        EXPECT_INVOKE(mock, get_isnull, _, _).WillRepeatedly(Return(false));
 
         std::vector<std::string> got;
         EXPECT_THROW(ozo::recv(value, oid_map, got), std::invalid_argument);
@@ -223,6 +234,7 @@ GTEST("ozo::recv") {
         EXPECT_INVOKE(mock, field_type, _).WillRepeatedly(Return(BOOLOID));
         EXPECT_INVOKE(mock, get_value, _, _).WillRepeatedly(Return(bytes));
         EXPECT_INVOKE(mock, get_length, _, _).WillRepeatedly(Return(sizeof(bytes) + 1));
+        EXPECT_INVOKE(mock, get_isnull, _, _).WillRepeatedly(Return(false));
 
         bool got = false;
         EXPECT_THROW(ozo::recv(value, oid_map, got), std::range_error);
@@ -237,6 +249,7 @@ GTEST("ozo::recv") {
         EXPECT_INVOKE(mock, field_type, _).WillRepeatedly(Return(TEXTARRAYOID));
         EXPECT_INVOKE(mock, get_value, _, _).WillRepeatedly(Return(bytes));
         EXPECT_INVOKE(mock, get_length, _, _).WillRepeatedly(Return(sizeof bytes));
+        EXPECT_INVOKE(mock, get_isnull, _, _).WillRepeatedly(Return(false));
 
         std::vector<std::string> got;
         ozo::recv(value, oid_map, got);
@@ -254,6 +267,7 @@ GTEST("ozo::recv") {
         EXPECT_INVOKE(mock, field_type, _).WillRepeatedly(Return(TEXTARRAYOID));
         EXPECT_INVOKE(mock, get_value, _, _).WillRepeatedly(Return(bytes));
         EXPECT_INVOKE(mock, get_length, _, _).WillRepeatedly(Return(sizeof bytes));
+        EXPECT_INVOKE(mock, get_isnull, _, _).WillRepeatedly(Return(false));
 
         std::vector<std::string> got;
         ozo::recv(value, oid_map, got);
@@ -277,6 +291,7 @@ GTEST("ozo::recv") {
         EXPECT_INVOKE(mock, field_type, _).WillRepeatedly(Return(TEXTARRAYOID));
         EXPECT_INVOKE(mock, get_value, _, _).WillRepeatedly(Return(bytes));
         EXPECT_INVOKE(mock, get_length, _, _).WillRepeatedly(Return(sizeof bytes));
+        EXPECT_INVOKE(mock, get_isnull, _, _).WillRepeatedly(Return(false));
 
         std::vector<std::unique_ptr<std::string>> got;
         ozo::recv(value, oid_map, got);
@@ -302,6 +317,7 @@ GTEST("ozo::recv") {
         EXPECT_INVOKE(mock, field_type, _).WillRepeatedly(Return(TEXTARRAYOID));
         EXPECT_INVOKE(mock, get_value, _, _).WillRepeatedly(Return(bytes));
         EXPECT_INVOKE(mock, get_length, _, _).WillRepeatedly(Return(sizeof bytes));
+        EXPECT_INVOKE(mock, get_isnull, _, _).WillRepeatedly(Return(false));
 
         std::vector<std::unique_ptr<std::string>> got;
         ozo::recv(value, oid_map, got);
@@ -335,10 +351,12 @@ GTEST("ozo::recv_row") {
         EXPECT_INVOKE(mock, field_type, 0).WillRepeatedly(Return(INT4OID));
         EXPECT_INVOKE(mock, get_value, _, 0).WillRepeatedly(Return(int32_bytes));
         EXPECT_INVOKE(mock, get_length, _, 0).WillRepeatedly(Return(4));
+        EXPECT_INVOKE(mock, get_isnull, _, 0).WillRepeatedly(Return(false));
 
         EXPECT_INVOKE(mock, field_type, 1).WillRepeatedly(Return(TEXTOID));
         EXPECT_INVOKE(mock, get_value, _, 1).WillRepeatedly(Return(string_bytes));
         EXPECT_INVOKE(mock, get_length, _, 1).WillRepeatedly(Return(4));
+        EXPECT_INVOKE(mock, get_isnull, _, 1).WillRepeatedly(Return(false));
 
         std::tuple<int, std::string> got;
         ozo::recv_row(row, oid_map, got);
@@ -363,11 +381,13 @@ GTEST("ozo::recv_row") {
         EXPECT_INVOKE(mock, field_type, 0).WillRepeatedly(Return(INT4OID));
         EXPECT_INVOKE(mock, get_value, _, 0).WillRepeatedly(Return(int32_bytes));
         EXPECT_INVOKE(mock, get_length, _, 0).WillRepeatedly(Return(4));
+        EXPECT_INVOKE(mock, get_isnull, _, 0).WillRepeatedly(Return(false));
 
         EXPECT_INVOKE(mock, field_number, Eq("text")).WillOnce(Return(1));
         EXPECT_INVOKE(mock, field_type, 1).WillRepeatedly(Return(TEXTOID));
         EXPECT_INVOKE(mock, get_value, _, 1).WillRepeatedly(Return(string_bytes));
         EXPECT_INVOKE(mock, get_length, _, 1).WillRepeatedly(Return(4));
+        EXPECT_INVOKE(mock, get_isnull, _, 1).WillRepeatedly(Return(false));
 
         fusion_adapted_test_result got;
         ozo::recv_row(row, oid_map, got);
@@ -416,11 +436,13 @@ GTEST("ozo::recv_result") {
         EXPECT_INVOKE(mock, field_type, 0).WillRepeatedly(Return(INT4OID));
         EXPECT_INVOKE(mock, get_value, _, 0).WillRepeatedly(Return(int32_bytes));
         EXPECT_INVOKE(mock, get_length, _, 0).WillRepeatedly(Return(4));
+        EXPECT_INVOKE(mock, get_isnull, _, 0).WillRepeatedly(Return(false));
 
         EXPECT_INVOKE(mock, field_number, Eq("text")).WillRepeatedly(Return(1));
         EXPECT_INVOKE(mock, field_type, 1).WillRepeatedly(Return(TEXTOID));
         EXPECT_INVOKE(mock, get_value, _, 1).WillRepeatedly(Return(string_bytes));
         EXPECT_INVOKE(mock, get_length, _, 1).WillRepeatedly(Return(4));
+        EXPECT_INVOKE(mock, get_isnull, _, 1).WillRepeatedly(Return(false));
 
         std::vector<fusion_adapted_test_result> got;
         ozo::recv_result(res, oid_map, std::back_inserter(got));
@@ -443,11 +465,13 @@ GTEST("ozo::recv_result") {
         EXPECT_INVOKE(mock, field_type, 0).WillRepeatedly(Return(INT4OID));
         EXPECT_INVOKE(mock, get_value, _, 0).WillRepeatedly(Return(int32_bytes));
         EXPECT_INVOKE(mock, get_length, _, 0).WillRepeatedly(Return(4));
+        EXPECT_INVOKE(mock, get_isnull, _, 0).WillRepeatedly(Return(false));
 
         EXPECT_INVOKE(mock, field_number, Eq("text")).WillRepeatedly(Return(1));
         EXPECT_INVOKE(mock, field_type, 1).WillRepeatedly(Return(TEXTOID));
         EXPECT_INVOKE(mock, get_value, _, 1).WillRepeatedly(Return(string_bytes));
         EXPECT_INVOKE(mock, get_length, _, 1).WillRepeatedly(Return(4));
+        EXPECT_INVOKE(mock, get_isnull, _, 1).WillRepeatedly(Return(false));
 
         std::vector<fusion_adapted_test_result> got;
         got.resize(2);
@@ -469,6 +493,7 @@ GTEST("ozo::recv_result") {
         EXPECT_INVOKE(mock, field_type, 0).WillRepeatedly(Return(INT4OID));
         EXPECT_INVOKE(mock, get_value, _, 0).WillRepeatedly(Return(int32_bytes));
         EXPECT_INVOKE(mock, get_length, _, 0).WillRepeatedly(Return(4));
+        EXPECT_INVOKE(mock, get_isnull, _, 0).WillRepeatedly(Return(false));
 
         std::vector<int32_t> got;
         got.resize(2);
