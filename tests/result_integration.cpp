@@ -47,6 +47,27 @@ GTEST("result integration") {
         EXPECT_EQ(std::get<0>(r[0]), 42.13f);
         EXPECT_EQ(std::get<1>(r[0]), "text");
     }
+
+    SHOULD("convert result with nulls into a tuple with nullables") {
+        using row = std::tuple<
+            __OZO_STD_OPTIONAL<float>,
+            std::unique_ptr<std::string>,
+            boost::optional<float>,
+            std::shared_ptr<std::string>
+        >;
+        auto result = execute_query("select 42.13::float4, 'text', null, null;");
+        auto oid_map = ozo::empty_oid_map();
+        std::vector<row> r;
+        ozo::recv_result(result, oid_map, std::back_inserter(r));
+
+        ASSERT_EQ(r.size(), 1);
+        EXPECT_TRUE(std::get<0>(r[0]));
+        EXPECT_EQ(*std::get<0>(r[0]), 42.13f);
+        EXPECT_TRUE(std::get<1>(r[0]));
+        EXPECT_EQ(*std::get<1>(r[0]), "text");
+        EXPECT_FALSE(std::get<2>(r[0]));
+        EXPECT_FALSE(std::get<3>(r[0]));
+    }
 }
 
 } // namespace
