@@ -1,6 +1,5 @@
 #pragma once
 
-#include <ozo/type_traits.h>
 #include <boost/fusion/adapted.hpp>
 #include <boost/fusion/sequence.hpp>
 #include <boost/fusion/support/is_sequence.hpp>
