@@ -99,6 +99,35 @@ GTEST("ozo::recv") {
         EXPECT_EQ("test", got);
     }
 
+    SHOULD("convert TEXTOID to a nullable-wrapped std::string, unwrapping that nullable") {
+        const char* bytes = "test";
+        EXPECT_INVOKE(mock, field_type, _).WillRepeatedly(Return(TEXTOID));
+        EXPECT_INVOKE(mock, get_value, _, _).WillRepeatedly(Return(bytes));
+        EXPECT_INVOKE(mock, get_length, _, _).WillRepeatedly(Return(4));
+        EXPECT_INVOKE(mock, get_isnull, _, _).WillRepeatedly(Return(false));
+
+        std::unique_ptr<std::string> got;
+        ozo::recv(value, oid_map, got);
+        EXPECT_TRUE(got);
+        EXPECT_EQ("test", *got);
+    }
+
+    SHOULD("set nullable to null for a null value of any type") {
+        EXPECT_INVOKE(mock, get_isnull, _, _).WillRepeatedly(Return(true));
+
+        auto got = std::make_unique<int>(7);
+        ozo::recv(value, oid_map, got);
+        EXPECT_TRUE(!got);
+    }
+
+    SHOULD("throw for a null value if receiving type is not nullable") {
+        EXPECT_INVOKE(mock, field_type, _).WillRepeatedly(Return(TEXTOID));
+        EXPECT_INVOKE(mock, get_isnull, _, _).WillRepeatedly(Return(true));
+
+        std::string got;
+        EXPECT_THROW(ozo::recv(value, oid_map, got), std::invalid_argument);
+    }
+
     SHOULD("convert TEXTARRAYOID to std::vector<std::string>") {
         const char bytes[] = {
             0x00, 0x00, 0x00, 0x01, // dimension count
@@ -167,7 +196,7 @@ GTEST("ozo::recv") {
         EXPECT_THROW(ozo::recv(value, oid_map, got), ozo::system_error);
     }
 
-    SHOULD("throw on null element (with size -1)") {
+    SHOULD("throw on null element for non-nullable out element") {
         const char bytes[] = {
             0x00, 0x00, 0x00, 0x01, // dimension count
             0x00, 0x00, 0x00, 0x00, // data offset
@@ -201,7 +230,7 @@ GTEST("ozo::recv") {
 
     SHOULD("read nothing when dimensions count is zero") {
         const char bytes[] = {
-            0x00, 0x00, 0x00, 0x00, // dimention count
+            0x00, 0x00, 0x00, 0x00, // dimension count
             0x00, 0x00, 0x00, 0x00, // data offset
             0x00, 0x00, 0x00, 0x19, // Oid
         };
@@ -216,11 +245,11 @@ GTEST("ozo::recv") {
 
     SHOULD("read nothing when dimension size is zero") {
         const char bytes[] = {
-            0x00, 0x00, 0x00, 0x01, // dimention count
+            0x00, 0x00, 0x00, 0x01, // dimension count
             0x00, 0x00, 0x00, 0x00, // data offset
             0x00, 0x00, 0x00, 0x19, // Oid
-            0x00, 0x00, 0x00, 0x00, // dimention size
-            0x00, 0x00, 0x00, 0x01, // dimention index
+            0x00, 0x00, 0x00, 0x00, // dimension size
+            0x00, 0x00, 0x00, 0x01, // dimension index
         };
         EXPECT_INVOKE(mock, field_type, _).WillRepeatedly(Return(TEXTARRAYOID));
         EXPECT_INVOKE(mock, get_value, _, _).WillRepeatedly(Return(bytes));
@@ -229,6 +258,57 @@ GTEST("ozo::recv") {
         std::vector<std::string> got;
         ozo::recv(value, oid_map, got);
         EXPECT_THAT(got, ElementsAre());
+    }
+
+    SHOULD("convert TEXTARRAYOID to std::vector<std::unique_ptr<std::string>>") {
+        const char bytes[] = {
+            0x00, 0x00, 0x00, 0x01, // dimension count
+            0x00, 0x00, 0x00, 0x00, // data offset
+            0x00, 0x00, 0x00, 0x19, // Oid
+            0x00, 0x00, 0x00, 0x03, // dimension size
+            0x00, 0x00, 0x00, 0x01, // dimension index
+            0x00, 0x00, 0x00, 0x04, // 1st element size
+            't', 'e', 's', 't',     // 1st element
+            0x00, 0x00, 0x00, 0x03, // 2nd element size
+            'f', 'o', 'o',          // 2ndst element
+            0x00, 0x00, 0x00, 0x03, // 3rd element size
+            'b', 'a', 'r',          // 3rd element
+        };
+        EXPECT_INVOKE(mock, field_type, _).WillRepeatedly(Return(TEXTARRAYOID));
+        EXPECT_INVOKE(mock, get_value, _, _).WillRepeatedly(Return(bytes));
+        EXPECT_INVOKE(mock, get_length, _, _).WillRepeatedly(Return(sizeof bytes));
+
+        std::vector<std::unique_ptr<std::string>> got;
+        ozo::recv(value, oid_map, got);
+        EXPECT_THAT(got, ElementsAre(
+            Pointee(std::string("test")),
+            Pointee(std::string("foo")),
+            Pointee(std::string("bar"))));
+    }
+
+    SHOULD("reset nullable on null element") {
+        const char bytes[] = {
+            0x00, 0x00, 0x00, 0x01, // dimension count
+            0x00, 0x00, 0x00, 0x00, // data offset
+            0x00, 0x00, 0x00, 0x19, // Oid
+            0x00, 0x00, 0x00, 0x03, // dimension size
+            0x00, 0x00, 0x00, 0x01, // dimension index
+            char(0xFF), char(0xFF), char(0xFF), char(0xFF), // 1st element size
+            0x00, 0x00, 0x00, 0x03, // 2nd element size
+            'f', 'o', 'o',          // 2ndst element
+            0x00, 0x00, 0x00, 0x03, // 3rd element size
+            'b', 'a', 'r',          // 3rd element
+        };
+        EXPECT_INVOKE(mock, field_type, _).WillRepeatedly(Return(TEXTARRAYOID));
+        EXPECT_INVOKE(mock, get_value, _, _).WillRepeatedly(Return(bytes));
+        EXPECT_INVOKE(mock, get_length, _, _).WillRepeatedly(Return(sizeof bytes));
+
+        std::vector<std::unique_ptr<std::string>> got;
+        ozo::recv(value, oid_map, got);
+        EXPECT_THAT(got, ElementsAre(
+            IsNull(),
+            Pointee(std::string("foo")),
+            Pointee(std::string("bar"))));
     }
 }
 

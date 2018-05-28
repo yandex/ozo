@@ -36,6 +36,23 @@ constexpr decltype(auto) member_value(Adt&& v, const Index&) {
     return fusion::at<Index>(std::forward<Adt>(v));
 }
 
+template <typename Out>
+bool recv_null(bool is_null, Out& out) {
+    if constexpr (Nullable<Out>) {
+        if (is_null) {
+            reset_nullable(out);
+            return true;
+        }
+        init_nullable(out);
+    } else {
+        if (is_null) {
+            throw std::invalid_argument("unexpected null for type "
+                + boost::core::demangle(typeid(out).name()));
+        }
+    }
+    return false;
+}
+
 template <typename Out, typename = std::void_t<>>
 struct recv_impl{
     template <typename M>
@@ -81,11 +98,12 @@ struct recv_impl<std::vector<Out>> {
         }
 
         using item_type = typename value_type::value_type;
+        using unwrapped_item_type = unwrap_nullable_type<item_type>;
 
-        if (!accepts_oid<item_type>(oids, array_header.elemtype)) {
+        if (!accepts_oid<unwrapped_item_type>(oids, array_header.elemtype)) {
             throw system_error(error::oid_type_mismatch,
                 "unexpected oid " + std::to_string(array_header.elemtype)
-                + " for element type of " + boost::core::demangle(typeid(out).name()));
+                + " for element type of " + boost::core::demangle(typeid(unwrapped_item_type).name()));
         }
 
         if (array_header.dimensions_count < 1) {
@@ -103,16 +121,9 @@ struct recv_impl<std::vector<Out>> {
         for (auto& item : out) {
             int32_t size = 0;
             read(in, size);
-            if (size == -1) {
-                if constexpr (!Nullable<item_type>) {
-                    throw std::invalid_argument("unexpected NULL");
-                }
-            } else {
-                if constexpr (!Nullable<item_type>) {
-                    recv(in, size, oids, item);
-                } else {
-                    throw std::invalid_argument("arrays with nullable are not supported yet.");
-                }
+            const bool is_null = size == -1;
+            if (!recv_null(is_null, item)) {
+                recv(in, size, oids, unwrap_nullable(item));
             }
         }
         return in;
@@ -120,16 +131,20 @@ struct recv_impl<std::vector<Out>> {
 };
 
 template <typename T, typename M, typename Out>
-inline void recv(const value<T>& in, const oid_map_t<M>& oids, Out& out) {
-    if (!accepts_oid(oids, out, in.oid())) {
+void recv(const value<T>& in, const oid_map_t<M>& oids, Out& out) {
+    if (recv_null(in.is_null(), out)) {
+        return;
+    }
+
+    if (!accepts_oid(oids, unwrap_nullable(out), in.oid())) {
         throw system_error(error::oid_type_mismatch, "unexpected oid "
             + std::to_string(in.oid()) + " for type "
-            + boost::core::demangle(typeid(out).name()));
+            + boost::core::demangle(typeid(unwrap_nullable_type<Out>).name()));
     }
 
     detail::istreambuf_view sbuf(in.data(), in.size());
     istream s(&sbuf);
-    recv(s, in.size(), oids, out);
+    recv(s, in.size(), oids, unwrap_nullable(out));
 }
 
 template <typename T, typename M, typename Out>
