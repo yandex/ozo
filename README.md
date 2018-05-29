@@ -3,6 +3,15 @@
 [![Build Status](https://travis-ci.org/YandexMail/ozo.svg?branch=master)](https://travis-ci.org/YandexMail/ozo)
 [![codecov](https://codecov.io/gh/YandexMail/ozo/branch/master/graph/badge.svg)](https://codecov.io/gh/YandexMail/ozo)
 
+## What's this
+
+OZO is a C++17 library for asyncronous communication with PostgreSQL DBMS.
+The library leverages the power of template metaprogramming, providing convenient mapping from C++ types to SQL along with rich query building possibilities. OZO supports different concurrency paradigms (callbacks, futures, coroutines), using Boost.Asio under the hood. Low-level communication with PostgreSQL server is done via libpq. All concepts in the library are designed to be easily extendable (even replaceable) by the user to simplify adaptation to specific project requirements.
+
+### API
+
+Since the project is on early state of developmet it lacks of documentation. We understand the importance of good docs and are working hard on this problem. But until the work isn't done there are [unit tests](tests/request_integration.cpp) which can help you understand the main use-cases of OZO on this early state of the project. We also have a C++Now'18 talk about OZO. The persentation is [here](https://github.com/boostcon/cppnow_presentations_2018/blob/master/05-09-2018_wednesday/design_and_implementation_of_dbms_asynchronous_client_library__roman_siromakha__cppnow_05092018.pdf). Video will be provided later at [C++Now 2018 playlist](https://www.youtube.com/watch?v=QFIOE1jKv30&list=PL_AKIMJc4roVSbTTfHReQTl1dc9ms0lWH).
+
 ## Dependencies
 
 These things are needed:
