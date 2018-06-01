@@ -157,6 +157,12 @@ struct callback_mock {
     virtual ~callback_mock() = default;
 };
 
+template <typename Arg>
+struct callback_gmock {
+    MOCK_CONST_METHOD2_T(call, void(ozo::error_code, Arg));
+    MOCK_CONST_METHOD0_T(context_preserved, void());
+};
+
 template <typename M>
 struct callback_handler{
     M& mock_;
@@ -178,6 +184,15 @@ inline callback_handler<typename T::type> wrap(T& mock) {
     return {object(mock)};
 }
 
+template <typename T>
+inline callback_handler<callback_gmock<T>> wrap(callback_gmock<T>& mock) {
+    return {mock};
+}
+
+template <typename T>
+inline callback_handler<callback_gmock<T>> wrap(::testing::StrictMock<callback_gmock<T>>& mock) {
+    return {mock};
+}
 
 } // namespace testing
 } // namespace ozo
