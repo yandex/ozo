@@ -2,6 +2,7 @@
 
 #include <ozo/async_request.h>
 #include <ozo/connection_info.h>
+#include <ozo/connection_pool.h>
 #include <ozo/query_builder.h>
 #include <ozo/request.h>
 
@@ -119,6 +120,22 @@ GTEST("ozo::request") {
             ozo::request(conn, "CREATE TYPE custom_type AS ()"_SQL, result, yield);
             auto conn_with_oid_map = ozo::get_connection(conn_info_with_oid_map, yield);
             EXPECT_NE(ozo::type_oid<ozo::testing::custom_type>(ozo::get_oid_map(conn_with_oid_map)), ozo::null_oid);
+        });
+
+        io.run();
+    }
+
+    SHOULD("request with connection pool") {
+        using namespace ozo::literals;
+        namespace asio = boost::asio;
+
+        ozo::io_context io;
+        ozo::connection_info<> conn_info(io, OZO_PG_TEST_CONNINFO);
+        const ozo::connection_pool_config config;
+        auto pool = ozo::make_connection_pool(conn_info, config);
+        asio::spawn(io, [&] (asio::yield_context yield) {
+            ozo::result result;
+            ozo::request(ozo::connection_pool_provider(pool, io), "SELECT 1"_SQL, result, yield);
         });
 
         io.run();

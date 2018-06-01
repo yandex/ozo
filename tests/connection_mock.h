@@ -8,6 +8,9 @@ namespace testing {
 
 enum class native_handle {bad, good};
 
+inline bool connection_status_bad(const native_handle* h) {
+    return *h == native_handle::bad;
+}
 struct pg_result {
     ExecStatusType status;
     error_code error;
@@ -31,6 +34,15 @@ struct connection_mock {
     virtual ozo::impl::query_state flush_output() = 0;
     virtual boost::optional<pg_result> get_result() = 0;
     virtual ~connection_mock() = default;
+};
+
+struct connection_gmock : connection_mock {
+    MOCK_METHOD0(set_nonblocking, int());
+    MOCK_METHOD0(send_query_params, int());
+    MOCK_METHOD0(consume_input, int());
+    MOCK_CONST_METHOD0(is_busy, bool());
+    MOCK_METHOD0(flush_output, ozo::impl::query_state());
+    MOCK_METHOD0(get_result, boost::optional<pg_result>());
 };
 
 inline boost::optional<pg_result> make_pg_result(
