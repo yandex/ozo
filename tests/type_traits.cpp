@@ -1,4 +1,5 @@
 #include <ozo/type_traits.h>
+#include "concept_mock.h"
 
 #include <boost/make_shared.hpp>
 #include <boost/fusion/adapted/std_tuple.hpp>
@@ -10,6 +11,8 @@
 #include <GUnit/GTest.h>
 
 namespace hana = ::boost::hana;
+using namespace ::testing;
+using namespace ::ozo::testing;
 
 GTEST("ozo::is_null<nullable>()", "[for non initialized optional returns true]") {
     EXPECT_TRUE(ozo::is_null(boost::optional<int>{}));
@@ -59,6 +62,122 @@ GTEST("ozo::is_null<boost::weak_ptr>()", "[for uninitialized pointer returns fal
 
 GTEST("ozo::is_null<not nullable>()", "[for int returns false]") {
     EXPECT_TRUE(!ozo::is_null(int()));
+}
+
+GTEST("ozo::unwrap_nullable") {
+    SHOULD("unwrap boost::optional") {
+        boost::optional<int> n(7);
+        EXPECT_EQ(ozo::unwrap_nullable(n), 7);
+    }
+}
+
+GTEST("ozo::allocate_nullable") {
+    SHOULD("allocate a boost::scoped_ptr") {
+        using ptr_t = boost::scoped_ptr<int>;
+        ptr_t p = ozo::allocate_nullable<int, ptr_t>(std::allocator<int>());
+        EXPECT_TRUE(p);
+    }
+    SHOULD("allocate a std::unique_ptr with default deleter") {
+        using ptr_t = std::unique_ptr<int>;
+        ptr_t p = ozo::allocate_nullable<int, ptr_t>(std::allocator<int>());
+        EXPECT_TRUE(p);
+    }
+    SHOULD("allocate a boost::shared_ptr") {
+        using ptr_t = boost::shared_ptr<int>;
+        ptr_t p = ozo::allocate_nullable<int, ptr_t>(std::allocator<int>());
+        EXPECT_TRUE(p);
+    }
+    SHOULD("allocate a std::shared_ptr") {
+        using ptr_t = std::shared_ptr<int>;
+        ptr_t p = ozo::allocate_nullable<int, ptr_t>(std::allocator<int>());
+        EXPECT_TRUE(p);
+    }
+}
+
+using emplaceable_nullable = emplaceable<
+    operator_not<
+    nullable<
+    concept
+>>>;
+
+template <typename V>
+using swappable_nullable = swappable<
+    has_element<V,
+    operator_not<
+    nullable<
+    concept
+>>>>;
+
+// This wrapper has no pure virtual methods,
+// and therefore can be created in allocate_nullable.
+// It simply redirects all calls to a StrictGMock::object
+// supplied via static reference.
+template <typename V>
+class swappable_mock_wrapper : public swappable_nullable<V>
+{
+public:
+    static boost::optional<swappable_nullable<V>&> mock;
+
+    swappable_mock_wrapper() = default;
+
+    virtual bool negate() const override { return mock.get().negate(); }
+    virtual void swap(swappable_nullable<V>& rhs) override { mock.get().swap(rhs); }
+};
+
+template <typename V>
+boost::optional<swappable_nullable<V>&> swappable_mock_wrapper<V>::mock;
+
+namespace ozo {
+
+template <>
+inline swappable_mock_wrapper<int> allocate_nullable<
+        int,
+        swappable_mock_wrapper<int>,
+        std::allocator<int>>(
+            const std::allocator<int>&) {
+    return swappable_mock_wrapper<int>{};
+}
+
+} // namespace ozo
+
+GTEST("ozo::init_nullable") {
+    SHOULD("initialize an empty Nullable with emplace() if possible") {
+        StrictGMock<emplaceable_nullable> mock{};
+        EXPECT_INVOKE(mock, emplace);
+        EXPECT_INVOKE(mock, negate).WillOnce(Return(true));
+        ozo::init_nullable(mock.object());
+    }
+
+    SHOULD("do nothing with an emplaceable Nullable that contains a value") {
+        StrictGMock<emplaceable_nullable> mock{};
+        EXPECT_INVOKE(mock, negate).WillOnce(Return(false));
+        ozo::init_nullable(mock.object());
+    }
+
+    SHOULD("initialize an empty swappable Nullable with a new nullable containing a default-constructed element") {
+        StrictGMock<swappable_nullable<int>> mock{};
+        swappable_mock_wrapper<int>::mock.reset(mock.object());
+        EXPECT_INVOKE(mock, swap, _);
+        EXPECT_INVOKE(mock, negate).WillOnce(Return(true));
+        auto mock_wrapper = swappable_mock_wrapper<int>{};
+        ozo::init_nullable(mock_wrapper);
+    }
+
+    SHOULD("do nothing with a swappable Nullable that contains a value") {
+        StrictGMock<swappable_nullable<int>> mock{};
+        swappable_mock_wrapper<int>::mock.reset(mock.object());
+        EXPECT_INVOKE(mock, negate).WillOnce(Return(false));
+        auto mock_wrapper = swappable_mock_wrapper<int>{};
+        ozo::init_nullable(mock_wrapper);
+    }
+}
+
+GTEST("ozo::reset_nullable") {
+    SHOULD("reset a nullable that contains a value") {
+        StrictGMock<resettable<nullable<concept>>> mock{};
+        EXPECT_INVOKE(mock, reset);
+        ozo::reset_nullable(mock.object());
+    }
 }
 
 namespace ozo {

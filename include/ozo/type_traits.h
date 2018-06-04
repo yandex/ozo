@@ -15,6 +15,7 @@
 #include <boost/optional.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/make_shared.hpp>
 #include <boost/weak_ptr.hpp>
 // Fusion adaptors support
 #include <boost/fusion/support/is_sequence.hpp>
@@ -50,7 +51,7 @@ constexpr null_oid_t null_oid;
 * Indicates if type is nullable. By default - type is not
 * nullable.
 */
-template <typename T>
+template <typename T, typename Enable = void>
 struct is_nullable : ::std::false_type {};
 
 /**
@@ -77,12 +78,25 @@ struct is_nullable<::boost::weak_ptr<T>> : ::std::true_type {};
 template <typename T>
 struct is_nullable<::std::weak_ptr<T>> : ::std::true_type {};
 
-template <class T>
+template <typename T>
 constexpr auto Nullable = is_nullable<std::decay_t<T>>::value;
 
 template <typename T>
-inline auto is_null(const T& v) noexcept ->
-    std::enable_if_t<is_nullable<std::decay_t<T>>::value, bool> {
+inline decltype(auto) unwrap_nullable(T&& t, Require<Nullable<T>>* = 0) noexcept {
+    return *t;
+}
+
+template <typename T>
+inline decltype(auto) unwrap_nullable(T&& t, Require<!Nullable<T>>* = 0) noexcept {
+    return std::forward<T>(t);
+}
+
+template <typename T>
+using unwrap_nullable_type = typename std::decay_t<decltype(unwrap_nullable(
+        std::declval<T>()))>;
+
+template <typename T>
+inline auto is_null(const T& v) noexcept -> std::enable_if_t<Nullable<T>, bool> {
     return !v;
 }
 
@@ -97,9 +111,68 @@ inline auto is_null(const ::std::weak_ptr<T>& v) noexcept {
 }
 
 template <typename T>
-constexpr auto is_null(const T&) noexcept ->
-    std::enable_if_t<!is_nullable<std::decay_t<T>>::value, std::false_type> {
+constexpr auto is_null(const T&) noexcept -> std::enable_if_t<!Nullable<T>, std::false_type> {
     return {};
+}
+
+template <typename V, typename T, typename Alloc, typename... Args>
+struct allocate_nullable_impl {};
+
+template <typename V, typename... Args>
+struct allocate_nullable_impl<V, boost::scoped_ptr<V>, std::allocator<V>, Args...> {
+    inline boost::scoped_ptr<V> operator()(const std::allocator<V>&, Args&&... args) const {
+        return boost::scoped_ptr<V>(new V(std::forward<Args>(args)...));
+    }
+};
+
+template <typename V, typename... Args>
+struct allocate_nullable_impl<V, std::unique_ptr<V>, std::allocator<V>, Args...> {
+    inline std::unique_ptr<V> operator()(const std::allocator<V>&, Args&&... args) const {
+        return std::make_unique<V>(std::forward<Args>(args)...);
+    }
+};
+
+template <typename V, typename Alloc, typename... Args>
+struct allocate_nullable_impl<V, boost::shared_ptr<V>, Alloc, Args...> {
+    inline boost::shared_ptr<V> operator()(const Alloc& a, Args&&... args) const {
+        return boost::allocate_shared<V, Alloc>(a, std::forward<Args>(args)...);
+    }
+};
+
+template <typename V, typename Alloc, typename... Args>
+struct allocate_nullable_impl<V, std::shared_ptr<V>, Alloc, Args...> {
+    inline std::shared_ptr<V> operator()(const Alloc& a, Args&&... args) const {
+        return std::allocate_shared<V, Alloc>(a, std::forward<Args>(args)...);
+    }
+};
+
+template <typename V, typename T, typename Alloc, typename... Args>
+inline T allocate_nullable(const Alloc& a, Args&&... args) {
+    return allocate_nullable_impl<V, T, Alloc, Args...>{}(a, std::forward<Args>(args)...);
+}
+
+template <typename T>
+Require<Nullable<T> && Emplaceable<T>>
+init_nullable(T& n) {
+    if (!n) {
+        n.emplace();
+    }
+}
+
+template <typename T, typename Alloc = std::allocator<typename T::element_type>>
+Require<Nullable<T> && !Emplaceable<T>>
+init_nullable(T& n, const Alloc& a = Alloc{}) {
+    if (!n) {
+        using V = typename T::element_type;
+        T allocated = allocate_nullable<V, T, Alloc>(a);
+        n.swap(allocated);
+    }
+}
+
+template <typename T>
+Require<Nullable<T>>
+reset_nullable(T& n) {
+    n.reset();
 }
 
 /**
@@ -250,6 +323,8 @@ constexpr auto size_of(const T& v) noexcept -> typename std::enable_if<
 
 #define OZO__TYPE_NAME_TYPE(Name) decltype(Name##_s)
 #define OZO__TYPE_ARRAY_NAME_TYPE(Name) decltype(Name##_s+"[]"_s)
+#define OZO__TYPE_ARRAY_NULLABLE_NAME_TYPE(Name, Nullable) \
+    Nullable##_s+"<"_s+Name##_s+">[]"
 
 #define OZO_PG_DEFINE_TYPE(Type, Name, Oid, Size) \
     namespace ozo {\
@@ -273,9 +348,25 @@ constexpr auto size_of(const T& v) noexcept -> typename std::enable_if<
         >{};\
     }
 
+#ifdef __OZO_STD_OPTIONAL
+#define OZO_PG_DEFINE_TYPE_ARRAY_OZO_OPTIONAL(Type, Name, Oid) \
+    OZO_PG_DEFINE_TYPE_ARRAY(__OZO_STD_OPTIONAL<Type>, OZO__TYPE_ARRAY_NULLABLE_NAME_TYPE(Name, "__OZO_STD_OPTIONAL"), Oid)
+#else
+#define OZO_PG_DEFINE_TYPE_ARRAY_OZO_OPTIONAL(Type, Name, Oid)
+#endif
+
+#define OZO_PG_DEFINE_TYPE_ARRAY_NULLABLES(Type, Name, Oid) \
+    OZO_PG_DEFINE_TYPE_ARRAY(::boost::optional<Type>, OZO__TYPE_ARRAY_NULLABLE_NAME_TYPE(Name, "::boost::optional"), Oid) \
+    OZO_PG_DEFINE_TYPE_ARRAY_OZO_OPTIONAL(Type, Name, Oid) \
+    OZO_PG_DEFINE_TYPE_ARRAY(::boost::scoped_ptr<Type>, OZO__TYPE_ARRAY_NULLABLE_NAME_TYPE(Name, "::boost::scoped_ptr"), Oid) \
+    OZO_PG_DEFINE_TYPE_ARRAY(::std::unique_ptr<Type>, OZO__TYPE_ARRAY_NULLABLE_NAME_TYPE(Name, "::std::unique_ptr"), Oid) \
+    OZO_PG_DEFINE_TYPE_ARRAY(::boost::shared_ptr<Type>, OZO__TYPE_ARRAY_NULLABLE_NAME_TYPE(Name, "::boost::shared_ptr"), Oid) \
+    OZO_PG_DEFINE_TYPE_ARRAY(::std::shared_ptr<Type>, OZO__TYPE_ARRAY_NULLABLE_NAME_TYPE(Name, "::std::shared_ptr"), Oid)
+
 #define OZO_PG_DEFINE_TYPE_AND_ARRAY(Type, Name, Oid, ArrayOid, Size) \
     OZO_PG_DEFINE_TYPE(Type, Name, Oid, Size) \
-    OZO_PG_DEFINE_TYPE_ARRAY(Type, Name, ArrayOid)
+    OZO_PG_DEFINE_TYPE_ARRAY(Type, Name, ArrayOid) \
+    OZO_PG_DEFINE_TYPE_ARRAY_NULLABLES(Type, Name, ArrayOid)
 
 
 #define OZO_PG_DEFINE_CUSTOM_TYPE(Type, Name, Size) \

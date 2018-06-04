@@ -127,4 +127,13 @@ struct is_raw_data_writable<T, std::void_t<decltype(std::declval<T&>().data())>>
 template <typename T>
 constexpr auto RawDataWritable = is_raw_data_writable<std::decay_t<T>>::value;
 
+template <typename T, typename = std::void_t<>>
+struct is_emplaceable : std::false_type {};
+
+template <typename T>
+struct is_emplaceable<T, std::void_t<decltype(std::declval<T&>().emplace())>> : std::true_type {};
+
+template <typename T>
+constexpr auto Emplaceable = is_emplaceable<std::decay_t<T>>::value;
+
 } // namespace ozo
