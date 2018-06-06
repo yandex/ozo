@@ -1,7 +1,7 @@
 # ozo
 
-[![Build Status](https://travis-ci.org/YandexMail/ozo.svg?branch=master)](https://travis-ci.org/YandexMail/ozo)
-[![codecov](https://codecov.io/gh/YandexMail/ozo/branch/master/graph/badge.svg)](https://codecov.io/gh/YandexMail/ozo)
+[![Build Status](https://travis-ci.org/yandex/ozo.svg?branch=master)](https://travis-ci.org/yandex/ozo)
+[![codecov](https://codecov.io/gh/yandex/ozo/branch/master/graph/badge.svg)](https://codecov.io/gh/yandex/ozo)
 
 ## What's this
 
