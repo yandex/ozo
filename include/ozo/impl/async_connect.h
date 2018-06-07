@@ -1,6 +1,8 @@
 #pragma once
 
 #include <ozo/impl/io.h>
+#include <ozo/impl/request_oid_map.h>
+#include <ozo/connection.h>
 
 namespace ozo {
 namespace impl {
@@ -69,11 +71,50 @@ struct async_connect_op {
 };
 
 template <typename Connection, typename Handler>
-inline void async_connect(const std::string& conninfo, Connection& conn,
+inline auto make_async_connect_op(Connection& conn,
         Handler&& handler) {
-    async_connect_op<std::decay_t<Handler>, std::decay_t<Connection>> {
+    return async_connect_op<std::decay_t<Handler>, std::decay_t<Connection>> {
         conn, std::forward<Handler>(handler)
-    }.perform(conninfo);
+    };
+}
+
+template <typename Handler, typename Connection>
+struct connection_binder {
+    Handler handler_;
+    Connection conn_;
+
+    void operator() (error_code ec) {
+        using namespace hana::literals;
+        if (ec || empty(get_oid_map(conn_))) {
+            handler_(std::move(ec), std::move(conn_));
+        } else {
+            make_async_request_oid_map_op(std::move(handler_)).perform(std::move(conn_));
+        }
+    }
+
+    template <typename Func>
+    friend void asio_handler_invoke(Func&& f, connection_binder* ctx) {
+        using ::boost::asio::asio_handler_invoke;
+        asio_handler_invoke(std::forward<Func>(f),
+            std::addressof(ctx->handler_));
+    }
+};
+
+template <typename Handler, typename Connection>
+inline auto bind_connection_handler(Handler&& base, Connection&& conn) {
+    return connection_binder<std::decay_t<Handler>, std::decay_t<Connection>> {
+        std::forward<Handler>(base), std::forward<Connection>(conn)
+    };
+}
+
+template <typename T, typename Handler>
+inline Require<Connectable<T>> async_connect(std::string conninfo, T&& conn,
+        Handler&& handler) {
+
+    decltype(auto) conn_ref = unwrap_connection(conn);
+    make_async_connect_op(conn_ref,
+        bind_connection_handler(std::forward<Handler>(handler), std::forward<T>(conn))
+    ).perform(conninfo);
 }
 
 } // namespace impl
