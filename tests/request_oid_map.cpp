@@ -1,6 +1,5 @@
 #include <GUnit/GTest.h>
 
-#include <ozo/async_request.h>
 #include <ozo/connection_info.h>
 #include <ozo/impl/request_oid_map.h>
 
