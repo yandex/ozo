@@ -1,6 +1,5 @@
 #pragma once
 
-#include <ozo/async_result.h>
 #include <ozo/error.h>
 #include <ozo/type_traits.h>
 #include <ozo/asio.h>
