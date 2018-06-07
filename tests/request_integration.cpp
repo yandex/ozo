@@ -1,6 +1,6 @@
 #include <GUnit/GTest.h>
 
-#include <ozo/async_request.h>
+#include <ozo/request.h>
 #include <ozo/connection_info.h>
 #include <ozo/connection_pool.h>
 #include <ozo/query_builder.h>
@@ -33,7 +33,7 @@ GTEST("ozo::request") {
         ozo::connection_info<> conn_info(io, "invalid connection info");
 
         ozo::result res;
-        ozo::async_request(conn_info, "SELECT 1"_SQL + " + 1"_SQL, res,
+        ozo::request(conn_info, "SELECT 1"_SQL + " + 1"_SQL, res,
                 [](ozo::error_code ec, auto conn) {
             EXPECT_TRUE(ec);
             EXPECT_TRUE(ozo::connection_bad(conn));
@@ -51,7 +51,7 @@ GTEST("ozo::request") {
 
         ozo::result res;
         const std::string foo = "foo";
-        ozo::async_request(conn_info, "SELECT "_SQL + foo, res,
+        ozo::request(conn_info, "SELECT "_SQL + foo, res,
                 [&](ozo::error_code ec, auto conn) {
             ASSERT_FALSE(ec) << ec.message() << " | " << error_message(conn) << " | " << get_error_context(conn);
             ASSERT_EQ(1, res.size());
@@ -73,7 +73,7 @@ GTEST("ozo::request") {
         const std::vector<std::string> foos = {"foo", "buzz", "bar"};
 
         rows_of<std::vector<std::string>> res;
-        ozo::async_request(conn_info, "SELECT "_SQL + foos, std::back_inserter(res),
+        ozo::request(conn_info, "SELECT "_SQL + foos, std::back_inserter(res),
                 [&](ozo::error_code ec, auto conn) {
             ASSERT_FALSE(ec) << ec.message() << " | " << error_message(conn) << " | " << get_error_context(conn);
             ASSERT_EQ(1, res.size());
@@ -94,7 +94,7 @@ GTEST("ozo::request") {
         const std::vector<int32_t> foos = {1, 22, 333};
 
         rows_of<std::vector<int32_t>> res;
-        ozo::async_request(conn_info, "SELECT "_SQL + foos, std::back_inserter(res),
+        ozo::request(conn_info, "SELECT "_SQL + foos, std::back_inserter(res),
                 [&](ozo::error_code ec, auto conn) {
             ASSERT_FALSE(ec) << ec.message() << " | " << error_message(conn) << " | " << get_error_context(conn);
             ASSERT_EQ(1, res.size());
