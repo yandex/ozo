@@ -71,7 +71,7 @@ namespace testing {
         decltype(auto) begin() const { return std::addressof(v_);}
         char v_;
     };
-    struct builtin_type {};
+    struct builtin_type { std::int64_t v = 0; };
 }
 }
 

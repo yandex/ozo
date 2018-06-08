@@ -1,6 +1,7 @@
 #pragma once
 
 #include <ozo/detail/pg_type.h>
+#include <ozo/detail/float.h>
 
 #include <libpq-fe.h>
 
@@ -166,6 +167,11 @@ template <std::size_t n>
 using bytes = std::integral_constant<std::size_t, n>;
 using dynamic_size = void;
 
+template <typename T, typename Size>
+struct type_size_match : std::integral_constant<bool, sizeof(T) == Size::value> {};
+
+template <typename T>
+struct type_size_match<T, dynamic_size> : std::true_type {};
 /**
 * Helper defines the way for the type traits definitions.
 * Type is undefined then Name type is not defined.
@@ -177,11 +183,13 @@ using dynamic_size = void;
 *     Size - size type - provides information about type's object size, may
 *         be specified only if the type's object has fixed size.
 */
-template <typename Name, typename Oid = null_oid_t, typename Size = dynamic_size>
+template <typename T, typename Name, typename Oid = null_oid_t, typename Size = dynamic_size>
 struct type_traits_helper {
     using name = Name;
     using oid = Oid;
     using size = Size;
+    static_assert(type_size_match<T, size>::value,
+        "type size does not match to declared size");
 };
 
 /**
@@ -189,7 +197,7 @@ struct type_traits_helper {
 * oid and size.
 */
 template <typename T>
-struct type_traits : type_traits_helper<void> {};
+struct type_traits : type_traits_helper<T, void> {};
 
 /**
 * Condition indicates if the specified type is built-in for PG
@@ -237,21 +245,40 @@ constexpr auto size_of(const T& v) noexcept -> typename std::enable_if<
 } // namespace ozo
 
 #define OZO__TYPE_NAME_TYPE(Name) decltype(Name##_s)
+#define OZO__TYPE_ARRAY_NAME_TYPE(Name) decltype(Name##_s+"[]"_s)
 
 #define OZO_PG_DEFINE_TYPE(Type, Name, Oid, Size) \
     namespace ozo {\
         template <>\
         struct type_traits<Type> : type_traits_helper<\
+            Type, \
             OZO__TYPE_NAME_TYPE(Name), \
             std::integral_constant<oid_t, Oid>, \
             Size\
         >{};\
     }
 
+#define OZO_PG_DEFINE_TYPE_ARRAY(Type, Name, Oid) \
+    namespace ozo {\
+        template <>\
+        struct type_traits<std::vector<Type>> : type_traits_helper<\
+            std::vector<Type>, \
+            OZO__TYPE_ARRAY_NAME_TYPE(Name), \
+            std::integral_constant<oid_t, Oid>, \
+            dynamic_size\
+        >{};\
+    }
+
+#define OZO_PG_DEFINE_TYPE_AND_ARRAY(Type, Name, Oid, ArrayOid, Size) \
+    OZO_PG_DEFINE_TYPE(Type, Name, Oid, Size) \
+    OZO_PG_DEFINE_TYPE_ARRAY(Type, Name, ArrayOid)
+
+
 #define OZO_PG_DEFINE_CUSTOM_TYPE(Type, Name, Size) \
     namespace ozo {\
         template <>\
         struct type_traits<Type> : type_traits_helper<\
+            Type, \
             OZO__TYPE_NAME_TYPE(Name), \
             null_oid_t, \
             Size\
@@ -262,26 +289,18 @@ OZO_PG_DEFINE_TYPE(bool, "bool", BOOLOID, bytes<1>)
 OZO_PG_DEFINE_TYPE(char, "char", CHAROID, bytes<1>)
 OZO_PG_DEFINE_TYPE(std::vector<char>, "bytea", BYTEAOID, dynamic_size)
 
-OZO_PG_DEFINE_TYPE(boost::uuids::uuid, "uuid", UUIDOID, bytes<16>)
-OZO_PG_DEFINE_TYPE(std::vector<boost::uuids::uuid>, "uuid[]", 2951, dynamic_size)
+OZO_PG_DEFINE_TYPE_AND_ARRAY(boost::uuids::uuid, "uuid", UUIDOID, 2951, bytes<16>)
 
-OZO_PG_DEFINE_TYPE(int64_t, "int8", INT8OID, bytes<8>)
-OZO_PG_DEFINE_TYPE(std::vector<int64_t>, "int8[]", 1016, dynamic_size)
-OZO_PG_DEFINE_TYPE(int32_t, "int4", INT4OID, bytes<4>)
-OZO_PG_DEFINE_TYPE(std::vector<int32_t>, "int4[]", INT4ARRAYOID, dynamic_size)
-OZO_PG_DEFINE_TYPE(int16_t, "int2", INT2OID, bytes<2>)
-OZO_PG_DEFINE_TYPE(std::vector<int16_t>, "int2[]", INT2ARRAYOID, dynamic_size)
+OZO_PG_DEFINE_TYPE_AND_ARRAY(int64_t, "int8", INT8OID, 1016, bytes<8>)
+OZO_PG_DEFINE_TYPE_AND_ARRAY(int32_t, "int4", INT4OID, INT4ARRAYOID, bytes<4>)
+OZO_PG_DEFINE_TYPE_AND_ARRAY(int16_t, "int2", INT2OID, INT2ARRAYOID, bytes<2>)
 
-OZO_PG_DEFINE_TYPE(ozo::oid_t, "oid", OIDOID, bytes<4>)
-OZO_PG_DEFINE_TYPE(std::vector<ozo::oid_t>, "oid[]", OIDARRAYOID, dynamic_size)
+OZO_PG_DEFINE_TYPE_AND_ARRAY(ozo::oid_t, "oid", OIDOID, OIDARRAYOID, bytes<4>)
 
-OZO_PG_DEFINE_TYPE(double, "float8", FLOAT8OID, bytes<8>)
-OZO_PG_DEFINE_TYPE(std::vector<double>, "float8[]", 1022, dynamic_size)
-OZO_PG_DEFINE_TYPE(float, "float4", FLOAT4OID, bytes<4>)
-OZO_PG_DEFINE_TYPE(std::vector<float>, "float4[]", FLOAT4ARRAYOID, dynamic_size)
+OZO_PG_DEFINE_TYPE_AND_ARRAY(double, "float8", FLOAT8OID, 1022, decltype(size_of(detail::to_integral(double()))))
+OZO_PG_DEFINE_TYPE_AND_ARRAY(float, "float4", FLOAT4OID, FLOAT4ARRAYOID, decltype(size_of(detail::to_integral(float()))))
 
-OZO_PG_DEFINE_TYPE(std::string, "text", TEXTOID, dynamic_size)
-OZO_PG_DEFINE_TYPE(std::vector<std::string>, "text[]", TEXTARRAYOID, dynamic_size)
+OZO_PG_DEFINE_TYPE_AND_ARRAY(std::string, "text", TEXTOID, TEXTARRAYOID, dynamic_size)
 
 
 namespace ozo {
