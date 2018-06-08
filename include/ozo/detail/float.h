@@ -1,7 +1,6 @@
 #pragma once
 
-#include <ozo/type_traits.h>
-#include <ozo/concept.h>
+#include <cstdint>
 
 namespace ozo::detail {
 
