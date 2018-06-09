@@ -7,36 +7,27 @@
 
 namespace ozo::detail {
 
-using std::istream;
+struct istream : std::istream {
+    using std::istream::istream;
+};
 
 class istreambuf_view : public std::streambuf {
 public:
-    istreambuf_view(const char* data, size_t len) :
-        begin_(data), end_(data + len), current_(data)
-    {}
+    istreambuf_view(const char* data, size_t len) {
+        // Standard streambuf contains only non constant char pointers for
+        // buffer. So we need to do here a const_cast. However, we do not
+        // allow put back characters since we do not override pbackfail().
+        auto buf = const_cast<char*>(data);
+        setg(buf, buf, buf + len);
+    }
+
 protected:
-    int_type underflow() override {
-        return (current_ == end_ ? traits_type::eof() : traits_type::to_int_type(*current_));
+    std::streamsize xsgetn(char* s, std::streamsize n) override {
+        n = std::min(n, egptr() - gptr());
+        std::copy(gptr(), gptr() + n, s);
+        gbump(n);
+        return n;
     }
-
-    int_type uflow() override {
-        return (current_ == end_ ? traits_type::eof() : traits_type::to_int_type(*current_++));
-    }
-
-    int_type pbackfail(int_type ch) override {
-        if (current_ == begin_ || (ch != traits_type::eof() && ch != current_[-1])) {
-            return traits_type::eof();
-        }
-        return traits_type::to_int_type(*--current_);
-    }
-
-    std::streamsize showmanyc() override {
-        return end_ - current_;
-    }
-
-    const char* const begin_;
-    const char* const end_;
-    const char* current_;
 };
 
 } // namespace ozo::detail
