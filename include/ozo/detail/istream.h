@@ -1,8 +1,5 @@
 #pragma once
 
-#include <ozo/concept.h>
-#include <ozo/detail/endian.h>
-#include <ozo/detail/float.h>
 #include <istream>
 
 namespace ozo::detail {
