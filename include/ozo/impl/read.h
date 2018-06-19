@@ -2,6 +2,8 @@
 
 #include <ozo/concept.h>
 #include <ozo/detail/istream.h>
+#include <ozo/detail/endian.h>
+#include <ozo/detail/float.h>
 #include <ozo/detail/typed_buffer.h>
 
 namespace ozo::impl {
@@ -20,7 +22,13 @@ inline Require<RawDataWritable<T>, istream&> read(istream& in, T& out) {
 }
 
 template <typename T>
-inline Require<Integral<T>, istream&> read(istream& in, T& out) {
+inline Require<Integral<T> && sizeof(T) == 1, istream&> read(istream& in, T& out) {
+    out = in.get();
+    return in;
+}
+
+template <typename T>
+inline Require<Integral<T> && sizeof(T) != 1, istream&> read(istream& in, T& out) {
     detail::typed_buffer<T> buf;
     read(in, buf);
     out = detail::convert_from_big_endian(buf.typed);
