@@ -81,9 +81,18 @@ struct recv_impl<std::string> {
     }
 };
 
-template <typename Out>
-struct recv_impl<std::vector<Out>> {
-    using value_type = std::vector<Out>;
+template <typename Alloc>
+struct recv_impl<std::vector<char, Alloc>> {
+    template <typename M>
+    static istream& apply(istream& in, int32_t size, const oid_map_t<M>&, std::vector<char, Alloc>& out) {
+        out.resize(size);
+        return read(in, out);
+    }
+};
+
+template <typename Out, typename Alloc>
+struct recv_impl<std::vector<Out, Alloc>> {
+    using value_type = std::vector<Out, Alloc>;
 
     template <typename M>
     static istream& apply(istream& in, int32_t, const oid_map_t<M>& oids, value_type& out) {

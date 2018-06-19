@@ -94,6 +94,18 @@ GTEST("ozo::recv") {
         EXPECT_EQ(7, got);
     }
 
+    SHOULD("convert BYTEAOID to std::vector<char>") {
+        const char* bytes = "test";
+        EXPECT_INVOKE(mock, field_type, _).WillRepeatedly(Return(BYTEAOID));
+        EXPECT_INVOKE(mock, get_value, _, _).WillRepeatedly(Return(bytes));
+        EXPECT_INVOKE(mock, get_length, _, _).WillRepeatedly(Return(4));
+        EXPECT_INVOKE(mock, get_isnull, _, _).WillRepeatedly(Return(false));
+
+        std::vector<char> got;
+        ozo::recv(value, oid_map, got);
+        EXPECT_EQ("test", std::string_view(std::data(got), std::size(got)));
+    }
+
     SHOULD("convert TEXTOID to std::string") {
         const char* bytes = "test";
         EXPECT_INVOKE(mock, field_type, _).WillRepeatedly(Return(TEXTOID));
