@@ -79,7 +79,7 @@ private:
     template <std::size_t field>
     class field_proxy {
     public:
-        field_proxy(impl_type& result) : result(result) {}
+        field_proxy(impl_type& result, ostream& os) : result(result), os(os) {}
 
         constexpr void set_type(::Oid value) noexcept {
             result.types[field] = value;
@@ -93,40 +93,40 @@ private:
             result.lengths[field] = value;
         }
 
-        constexpr void set_value(const char* value) noexcept {
-            result.values[field] = value;
+        constexpr int stream_pos() noexcept {
+            return int(std::size(result.buffer));
         }
 
-        constexpr auto& buffer() noexcept {
-            return result.buffer;
+        constexpr auto& stream() noexcept {
+            return os;
         }
 
     private:
         impl_type& result;
+        ozo::ostream& os;
     };
 
     std::shared_ptr<impl_type> impl;
 
-    static constexpr auto make_impl(const buffer_allocator_type& buffer_allocator, std::string_view text, const oid_map_type& oid_map, const ParamsT& ... params) {
+    static auto make_impl(const buffer_allocator_type& buffer_allocator, std::string_view text, const oid_map_type& oid_map, const ParamsT& ... params) {
         const auto tuple = hana::tuple<const ParamsT& ...>(params ...);
         auto result = std::make_shared<impl_type>(text, buffer_allocator);
-        hana::for_each(
-            hana::to<hana::tuple_tag>(hana::make_range(hana::size_c<0>, hana::size_c<params_count>)),
-            [&] (auto field) {
-                field_proxy<field> proxy(*result);
-                write_meta(oid_map, tuple[field], proxy);
-            }
-        );
+
+        ozo::detail::ostreambuf osbuf(result->buffer);
+        ozo::ostream os(&osbuf);
+
+        const auto range = hana::to<hana::tuple_tag>(hana::make_range(hana::size_c<0>, hana::size_c<params_count>));
+
+        hana::for_each(range, [&] (auto field) {
+            field_proxy<field> proxy(*result, os);
+            write_meta(oid_map, tuple[field], proxy);
+        });
+
         std::size_t offset = 0;
-        hana::for_each(
-            hana::to<hana::tuple_tag>(hana::make_range(hana::size_c<0>, hana::size_c<params_count>)),
-            [&] (auto field) {
-                if (const auto size = result->lengths[field]) {
-                    field_proxy<field>(*result).set_value(std::data(result->buffer) + offset);
-                    offset += size;
-                } else {
-                    field_proxy<field>(*result).set_value(nullptr);
-                }
+        hana::for_each(range, [&] (auto field) {
+                const auto size = result->lengths[field];
+                result->values[field] = size ? std::data(result->buffer) + offset : nullptr;
+                offset += size;
             }
         );
         return result;
@@ -142,13 +142,13 @@ private:
     }
 
     template <class T, std::size_t field>
-    static constexpr Require<!Nullable<T>> write_meta(const oid_map_type& oid_map, const T& value, field_proxy<field>& result) {
+    static Require<!Nullable<T>> write_meta(const oid_map_type& oid_map, const T& value, field_proxy<field>& result) {
         using ozo::send;
         result.set_type(type_oid(oid_map, value));
         result.set_format(binary_format);
-        const auto current_size = std::size(result.buffer());
-        send(value, oid_map, std::back_inserter(result.buffer()));
-        result.set_length(int(std::size(result.buffer()) - current_size));
+        const auto start_pos = result.stream_pos();
+        send(result.stream(), oid_map, value);
+        result.set_length(result.stream_pos() - start_pos);
     }
 
     template <class T, std::size_t field>
