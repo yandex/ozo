@@ -2,107 +2,58 @@
 
 #include <ozo/concept.h>
 #include <ozo/type_traits.h>
-#include <ozo/detail/endian.h>
-#include <ozo/detail/float.h>
+#include <ozo/ostream.h>
 #include <ozo/detail/array.h>
 
 #include <libpq-fe.h>
-
-#include <boost/hana/adapt_struct.hpp>
-#include <boost/hana/for_each.hpp>
-#include <boost/hana/members.hpp>
-#include <boost/hana/tuple.hpp>
 #include <boost/range/algorithm/for_each.hpp>
-
 #include <type_traits>
 
-#include <limits.h>
-
 namespace ozo {
-namespace detail {
 
-template <class T, class OutIteratorT>
-constexpr Require<Integral<T>, OutIteratorT> write(T value, OutIteratorT out) {
-    hana::for_each(
-        hana::to<hana::tuple_tag>(hana::make_range(hana::size_c<0>, hana::size_c<sizeof(T)>)),
-        [&] (auto i) { *out++ = value >> decltype(i)::value * CHAR_BIT & std::numeric_limits<std::uint8_t>::max(); }
-    );
-    return out;
+template <typename In, typename = std::void_t<>>
+struct send_impl{
+    template <typename M>
+    static ostream& apply(ostream& out, const oid_map_t<M>&, const In& in) {
+        return write(out, in);
+    }
+};
+
+template <class M, class In>
+inline ostream& send(ostream& out, const oid_map_t<M>& oid_map, const In& in) {
+    return send_impl<In>::apply(out, oid_map, in);
 }
 
-template <class T, class OutIteratorT>
-constexpr Require<std::is_floating_point_v<T>, OutIteratorT> write(T value, OutIteratorT out) {
-    return write(detail::convert_to_big_endian(to_integral(value)), out);
-}
+template <typename T, typename Alloc>
+struct send_impl<std::vector<T, Alloc>> {
+    template <typename M>
+    static ostream& apply(ostream& out, const oid_map_t<M>& oid_map, const std::vector<T, Alloc>& in) {
+        using value_type = std::decay_t<T>;
+        write(out, detail::pg_array {1, 0, ::Oid(type_oid<value_type>(oid_map))});
+        write(out, detail::pg_array_dimension {std::int32_t(std::size(in)), 0});
+        boost::for_each(in,
+            [&] (const auto& v) {
+                write(out, std::int32_t(size_of(v)));
+                send(out, oid_map, v);
+            });
+        return out;
+    }
+};
 
-template <class OutIteratorT>
-auto make_writer(OutIteratorT& out) {
-    return [&] (auto v) { out = write(v, out); };
-}
+template <typename Alloc>
+struct send_impl<std::vector<char, Alloc>> {
+    template <typename M>
+    static ostream& apply(ostream& out, const oid_map_t<M>&, const std::vector<char, Alloc>& in) {
+        return write(out, in);
+    }
+};
 
-template <class OidMapT, class OutIteratorT>
-auto make_sender(const OidMapT& oid_map, OutIteratorT& out) {
-    return [&] (const auto& v) { out = send(v, oid_map, out); };
-}
-
-} // namespace detail
-
-template <class T, class OidMapT, class OutIteratorT>
-constexpr Require<Integral<T>, OutIteratorT> send(T value, const OidMapT&, OutIteratorT out) {
-    return detail::write(detail::convert_to_big_endian(value), out);
-}
-
-template <class OidMapT, class OutIteratorT>
-constexpr OutIteratorT send(bool value, const OidMapT&, OutIteratorT out) {
-    return detail::write(char(value), out);
-}
-
-template <class T, class OidMapT, class OutIteratorT>
-constexpr Require<FloatingPoint<T>, OutIteratorT> send(T value, const OidMapT&, OutIteratorT out) {
-    return detail::write(value, out);
-}
-
-template <class OidMapT, class OutIteratorT, class CharT, class TraitsT, class AllocatorT>
-constexpr OutIteratorT send(const std::basic_string<CharT, TraitsT, AllocatorT>& value, const OidMapT&, OutIteratorT out) {
-    boost::for_each(value, detail::make_writer(out));
-    return out;
-}
-
-template <class OidMapT, class OutIteratorT, class T, class AllocatorT>
-constexpr OutIteratorT send(const std::vector<T, AllocatorT>& value, const OidMapT& oid_map, OutIteratorT out) {
-    using value_type = std::decay_t<T>;
-    out = send(detail::pg_array {1, 0, ::Oid(type_oid<value_type>(oid_map))}, oid_map, out);
-    out = send(detail::pg_array_dimension {std::int32_t(std::size(value)), 0}, oid_map, out);
-    boost::for_each(value,
-        [&] (const auto& v) {
-            out = send(std::int32_t(size_of(v)), oid_map, out);
-            out = send(v, oid_map, out);
-        });
-    return out;
-}
-
-template <class OidMapT, class OutIteratorT, class AllocatorT>
-constexpr OutIteratorT send(const std::vector<char, AllocatorT>& value, const OidMapT&, OutIteratorT out) {
-    boost::for_each(value, detail::make_writer(out));
-    return out;
-}
-
-template <class OidMapT, class OutIteratorT>
-constexpr OutIteratorT send(const boost::uuids::uuid& value, const OidMapT&, OutIteratorT out) {
-    hana::for_each(value, detail::make_writer(out));
-    return out;
-}
-
-template <class OidMapT, class OutIteratorT>
-constexpr OutIteratorT send(const detail::pg_array& value, const OidMapT& oid_map, OutIteratorT out) {
-    hana::for_each(hana::members(value), detail::make_sender(oid_map, out));
-    return out;
-}
-
-template <class OidMapT, class OutIteratorT>
-constexpr OutIteratorT send(const detail::pg_array_dimension& value, const OidMapT& oid_map, OutIteratorT out) {
-    hana::for_each(hana::members(value), detail::make_sender(oid_map, out));
-    return out;
-}
+template <>
+struct send_impl<boost::uuids::uuid> {
+    template <typename M>
+    static ostream& apply(ostream& out, const oid_map_t<M>&, const boost::uuids::uuid& in) {
+        return write(out, in);
+    }
+};
 
 } // namespace ozo

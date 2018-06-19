@@ -101,6 +101,12 @@ constexpr auto InsertIterator = is_insert_iterator<T>::value;
 template <typename T>
 constexpr auto FusionSequence = ::boost::fusion::traits::is_sequence<std::decay_t<T>>::value;
 
+template <typename T>
+constexpr auto HanaSequence = ::boost::hana::Sequence<std::decay_t<T>>::value;
+
+template <typename T>
+constexpr auto HanaStruct = ::boost::hana::Struct<std::decay_t<T>>::value;
+
 template <typename T, typename = std::void_t<>>
 struct is_fusion_adapted_struct : std::false_type {};
 
