@@ -145,14 +145,14 @@ inline auto make_async_send_query_params_op(Context&& ctx, BinaryQuery&& q) {
 }
 
 template <typename T, typename ...Ts>
-inline decltype(auto) make_binary_query(const oid_map_t<T>& m, const query_builder<Ts...>& builder) {
-    return make_binary_query(m, builder.build());
+inline decltype(auto) make_binary_query(const query_builder<Ts...>& builder, const oid_map_t<T>& m) {
+    return make_binary_query(builder.build(), m);
 }
 
 template <typename Context, typename Query>
 void async_send_query_params(std::shared_ptr<Context> ctx, Query&& query) {
-    auto q = make_binary_query(get_oid_map(get_connection(ctx)),
-            std::forward<Query>(query));
+    auto q = make_binary_query(std::forward<Query>(query),
+                        get_oid_map(get_connection(ctx)));
 
     make_async_send_query_params_op(std::move(ctx), std::move(q)).perform();
 }

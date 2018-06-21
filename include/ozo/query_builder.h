@@ -116,7 +116,7 @@ struct query_builder {
         return hana::unpack(
             params(),
             [&] (auto&& ... params) {
-                return make_query(hana::to<const char*>(text()), std::move(params) ...);
+                return make_query(text(), std::move(params) ...);
             }
         );
     }

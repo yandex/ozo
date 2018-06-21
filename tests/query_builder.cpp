@@ -106,7 +106,8 @@ GTEST("ozo::query_builder::build") {
 
     SHOULD("with one text element returns query with text equal to input") {
         using namespace ozo::literals;
-        EXPECT_EQ("SELECT 1"_SQL.build().text, "SELECT 1");
+        EXPECT_EQ(std::string_view(hana::to<const char*>("SELECT 1"_SQL.build().text)),
+            "SELECT 1");
     }
 
     SHOULD("with one text element returns query without params") {

@@ -52,9 +52,8 @@ inline boost::optional<pg_result> make_pg_result(
 
 struct fake_query {
     template <typename T>
-    friend decltype(auto) make_binary_query(
-        const ozo::oid_map_t<T>&,
-        fake_query query) {
+    friend decltype(auto) make_binary_query(fake_query query,
+            const ozo::oid_map_t<T>&) {
         return std::move(query);
     }
 };
