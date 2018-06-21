@@ -8,19 +8,19 @@
 
 namespace ozo::impl {
 
-template <class ... ParamsT>
+template <class Text, class ... ParamsT>
 struct query {
-    std::string_view text;
+    Text text;
     hana::tuple<ParamsT ...> params;
 };
 
-template <class ... ParamsT>
-const auto& get_query_text(const query<ParamsT ...>& value) {
+template <class ... Ts>
+const auto& get_query_text(const query<Ts ...>& value) {
     return value.text;
 }
 
-template <class ... ParamsT>
-const auto& get_query_params(const query<ParamsT ...>& value) {
+template <class ... Ts>
+const auto& get_query_params(const query<Ts ...>& value) {
     return value.params;
 }
 

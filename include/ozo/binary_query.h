@@ -19,25 +19,25 @@
 
 namespace ozo {
 
-template <class BufferAllocatorT, class OidMapImplT, class ... ParamsT>
+template <class TextT, class ParamsT, class OidMapT, class BufferAllocatorT>
 class binary_query {
 public:
-    static constexpr std::size_t params_count = sizeof ... (ParamsT);
+    static_assert(HanaTuple<ParamsT>, "Params must be hana::tuple");
+    static_assert(OidMap<OidMapT>, "OidMapT must be ozo::oid_map_t");
+    static_assert(QueryText<TextT>, "Text must be QueryText concept");
 
     using buffer_allocator_type = BufferAllocatorT;
-    using oid_map_type = oid_map_t<OidMapImplT>;
+    using oid_map_type = OidMapT;
+    using text_type = TextT;
+    using params_type = ParamsT;
 
-    binary_query(std::string_view text)
-        : impl(make_impl(buffer_allocator_type(), text, oid_map_type())) {}
+    static constexpr auto params_count = decltype(hana::length(std::declval<params_type>()))::value;
 
-    binary_query(std::string_view text, const oid_map_type& oid_map, const ParamsT& ... params)
-        : impl(make_impl(buffer_allocator_type(), text, oid_map, params ...)) {}
-
-    binary_query(const buffer_allocator_type& buffer_allocator, std::string_view text, const oid_map_type& oid_map, const ParamsT& ... params)
-        : impl(make_impl(buffer_allocator, text, oid_map, params ...)) {}
+    binary_query(text_type text, const params_type& params, const buffer_allocator_type& buffer_allocator, const oid_map_type& oid_map)
+        : impl(make_impl(std::move(text), params, oid_map, buffer_allocator)) {}
 
     constexpr const char* text() const noexcept {
-        return std::data(impl->text);
+        return to_const_char(impl->text);
     }
 
     constexpr const ::Oid* types() const noexcept {
@@ -62,15 +62,15 @@ private:
     using buffer_type = std::vector<char, buffer_allocator_type>;
 
     struct impl_type {
-        std::string_view text;
+        text_type text;
         buffer_type buffer;
         std::array<::Oid, params_count> types;
         std::array<int, params_count> formats;
         std::array<int, params_count> lengths;
         std::array<const char*, params_count> values;
 
-        impl_type(std::string_view text, const buffer_allocator_type& buffer_allocator)
-            : text(text), buffer(buffer_allocator) {}
+        impl_type(text_type text, const buffer_allocator_type& buffer_allocator)
+            : text(std::move(text)), buffer(buffer_allocator) {}
 
         impl_type(const impl_type&) = delete;
         impl_type(impl_type&&) = delete;
@@ -108,18 +108,20 @@ private:
 
     std::shared_ptr<impl_type> impl;
 
-    static auto make_impl(const buffer_allocator_type& buffer_allocator, std::string_view text, const oid_map_type& oid_map, const ParamsT& ... params) {
-        const auto tuple = hana::tuple<const ParamsT& ...>(params ...);
-        auto result = std::make_shared<impl_type>(text, buffer_allocator);
+    static auto make_impl(text_type text, const params_type& params,
+            const oid_map_type& oid_map, const buffer_allocator_type& buffer_allocator) {
+
+        auto result = std::make_shared<impl_type>(std::move(text), buffer_allocator);
 
         ozo::detail::ostreambuf osbuf(result->buffer);
         ozo::ostream os(&osbuf);
 
-        const auto range = hana::to<hana::tuple_tag>(hana::make_range(hana::size_c<0>, hana::size_c<params_count>));
+        const auto range = hana::to<hana::tuple_tag>(
+            hana::make_range(hana::size_c<0>, hana::size_c<params_count>));
 
         hana::for_each(range, [&] (auto field) {
             field_proxy<field> proxy(*result, os);
-            write_meta(oid_map, tuple[field], proxy);
+            write_meta(oid_map, params[field], proxy);
         });
 
         std::size_t offset = 0;
@@ -179,72 +181,31 @@ private:
     }
 };
 
-template <class ... ParamsT>
-auto make_binary_query(std::string_view text, const ParamsT& ... params) {
-    using binary_query_type = binary_query<std::allocator<char>, empty_oid_map::impl_type, const ParamsT& ...>;
-    return binary_query_type(text, register_types<>(), params ...);
+template <typename T>
+struct is_binary_query : std::false_type {};
+
+template <typename ... Ts>
+struct is_binary_query<binary_query<Ts...>> : std::true_type {};
+
+template <typename T>
+constexpr auto BinaryQuery = is_binary_query<std::decay_t<T>>::value;
+
+template <class Text, class Params, class M = empty_oid_map, class Alloc = std::allocator<char>,
+        class = Require<QueryText<Text> && HanaTuple<Params>>
+>
+auto make_binary_query(Text&& text, const Params& params,
+            const M& oid_map = M{}, const Alloc& buffer_allocator = Alloc{}) {
+    using binary_query_type = binary_query<std::decay_t<Text>, Params, M, Alloc>;
+    return binary_query_type(std::forward<Text>(text), params, buffer_allocator, oid_map);
 }
 
-template <class OidMapImplT, class ... ParamsT>
-auto make_binary_query(std::string_view text, const oid_map_t<OidMapImplT>& oid_map, const ParamsT& ... params) {
-    using binary_query_type = binary_query<std::allocator<char>, OidMapImplT, const ParamsT& ...>;
-    return binary_query_type(text, oid_map, params ...);
+template <class T, class M = empty_oid_map, class Alloc = std::allocator<char>, class = Require<Query<T>>>
+auto make_binary_query(const T& query, const M& oid_map = M{}, const Alloc& buffer_allocator = Alloc{}) {
+    return make_binary_query(get_text(query), get_params(query), oid_map, buffer_allocator);
 }
 
-template <class BufferAllocatorT, class OidMapImplT, class ... ParamsT>
-auto make_binary_query(std::string_view text, const oid_map_t<OidMapImplT>& oid_map, const ParamsT& ... params) {
-    using binary_query_type = binary_query<BufferAllocatorT, OidMapImplT, const ParamsT& ...>;
-    return binary_query_type(text, oid_map, params ...);
-}
-
-template <class BufferAllocatorT, class OidMapImplT, class ... ParamsT>
-auto make_binary_query(const BufferAllocatorT& buffer_allocator, std::string_view text, const oid_map_t<OidMapImplT>& oid_map, const ParamsT& ... params) {
-    using binary_query_type = binary_query<BufferAllocatorT, OidMapImplT, const ParamsT& ...>;
-    return binary_query_type(buffer_allocator, text, oid_map, params ...);
-}
-
-template <class T, class = Require<Query<T>>>
-auto make_binary_query(const T& query) {
-    return hana::unpack(
-        get_params(query),
-        [&] (const auto& ... params) {
-            return make_binary_query(get_text(query), empty_oid_map(), params ...);
-        }
-    );
-}
-
-template <class OidMapImplT, class T, class = Require<Query<T>>>
-auto make_binary_query(const oid_map_t<OidMapImplT>& oid_map, const T& query) {
-    return hana::unpack(
-        get_params(query),
-        [&] (const auto& ... params) {
-            return make_binary_query(get_text(query), oid_map, params ...);
-        }
-    );
-}
-
-template <class BufferAllocatorT, class OidMapImplT, class T, class = Require<Query<T>>>
-auto make_binary_query(const oid_map_t<OidMapImplT>& oid_map, const T& query) {
-    return hana::unpack(
-        get_params(query),
-        [&] (const auto& ... params) {
-            return make_binary_query<BufferAllocatorT>(get_text(query), oid_map, params ...);
-        }
-    );
-}
-
-template <class BufferAllocatorT, class OidMapImplT, class T, class = Require<Query<T>>>
-auto make_binary_query(const BufferAllocatorT& buffer_allocator, const oid_map_t<OidMapImplT>& oid_map, const T& query) {
-    return hana::unpack(
-        get_params(query),
-        [&] (const auto& ... params) {
-            return make_binary_query(buffer_allocator, get_text(query), oid_map, params ...);
-        }
-    );
-}
-
-template <typename T, typename ...Ts>
-inline decltype(auto) make_binary_query(const oid_map_t<T>&, binary_query<Ts...> query) {
+template <class Q, class M, class A>
+inline Require<BinaryQuery<Q>, Q> make_binary_query(Q query, M&&, A&&) {
     return std::move(query);
 }
 

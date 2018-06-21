@@ -404,6 +404,16 @@ struct oid_map_t {
     impl_type impl;
 };
 
+
+template <typename T>
+struct is_oid_map : std::false_type {};
+
+template <typename T>
+struct is_oid_map<oid_map_t<T>> : std::true_type {};
+
+template <typename T>
+constexpr auto OidMap = is_oid_map<std::decay_t<T>>::value;
+
 namespace detail {
 
 template <typename ... T>

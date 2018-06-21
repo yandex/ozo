@@ -4,6 +4,9 @@
 #include <boost/fusion/sequence.hpp>
 #include <boost/fusion/support/is_sequence.hpp>
 #include <boost/fusion/include/is_sequence.hpp>
+#include <boost/hana/core/is_a.hpp>
+#include <boost/hana/tuple.hpp>
+#include <boost/hana/string.hpp>
 #include <typeinfo>
 #include <type_traits>
 #include <iterator>
@@ -106,6 +109,12 @@ constexpr auto HanaSequence = ::boost::hana::Sequence<std::decay_t<T>>::value;
 
 template <typename T>
 constexpr auto HanaStruct = ::boost::hana::Struct<std::decay_t<T>>::value;
+
+template <typename T>
+constexpr auto HanaString = decltype(::boost::hana::is_a<::boost::hana::string_tag>(std::declval<T>()))::value;
+
+template <typename T>
+constexpr auto HanaTuple = decltype(::boost::hana::is_a<::boost::hana::tuple_tag>(std::declval<T>()))::value;
 
 template <typename T, typename = std::void_t<>>
 struct is_fusion_adapted_struct : std::false_type {};
