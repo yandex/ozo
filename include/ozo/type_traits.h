@@ -322,8 +322,6 @@ constexpr auto size_of(const T& v) noexcept -> typename std::enable_if<
 
 #define OZO__TYPE_NAME_TYPE(Name) decltype(Name##_s)
 #define OZO__TYPE_ARRAY_NAME_TYPE(Name) decltype(Name##_s+"[]"_s)
-#define OZO__TYPE_ARRAY_NULLABLE_NAME_TYPE(Name, Nullable) \
-    Nullable##_s+"<"_s+Name##_s+">[]"
 
 #define OZO_PG_DEFINE_TYPE(Type, Name, Oid, Size) \
     namespace ozo {\
@@ -349,18 +347,18 @@ constexpr auto size_of(const T& v) noexcept -> typename std::enable_if<
 
 #ifdef __OZO_STD_OPTIONAL
 #define OZO_PG_DEFINE_TYPE_ARRAY_OZO_OPTIONAL(Type, Name, Oid) \
-    OZO_PG_DEFINE_TYPE_ARRAY(__OZO_STD_OPTIONAL<Type>, OZO__TYPE_ARRAY_NULLABLE_NAME_TYPE(Name, "__OZO_STD_OPTIONAL"), Oid)
+    OZO_PG_DEFINE_TYPE_ARRAY(__OZO_STD_OPTIONAL<Type>, Name, Oid)
 #else
 #define OZO_PG_DEFINE_TYPE_ARRAY_OZO_OPTIONAL(Type, Name, Oid)
 #endif
 
 #define OZO_PG_DEFINE_TYPE_ARRAY_NULLABLES(Type, Name, Oid) \
-    OZO_PG_DEFINE_TYPE_ARRAY(::boost::optional<Type>, OZO__TYPE_ARRAY_NULLABLE_NAME_TYPE(Name, "::boost::optional"), Oid) \
+    OZO_PG_DEFINE_TYPE_ARRAY(::boost::optional<Type>, Name, Oid) \
     OZO_PG_DEFINE_TYPE_ARRAY_OZO_OPTIONAL(Type, Name, Oid) \
-    OZO_PG_DEFINE_TYPE_ARRAY(::boost::scoped_ptr<Type>, OZO__TYPE_ARRAY_NULLABLE_NAME_TYPE(Name, "::boost::scoped_ptr"), Oid) \
-    OZO_PG_DEFINE_TYPE_ARRAY(::std::unique_ptr<Type>, OZO__TYPE_ARRAY_NULLABLE_NAME_TYPE(Name, "::std::unique_ptr"), Oid) \
-    OZO_PG_DEFINE_TYPE_ARRAY(::boost::shared_ptr<Type>, OZO__TYPE_ARRAY_NULLABLE_NAME_TYPE(Name, "::boost::shared_ptr"), Oid) \
-    OZO_PG_DEFINE_TYPE_ARRAY(::std::shared_ptr<Type>, OZO__TYPE_ARRAY_NULLABLE_NAME_TYPE(Name, "::std::shared_ptr"), Oid)
+    OZO_PG_DEFINE_TYPE_ARRAY(::boost::scoped_ptr<Type>, Name, Oid) \
+    OZO_PG_DEFINE_TYPE_ARRAY(::std::unique_ptr<Type>, Name, Oid) \
+    OZO_PG_DEFINE_TYPE_ARRAY(::boost::shared_ptr<Type>, Name, Oid) \
+    OZO_PG_DEFINE_TYPE_ARRAY(::std::shared_ptr<Type>, Name, Oid)
 
 #define OZO_PG_DEFINE_TYPE_AND_ARRAY(Type, Name, Oid, ArrayOid, Size) \
     OZO_PG_DEFINE_TYPE(Type, Name, Oid, Size) \
