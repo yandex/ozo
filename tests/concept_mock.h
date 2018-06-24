@@ -34,9 +34,11 @@ public:
 };
 
 template <typename T>
-class swappable : public T {
+class move_assignable : public T {
+    using self_t = move_assignable<T>;
 public:
-    virtual void swap(swappable<T>&) = 0;
+    virtual void move_assign() = 0;
+    self_t& operator=(self_t&&) { move_assign(); return *this; }
 };
 
 template <typename T>
