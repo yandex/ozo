@@ -72,11 +72,6 @@ GTEST("ozo::unwrap_nullable") {
 }
 
 GTEST("ozo::allocate_nullable") {
-    SHOULD("allocate a boost::scoped_ptr") {
-        using ptr_t = boost::scoped_ptr<int>;
-        ptr_t p = ozo::allocate_nullable<int, ptr_t>(std::allocator<int>());
-        EXPECT_TRUE(p);
-    }
     SHOULD("allocate a std::unique_ptr with default deleter") {
         using ptr_t = std::unique_ptr<int>;
         ptr_t p = ozo::allocate_nullable<int, ptr_t>(std::allocator<int>());
@@ -101,7 +96,7 @@ using emplaceable_nullable = emplaceable<
 >>>;
 
 template <typename V>
-using swappable_nullable = swappable<
+using movable_nullable = move_assignable<
     has_element<V,
     operator_not<
     nullable<
@@ -113,29 +108,29 @@ using swappable_nullable = swappable<
 // It simply redirects all calls to a StrictGMock::object
 // supplied via static reference.
 template <typename V>
-class swappable_mock_wrapper : public swappable_nullable<V>
+class movable_mock_wrapper : public movable_nullable<V>
 {
 public:
-    static boost::optional<swappable_nullable<V>&> mock;
+    static boost::optional<movable_nullable<V>&> mock;
 
-    swappable_mock_wrapper() = default;
+    movable_mock_wrapper() = default;
 
     virtual bool negate() const override { return mock.get().negate(); }
-    virtual void swap(swappable_nullable<V>& rhs) override { mock.get().swap(rhs); }
+    virtual void move_assign() override { mock.get().move_assign(); }
 };
 
 template <typename V>
-boost::optional<swappable_nullable<V>&> swappable_mock_wrapper<V>::mock;
+boost::optional<movable_nullable<V>&> movable_mock_wrapper<V>::mock;
 
 namespace ozo {
 
 template <>
-inline swappable_mock_wrapper<int> allocate_nullable<
+inline movable_mock_wrapper<int> allocate_nullable<
         int,
-        swappable_mock_wrapper<int>,
+        movable_mock_wrapper<int>,
         std::allocator<int>>(
             const std::allocator<int>&) {
-    return swappable_mock_wrapper<int>{};
+    return movable_mock_wrapper<int>{};
 }
 
 } // namespace ozo
@@ -154,20 +149,20 @@ GTEST("ozo::init_nullable") {
         ozo::init_nullable(mock.object());
     }
 
-    SHOULD("initialize an empty swappable Nullable with a new nullable containing a default-constructed element") {
-        StrictGMock<swappable_nullable<int>> mock{};
-        swappable_mock_wrapper<int>::mock.reset(mock.object());
-        EXPECT_INVOKE(mock, swap, _);
+    SHOULD("initialize an empty movable Nullable with a new nullable containing a default-constructed element") {
+        StrictGMock<movable_nullable<int>> mock{};
+        movable_mock_wrapper<int>::mock.reset(mock.object());
+        EXPECT_INVOKE(mock, move_assign);
         EXPECT_INVOKE(mock, negate).WillOnce(Return(true));
-        auto mock_wrapper = swappable_mock_wrapper<int>{};
+        auto mock_wrapper = movable_mock_wrapper<int>{};
         ozo::init_nullable(mock_wrapper);
     }
 
-    SHOULD("do nothing with a swappable Nullable that contains a value") {
-        StrictGMock<swappable_nullable<int>> mock{};
-        swappable_mock_wrapper<int>::mock.reset(mock.object());
+    SHOULD("do nothing with a movable Nullable that contains a value") {
+        StrictGMock<movable_nullable<int>> mock{};
+        movable_mock_wrapper<int>::mock.reset(mock.object());
         EXPECT_INVOKE(mock, negate).WillOnce(Return(false));
-        auto mock_wrapper = swappable_mock_wrapper<int>{};
+        auto mock_wrapper = movable_mock_wrapper<int>{};
         ozo::init_nullable(mock_wrapper);
     }
 }

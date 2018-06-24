@@ -119,13 +119,6 @@ template <typename V, typename T, typename Alloc, typename... Args>
 struct allocate_nullable_impl {};
 
 template <typename V, typename... Args>
-struct allocate_nullable_impl<V, boost::scoped_ptr<V>, std::allocator<V>, Args...> {
-    inline boost::scoped_ptr<V> operator()(const std::allocator<V>&, Args&&... args) const {
-        return boost::scoped_ptr<V>(new V(std::forward<Args>(args)...));
-    }
-};
-
-template <typename V, typename... Args>
 struct allocate_nullable_impl<V, std::unique_ptr<V>, std::allocator<V>, Args...> {
     inline std::unique_ptr<V> operator()(const std::allocator<V>&, Args&&... args) const {
         return std::make_unique<V>(std::forward<Args>(args)...);
@@ -159,13 +152,19 @@ init_nullable(T& n) {
     }
 }
 
+template <typename T>
+void init_nullable(boost::scoped_ptr<T>& n) {
+    if (!n) {
+        n.reset(new T{});
+    }
+}
+
 template <typename T, typename Alloc = std::allocator<typename T::element_type>>
 Require<Nullable<T> && !Emplaceable<T>>
 init_nullable(T& n, const Alloc& a = Alloc{}) {
     if (!n) {
         using V = typename T::element_type;
-        T allocated = allocate_nullable<V, T, Alloc>(a);
-        n.swap(allocated);
+        n = allocate_nullable<V, T, Alloc>(a);
     }
 }
 
