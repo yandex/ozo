@@ -9,6 +9,8 @@ namespace hana = ::boost::hana;
 namespace {
 
 struct fixed_size_struct {
+    fixed_size_struct(const fixed_size_struct&) = delete;
+
     BOOST_HANA_DEFINE_STRUCT(fixed_size_struct,
         (std::int64_t, value)
     );
