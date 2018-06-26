@@ -168,6 +168,60 @@ GTEST("ozo::async_get_result()") {
         ozo::impl::async_get_result(m.ctx, process_f);
     }
 
+    SHOULD("process data, post callback if result is empty") {
+        Sequence s;
+
+        // Post self to strand
+        EXPECT_INVOKE(m.io_context, post, _).InSequence(s).WillOnce(InvokeArgument<0>());
+        EXPECT_INVOKE(m.strand, dispatch, _).InSequence(s).WillOnce(InvokeArgument<0>());
+        EXPECT_INVOKE(m.callback, context_preserved).InSequence(s);
+
+        // get result since is_busy() is false
+        EXPECT_INVOKE(m.connection, is_busy).InSequence(s).WillOnce(Return(false));
+        EXPECT_INVOKE(m.connection, get_result)
+            .InSequence(s)
+            .WillOnce(Return(boost::none));
+
+        // Post callback with no error since result is empty
+        EXPECT_INVOKE(m.io_context, post, _).InSequence(s).WillOnce(InvokeArgument<0>());
+        EXPECT_INVOKE(m.strand, dispatch, _).InSequence(s).WillOnce(InvokeArgument<0>());
+        EXPECT_INVOKE(m.callback, context_preserved).InSequence(s);
+        EXPECT_INVOKE(m.callback, call, error_code{}, _).InSequence(s);
+
+        ozo::impl::async_get_result(m.ctx, process_f);
+    }
+
+    SHOULD("post callback with error and consume if process data throws") {
+        Sequence s;
+
+        // Post self to strand
+        EXPECT_INVOKE(m.io_context, post, _).InSequence(s).WillOnce(InvokeArgument<0>());
+        EXPECT_INVOKE(m.strand, dispatch, _).InSequence(s).WillOnce(InvokeArgument<0>());
+        EXPECT_INVOKE(m.callback, context_preserved).InSequence(s);
+
+        // get result since is_busy() is false
+        EXPECT_INVOKE(m.connection, is_busy).InSequence(s).WillOnce(Return(false));
+        EXPECT_INVOKE(m.connection, get_result)
+            .InSequence(s)
+            .WillOnce(Return(make_pg_result(PGRES_TUPLES_OK, error_code{})));
+
+        EXPECT_INVOKE(process, call).InSequence(s).WillOnce(Invoke([]{ throw std::runtime_error("");}));
+
+        EXPECT_INVOKE(m.socket, cancel, _).InSequence(s);
+        // Post callback with no error since result is error
+        EXPECT_INVOKE(m.io_context, post, _).InSequence(s).WillOnce(InvokeArgument<0>());
+        EXPECT_INVOKE(m.strand, dispatch, _).InSequence(s).WillOnce(InvokeArgument<0>());
+        EXPECT_INVOKE(m.callback, context_preserved).InSequence(s);
+        EXPECT_INVOKE(m.callback, call, error_code{ozo::error::bad_result_process}, _).InSequence(s);
+
+        //Consume result with calling get_result until it returns nothing
+        EXPECT_INVOKE(m.connection, get_result)
+            .InSequence(s)
+            .WillOnce(Return(boost::none));
+
+        ozo::impl::async_get_result(m.ctx, process_f);
+    }
+
     SHOULD("process data, post callback and consume if result status is PGRES_TUPLES_OK") {
         Sequence s;
 
