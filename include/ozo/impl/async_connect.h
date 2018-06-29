@@ -79,6 +79,12 @@ inline auto make_async_connect_op(Connection& conn,
 }
 
 template <typename Handler, typename Connection>
+inline void request_oid_map(Connection&& conn, Handler&& handler) {
+    make_async_request_oid_map_op(std::forward<Handler>(handler))
+        .perform(std::forward<Connection>(conn));
+}
+
+template <typename Handler, typename Connection>
 struct connection_binder {
     Handler handler_;
     Connection conn_;
@@ -88,7 +94,7 @@ struct connection_binder {
         if (ec || empty(get_oid_map(conn_))) {
             handler_(std::move(ec), std::move(conn_));
         } else {
-            make_async_request_oid_map_op(std::move(handler_)).perform(std::move(conn_));
+            request_oid_map(std::move(conn_), std::move(handler_));
         }
     }
 
