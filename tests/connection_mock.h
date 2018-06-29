@@ -33,6 +33,12 @@ struct connection_mock {
     virtual bool is_busy() const = 0;
     virtual ozo::impl::query_state flush_output() = 0;
     virtual boost::optional<pg_result> get_result() = 0;
+
+    virtual int connect_poll() const = 0;
+    virtual ozo::error_code start_connection(const std::string&) = 0;
+    virtual ozo::error_code assign_socket() = 0;
+    virtual void async_request() = 0;
+
     virtual ~connection_mock() = default;
 };
 
@@ -43,6 +49,11 @@ struct connection_gmock : connection_mock {
     MOCK_CONST_METHOD0(is_busy, bool());
     MOCK_METHOD0(flush_output, ozo::impl::query_state());
     MOCK_METHOD0(get_result, boost::optional<pg_result>());
+
+    MOCK_CONST_METHOD0(connect_poll, int());
+    MOCK_METHOD1(start_connection, ozo::error_code(const std::string&));
+    MOCK_METHOD0(assign_socket, ozo::error_code());
+    MOCK_METHOD0(async_request, void());
 };
 
 inline boost::optional<pg_result> make_pg_result(
@@ -117,6 +128,26 @@ struct connection {
     friend decltype(auto) pq_get_result(connection& c) noexcept {
         return c.mock_->get_result();
     }
+
+
+
+    friend int pq_connect_poll(connection& c) {
+        return c.mock_->connect_poll();
+    }
+
+    friend ozo::error_code pq_start_connection(
+            connection& c, const std::string& conninfo) {
+        return c.mock_->start_connection(conninfo);
+    }
+
+    friend ozo::error_code pq_assign_socket(connection& c) {
+        return c.mock_->assign_socket();
+    }
+
+    template <typename Q, typename Out, typename Handler>
+    friend void async_request(std::shared_ptr<connection>&& provider, Q&&, Out&&, Handler&&) {
+        provider->mock_->async_request();
+    }
 };
 
 template <typename ...Ts>
@@ -131,12 +162,13 @@ static_assert(ozo::Connectable<connection<>>,
 static_assert(ozo::Connectable<connection_ptr<>>,
     "connection_ptr does not meet Connectable requirements");
 
+template <typename OidMap = empty_oid_map>
 inline auto make_connection(connection_mock& mock, io_context& io,
-        stream_descriptor_mock& socket_mock) {
-    return std::make_shared<connection<>>(connection<>{
+        stream_descriptor_mock& socket_mock, OidMap oid_map = OidMap{}) {
+    return std::make_shared<connection<OidMap>>(connection<OidMap>{
             std::make_unique<native_handle>(native_handle::bad),
             stream_descriptor{io, socket_mock},
-            empty_oid_map{},
+            oid_map,
             std::addressof(mock),
             ""
         });

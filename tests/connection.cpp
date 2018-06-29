@@ -17,13 +17,23 @@ namespace hana = ::boost::hana;
 
 enum class native_handle { bad, good };
 
-using ozo::testing::socket_mock;
-
 inline bool connection_status_bad(const native_handle* h) {
     return *h == native_handle::bad;
 }
 
 using ozo::empty_oid_map;
+
+struct socket_mock {
+    socket_mock& get_io_service() { return *this;}
+    template <typename Handler>
+    void post(Handler&& h) {
+        ozo::testing::asio_post(std::forward<Handler>(h));
+    }
+    template <typename Handler>
+    void dispatch(Handler&& h) {
+        ozo::testing::asio_post(std::forward<Handler>(h));
+    }
+};
 
 template <typename OidMap = empty_oid_map>
 struct connection {
