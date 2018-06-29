@@ -20,6 +20,11 @@ struct executor_mock {
     virtual ~executor_mock() = default;
 };
 
+struct executor_gmock : executor_mock {
+    MOCK_CONST_METHOD1(post, void(std::function<void()>));
+    MOCK_CONST_METHOD1(dispatch, void(std::function<void()>));
+};
+
 template <typename Op>
 inline void post(executor_mock& e, Op op) {
     e.post([op=std::move(op)] () mutable { asio_post(std::move(op));});
@@ -33,6 +38,10 @@ inline void dispatch(executor_mock& e, Op op) {
 struct strand_executor_service_mock {
     virtual executor_mock& get_executor() const = 0;
     virtual ~strand_executor_service_mock() = default;
+};
+
+struct strand_executor_service_gmock : strand_executor_service_mock {
+    MOCK_CONST_METHOD0(get_executor, executor_mock& ());
 };
 
 struct io_context {
@@ -104,6 +113,12 @@ struct stream_descriptor_mock {
     virtual ~stream_descriptor_mock() = default;
 };
 
+struct stream_descriptor_gmock : stream_descriptor_mock {
+    MOCK_METHOD1(async_write_some, void(std::function<void(error_code)>));
+    MOCK_METHOD1(async_read_some, void(std::function<void(error_code)>));
+    MOCK_METHOD1(cancel, void(error_code&));
+};
+
 struct stream_descriptor {
     io_context* io_ = nullptr;
     stream_descriptor_mock* mock_ = nullptr;
@@ -138,18 +153,6 @@ struct asio_strand<testing::io_context> { using type = testing::strand; };
 
 namespace testing {
 
-struct socket_mock {
-    socket_mock& get_io_service() { return *this;}
-    template <typename Handler>
-    void post(Handler&& h) {
-        asio_post(std::forward<Handler>(h));
-    }
-    template <typename Handler>
-    void dispatch(Handler&& h) {
-        asio_post(std::forward<Handler>(h));
-    }
-};
-
 template <typename ... Args>
 struct callback_mock {
     virtual void call(ozo::error_code, Args...) const = 0;
@@ -157,9 +160,24 @@ struct callback_mock {
     virtual ~callback_mock() = default;
 };
 
+template <typename ...Args>
+struct callback_gmock;
+
+template <typename Arg1, typename Arg2>
+struct callback_gmock<Arg1, Arg2> {
+    MOCK_CONST_METHOD3_T(call, void(ozo::error_code, Arg1, Arg2));
+    MOCK_CONST_METHOD0_T(context_preserved, void());
+};
+
 template <typename Arg>
-struct callback_gmock {
+struct callback_gmock<Arg> {
     MOCK_CONST_METHOD2_T(call, void(ozo::error_code, Arg));
+    MOCK_CONST_METHOD0_T(context_preserved, void());
+};
+
+template <>
+struct callback_gmock<> {
+    MOCK_CONST_METHOD1_T(call, void(ozo::error_code));
     MOCK_CONST_METHOD0_T(context_preserved, void());
 };
 
@@ -184,13 +202,13 @@ inline callback_handler<typename T::type> wrap(T& mock) {
     return {object(mock)};
 }
 
-template <typename T>
-inline callback_handler<callback_gmock<T>> wrap(callback_gmock<T>& mock) {
+template <typename ...Ts>
+inline callback_handler<callback_gmock<Ts...>> wrap(callback_gmock<Ts...>& mock) {
     return {mock};
 }
 
-template <typename T>
-inline callback_handler<callback_gmock<T>> wrap(::testing::StrictMock<callback_gmock<T>>& mock) {
+template <typename ...Ts>
+inline callback_handler<callback_gmock<Ts...>> wrap(::testing::StrictMock<callback_gmock<Ts...>>& mock) {
     return {mock};
 }
 

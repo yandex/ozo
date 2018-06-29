@@ -1,344 +1,202 @@
 #include <ozo/impl/async_connect.h>
 #include "test_error.h"
-#include "test_asio.h"
+#include "connection_mock.h"
 #include <GUnit/GTest.h>
-
-namespace ozo::testing {
-    struct custom_type {};
-} // namespace ozo::testing
-
-OZO_PG_DEFINE_CUSTOM_TYPE(ozo::testing::custom_type, "custom_type", dynamic_size)
 
 namespace {
 
 namespace hana = ::boost::hana;
-
-enum class native_handle {bad, good};
-
-inline bool connection_status_bad(const native_handle* h) {
-    return *h == native_handle::bad;
-}
-
-using ozo::testing::asio_post;
-using ozo::testing::socket_mock;
 using ozo::empty_oid_map;
-
-struct connection_mock {
-    using handler = std::function<void(ozo::error_code)>;
-
-    virtual void write_poll(handler) const = 0;
-    virtual void read_poll(handler) const = 0;
-    virtual int connect_poll() const = 0;
-    virtual ozo::error_code start_connection(const std::string&) = 0;
-    virtual ozo::error_code assign_socket() = 0;
-    virtual void async_request() = 0;
-    virtual ~connection_mock() = default;
-};
-
-using callback_mock = ozo::testing::callback_mock<>;
+using ozo::testing::native_handle;
+using callback_mock = ozo::testing::callback_gmock<>;
 using ozo::testing::wrap;
+using ::testing::StrictMock;
 
-template <typename OidMap = empty_oid_map>
-struct connection {
-    using handle_type = std::unique_ptr<native_handle>;
-
-    handle_type handle_;
-    socket_mock socket_;
-    OidMap oid_map_;
-    connection_mock* mock_ = nullptr;
-    std::string error_context_;
-
-    friend OidMap& get_connection_oid_map(connection& conn) {
-        return conn.oid_map_;
-    }
-    friend const OidMap& get_connection_oid_map(const connection& conn) {
-        return conn.oid_map_;
-    }
-    friend auto& get_connection_socket(connection& conn) {
-        return conn.socket_;
-    }
-    friend const auto& get_connection_socket(const connection& conn) {
-        return conn.socket_;
-    }
-    friend handle_type& get_connection_handle(connection& conn) {
-        return conn.handle_;
-    }
-    friend const handle_type& get_connection_handle(const connection& conn) {
-        return conn.handle_;
-    }
-    friend std::string& get_connection_error_context(connection& conn) {
-        return conn.error_context_;
-    }
-    friend const std::string& get_connection_error_context(const connection& conn) {
-        return conn.error_context_;
-    }
-
-    template <typename Handler>
-    friend void pq_write_poll(connection& c, Handler&& h) {
-        c.mock_->write_poll([h] (auto e) {
-            asio_post(ozo::detail::bind(std::move(h), std::move(e)));
-        });
-    }
-
-    template <typename Handler>
-    friend void pq_read_poll(connection& c, Handler&& h) {
-        c.mock_->read_poll([h] (auto e) {
-            asio_post(ozo::detail::bind(std::move(h), std::move(e)));
-        });
-    }
-
-    friend int pq_connect_poll(connection& c) {
-        return c.mock_->connect_poll();
-    }
-
-    friend ozo::error_code pq_start_connection(
-            connection& c, const std::string& conninfo) {
-        return c.mock_->start_connection(conninfo);
-    }
-
-    friend ozo::error_code pq_assign_socket(connection& c) {
-        return c.mock_->assign_socket();
-    }
-
-    template <typename Q, typename Out, typename Handler>
-    friend void async_request(std::shared_ptr<connection>&& provider, Q&&, Out&&, Handler&&) {
-        provider->mock_->async_request();
-    }
+template <typename OidMap>
+struct fixture_impl {
+    StrictMock<ozo::testing::connection_gmock> connection{};
+    StrictMock<callback_mock> callback{};
+    StrictMock<ozo::testing::executor_gmock> io_context{};
+    StrictMock<ozo::testing::executor_gmock> strand{};
+    StrictMock<ozo::testing::strand_executor_service_gmock> strand_service{};
+    StrictMock<ozo::testing::stream_descriptor_gmock> socket{};
+    ozo::testing::io_context io{io_context, strand_service};
+    decltype(ozo::testing::make_connection(connection, io, socket)) conn =
+            ozo::testing::make_connection(connection, io, socket);
 };
 
-template <typename ...Ts>
-using connection_ptr = std::shared_ptr<connection<Ts...>>;
+using fixture = fixture_impl<empty_oid_map>;
 
-static_assert(ozo::Connection<connection<>>,
-    "connection does not meet Connection requirements");
-static_assert(ozo::ConnectionWrapper<connection_ptr<>>,
-    "connection_ptr does not meet ConnectionWrapper requirements");
-static_assert(ozo::Connectable<connection<>>,
-    "connection does not meet Connectable requirements");
-static_assert(ozo::Connectable<connection_ptr<>>,
-    "connection_ptr does not meet Connectable requirements");
-
-template <typename OidMapT = empty_oid_map>
-inline auto make_connection(connection_mock& mock, OidMapT oid_map = {}) {
-    return std::make_shared<connection<std::decay_t<OidMapT>>>(connection<std::decay_t<OidMapT>>{
-            std::make_unique<native_handle>(native_handle::bad),
-            socket_mock{},
-            std::move(oid_map),
-            std::addressof(mock),
-            ""
-        });
-}
+template <typename OidMap>
+auto make_fixture(OidMap) { return fixture_impl<OidMap>{}; }
 
 GTEST("ozo::async_connect()") {
     using namespace testing;
     using ozo::error_code;
 
     SHOULD("start connection, assign socket and wait for write complete") {
-        StrictGMock<connection_mock> conn_mock{};
-        StrictGMock<callback_mock> cb_mock{};
-        auto conn = make_connection(object(conn_mock));
-        *(conn->handle_) = native_handle::good;
+        fixture f;
+        *(f.conn->handle_) = native_handle::good;
 
-        EXPECT_CALL(conn_mock, (start_connection)("conninfo")).WillOnce(Return(error_code{}));
-        EXPECT_CALL(conn_mock, (assign_socket)()).WillOnce(Return(error_code{}));
-        EXPECT_CALL(conn_mock, (write_poll)(_));
-        ozo::impl::make_async_connect_op(conn, wrap(cb_mock)).perform("conninfo");
+        EXPECT_CALL(f.connection, start_connection("conninfo")).WillOnce(Return(error_code{}));
+        EXPECT_CALL(f.connection, assign_socket()).WillOnce(Return(error_code{}));
+        EXPECT_CALL(f.socket, async_write_some(_)).WillOnce(Return());
+        ozo::impl::make_async_connect_op(f.conn, wrap(f.callback)).perform("conninfo");
     }
 
     SHOULD("call handler with pq_connection_start_failed on error in start_connection") {
-        StrictGMock<connection_mock> conn_mock{};
-        StrictGMock<callback_mock> cb_mock{};
-        auto conn = make_connection(object(conn_mock));
-        *(conn->handle_) = native_handle::good;
+        fixture f;
+        *(f.conn->handle_) = native_handle::good;
 
-        EXPECT_CALL(conn_mock, (start_connection)("conninfo"))
+        EXPECT_CALL(f.connection, start_connection("conninfo"))
             .WillOnce(Return(error_code{ozo::error::pq_connection_start_failed}));
 
-        EXPECT_INVOKE(cb_mock, context_preserved);
-        EXPECT_INVOKE(cb_mock, call, error_code{ozo::error::pq_connection_start_failed});
+        EXPECT_CALL(f.io_context, post(_)).WillOnce(InvokeArgument<0>());
+        EXPECT_CALL(f.callback, context_preserved()).WillOnce(Return());
+        EXPECT_CALL(f.callback, call(error_code{ozo::error::pq_connection_start_failed}))
+            .WillOnce(Return());
 
-        ozo::impl::make_async_connect_op(conn, wrap(cb_mock)).perform("conninfo");
+        ozo::impl::make_async_connect_op(f.conn, wrap(f.callback)).perform("conninfo");
     }
 
     SHOULD("call handler with pq_connection_status_bad if connection status is bad") {
-        StrictGMock<connection_mock> conn_mock{};
-        StrictGMock<callback_mock> cb_mock{};
-        auto conn = make_connection(object(conn_mock));
-        *(conn->handle_) = native_handle::bad;
+        fixture f;
+        *(f.conn->handle_) = native_handle::bad;
 
-        EXPECT_CALL(conn_mock, (start_connection)("conninfo")).WillOnce(Return(error_code{}));
+        EXPECT_CALL(f.connection, start_connection("conninfo")).WillOnce(Return(error_code{}));
 
-        EXPECT_INVOKE(cb_mock, context_preserved);
-        EXPECT_INVOKE(cb_mock, call, error_code{ozo::error::pq_connection_status_bad});
+        EXPECT_CALL(f.io_context, post(_)).WillOnce(InvokeArgument<0>());
+        EXPECT_CALL(f.callback, context_preserved()).WillOnce(Return());
+        EXPECT_CALL(f.callback, call(error_code{ozo::error::pq_connection_status_bad}))
+            .WillOnce(Return());
 
-        ozo::impl::make_async_connect_op(conn, wrap(cb_mock)).perform("conninfo");
+        ozo::impl::make_async_connect_op(f.conn, wrap(f.callback)).perform("conninfo");
     }
 
     SHOULD("call handler with error if assign_socket returns error") {
-        StrictGMock<connection_mock> conn_mock{};
-        StrictGMock<callback_mock> cb_mock{};
-        auto conn = make_connection(object(conn_mock));
-        *(conn->handle_) = native_handle::good;
+        fixture f;
+        *(f.conn->handle_) = native_handle::good;
 
-        EXPECT_CALL(conn_mock, (start_connection)("conninfo")).WillOnce(Return(error_code{}));
-        EXPECT_CALL(conn_mock, (assign_socket)()).WillOnce(Return(error_code{ozo::testing::error::error}));
+        EXPECT_CALL(f.connection, start_connection("conninfo")).WillOnce(Return(error_code{}));
+        EXPECT_CALL(f.connection, assign_socket()).WillOnce(Return(error_code{ozo::testing::error::error}));
 
-        EXPECT_INVOKE(cb_mock, context_preserved);
-        EXPECT_INVOKE(cb_mock, call, error_code{ozo::testing::error::error});
+        EXPECT_CALL(f.io_context, post(_)).WillOnce(InvokeArgument<0>());
+        EXPECT_CALL(f.callback, context_preserved()).WillOnce(Return());
+        EXPECT_CALL(f.callback, call(error_code{ozo::testing::error::error})).WillOnce(Return());
 
-        ozo::impl::make_async_connect_op(conn, wrap(cb_mock)).perform("conninfo");
+        ozo::impl::make_async_connect_op(f.conn, wrap(f.callback)).perform("conninfo");
     }
 
     SHOULD("wait for write complete if connect_poll() returns PGRES_POLLING_WRITING") {
-        StrictGMock<connection_mock> conn_mock{};
-        StrictGMock<callback_mock> cb_mock{};
-        auto conn = make_connection(object(conn_mock));
-        *(conn->handle_) = native_handle::good;
+        fixture f;
+        *(f.conn->handle_) = native_handle::good;
 
         testing::InSequence s;
-        EXPECT_CALL(conn_mock, (start_connection)("conninfo")).WillOnce(Return(error_code{}));
-        EXPECT_CALL(conn_mock, (assign_socket)()).WillOnce(Return(error_code{}));
+        EXPECT_CALL(f.connection, start_connection("conninfo")).WillOnce(Return(error_code{}));
+        EXPECT_CALL(f.connection, assign_socket()).WillOnce(Return(error_code{}));
 
-        EXPECT_CALL(conn_mock, (write_poll)(_)).WillOnce(InvokeArgument<0>(error_code{}));
-        EXPECT_INVOKE(cb_mock, context_preserved);
+        EXPECT_CALL(f.socket, async_write_some(_)).WillOnce(InvokeArgument<0>(error_code{}));
+        EXPECT_CALL(f.callback, context_preserved()).WillOnce(Return());
 
-        EXPECT_CALL(conn_mock, (connect_poll)()).WillOnce(Return(PGRES_POLLING_WRITING));
+        EXPECT_CALL(f.connection, connect_poll()).WillOnce(Return(PGRES_POLLING_WRITING));
 
-        EXPECT_CALL(conn_mock, (write_poll)(_));
-        ozo::impl::make_async_connect_op(conn, wrap(cb_mock)).perform("conninfo");
+        EXPECT_CALL(f.socket, async_write_some(_)).WillOnce(Return());
+        ozo::impl::make_async_connect_op(f.conn, wrap(f.callback)).perform("conninfo");
     }
 
     SHOULD("wait for read complete if connect_poll() returns PGRES_POLLING_READING") {
-        StrictGMock<connection_mock> conn_mock{};
-        StrictGMock<callback_mock> cb_mock{};
-        auto conn = make_connection(object(conn_mock));
-        *(conn->handle_) = native_handle::good;
+        fixture f;
+        *(f.conn->handle_) = native_handle::good;
 
         testing::InSequence s;
-        EXPECT_CALL(conn_mock, (start_connection)("conninfo")).WillOnce(Return(error_code{}));
-        EXPECT_CALL(conn_mock, (assign_socket)()).WillOnce(Return(error_code{}));
+        EXPECT_CALL(f.connection, start_connection("conninfo")).WillOnce(Return(error_code{}));
+        EXPECT_CALL(f.connection, assign_socket()).WillOnce(Return(error_code{}));
 
-        EXPECT_CALL(conn_mock, (write_poll)(_)).WillOnce(InvokeArgument<0>(error_code{}));
-        EXPECT_INVOKE(cb_mock, context_preserved);
+        EXPECT_CALL(f.socket, async_write_some(_)).WillOnce(InvokeArgument<0>(error_code{}));
+        EXPECT_CALL(f.callback, context_preserved()).WillOnce(Return());
 
-        EXPECT_CALL(conn_mock, (connect_poll)()).WillOnce(Return(PGRES_POLLING_READING));
+        EXPECT_CALL(f.connection, connect_poll()).WillOnce(Return(PGRES_POLLING_READING));
 
-        EXPECT_CALL(conn_mock, (read_poll)(_));
-        ozo::impl::make_async_connect_op(conn, wrap(cb_mock)).perform("conninfo");
+        EXPECT_CALL(f.socket, async_read_some(_)).WillOnce(Return());
+        ozo::impl::make_async_connect_op(f.conn, wrap(f.callback)).perform("conninfo");
     }
 
     SHOULD("call handler with no error if connect_poll() returns PGRES_POLLING_OK") {
-        StrictGMock<connection_mock> conn_mock{};
-        StrictGMock<callback_mock> cb_mock{};
-        auto conn = make_connection(object(conn_mock));
-        *(conn->handle_) = native_handle::good;
+        fixture f;
+        *(f.conn->handle_) = native_handle::good;
 
         testing::InSequence s;
-        EXPECT_CALL(conn_mock, (start_connection)("conninfo")).WillOnce(Return(error_code{}));
-        EXPECT_CALL(conn_mock, (assign_socket)()).WillOnce(Return(error_code{}));
+        EXPECT_CALL(f.connection, start_connection("conninfo")).WillOnce(Return(error_code{}));
+        EXPECT_CALL(f.connection, assign_socket()).WillOnce(Return(error_code{}));
 
-        EXPECT_CALL(conn_mock, (write_poll)(_)).WillOnce(InvokeArgument<0>(error_code{}));
-        EXPECT_INVOKE(cb_mock, context_preserved);
+        EXPECT_CALL(f.socket, async_write_some(_)).WillOnce(InvokeArgument<0>(error_code{}));
+        EXPECT_CALL(f.callback, context_preserved()).WillOnce(Return());
 
-        EXPECT_CALL(conn_mock, (connect_poll)()).WillOnce(Return(PGRES_POLLING_OK));
+        EXPECT_CALL(f.connection, connect_poll()).WillOnce(Return(PGRES_POLLING_OK));
 
-        EXPECT_INVOKE(cb_mock, context_preserved);
-        EXPECT_INVOKE(cb_mock, call, error_code{});
-        ozo::impl::make_async_connect_op(conn, wrap(cb_mock)).perform("conninfo");
+        EXPECT_CALL(f.io_context, post(_)).WillOnce(InvokeArgument<0>());
+        EXPECT_CALL(f.callback, context_preserved()).WillOnce(Return());
+        EXPECT_CALL(f.callback, call(error_code{})).WillOnce(Return());
+        ozo::impl::make_async_connect_op(f.conn, wrap(f.callback)).perform("conninfo");
     }
 
     SHOULD("call handler with pq_connect_poll_failed if connect_poll() returns PGRES_POLLING_FAILED") {
-        StrictGMock<connection_mock> conn_mock{};
-        StrictGMock<callback_mock> cb_mock{};
-        auto conn = make_connection(object(conn_mock));
-        *(conn->handle_) = native_handle::good;
+        fixture f;
+        *(f.conn->handle_) = native_handle::good;
 
         testing::InSequence s;
-        EXPECT_CALL(conn_mock, (start_connection)("conninfo")).WillOnce(Return(error_code{}));
-        EXPECT_CALL(conn_mock, (assign_socket)()).WillOnce(Return(error_code{}));
+        EXPECT_CALL(f.connection, start_connection("conninfo")).WillOnce(Return(error_code{}));
+        EXPECT_CALL(f.connection, assign_socket()).WillOnce(Return(error_code{}));
 
-        EXPECT_CALL(conn_mock, (write_poll)(_)).WillOnce(InvokeArgument<0>(error_code{}));
-        EXPECT_INVOKE(cb_mock, context_preserved);
+        EXPECT_CALL(f.socket, async_write_some(_)).WillOnce(InvokeArgument<0>(error_code{}));
+        EXPECT_CALL(f.callback, context_preserved()).WillOnce(Return());
 
-        EXPECT_CALL(conn_mock, (connect_poll)()).WillOnce(Return(PGRES_POLLING_FAILED));
+        EXPECT_CALL(f.connection, connect_poll()).WillOnce(Return(PGRES_POLLING_FAILED));
 
-        EXPECT_INVOKE(cb_mock, context_preserved);
-        EXPECT_INVOKE(cb_mock, call, error_code{ozo::error::pq_connect_poll_failed});
-        ozo::impl::make_async_connect_op(conn, wrap(cb_mock)).perform("conninfo");
+        EXPECT_CALL(f.io_context, post(_)).WillOnce(InvokeArgument<0>());
+        EXPECT_CALL(f.callback, context_preserved()).WillOnce(Return());
+        EXPECT_CALL(f.callback, call(error_code{ozo::error::pq_connect_poll_failed}))
+            .WillOnce(Return());
+        ozo::impl::make_async_connect_op(f.conn, wrap(f.callback)).perform("conninfo");
     }
 
     SHOULD("call handler with pq_connect_poll_failed if connect_poll() returns PGRES_POLLING_ACTIVE") {
-        StrictGMock<connection_mock> conn_mock{};
-        StrictGMock<callback_mock> cb_mock{};
-        auto conn = make_connection(object(conn_mock));
-        *(conn->handle_) = native_handle::good;
+        fixture f;
+        *(f.conn->handle_) = native_handle::good;
 
         testing::InSequence s;
-        EXPECT_CALL(conn_mock, (start_connection)("conninfo")).WillOnce(Return(error_code{}));
-        EXPECT_CALL(conn_mock, (assign_socket)()).WillOnce(Return(error_code{}));
+        EXPECT_CALL(f.connection, start_connection("conninfo")).WillOnce(Return(error_code{}));
+        EXPECT_CALL(f.connection, assign_socket()).WillOnce(Return(error_code{}));
 
-        EXPECT_CALL(conn_mock, (write_poll)(_)).WillOnce(InvokeArgument<0>(error_code{}));
-        EXPECT_INVOKE(cb_mock, context_preserved);
+        EXPECT_CALL(f.socket, async_write_some(_)).WillOnce(InvokeArgument<0>(error_code{}));
+        EXPECT_CALL(f.callback, context_preserved()).WillOnce(Return());
 
-        EXPECT_CALL(conn_mock, (connect_poll)()).WillOnce(Return(PGRES_POLLING_ACTIVE));
+        EXPECT_CALL(f.connection, connect_poll()).WillOnce(Return(PGRES_POLLING_ACTIVE));
 
-        EXPECT_INVOKE(cb_mock, context_preserved);
-        EXPECT_INVOKE(cb_mock, call, error_code{ozo::error::pq_connect_poll_failed});
-        ozo::impl::make_async_connect_op(conn, wrap(cb_mock)).perform("conninfo");
+        EXPECT_CALL(f.io_context, post(_)).WillOnce(InvokeArgument<0>());
+        EXPECT_CALL(f.callback, context_preserved()).WillOnce(Return());
+        EXPECT_CALL(f.callback, call(error_code{ozo::error::pq_connect_poll_failed}))
+            .WillOnce(Return());
+        ozo::impl::make_async_connect_op(f.conn, wrap(f.callback)).perform("conninfo");
     }
 
     SHOULD("call handler with the error if polling operation invokes callback with it") {
-        StrictGMock<connection_mock> conn_mock{};
-        StrictGMock<callback_mock> cb_mock{};
-        auto conn = make_connection(object(conn_mock));
-        *(conn->handle_) = native_handle::good;
+        fixture f;
+        *(f.conn->handle_) = native_handle::good;
 
         testing::InSequence s;
-        EXPECT_CALL(conn_mock, (start_connection)("conninfo")).WillOnce(Return(error_code{}));
-        EXPECT_CALL(conn_mock, (assign_socket)()).WillOnce(Return(error_code{}));
+        EXPECT_CALL(f.connection, start_connection("conninfo")).WillOnce(Return(error_code{}));
+        EXPECT_CALL(f.connection, assign_socket()).WillOnce(Return(error_code{}));
 
-        EXPECT_CALL(conn_mock, (write_poll)(_))
+        EXPECT_CALL(f.socket, async_write_some(_))
             .WillOnce(InvokeArgument<0>(ozo::testing::error::error));
-        EXPECT_INVOKE(cb_mock, context_preserved);
+        EXPECT_CALL(f.callback, context_preserved()).WillOnce(Return());
 
-        EXPECT_INVOKE(cb_mock, context_preserved);
-        EXPECT_INVOKE(cb_mock, call, error_code{ozo::testing::error::error});
-        ozo::impl::make_async_connect_op(conn, wrap(cb_mock)).perform("conninfo");
-    }
-}
-
-GTEST("ozo::detail::connection_binder") {
-    using namespace testing;
-    using ozo::error_code;
-
-    SHOULD("request for oid when oid map is not empty") {
-        StrictGMock<connection_mock> conn_mock{};
-        auto conn = make_connection(object(conn_mock), ozo::register_types<ozo::testing::custom_type>());
-        StrictGMock<ozo::testing::callback_mock<std::decay_t<decltype(conn)>>> cb_mock{};
-        *(conn->handle_) = native_handle::good;
-
-        EXPECT_INVOKE(conn_mock, async_request);
-        ozo::impl::bind_connection_handler(wrap(cb_mock), std::move(conn))(error_code{});
-    }
-
-    SHOULD("request for oid when there is an error adn oid map is not empty") {
-        StrictGMock<connection_mock> conn_mock{};
-        auto conn = make_connection(object(conn_mock), ozo::register_types<ozo::testing::custom_type>());
-        StrictGMock<ozo::testing::callback_mock<std::decay_t<decltype(conn)>>> cb_mock{};
-        *(conn->handle_) = native_handle::good;
-
-        EXPECT_INVOKE(cb_mock, call, error_code{ozo::testing::error::error}, _);
-        ozo::impl::bind_connection_handler(wrap(cb_mock), std::move(conn))(ozo::testing::error::error);
-    }
-
-    SHOULD("not request for oid and call handler when oid map is empty") {
-        StrictGMock<connection_mock> conn_mock{};
-        auto conn = make_connection(object(conn_mock), ozo::register_types<>());
-        StrictGMock<ozo::testing::callback_mock<std::decay_t<decltype(conn)>>> cb_mock{};
-        *(conn->handle_) = native_handle::good;
-
-        EXPECT_INVOKE(cb_mock, call, error_code{}, _);
-        ozo::impl::bind_connection_handler(wrap(cb_mock), std::move(conn))(error_code{});
+        EXPECT_CALL(f.io_context, post(_)).WillOnce(InvokeArgument<0>());
+        EXPECT_CALL(f.callback, context_preserved()).WillOnce(Return());
+        EXPECT_CALL(f.callback, call(error_code{ozo::testing::error::error}))
+            .WillOnce(Return());
+        ozo::impl::make_async_connect_op(f.conn, wrap(f.callback)).perform("conninfo");
     }
 }
 

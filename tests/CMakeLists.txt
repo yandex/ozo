@@ -75,6 +75,7 @@ set(SOURCES
     async_get_result.cpp
     base36.cpp
     request_oid_map.cpp
+    connection_binder.cpp
 )
 
 if(OZO_BUILD_PG_TESTS)
