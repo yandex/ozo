@@ -1,54 +1,32 @@
 #include <ozo/detail/bind.h>
-#include <GUnit/GTest.h>
+#include "test_asio.h"
+#include <gtest/gtest.h>
+#include <gmock/gmock.h>
 
-template <typename Handler>
-inline void asio_post(Handler h) {
-    using boost::asio::asio_handler_invoke;
-    asio_handler_invoke(h, std::addressof(h));
-}
+using ozo::testing::asio_post;
+using ozo::testing::callback_gmock;
+using ozo::testing::wrap;
 
-struct callback_mock {
-    virtual void call(int) const = 0;
-    virtual void context_preserved() const = 0;
-    virtual ~callback_mock() = default;
+namespace {
+
+using namespace ::testing;
+
+struct bind : Test {
+    StrictMock<callback_gmock<int>> cb_mock{};
 };
 
-struct callback_handler {
-    callback_mock& mock;
+TEST_F(bind, should_preserve_handler_context) {
+    EXPECT_CALL(cb_mock, context_preserved()).WillOnce(Return());
+    EXPECT_CALL(cb_mock, call(_, _)).WillOnce(Return());
 
-    void operator() (int arg) const {
-        mock.call(arg);
-    }
-
-    template <typename Func>
-    friend void asio_handler_invoke(Func&& f, callback_handler* ctx) {
-        ctx->mock.context_preserved();
-        f();
-    }
-};
-
-inline auto wrap(callback_mock& mock) {
-    return callback_handler{mock};
+    asio_post(ozo::detail::bind(wrap(cb_mock), ozo::error_code{}, 42));
 }
 
-GTEST("ozo::detail::bind()") {
-    SHOULD("preserve handler context") {
-        using namespace ::testing;
-        StrictGMock<callback_mock> cb_mock{};
+TEST_F(bind, should_forward_binded_values) {
+    EXPECT_CALL(cb_mock, context_preserved()).WillOnce(Return());
+    EXPECT_CALL(cb_mock, call(ozo::error_code{}, 42)).WillOnce(Return());
 
-        EXPECT_INVOKE(cb_mock, context_preserved);
-        EXPECT_INVOKE(cb_mock, call, _);
-
-        asio_post(ozo::detail::bind(wrap(object(cb_mock)), 42));
-    }
-
-    SHOULD("forward binded value") {
-        using namespace ::testing;
-        StrictGMock<callback_mock> cb_mock{};
-
-        EXPECT_INVOKE(cb_mock, context_preserved);
-        EXPECT_INVOKE(cb_mock, call, 42);
-
-        asio_post(ozo::detail::bind(wrap(object(cb_mock)), 42));
-    }
+    asio_post(ozo::detail::bind(wrap(cb_mock), ozo::error_code{}, 42));
 }
+
+} // namespace

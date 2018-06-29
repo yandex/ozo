@@ -1,21 +1,21 @@
 #include <ozo/result.h>
 
-#include <GUnit/GTest.h>
+#include <gtest/gtest.h>
+#include <gmock/gmock.h>
 
 namespace ozo::testing {
 
 using namespace ::testing;
 
 struct pg_result_mock {
-    virtual ozo::oid_t field_type(int column) const = 0;
-    virtual ozo::impl::result_format field_format(int column) const = 0;
-    virtual const char* get_value(int row, int column) const = 0;
-    virtual std::size_t get_length(int row, int column) const = 0;
-    virtual bool get_isnull(int row, int column) const = 0;
-    virtual int field_number(const char* name) const = 0;
-    virtual int nfields() const = 0;
-    virtual int ntuples() const = 0;
-    virtual ~pg_result_mock() = default;
+    MOCK_CONST_METHOD1(field_type, ozo::oid_t(int column));
+    MOCK_CONST_METHOD1(field_format, ozo::impl::result_format(int column));
+    MOCK_CONST_METHOD2(get_value, const char*(int row, int column));
+    MOCK_CONST_METHOD2(get_length, std::size_t(int row, int column));
+    MOCK_CONST_METHOD2(get_isnull, bool(int row, int column));
+    MOCK_CONST_METHOD1(field_number, int(const char* name));
+    MOCK_CONST_METHOD0(nfields, int());
+    MOCK_CONST_METHOD0(ntuples, int());
 
     friend ozo::oid_t pq_field_type(const pg_result_mock& m, int column) {
         return m.field_type(column);

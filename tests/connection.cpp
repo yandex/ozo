@@ -9,7 +9,8 @@
 
 #include "test_asio.h"
 
-#include <GUnit/GTest.h>
+#include <gtest/gtest.h>
+#include <gmock/gmock.h>
 
 namespace {
 
@@ -89,114 +90,100 @@ static_assert(!ozo::ConnectionWrapper<int>,
 static_assert(!ozo::Connectable<int>,
     "int meets Connectable requirements unexpectedly");
 
-GTEST("ozo::connection_good()") {
-    SHOULD("for object with bad handle returns false") {
-        auto conn = std::make_shared<connection<>>();
-        *(conn->handle_) = native_handle::bad;
-        EXPECT_FALSE(ozo::connection_good(conn));
-    }
-
-    SHOULD("for object with nullptr returns false") {
-        connection_ptr<> conn;
-        EXPECT_FALSE(ozo::connection_good(conn));
-    }
-
-    SHOULD("for object with good handle returns true") {
-        auto conn = std::make_shared<connection<>>();
-        *(conn->handle_) = native_handle::good;
-        EXPECT_TRUE(ozo::connection_good(conn));
-    }
+TEST(connection_good, should_return_false_for_object_with_bad_handle) {
+    auto conn = std::make_shared<connection<>>();
+    *(conn->handle_) = native_handle::bad;
+    EXPECT_FALSE(ozo::connection_good(conn));
 }
 
-GTEST("ozo::connection_bad()") {
-    SHOULD("for object with bad handle returns true") {
-        auto conn = std::make_shared<connection<>>();
-        *(conn->handle_) = native_handle::bad;
-        EXPECT_TRUE(ozo::connection_bad(conn));
-    }
-
-    SHOULD("for object with nullptr returns true") {
-        connection_ptr<> conn;
-        EXPECT_FALSE(ozo::connection_good(conn));
-    }
-
-    SHOULD("for object with good handle returns false") {
-        auto conn = std::make_shared<connection<>>();
-        *(conn->handle_) = native_handle::good;
-        EXPECT_FALSE(ozo::connection_bad(conn));
-    }
+TEST(connection_good, should_return_false_for_object_with_nullptr) {
+    connection_ptr<> conn;
+    EXPECT_FALSE(ozo::connection_good(conn));
 }
 
-GTEST("ozo::unwrap_connection()") {
-    SHOULD("for wrapped connection returns connection reference") {
-        auto conn = std::make_shared<connection<>>();
-
-        EXPECT_EQ(
-            std::addressof(ozo::unwrap_connection(conn)),
-            conn.get()
-        );
-    }
-
-    SHOULD("for connection returns reference to itself") {
-        auto conn = connection<>();
-
-        EXPECT_EQ(
-            std::addressof(ozo::unwrap_connection(conn)),
-            std::addressof(conn)
-        );
-    }
+TEST(connection_good, should_return_true_for_object_with_good_handle) {
+    auto conn = std::make_shared<connection<>>();
+    *(conn->handle_) = native_handle::good;
+    EXPECT_TRUE(ozo::connection_good(conn));
 }
 
-GTEST("ozo::get_error_context()") {
-    SHOULD("for connection returns reference to error_context_") {
-        auto conn = std::make_shared<connection<>>();
-
-        EXPECT_EQ(
-            std::addressof(ozo::get_error_context(conn)),
-            std::addressof(conn->error_context_)
-        );
-    }
+TEST(connection_bad, should_return_true_for_object_with_bad_handle) {
+    auto conn = std::make_shared<connection<>>();
+    *(conn->handle_) = native_handle::bad;
+    EXPECT_TRUE(ozo::connection_bad(conn));
 }
 
-GTEST("ozo::set_error_context()") {
-    SHOULD("for connection sets error_context_") {
-        auto conn = std::make_shared<connection<>>();
-        ozo::set_error_context(conn, "brand new super context");
-
-        EXPECT_EQ(conn->error_context_, "brand new super context");
-    }
+TEST(connection_bad, should_return_true_for_object_with_nullptr) {
+    connection_ptr<> conn;
+    EXPECT_TRUE(ozo::connection_bad(conn));
 }
 
-GTEST("ozo::reset_error_context()") {
-    SHOULD("for connection resets error_context_ into empty string") {
-        auto conn = std::make_shared<connection<>>();
-        conn->error_context_ = "brand new super context";
-        ozo::reset_error_context(conn);
-        EXPECT_TRUE(conn->error_context_.empty());
-    }
+TEST(connection_bad, should_return_false_for_object_with_good_handle) {
+    auto conn = std::make_shared<connection<>>();
+    *(conn->handle_) = native_handle::good;
+    EXPECT_FALSE(ozo::connection_bad(conn));
 }
 
-GTEST("ozo::get_connection()") {
-    using callback_mock = ozo::testing::callback_mock<std::shared_ptr<connection<>>>;
+TEST(unwrap_connection, should_return_connection_reference_for_connection_wrapper) {
+    auto conn = std::make_shared<connection<>>();
+
+    EXPECT_EQ(
+        std::addressof(ozo::unwrap_connection(conn)),
+        conn.get()
+    );
+}
+
+TEST(unwrap_connection, should_return_argument_reference_for_connection) {
+    auto conn = connection<>();
+
+    EXPECT_EQ(
+        std::addressof(ozo::unwrap_connection(conn)),
+        std::addressof(conn)
+    );
+}
+
+TEST(get_error_context, should_returns_reference_to_error_context) {
+    auto conn = std::make_shared<connection<>>();
+
+    EXPECT_EQ(
+        std::addressof(ozo::get_error_context(conn)),
+        std::addressof(conn->error_context_)
+    );
+}
+
+TEST(set_error_context, should_set_error_context) {
+    auto conn = std::make_shared<connection<>>();
+    ozo::set_error_context(conn, "brand new super context");
+
+    EXPECT_EQ(conn->error_context_, "brand new super context");
+}
+
+TEST(reset_error_context, should_resets_error_context) {
+    auto conn = std::make_shared<connection<>>();
+    conn->error_context_ = "brand new super context";
+    ozo::reset_error_context(conn);
+    EXPECT_TRUE(conn->error_context_.empty());
+}
+
+using ozo::error_code;
+using namespace ::testing;
+
+TEST(get_connection, should_pass_through_the_connection_to_handler) {
+    auto conn = std::make_shared<connection<>>();
+    using callback_mock = ozo::testing::callback_gmock<decltype(conn)>;
     using ozo::testing::wrap;
-    using ozo::error_code;
-    using namespace ::testing;
+    StrictMock<callback_mock> cb_mock{};
+    EXPECT_CALL(cb_mock, context_preserved()).WillOnce(Return());
+    EXPECT_CALL(cb_mock, call(error_code{}, conn)).WillOnce(Return());
+    ozo::get_connection(conn, wrap(cb_mock));
+}
 
-    SHOULD("pass through the connection to handler") {
-        auto conn = std::make_shared<connection<>>();
-        StrictGMock<callback_mock> cb_mock{};
-        EXPECT_INVOKE(cb_mock, context_preserved);
-        EXPECT_CALL(cb_mock, (call)(error_code{}, conn));
-        ozo::get_connection(conn, wrap(cb_mock));
-    }
-
-    SHOULD("resets connection error context") {
-        auto conn = std::make_shared<connection<>>();
-        conn->error_context_ = "some context here";
-        ozo::get_connection(conn, [](error_code, auto conn) {
-            EXPECT_TRUE(conn->error_context_.empty());
-        });
-    }
+TEST(get_connection, should_reset_connection_error_context) {
+    auto conn = std::make_shared<connection<>>();
+    conn->error_context_ = "some context here";
+    ozo::get_connection(conn, [](error_code, auto conn) {
+        EXPECT_TRUE(conn->error_context_.empty());
+    });
 }
 
 } //namespace

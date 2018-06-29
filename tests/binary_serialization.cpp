@@ -1,91 +1,78 @@
-#include <GUnit/GTest.h>
+#include <gtest/gtest.h>
+#include <gmock/gmock.h>
 
 #include <ozo/binary_serialization.h>
 
-GTEST("ozo::send") {
+namespace {
 
-    struct fixture {
-        std::vector<char> buffer;
-        ozo::detail::ostreambuf obuf{buffer};
-        ozo::ostream os{&obuf};
-    };
+using namespace testing;
 
-    struct badbuf : std::streambuf{};
+struct send : Test {
+    std::vector<char> buffer;
+    ozo::detail::ostreambuf obuf{buffer};
+    ozo::ostream os{&obuf};
 
-    SHOULD("with single byte type and bad ostream should throw exception") {
-        using namespace testing;
-        badbuf obuf;
-        ozo::ostream os{&obuf};
-        EXPECT_THROW(
-            ozo::send(os, ozo::register_types<>(), std::int8_t(42)),
-            ozo::system_error
-        );
-    }
+    struct badbuf_t : std::streambuf{} badbuf;
+    ozo::ostream bad_ostream{&badbuf};
 
-    SHOULD("with multi byte type and bad ostream should throw exception") {
-        using namespace testing;
-        badbuf obuf;
-        ozo::ostream os{&obuf};
-        EXPECT_THROW(
-            ozo::send(os, ozo::register_types<>(), std::int64_t(42)),
-            ozo::system_error
-        );
-    }
+    ozo::empty_oid_map oid_map;
+};
 
-    SHOULD("with std::int8_t should return as is") {
-        using namespace testing;
-        fixture f;
-        ozo::send(f.os, ozo::register_types<>(), std::int8_t(42));
-        EXPECT_THAT(f.buffer, ElementsAre(42));
-    }
-
-    SHOULD("with std::int16_t should return bytes in big-endian order") {
-        using namespace testing;
-        fixture f;
-        ozo::send(f.os, ozo::register_types<>(), std::int16_t(42));
-        EXPECT_THAT(f.buffer, ElementsAre(0, 42));
-    }
-
-    SHOULD("with std::int32_t should return bytes in big-endian order") {
-        using namespace testing;
-        fixture f;
-        ozo::send(f.os, ozo::register_types<>(), std::int32_t(42));
-        EXPECT_THAT(f.buffer, ElementsAre(0, 0, 0, 42));
-    }
-
-    SHOULD("with std::int64_t should return bytes in big-endian order") {
-        using namespace testing;
-        fixture f;
-        ozo::send(f.os, ozo::register_types<>(), std::int64_t(42));
-        EXPECT_THAT(f.buffer, ElementsAre(0, 0, 0, 0, 0, 0, 0, 42));
-    }
-
-    SHOULD("with float should return bytes in same order") {
-        using namespace testing;
-        fixture f;
-        ozo::send(f.os, ozo::register_types<>(), 42.13f);
-        EXPECT_THAT(f.buffer, ElementsAre(0x42, 0x28, 0x85, 0x1F));
-    }
-
-    SHOULD("with std::string should return bytes in same order") {
-        using namespace testing;
-        fixture f;
-        ozo::send(f.os, ozo::register_types<>(), std::string("text"));
-        EXPECT_THAT(f.buffer, ElementsAre('t', 'e', 'x', 't'));
-    }
-
-    SHOULD("with std::vector<float> should return bytes with one dimension array header and values") {
-        using namespace testing;
-        fixture f;
-        ozo::send(f.os, ozo::register_types<>(), std::vector<float>({42.13f}));
-        EXPECT_EQ(f.buffer, std::vector<char>({
-            0, 0, 0, 1,
-            0, 0, 0, 0,
-            0, 0, 2, '\xBC',
-            0, 0, 0, 1,
-            0, 0, 0, 0,
-            0, 0, 0, 4,
-            0x42, 0x28, char(0x85), 0x1F,
-        }));
-    }
+TEST_F(send, with_single_byte_type_and_bad_ostream_should_throw) {
+    EXPECT_THROW(
+        ozo::send(bad_ostream, oid_map, std::int8_t(42)),
+        ozo::system_error
+    );
 }
+
+TEST_F(send, with_multi_byte_type_and_bad_ostream_should_throw) {
+    EXPECT_THROW(
+        ozo::send(bad_ostream, oid_map, std::int64_t(42)),
+        ozo::system_error
+    );
+}
+
+TEST_F(send, with_std_int8_t_should_store_it_as_is) {
+    ozo::send(os, oid_map, std::int8_t(42));
+    EXPECT_THAT(buffer, ElementsAre(42));
+}
+
+TEST_F(send, with_std_int16_t_should_store_it_in_big_endian_order) {
+    ozo::send(os, oid_map, std::int16_t(42));
+    EXPECT_THAT(buffer, ElementsAre(0, 42));
+}
+
+TEST_F(send, with_std_int32_t_should_store_it_in_big_endian_order) {
+    ozo::send(os, oid_map, std::int32_t(42));
+    EXPECT_THAT(buffer, ElementsAre(0, 0, 0, 42));
+}
+
+TEST_F(send, with_std_int64_t_should_store_it_in_big_endian_order) {
+    ozo::send(os, oid_map, std::int64_t(42));
+    EXPECT_THAT(buffer, ElementsAre(0, 0, 0, 0, 0, 0, 0, 42));
+}
+
+TEST_F(send, with_float_should_store_it_as_integral_in_big_endian_order) {
+    ozo::send(os, oid_map, 42.13f);
+    EXPECT_THAT(buffer, ElementsAre(0x42, 0x28, 0x85, 0x1F));
+}
+
+TEST_F(send, with_std_string_should_store_it_as_is) {
+    ozo::send(os, oid_map, std::string("text"));
+    EXPECT_THAT(buffer, ElementsAre('t', 'e', 'x', 't'));
+}
+
+TEST_F(send, with_std_vector_of_float_should_store_with_one_dimension_array_header_and_values) {
+    ozo::send(os, oid_map, std::vector<float>({42.13f}));
+    EXPECT_EQ(buffer, std::vector<char>({
+        0, 0, 0, 1,
+        0, 0, 0, 0,
+        0, 0, 2, '\xBC',
+        0, 0, 0, 1,
+        0, 0, 0, 0,
+        0, 0, 0, 4,
+        0x42, 0x28, char(0x85), 0x1F,
+    }));
+}
+
+} // namespace

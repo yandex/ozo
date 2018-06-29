@@ -1,7 +1,8 @@
 #include <ozo/impl/async_connect.h>
 #include "test_error.h"
 #include "connection_mock.h"
-#include <GUnit/GTest.h>
+#include <gtest/gtest.h>
+#include <gmock/gmock.h>
 
 namespace {
 
@@ -29,175 +30,174 @@ using fixture = fixture_impl<empty_oid_map>;
 
 template <typename OidMap>
 auto make_fixture(OidMap) { return fixture_impl<OidMap>{}; }
+using namespace testing;
+using ozo::error_code;
 
-GTEST("ozo::async_connect()") {
-    using namespace testing;
-    using ozo::error_code;
+struct async_connect : Test {};
 
-    SHOULD("start connection, assign socket and wait for write complete") {
-        fixture f;
-        *(f.conn->handle_) = native_handle::good;
+TEST_F(async_connect, should_start_connection_assign_socket_and_wait_for_compile) {
+    fixture f;
+    *(f.conn->handle_) = native_handle::good;
 
-        EXPECT_CALL(f.connection, start_connection("conninfo")).WillOnce(Return(error_code{}));
-        EXPECT_CALL(f.connection, assign_socket()).WillOnce(Return(error_code{}));
-        EXPECT_CALL(f.socket, async_write_some(_)).WillOnce(Return());
-        ozo::impl::make_async_connect_op(f.conn, wrap(f.callback)).perform("conninfo");
-    }
+    EXPECT_CALL(f.connection, start_connection("conninfo")).WillOnce(Return(error_code{}));
+    EXPECT_CALL(f.connection, assign_socket()).WillOnce(Return(error_code{}));
+    EXPECT_CALL(f.socket, async_write_some(_)).WillOnce(Return());
+    ozo::impl::make_async_connect_op(f.conn, wrap(f.callback)).perform("conninfo");
+}
 
-    SHOULD("call handler with pq_connection_start_failed on error in start_connection") {
-        fixture f;
-        *(f.conn->handle_) = native_handle::good;
+TEST_F(async_connect, should_call_handler_with_pq_connection_start_failed_on_error_in_start_connection) {
+    fixture f;
+    *(f.conn->handle_) = native_handle::good;
 
-        EXPECT_CALL(f.connection, start_connection("conninfo"))
-            .WillOnce(Return(error_code{ozo::error::pq_connection_start_failed}));
+    EXPECT_CALL(f.connection, start_connection("conninfo"))
+        .WillOnce(Return(error_code{ozo::error::pq_connection_start_failed}));
 
-        EXPECT_CALL(f.io_context, post(_)).WillOnce(InvokeArgument<0>());
-        EXPECT_CALL(f.callback, context_preserved()).WillOnce(Return());
-        EXPECT_CALL(f.callback, call(error_code{ozo::error::pq_connection_start_failed}))
-            .WillOnce(Return());
+    EXPECT_CALL(f.io_context, post(_)).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(f.callback, context_preserved()).WillOnce(Return());
+    EXPECT_CALL(f.callback, call(error_code{ozo::error::pq_connection_start_failed}))
+        .WillOnce(Return());
 
-        ozo::impl::make_async_connect_op(f.conn, wrap(f.callback)).perform("conninfo");
-    }
+    ozo::impl::make_async_connect_op(f.conn, wrap(f.callback)).perform("conninfo");
+}
 
-    SHOULD("call handler with pq_connection_status_bad if connection status is bad") {
-        fixture f;
-        *(f.conn->handle_) = native_handle::bad;
+TEST_F(async_connect, should_call_handler_with_pq_connection_status_bad_if_connection_status_is_bad) {
+    fixture f;
+    *(f.conn->handle_) = native_handle::bad;
 
-        EXPECT_CALL(f.connection, start_connection("conninfo")).WillOnce(Return(error_code{}));
+    EXPECT_CALL(f.connection, start_connection("conninfo")).WillOnce(Return(error_code{}));
 
-        EXPECT_CALL(f.io_context, post(_)).WillOnce(InvokeArgument<0>());
-        EXPECT_CALL(f.callback, context_preserved()).WillOnce(Return());
-        EXPECT_CALL(f.callback, call(error_code{ozo::error::pq_connection_status_bad}))
-            .WillOnce(Return());
+    EXPECT_CALL(f.io_context, post(_)).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(f.callback, context_preserved()).WillOnce(Return());
+    EXPECT_CALL(f.callback, call(error_code{ozo::error::pq_connection_status_bad}))
+        .WillOnce(Return());
 
-        ozo::impl::make_async_connect_op(f.conn, wrap(f.callback)).perform("conninfo");
-    }
+    ozo::impl::make_async_connect_op(f.conn, wrap(f.callback)).perform("conninfo");
+}
 
-    SHOULD("call handler with error if assign_socket returns error") {
-        fixture f;
-        *(f.conn->handle_) = native_handle::good;
+TEST_F(async_connect, should_call_handler_with_error_if_assign_socket_returns_error) {
+    fixture f;
+    *(f.conn->handle_) = native_handle::good;
 
-        EXPECT_CALL(f.connection, start_connection("conninfo")).WillOnce(Return(error_code{}));
-        EXPECT_CALL(f.connection, assign_socket()).WillOnce(Return(error_code{ozo::testing::error::error}));
+    EXPECT_CALL(f.connection, start_connection("conninfo")).WillOnce(Return(error_code{}));
+    EXPECT_CALL(f.connection, assign_socket()).WillOnce(Return(error_code{ozo::testing::error::error}));
 
-        EXPECT_CALL(f.io_context, post(_)).WillOnce(InvokeArgument<0>());
-        EXPECT_CALL(f.callback, context_preserved()).WillOnce(Return());
-        EXPECT_CALL(f.callback, call(error_code{ozo::testing::error::error})).WillOnce(Return());
+    EXPECT_CALL(f.io_context, post(_)).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(f.callback, context_preserved()).WillOnce(Return());
+    EXPECT_CALL(f.callback, call(error_code{ozo::testing::error::error})).WillOnce(Return());
 
-        ozo::impl::make_async_connect_op(f.conn, wrap(f.callback)).perform("conninfo");
-    }
+    ozo::impl::make_async_connect_op(f.conn, wrap(f.callback)).perform("conninfo");
+}
 
-    SHOULD("wait for write complete if connect_poll() returns PGRES_POLLING_WRITING") {
-        fixture f;
-        *(f.conn->handle_) = native_handle::good;
+TEST_F(async_connect, should_wait_for_write_complete_if_connect_poll_returns_PGRES_POLLING_WRITING) {
+    fixture f;
+    *(f.conn->handle_) = native_handle::good;
 
-        testing::InSequence s;
-        EXPECT_CALL(f.connection, start_connection("conninfo")).WillOnce(Return(error_code{}));
-        EXPECT_CALL(f.connection, assign_socket()).WillOnce(Return(error_code{}));
+    testing::InSequence s;
+    EXPECT_CALL(f.connection, start_connection("conninfo")).WillOnce(Return(error_code{}));
+    EXPECT_CALL(f.connection, assign_socket()).WillOnce(Return(error_code{}));
 
-        EXPECT_CALL(f.socket, async_write_some(_)).WillOnce(InvokeArgument<0>(error_code{}));
-        EXPECT_CALL(f.callback, context_preserved()).WillOnce(Return());
+    EXPECT_CALL(f.socket, async_write_some(_)).WillOnce(InvokeArgument<0>(error_code{}));
+    EXPECT_CALL(f.callback, context_preserved()).WillOnce(Return());
 
-        EXPECT_CALL(f.connection, connect_poll()).WillOnce(Return(PGRES_POLLING_WRITING));
+    EXPECT_CALL(f.connection, connect_poll()).WillOnce(Return(PGRES_POLLING_WRITING));
 
-        EXPECT_CALL(f.socket, async_write_some(_)).WillOnce(Return());
-        ozo::impl::make_async_connect_op(f.conn, wrap(f.callback)).perform("conninfo");
-    }
+    EXPECT_CALL(f.socket, async_write_some(_)).WillOnce(Return());
+    ozo::impl::make_async_connect_op(f.conn, wrap(f.callback)).perform("conninfo");
+}
 
-    SHOULD("wait for read complete if connect_poll() returns PGRES_POLLING_READING") {
-        fixture f;
-        *(f.conn->handle_) = native_handle::good;
+TEST_F(async_connect, should_wait_for_read_complete_if_connect_poll_returns_PGRES_POLLING_READING) {
+    fixture f;
+    *(f.conn->handle_) = native_handle::good;
 
-        testing::InSequence s;
-        EXPECT_CALL(f.connection, start_connection("conninfo")).WillOnce(Return(error_code{}));
-        EXPECT_CALL(f.connection, assign_socket()).WillOnce(Return(error_code{}));
+    testing::InSequence s;
+    EXPECT_CALL(f.connection, start_connection("conninfo")).WillOnce(Return(error_code{}));
+    EXPECT_CALL(f.connection, assign_socket()).WillOnce(Return(error_code{}));
 
-        EXPECT_CALL(f.socket, async_write_some(_)).WillOnce(InvokeArgument<0>(error_code{}));
-        EXPECT_CALL(f.callback, context_preserved()).WillOnce(Return());
+    EXPECT_CALL(f.socket, async_write_some(_)).WillOnce(InvokeArgument<0>(error_code{}));
+    EXPECT_CALL(f.callback, context_preserved()).WillOnce(Return());
 
-        EXPECT_CALL(f.connection, connect_poll()).WillOnce(Return(PGRES_POLLING_READING));
+    EXPECT_CALL(f.connection, connect_poll()).WillOnce(Return(PGRES_POLLING_READING));
 
-        EXPECT_CALL(f.socket, async_read_some(_)).WillOnce(Return());
-        ozo::impl::make_async_connect_op(f.conn, wrap(f.callback)).perform("conninfo");
-    }
+    EXPECT_CALL(f.socket, async_read_some(_)).WillOnce(Return());
+    ozo::impl::make_async_connect_op(f.conn, wrap(f.callback)).perform("conninfo");
+}
 
-    SHOULD("call handler with no error if connect_poll() returns PGRES_POLLING_OK") {
-        fixture f;
-        *(f.conn->handle_) = native_handle::good;
+TEST_F(async_connect, should_call_handler_with_no_error_if_connect_poll_returns_PGRES_POLLING_OK) {
+    fixture f;
+    *(f.conn->handle_) = native_handle::good;
 
-        testing::InSequence s;
-        EXPECT_CALL(f.connection, start_connection("conninfo")).WillOnce(Return(error_code{}));
-        EXPECT_CALL(f.connection, assign_socket()).WillOnce(Return(error_code{}));
+    testing::InSequence s;
+    EXPECT_CALL(f.connection, start_connection("conninfo")).WillOnce(Return(error_code{}));
+    EXPECT_CALL(f.connection, assign_socket()).WillOnce(Return(error_code{}));
 
-        EXPECT_CALL(f.socket, async_write_some(_)).WillOnce(InvokeArgument<0>(error_code{}));
-        EXPECT_CALL(f.callback, context_preserved()).WillOnce(Return());
+    EXPECT_CALL(f.socket, async_write_some(_)).WillOnce(InvokeArgument<0>(error_code{}));
+    EXPECT_CALL(f.callback, context_preserved()).WillOnce(Return());
 
-        EXPECT_CALL(f.connection, connect_poll()).WillOnce(Return(PGRES_POLLING_OK));
+    EXPECT_CALL(f.connection, connect_poll()).WillOnce(Return(PGRES_POLLING_OK));
 
-        EXPECT_CALL(f.io_context, post(_)).WillOnce(InvokeArgument<0>());
-        EXPECT_CALL(f.callback, context_preserved()).WillOnce(Return());
-        EXPECT_CALL(f.callback, call(error_code{})).WillOnce(Return());
-        ozo::impl::make_async_connect_op(f.conn, wrap(f.callback)).perform("conninfo");
-    }
+    EXPECT_CALL(f.io_context, post(_)).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(f.callback, context_preserved()).WillOnce(Return());
+    EXPECT_CALL(f.callback, call(error_code{})).WillOnce(Return());
+    ozo::impl::make_async_connect_op(f.conn, wrap(f.callback)).perform("conninfo");
+}
 
-    SHOULD("call handler with pq_connect_poll_failed if connect_poll() returns PGRES_POLLING_FAILED") {
-        fixture f;
-        *(f.conn->handle_) = native_handle::good;
+TEST_F(async_connect, should_call_handler_with_pq_connect_poll_failed_if_connect_poll_returns_PGRES_POLLING_FAILED) {
+    fixture f;
+    *(f.conn->handle_) = native_handle::good;
 
-        testing::InSequence s;
-        EXPECT_CALL(f.connection, start_connection("conninfo")).WillOnce(Return(error_code{}));
-        EXPECT_CALL(f.connection, assign_socket()).WillOnce(Return(error_code{}));
+    testing::InSequence s;
+    EXPECT_CALL(f.connection, start_connection("conninfo")).WillOnce(Return(error_code{}));
+    EXPECT_CALL(f.connection, assign_socket()).WillOnce(Return(error_code{}));
 
-        EXPECT_CALL(f.socket, async_write_some(_)).WillOnce(InvokeArgument<0>(error_code{}));
-        EXPECT_CALL(f.callback, context_preserved()).WillOnce(Return());
+    EXPECT_CALL(f.socket, async_write_some(_)).WillOnce(InvokeArgument<0>(error_code{}));
+    EXPECT_CALL(f.callback, context_preserved()).WillOnce(Return());
 
-        EXPECT_CALL(f.connection, connect_poll()).WillOnce(Return(PGRES_POLLING_FAILED));
+    EXPECT_CALL(f.connection, connect_poll()).WillOnce(Return(PGRES_POLLING_FAILED));
 
-        EXPECT_CALL(f.io_context, post(_)).WillOnce(InvokeArgument<0>());
-        EXPECT_CALL(f.callback, context_preserved()).WillOnce(Return());
-        EXPECT_CALL(f.callback, call(error_code{ozo::error::pq_connect_poll_failed}))
-            .WillOnce(Return());
-        ozo::impl::make_async_connect_op(f.conn, wrap(f.callback)).perform("conninfo");
-    }
+    EXPECT_CALL(f.io_context, post(_)).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(f.callback, context_preserved()).WillOnce(Return());
+    EXPECT_CALL(f.callback, call(error_code{ozo::error::pq_connect_poll_failed}))
+        .WillOnce(Return());
+    ozo::impl::make_async_connect_op(f.conn, wrap(f.callback)).perform("conninfo");
+}
 
-    SHOULD("call handler with pq_connect_poll_failed if connect_poll() returns PGRES_POLLING_ACTIVE") {
-        fixture f;
-        *(f.conn->handle_) = native_handle::good;
+TEST_F(async_connect, should_call_handler_with_pq_connect_poll_failed_if_connect_poll_returns_PGRES_POLLING_ACTIVE) {
+    fixture f;
+    *(f.conn->handle_) = native_handle::good;
 
-        testing::InSequence s;
-        EXPECT_CALL(f.connection, start_connection("conninfo")).WillOnce(Return(error_code{}));
-        EXPECT_CALL(f.connection, assign_socket()).WillOnce(Return(error_code{}));
+    testing::InSequence s;
+    EXPECT_CALL(f.connection, start_connection("conninfo")).WillOnce(Return(error_code{}));
+    EXPECT_CALL(f.connection, assign_socket()).WillOnce(Return(error_code{}));
 
-        EXPECT_CALL(f.socket, async_write_some(_)).WillOnce(InvokeArgument<0>(error_code{}));
-        EXPECT_CALL(f.callback, context_preserved()).WillOnce(Return());
+    EXPECT_CALL(f.socket, async_write_some(_)).WillOnce(InvokeArgument<0>(error_code{}));
+    EXPECT_CALL(f.callback, context_preserved()).WillOnce(Return());
 
-        EXPECT_CALL(f.connection, connect_poll()).WillOnce(Return(PGRES_POLLING_ACTIVE));
+    EXPECT_CALL(f.connection, connect_poll()).WillOnce(Return(PGRES_POLLING_ACTIVE));
 
-        EXPECT_CALL(f.io_context, post(_)).WillOnce(InvokeArgument<0>());
-        EXPECT_CALL(f.callback, context_preserved()).WillOnce(Return());
-        EXPECT_CALL(f.callback, call(error_code{ozo::error::pq_connect_poll_failed}))
-            .WillOnce(Return());
-        ozo::impl::make_async_connect_op(f.conn, wrap(f.callback)).perform("conninfo");
-    }
+    EXPECT_CALL(f.io_context, post(_)).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(f.callback, context_preserved()).WillOnce(Return());
+    EXPECT_CALL(f.callback, call(error_code{ozo::error::pq_connect_poll_failed}))
+        .WillOnce(Return());
+    ozo::impl::make_async_connect_op(f.conn, wrap(f.callback)).perform("conninfo");
+}
 
-    SHOULD("call handler with the error if polling operation invokes callback with it") {
-        fixture f;
-        *(f.conn->handle_) = native_handle::good;
+TEST_F(async_connect, should_call_handler_with_the_error_if_polling_operation_invokes_callback_with_it) {
+    fixture f;
+    *(f.conn->handle_) = native_handle::good;
 
-        testing::InSequence s;
-        EXPECT_CALL(f.connection, start_connection("conninfo")).WillOnce(Return(error_code{}));
-        EXPECT_CALL(f.connection, assign_socket()).WillOnce(Return(error_code{}));
+    testing::InSequence s;
+    EXPECT_CALL(f.connection, start_connection("conninfo")).WillOnce(Return(error_code{}));
+    EXPECT_CALL(f.connection, assign_socket()).WillOnce(Return(error_code{}));
 
-        EXPECT_CALL(f.socket, async_write_some(_))
-            .WillOnce(InvokeArgument<0>(ozo::testing::error::error));
-        EXPECT_CALL(f.callback, context_preserved()).WillOnce(Return());
+    EXPECT_CALL(f.socket, async_write_some(_))
+        .WillOnce(InvokeArgument<0>(ozo::testing::error::error));
+    EXPECT_CALL(f.callback, context_preserved()).WillOnce(Return());
 
-        EXPECT_CALL(f.io_context, post(_)).WillOnce(InvokeArgument<0>());
-        EXPECT_CALL(f.callback, context_preserved()).WillOnce(Return());
-        EXPECT_CALL(f.callback, call(error_code{ozo::testing::error::error}))
-            .WillOnce(Return());
-        ozo::impl::make_async_connect_op(f.conn, wrap(f.callback)).perform("conninfo");
-    }
+    EXPECT_CALL(f.io_context, post(_)).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(f.callback, context_preserved()).WillOnce(Return());
+    EXPECT_CALL(f.callback, call(error_code{ozo::testing::error::error}))
+        .WillOnce(Return());
+    ozo::impl::make_async_connect_op(f.conn, wrap(f.callback)).perform("conninfo");
 }
 
 } // namespace
