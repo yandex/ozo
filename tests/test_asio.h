@@ -4,6 +4,7 @@
 
 #include <GUnit/GTest.h>
 #include <boost/core/demangle.hpp>
+#include "test_error.h"
 
 namespace ozo {
 namespace testing {

@@ -1,155 +1,163 @@
-#include <GUnit/GTest.h>
+#include <gtest/gtest.h>
+#include <gmock/gmock.h>
 
 #include <ozo/binary_query.h>
 
 #include <iterator>
 
+namespace {
+
 namespace hana = ::boost::hana;
 
-GTEST("ozo::binary_query::params_count", "without parameters should be equal to 0") {
+struct binary_query_params_count : ::testing::Test {};
+
+TEST_F(binary_query_params_count, without_parameters_should_be_equal_to_0) {
     const auto query = ozo::make_binary_query("", hana::make_tuple());
     EXPECT_EQ(query.params_count, 0);
 }
 
-GTEST("ozo::query") {
-    SHOULD("with more than 0 parameters should be equal to that number") {
-        const auto query = ozo::make_binary_query("", hana::make_tuple(true, 42, std::string("text")));
-        EXPECT_EQ(query.params_count, 3);
-    }
-
-    SHOULD("from query concept with more than 0 parameters should be equal to that number") {
-        const auto query = ozo::make_binary_query(ozo::make_query("", true, 42, std::string("text")));
-        EXPECT_EQ(query.params_count, 3);
-    }
+TEST_F(binary_query_params_count, with_more_than_0_parameters_should_be_equal_to_that_number) {
+    const auto query = ozo::make_binary_query("", hana::make_tuple(true, 42, std::string("text")));
+    EXPECT_EQ(query.params_count, 3);
 }
 
-GTEST("ozo::binary_query::text", "query text should be equal to input") {
+TEST_F(binary_query_params_count, from_query_concept_with_more_than_0_parameters_should_be_equal_to_that_number) {
+    const auto query = ozo::make_binary_query(ozo::make_query("", true, 42, std::string("text")));
+    EXPECT_EQ(query.params_count, 3);
+}
+
+struct binary_query_text : ::testing::Test {};
+
+TEST_F(binary_query_text, should_be_equal_to_input) {
     const auto query = ozo::make_binary_query("query", hana::make_tuple());
     EXPECT_STREQ(query.text(), "query");
 }
 
-GTEST("ozo::binary_query::types") {
-    SHOULD("type of the param should be equal to type oid") {
-        const auto query = ozo::make_binary_query("", hana::make_tuple(std::int16_t()));
-        EXPECT_EQ(query.types()[0], ozo::type_traits<std::int16_t>::oid());
-    }
+struct binary_query_types : ::testing::Test {};
 
-    SHOULD("nullptr type should be equal to 0") {
-        const auto query = ozo::make_binary_query("", hana::make_tuple(nullptr));
-        EXPECT_EQ(query.types()[0], 0);
-    }
-
-    SHOULD("null std::optional<std::int32_t> type should be equal to std::int32_t oid") {
-        const auto query = ozo::make_binary_query("", hana::make_tuple(__OZO_STD_OPTIONAL<std::int32_t>()));
-        EXPECT_EQ(query.types()[0], ozo::type_traits<std::int32_t>::oid());
-    }
-
-    SHOULD("null std::shared_ptr<std::int32_t> type should be equal to std::int32_t oid") {
-        const auto query = ozo::make_binary_query("", hana::make_tuple(std::shared_ptr<std::int32_t>()));
-        EXPECT_EQ(query.types()[0], ozo::type_traits<std::int32_t>::oid());
-    }
-
-    SHOULD("null std::unique_ptr<std::int32_t> type should be equal to std::int32_t oid") {
-        const auto query = ozo::make_binary_query("", hana::make_tuple(std::vector<std::int32_t>()));
-        EXPECT_EQ(query.types()[0], ozo::type_traits<std::vector<std::int32_t>>::oid());
-    }
-
-    SHOULD("null std::weak_ptr<std::int32_t> type should be equal to std::int32_t oid") {
-        const auto query = ozo::make_binary_query("", hana::make_tuple(std::weak_ptr<std::int32_t>()));
-        EXPECT_EQ(query.types()[0], ozo::type_traits<std::int32_t>::oid());
-    }
+TEST_F(binary_query_types, for_param_should_be_equal_to_type_oid) {
+    const auto query = ozo::make_binary_query("", hana::make_tuple(std::int16_t()));
+    EXPECT_EQ(query.types()[0], ozo::type_traits<std::int16_t>::oid());
 }
 
-GTEST("ozo::binary_query::formats", "format of the param should be equal to 1") {
+TEST_F(binary_query_types, for_nullptr_should_be_equal_to_0) {
+    const auto query = ozo::make_binary_query("", hana::make_tuple(nullptr));
+    EXPECT_EQ(query.types()[0], 0);
+}
+
+TEST_F(binary_query_types, for_not_initialized_std_optional_should_be_equal_to_value_type_oid) {
+    const auto query = ozo::make_binary_query("", hana::make_tuple(__OZO_STD_OPTIONAL<std::int32_t>()));
+    EXPECT_EQ(query.types()[0], ozo::type_traits<std::int32_t>::oid());
+}
+
+TEST_F(binary_query_types, for_null_std_shared_ptr_should_be_equal_to_value_type_oid) {
+    const auto query = ozo::make_binary_query("", hana::make_tuple(std::shared_ptr<std::int32_t>()));
+    EXPECT_EQ(query.types()[0], ozo::type_traits<std::int32_t>::oid());
+}
+
+TEST_F(binary_query_types, for_null_std_unique_ptr_should_be_equal_to_value_type_oid) {
+    const auto query = ozo::make_binary_query("", hana::make_tuple(std::vector<std::int32_t>()));
+    EXPECT_EQ(query.types()[0], ozo::type_traits<std::vector<std::int32_t>>::oid());
+}
+
+TEST_F(binary_query_types, for_null_std_weak_ptr_should_be_equal_to_value_type_oid) {
+    const auto query = ozo::make_binary_query("", hana::make_tuple(std::weak_ptr<std::int32_t>()));
+    EXPECT_EQ(query.types()[0], ozo::type_traits<std::int32_t>::oid());
+}
+
+struct binary_query_formats : ::testing::Test {};
+
+TEST_F(binary_query_formats, format_of_the_param_should_be_equal_to_1) {
     const auto query = ozo::make_binary_query("", hana::make_tuple(std::int16_t()));
     EXPECT_EQ(query.formats()[0], 1);
 }
 
-GTEST("ozo::binary_query::lengths") {
-    SHOULD("length of the param should be equal to its binary serialized data size") {
-        const auto query = ozo::make_binary_query("", hana::make_tuple(std::int16_t()));
-        EXPECT_EQ(query.lengths()[0], sizeof(std::int16_t));
-    }
+struct binary_query_lengths : ::testing::Test {};
 
-    SHOULD("string length should be equal to number of chars") {
-        const auto query = ozo::make_binary_query("", hana::make_tuple(std::string("std::string")));
-        EXPECT_EQ(query.lengths()[0], 11);
-    }
+TEST_F(binary_query_lengths, should_be_equal_to_parameter_binary_serialized_data_size) {
+    const auto query = ozo::make_binary_query("", hana::make_tuple(std::int16_t()));
+    EXPECT_EQ(query.lengths()[0], sizeof(std::int16_t));
 }
 
-GTEST("ozo::binary_query::values") {
-
-    SHOULD("string value should be equal to input") {
-        using namespace ::testing;
-        const auto query = ozo::make_binary_query("", hana::make_tuple(std::string("string")));
-        EXPECT_THAT(std::vector<char>(query.values()[0], query.values()[0] + 6),
-            ElementsAre('s', 't', 'r', 'i', 'n', 'g'));
-    }
-
-    SHOULD("nullptr value should be equal to nullptr") {
-        const auto query = ozo::make_binary_query("", hana::make_tuple(nullptr));
-        EXPECT_EQ(query.values()[0], nullptr);
-    }
-
-    SHOULD("nullopt value should be equal to nullptr") {
-        const auto query = ozo::make_binary_query("", hana::make_tuple(__OZO_NULLOPT));
-        EXPECT_EQ(query.values()[0], nullptr);
-    }
-
-    SHOULD("null std::optional<std::int32_t> value should be equal to nullptr") {
-        const auto query = ozo::make_binary_query("", hana::make_tuple(__OZO_STD_OPTIONAL<std::int32_t>()));
-        EXPECT_EQ(query.values()[0], nullptr);
-    }
-
-    SHOULD("not null std::optional<std::string> value should be equal to input") {
-        using namespace ::testing;
-        const auto query = ozo::make_binary_query("", hana::make_tuple(__OZO_STD_OPTIONAL<std::string>("string")));
-        EXPECT_THAT(std::vector<char>(query.values()[0], query.values()[0] + 6),
-            ElementsAre('s', 't', 'r', 'i', 'n', 'g'));
-    }
-
-    SHOULD("null std::shared_ptr<std::int32_t> value should be equal to nullptr") {
-        const auto query = ozo::make_binary_query("", hana::make_tuple(std::shared_ptr<std::int32_t>()));
-        EXPECT_EQ(query.values()[0], nullptr);
-    }
-
-    SHOULD("not null std::shared_ptr<std::string> value should be equal to input") {
-        using namespace ::testing;
-        const auto query = ozo::make_binary_query("", hana::make_tuple(std::make_shared<std::string>("string")));
-        EXPECT_THAT(std::vector<char>(query.values()[0], query.values()[0] + 6),
-            ElementsAre('s', 't', 'r', 'i', 'n', 'g'));
-    }
-
-    SHOULD("null std::unique_ptr<std::int32_t> value should be equal to nullptr") {
-        const auto query = ozo::make_binary_query("", hana::make_tuple(std::unique_ptr<std::int32_t>()));
-        EXPECT_EQ(query.values()[0], nullptr);
-    }
-
-    SHOULD("not null std::unique_ptr<std::string> value should be equal to input") {
-        using namespace ::testing;
-        const auto query = ozo::make_binary_query("", hana::make_tuple(std::make_unique<std::string>("string")));
-        EXPECT_THAT(std::vector<char>(query.values()[0], query.values()[0] + 6),
-            ElementsAre('s', 't', 'r', 'i', 'n', 'g'));
-    }
-
-    SHOULD("null std::weak_ptr<std::int32_t> value should be equal to nullptr") {
-        const auto query = ozo::make_binary_query("", hana::make_tuple(std::weak_ptr<std::int32_t>()));
-        EXPECT_EQ(query.values()[0], nullptr);
-    }
-
-    SHOULD("not null std::weak_ptr<std::string> value should be equal to input") {
-        using namespace ::testing;
-        const auto ptr = std::make_shared<std::string>("string");
-        const auto query = ozo::make_binary_query("", hana::make_tuple(std::weak_ptr<std::string>(ptr)));
-        EXPECT_THAT(std::vector<char>(query.values()[0], query.values()[0] + 6),
-            ElementsAre('s', 't', 'r', 'i', 'n', 'g'));
-    }
-
-    SHOULD("std::reference_wrapper<std::string> value should be equal to input") {
-        using namespace ::testing;
-        const auto value = std::string("string");
-        const auto query = ozo::make_binary_query("", hana::make_tuple(std::cref(value)));
-        EXPECT_THAT(std::vector<char>(query.values()[0], query.values()[0] + 6),
-            ElementsAre('s', 't', 'r', 'i', 'n', 'g'));
-    }
+TEST_F(binary_query_lengths, for_std_string_should_be_equal_to_std_string_length) {
+    const auto query = ozo::make_binary_query("", hana::make_tuple(std::string("std::string")));
+    EXPECT_EQ(query.lengths()[0], 11);
 }
+
+struct binary_query_values : ::testing::Test {};
+
+TEST_F(binary_query_values, for_string_value_should_be_equal_to_input) {
+    using namespace ::testing;
+    const auto query = ozo::make_binary_query("", hana::make_tuple(std::string("string")));
+    EXPECT_THAT(std::vector<char>(query.values()[0], query.values()[0] + 6),
+        ElementsAre('s', 't', 'r', 'i', 'n', 'g'));
+}
+
+TEST_F(binary_query_values, for_nullptr_should_be_equal_to_nullptr) {
+    const auto query = ozo::make_binary_query("", hana::make_tuple(nullptr));
+    EXPECT_EQ(query.values()[0], nullptr);
+}
+
+TEST_F(binary_query_values, for_nullopt_value_should_be_equal_to_nullptr) {
+    const auto query = ozo::make_binary_query("", hana::make_tuple(__OZO_NULLOPT));
+    EXPECT_EQ(query.values()[0], nullptr);
+}
+
+TEST_F(binary_query_values, for_not_initialized_std_optional_should_be_equal_to_nullptr) {
+    const auto query = ozo::make_binary_query("", hana::make_tuple(__OZO_STD_OPTIONAL<std::int32_t>()));
+    EXPECT_EQ(query.values()[0], nullptr);
+}
+
+TEST_F(binary_query_values, for_initialized_std_optional_value_should_be_equal_to_binary_representation) {
+    using namespace ::testing;
+    const auto query = ozo::make_binary_query("", hana::make_tuple(__OZO_STD_OPTIONAL<std::string>("string")));
+    EXPECT_THAT(std::vector<char>(query.values()[0], query.values()[0] + 6),
+        ElementsAre('s', 't', 'r', 'i', 'n', 'g'));
+}
+
+TEST_F(binary_query_values, for_null_std_shared_ptr_value_should_be_equal_to_nullptr) {
+    const auto query = ozo::make_binary_query("", hana::make_tuple(std::shared_ptr<std::int32_t>()));
+    EXPECT_EQ(query.values()[0], nullptr);
+}
+
+TEST_F(binary_query_values, for_not_null_std_shared_ptr_value_should_be_equal_to_binary_representation) {
+    using namespace ::testing;
+    const auto query = ozo::make_binary_query("", hana::make_tuple(std::make_shared<std::string>("string")));
+    EXPECT_THAT(std::vector<char>(query.values()[0], query.values()[0] + 6),
+        ElementsAre('s', 't', 'r', 'i', 'n', 'g'));
+}
+
+TEST_F(binary_query_values, for_null_std_unique_ptr_value_should_be_equal_to_nullptr) {
+    const auto query = ozo::make_binary_query("", hana::make_tuple(std::unique_ptr<std::int32_t>()));
+    EXPECT_EQ(query.values()[0], nullptr);
+}
+
+TEST_F(binary_query_values, for_not_null_std_unique_ptr_value_should_be_equal_to_binary_representation) {
+    using namespace ::testing;
+    const auto query = ozo::make_binary_query("", hana::make_tuple(std::make_unique<std::string>("string")));
+    EXPECT_THAT(std::vector<char>(query.values()[0], query.values()[0] + 6),
+        ElementsAre('s', 't', 'r', 'i', 'n', 'g'));
+}
+
+TEST_F(binary_query_values, for_null_std_weak_ptr_value_should_be_equal_to_nullptr) {
+    const auto query = ozo::make_binary_query("", hana::make_tuple(std::weak_ptr<std::int32_t>()));
+    EXPECT_EQ(query.values()[0], nullptr);
+}
+
+TEST_F(binary_query_values, for_not_null_std_weak_ptr_value_should_be_equal_to_binary_representation) {
+    using namespace ::testing;
+    const auto ptr = std::make_shared<std::string>("string");
+    const auto query = ozo::make_binary_query("", hana::make_tuple(std::weak_ptr<std::string>(ptr)));
+    EXPECT_THAT(std::vector<char>(query.values()[0], query.values()[0] + 6),
+        ElementsAre('s', 't', 'r', 'i', 'n', 'g'));
+}
+
+TEST_F(binary_query_values, for_std_reference_wrapper_value_should_be_equal_to_binary_representation) {
+    using namespace ::testing;
+    const auto value = std::string("string");
+    const auto query = ozo::make_binary_query("", hana::make_tuple(std::cref(value)));
+    EXPECT_THAT(std::vector<char>(query.values()[0], query.values()[0] + 6),
+        ElementsAre('s', 't', 'r', 'i', 'n', 'g'));
+}
+
+} // namespace

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <boost/system/system_error.hpp>
+#include <ozo/error.h>
 
 namespace ozo {
 namespace testing {

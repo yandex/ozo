@@ -1,19 +1,20 @@
 #include <ozo/connection_info.h>
 
-#include <GUnit/GTest.h>
+#include <gtest/gtest.h>
+#include <gmock/gmock.h>
 
-GTEST("ozo::connection_info") {
-    namespace asio = boost::asio;
+namespace {
 
-    SHOULD("return error and bad connect for invalid connection info") {
-        ozo::io_context io;
-        ozo::connection_info<> conn_info(io, "invalid connection info");
+TEST(connection_info, sould_return_error_and_bad_connect_for_invalid_connection_info) {
+    ozo::io_context io;
+    ozo::connection_info<> conn_info(io, "invalid connection info");
 
-        ozo::get_connection(conn_info, [](ozo::error_code ec, auto conn){
-            EXPECT_TRUE(ec);
-            EXPECT_TRUE(ozo::connection_bad(conn));
-        });
+    ozo::get_connection(conn_info, [](ozo::error_code ec, auto conn){
+        EXPECT_TRUE(ec);
+        EXPECT_TRUE(ozo::connection_bad(conn));
+    });
 
-        io.run();
-    }
+    io.run();
 }
+
+} // namespace

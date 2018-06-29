@@ -1,7 +1,8 @@
 #include <ozo/binary_deserialization.h>
 #include "result_mock.h"
 
-#include <GUnit/GTest.h>
+#include <gtest/gtest.h>
+#include <gmock/gmock.h>
 
 BOOST_FUSION_DEFINE_STRUCT((),
     fusion_adapted_test_result,
@@ -14,511 +15,503 @@ namespace {
 using namespace ::testing;
 using ::ozo::testing::pg_result_mock;
 
-GTEST("ozo::recv") {
-    auto oid_map = ozo::empty_oid_map{};
-    StrictGMock<pg_result_mock> mock{};
-    ::ozo::value<pg_result_mock> value({object(mock), 0, 0});
+struct recv : Test {
+    ozo::empty_oid_map oid_map{};
+    StrictMock<pg_result_mock> mock{};
+    ::ozo::value<pg_result_mock> value{{&mock, 0, 0}};
+};
 
-    SHOULD("throw system_error if oid does not match the type") {
-        EXPECT_INVOKE(mock, get_isnull, _, _).WillRepeatedly(Return(false));
-        EXPECT_INVOKE(mock, field_type, _).WillRepeatedly(Return(TEXTOID));
+TEST_F(recv, should_throw_system_error_if_oid_does_not_match_the_type) {
+    EXPECT_CALL(mock, get_isnull(_, _)).WillRepeatedly(Return(false));
+    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(TEXTOID));
 
-        int x;
-        EXPECT_THROW(ozo::recv(value, oid_map, x), ozo::system_error);
-    }
-
-    SHOULD("convert BOOLOID to bool") {
-        const char bytes[] = { true };
-
-        EXPECT_INVOKE(mock, field_type, _).WillRepeatedly(Return(BOOLOID));
-        EXPECT_INVOKE(mock, get_value, _, _).WillRepeatedly(Return(bytes));
-        EXPECT_INVOKE(mock, get_length, _, _).WillRepeatedly(Return(sizeof(bytes)));
-        EXPECT_INVOKE(mock, get_isnull, _, _).WillRepeatedly(Return(false));
-
-        bool got = false;
-        ozo::recv(value, oid_map, got);
-        EXPECT_TRUE(got);
-    }
-
-    SHOULD("convert FLOAT4OID to float") {
-        const char bytes[] = { 0x42, 0x28, static_cast<char>(0x85), 0x1F };
-
-        EXPECT_INVOKE(mock, field_type, _).WillRepeatedly(Return(FLOAT4OID));
-        EXPECT_INVOKE(mock, get_value, _, _).WillRepeatedly(Return(bytes));
-        EXPECT_INVOKE(mock, get_length, _, _).WillRepeatedly(Return(4));
-        EXPECT_INVOKE(mock, get_isnull, _, _).WillRepeatedly(Return(false));
-
-        float got = 0.0;
-        ozo::recv(value, oid_map, got);
-        EXPECT_EQ(got, 42.13f);
-    }
-
-    SHOULD("convert INT2OID to int16_t") {
-        const char bytes[] = { 0x00, 0x07 };
-
-        EXPECT_INVOKE(mock, field_type, _).WillRepeatedly(Return(INT2OID));
-        EXPECT_INVOKE(mock, get_value, _, _).WillRepeatedly(Return(bytes));
-        EXPECT_INVOKE(mock, get_length, _, _).WillRepeatedly(Return(sizeof(bytes)));
-        EXPECT_INVOKE(mock, get_isnull, _, _).WillRepeatedly(Return(false));
-
-        int16_t got = 0;
-        ozo::recv(value, oid_map, got);
-        EXPECT_EQ(7, got);
-    }
-
-    SHOULD("convert INT4OID to int32_t") {
-
-        const char bytes[] = { 0x00, 0x00, 0x00, 0x07 };
-
-        EXPECT_INVOKE(mock, field_type, _).WillRepeatedly(Return(INT4OID));
-        EXPECT_INVOKE(mock, get_value, _, _).WillRepeatedly(Return(bytes));
-        EXPECT_INVOKE(mock, get_length, _, _).WillRepeatedly(Return(sizeof(bytes)));
-        EXPECT_INVOKE(mock, get_isnull, _, _).WillRepeatedly(Return(false));
-
-        int32_t got = 0;
-        ozo::recv(value, oid_map, got);
-        EXPECT_EQ(7, got);
-    }
-
-    SHOULD("convert INT8OID to int64_t") {
-
-        const char bytes[] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x07 };
-
-        EXPECT_INVOKE(mock, field_type, _).WillRepeatedly(Return(INT8OID));
-        EXPECT_INVOKE(mock, get_value, _, _).WillRepeatedly(Return(bytes));
-        EXPECT_INVOKE(mock, get_length, _, _).WillRepeatedly(Return(sizeof(bytes)));
-        EXPECT_INVOKE(mock, get_isnull, _, _).WillRepeatedly(Return(false));
-
-        int64_t got = 0;
-        ozo::recv(value, oid_map, got);
-        EXPECT_EQ(7, got);
-    }
-
-    SHOULD("convert BYTEAOID to std::vector<char>") {
-        const char* bytes = "test";
-        EXPECT_INVOKE(mock, field_type, _).WillRepeatedly(Return(BYTEAOID));
-        EXPECT_INVOKE(mock, get_value, _, _).WillRepeatedly(Return(bytes));
-        EXPECT_INVOKE(mock, get_length, _, _).WillRepeatedly(Return(4));
-        EXPECT_INVOKE(mock, get_isnull, _, _).WillRepeatedly(Return(false));
-
-        std::vector<char> got;
-        ozo::recv(value, oid_map, got);
-        EXPECT_EQ("test", std::string_view(std::data(got), std::size(got)));
-    }
-
-    SHOULD("convert TEXTOID to std::string") {
-        const char* bytes = "test";
-        EXPECT_INVOKE(mock, field_type, _).WillRepeatedly(Return(TEXTOID));
-        EXPECT_INVOKE(mock, get_value, _, _).WillRepeatedly(Return(bytes));
-        EXPECT_INVOKE(mock, get_length, _, _).WillRepeatedly(Return(4));
-        EXPECT_INVOKE(mock, get_isnull, _, _).WillRepeatedly(Return(false));
-
-        std::string got;
-        ozo::recv(value, oid_map, got);
-        EXPECT_EQ("test", got);
-    }
-
-    SHOULD("convert TEXTOID to a nullable-wrapped std::string, unwrapping that nullable") {
-        const char* bytes = "test";
-        EXPECT_INVOKE(mock, field_type, _).WillRepeatedly(Return(TEXTOID));
-        EXPECT_INVOKE(mock, get_value, _, _).WillRepeatedly(Return(bytes));
-        EXPECT_INVOKE(mock, get_length, _, _).WillRepeatedly(Return(4));
-        EXPECT_INVOKE(mock, get_isnull, _, _).WillRepeatedly(Return(false));
-
-        std::unique_ptr<std::string> got;
-        ozo::recv(value, oid_map, got);
-        EXPECT_TRUE(got);
-        EXPECT_EQ("test", *got);
-    }
-
-    SHOULD("set nullable to null for a null value of any type") {
-        EXPECT_INVOKE(mock, get_isnull, _, _).WillRepeatedly(Return(true));
-
-        auto got = std::make_unique<int>(7);
-        ozo::recv(value, oid_map, got);
-        EXPECT_TRUE(!got);
-    }
-
-    SHOULD("throw for a null value if receiving type is not nullable") {
-        EXPECT_INVOKE(mock, field_type, _).WillRepeatedly(Return(TEXTOID));
-        EXPECT_INVOKE(mock, get_isnull, _, _).WillRepeatedly(Return(true));
-
-        std::string got;
-        EXPECT_THROW(ozo::recv(value, oid_map, got), std::invalid_argument);
-    }
-
-    SHOULD("convert TEXTARRAYOID to std::vector<std::string>") {
-        const char bytes[] = {
-            0x00, 0x00, 0x00, 0x01, // dimension count
-            0x00, 0x00, 0x00, 0x00, // data offset
-            0x00, 0x00, 0x00, 0x19, // Oid
-            0x00, 0x00, 0x00, 0x03, // dimension size
-            0x00, 0x00, 0x00, 0x01, // dimension index
-            0x00, 0x00, 0x00, 0x04, // 1st element size
-            't', 'e', 's', 't',     // 1st element
-            0x00, 0x00, 0x00, 0x03, // 2nd element size
-            'f', 'o', 'o',          // 2ndst element
-            0x00, 0x00, 0x00, 0x03, // 3rd element size
-            'b', 'a', 'r',          // 3rd element
-        };
-        EXPECT_INVOKE(mock, field_type, _).WillRepeatedly(Return(TEXTARRAYOID));
-        EXPECT_INVOKE(mock, get_value, _, _).WillRepeatedly(Return(bytes));
-        EXPECT_INVOKE(mock, get_length, _, _).WillRepeatedly(Return(sizeof bytes));
-        EXPECT_INVOKE(mock, get_isnull, _, _).WillRepeatedly(Return(false));
-
-        std::vector<std::string> got;
-        ozo::recv(value, oid_map, got);
-        EXPECT_THAT(got, ElementsAre("test", "foo", "bar"));
-    }
-
-    SHOULD("throw on multidimential arrays") {
-        const char bytes[] = {
-            0x00, 0x00, 0x00, 0x02, // dimension count
-            0x00, 0x00, 0x00, 0x00, // data offset
-            0x00, 0x00, 0x00, 0x19, // Oid
-            0x00, 0x00, 0x00, 0x03, // dimension size
-            0x00, 0x00, 0x00, 0x01, // dimension index
-            0x00, 0x00, 0x00, 0x04, // 1st element size
-            't', 'e', 's', 't',     // 1st element
-            0x00, 0x00, 0x00, 0x03, // 2nd element size
-            'f', 'o', 'o',          // 2ndst element
-            0x00, 0x00, 0x00, 0x03, // 3rd element size
-            'b', 'a', 'r',          // 3rd element
-        };
-        EXPECT_INVOKE(mock, field_type, _).WillRepeatedly(Return(TEXTARRAYOID));
-        EXPECT_INVOKE(mock, get_value, _, _).WillRepeatedly(Return(bytes));
-        EXPECT_INVOKE(mock, get_length, _, _).WillRepeatedly(Return(sizeof bytes));
-        EXPECT_INVOKE(mock, get_isnull, _, _).WillRepeatedly(Return(false));
-
-        std::vector<std::string> got;
-        ;
-        EXPECT_THROW(ozo::recv(value, oid_map, got), std::range_error);
-    }
-
-    SHOULD("throw on inappropriate element oid") {
-        const char bytes[] = {
-            0x00, 0x00, 0x00, 0x01, // dimension count
-            0x00, 0x00, 0x00, 0x00, // data offset
-            0x00, 0x00, 0x00, 0x01, // Oid
-            0x00, 0x00, 0x00, 0x03, // dimension size
-            0x00, 0x00, 0x00, 0x01, // dimension index
-            0x00, 0x00, 0x00, 0x04, // 1st element size
-            't', 'e', 's', 't',     // 1st element
-            0x00, 0x00, 0x00, 0x03, // 2nd element size
-            'f', 'o', 'o',          // 2ndst element
-            0x00, 0x00, 0x00, 0x03, // 3rd element size
-            'b', 'a', 'r',          // 3rd element
-        };
-        EXPECT_INVOKE(mock, field_type, _).WillRepeatedly(Return(TEXTARRAYOID));
-        EXPECT_INVOKE(mock, get_value, _, _).WillRepeatedly(Return(bytes));
-        EXPECT_INVOKE(mock, get_length, _, _).WillRepeatedly(Return(sizeof bytes));
-        EXPECT_INVOKE(mock, get_isnull, _, _).WillRepeatedly(Return(false));
-
-        std::vector<std::string> got;
-        EXPECT_THROW(ozo::recv(value, oid_map, got), ozo::system_error);
-    }
-
-    SHOULD("throw on null element for non-nullable out element") {
-        const char bytes[] = {
-            0x00, 0x00, 0x00, 0x01, // dimension count
-            0x00, 0x00, 0x00, 0x00, // data offset
-            0x00, 0x00, 0x00, 0x19, // Oid
-            0x00, 0x00, 0x00, 0x03, // dimension size
-            0x00, 0x00, 0x00, 0x01, // dimension index
-            char(0xFF), char(0xFF), char(0xFF), char(0xFF), // 1st element size
-            0x00, 0x00, 0x00, 0x03, // 2nd element size
-            'f', 'o', 'o',          // 2ndst element
-            0x00, 0x00, 0x00, 0x03, // 3rd element size
-            'b', 'a', 'r',          // 3rd element
-        };
-        EXPECT_INVOKE(mock, field_type, _).WillRepeatedly(Return(TEXTARRAYOID));
-        EXPECT_INVOKE(mock, get_value, _, _).WillRepeatedly(Return(bytes));
-        EXPECT_INVOKE(mock, get_length, _, _).WillRepeatedly(Return(sizeof bytes));
-        EXPECT_INVOKE(mock, get_isnull, _, _).WillRepeatedly(Return(false));
-
-        std::vector<std::string> got;
-        EXPECT_THROW(ozo::recv(value, oid_map, got), std::invalid_argument);
-    }
-
-    SHOULD("throw exception when size of integral differs from given") {
-        const char bytes[] = { true };
-
-        EXPECT_INVOKE(mock, field_type, _).WillRepeatedly(Return(BOOLOID));
-        EXPECT_INVOKE(mock, get_value, _, _).WillRepeatedly(Return(bytes));
-        EXPECT_INVOKE(mock, get_length, _, _).WillRepeatedly(Return(sizeof(bytes) + 1));
-        EXPECT_INVOKE(mock, get_isnull, _, _).WillRepeatedly(Return(false));
-
-        bool got = false;
-        EXPECT_THROW(ozo::recv(value, oid_map, got), std::range_error);
-    }
-
-    SHOULD("read nothing when dimensions count is zero") {
-        const char bytes[] = {
-            0x00, 0x00, 0x00, 0x00, // dimension count
-            0x00, 0x00, 0x00, 0x00, // data offset
-            0x00, 0x00, 0x00, 0x19, // Oid
-        };
-        EXPECT_INVOKE(mock, field_type, _).WillRepeatedly(Return(TEXTARRAYOID));
-        EXPECT_INVOKE(mock, get_value, _, _).WillRepeatedly(Return(bytes));
-        EXPECT_INVOKE(mock, get_length, _, _).WillRepeatedly(Return(sizeof bytes));
-        EXPECT_INVOKE(mock, get_isnull, _, _).WillRepeatedly(Return(false));
-
-        std::vector<std::string> got;
-        ozo::recv(value, oid_map, got);
-        EXPECT_THAT(got, ElementsAre());
-    }
-
-    SHOULD("read nothing when dimension size is zero") {
-        const char bytes[] = {
-            0x00, 0x00, 0x00, 0x01, // dimension count
-            0x00, 0x00, 0x00, 0x00, // data offset
-            0x00, 0x00, 0x00, 0x19, // Oid
-            0x00, 0x00, 0x00, 0x00, // dimension size
-            0x00, 0x00, 0x00, 0x01, // dimension index
-        };
-        EXPECT_INVOKE(mock, field_type, _).WillRepeatedly(Return(TEXTARRAYOID));
-        EXPECT_INVOKE(mock, get_value, _, _).WillRepeatedly(Return(bytes));
-        EXPECT_INVOKE(mock, get_length, _, _).WillRepeatedly(Return(sizeof bytes));
-        EXPECT_INVOKE(mock, get_isnull, _, _).WillRepeatedly(Return(false));
-
-        std::vector<std::string> got;
-        ozo::recv(value, oid_map, got);
-        EXPECT_THAT(got, ElementsAre());
-    }
-
-    SHOULD("convert TEXTARRAYOID to std::vector<std::unique_ptr<std::string>>") {
-        const char bytes[] = {
-            0x00, 0x00, 0x00, 0x01, // dimension count
-            0x00, 0x00, 0x00, 0x00, // data offset
-            0x00, 0x00, 0x00, 0x19, // Oid
-            0x00, 0x00, 0x00, 0x03, // dimension size
-            0x00, 0x00, 0x00, 0x01, // dimension index
-            0x00, 0x00, 0x00, 0x04, // 1st element size
-            't', 'e', 's', 't',     // 1st element
-            0x00, 0x00, 0x00, 0x03, // 2nd element size
-            'f', 'o', 'o',          // 2ndst element
-            0x00, 0x00, 0x00, 0x03, // 3rd element size
-            'b', 'a', 'r',          // 3rd element
-        };
-        EXPECT_INVOKE(mock, field_type, _).WillRepeatedly(Return(TEXTARRAYOID));
-        EXPECT_INVOKE(mock, get_value, _, _).WillRepeatedly(Return(bytes));
-        EXPECT_INVOKE(mock, get_length, _, _).WillRepeatedly(Return(sizeof bytes));
-        EXPECT_INVOKE(mock, get_isnull, _, _).WillRepeatedly(Return(false));
-
-        std::vector<std::unique_ptr<std::string>> got;
-        ozo::recv(value, oid_map, got);
-        EXPECT_THAT(got, ElementsAre(
-            Pointee(std::string("test")),
-            Pointee(std::string("foo")),
-            Pointee(std::string("bar"))));
-    }
-
-    SHOULD("reset nullable on null element") {
-        const char bytes[] = {
-            0x00, 0x00, 0x00, 0x01, // dimension count
-            0x00, 0x00, 0x00, 0x00, // data offset
-            0x00, 0x00, 0x00, 0x19, // Oid
-            0x00, 0x00, 0x00, 0x03, // dimension size
-            0x00, 0x00, 0x00, 0x01, // dimension index
-            char(0xFF), char(0xFF), char(0xFF), char(0xFF), // 1st element size
-            0x00, 0x00, 0x00, 0x03, // 2nd element size
-            'f', 'o', 'o',          // 2ndst element
-            0x00, 0x00, 0x00, 0x03, // 3rd element size
-            'b', 'a', 'r',          // 3rd element
-        };
-        EXPECT_INVOKE(mock, field_type, _).WillRepeatedly(Return(TEXTARRAYOID));
-        EXPECT_INVOKE(mock, get_value, _, _).WillRepeatedly(Return(bytes));
-        EXPECT_INVOKE(mock, get_length, _, _).WillRepeatedly(Return(sizeof bytes));
-        EXPECT_INVOKE(mock, get_isnull, _, _).WillRepeatedly(Return(false));
-
-        std::vector<std::unique_ptr<std::string>> got;
-        ozo::recv(value, oid_map, got);
-        EXPECT_THAT(got, ElementsAre(
-            IsNull(),
-            Pointee(std::string("foo")),
-            Pointee(std::string("bar"))));
-    }
+    int x;
+    EXPECT_THROW(ozo::recv(value, oid_map, x), ozo::system_error);
 }
 
+TEST_F(recv, should_convert_BOOLOID_to_bool) {
+    const char bytes[] = { true };
 
-GTEST("ozo::recv_row") {
-    auto oid_map = ozo::empty_oid_map{};
-    StrictGMock<pg_result_mock> mock{};
-    ::ozo::row<pg_result_mock> row({object(mock), 0, 0});
+    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(BOOLOID));
+    EXPECT_CALL(mock, get_value(_, _)).WillRepeatedly(Return(bytes));
+    EXPECT_CALL(mock, get_length(_, _)).WillRepeatedly(Return(sizeof(bytes)));
+    EXPECT_CALL(mock, get_isnull(_, _)).WillRepeatedly(Return(false));
 
-    SHOULD("throw range_error if size of tuple does not equal to row size") {
-        std::tuple<int, std::string> out;
-        EXPECT_INVOKE(mock, nfields).WillRepeatedly(Return(1));
-
-        EXPECT_THROW(ozo::recv_row(row, oid_map, out), std::range_error);
-    }
-
-    SHOULD("convert INT4OID and TEXTOID to std::tuple<int32_t, std::string>") {
-
-        const char int32_bytes[] = { 0x00, 0x00, 0x00, 0x07 };
-        const char* string_bytes = "test";
-
-        EXPECT_INVOKE(mock, nfields).WillRepeatedly(Return(2));
-
-        EXPECT_INVOKE(mock, field_type, 0).WillRepeatedly(Return(INT4OID));
-        EXPECT_INVOKE(mock, get_value, _, 0).WillRepeatedly(Return(int32_bytes));
-        EXPECT_INVOKE(mock, get_length, _, 0).WillRepeatedly(Return(4));
-        EXPECT_INVOKE(mock, get_isnull, _, 0).WillRepeatedly(Return(false));
-
-        EXPECT_INVOKE(mock, field_type, 1).WillRepeatedly(Return(TEXTOID));
-        EXPECT_INVOKE(mock, get_value, _, 1).WillRepeatedly(Return(string_bytes));
-        EXPECT_INVOKE(mock, get_length, _, 1).WillRepeatedly(Return(4));
-        EXPECT_INVOKE(mock, get_isnull, _, 1).WillRepeatedly(Return(false));
-
-        std::tuple<int, std::string> got;
-        ozo::recv_row(row, oid_map, got);
-        EXPECT_EQ(std::make_tuple(int32_t(7), std::string("test")), got);
-    }
-
-    SHOULD("return type mismatch error if size of tuple does not equal to row size") {
-        std::tuple<int, std::string> out;
-        EXPECT_INVOKE(mock, nfields).WillRepeatedly(Return(1));
-
-        EXPECT_THROW(ozo::recv_row(row, oid_map, out), std::range_error);
-    }
-
-    SHOULD("convert INT4OID and TEXTOID to fusion adapted structure") {
-
-        const char int32_bytes[] = { 0x00, 0x00, 0x00, 0x07 };
-        const char* string_bytes = "test";
-
-        EXPECT_INVOKE(mock, nfields).WillRepeatedly(Return(2));
-
-        EXPECT_INVOKE(mock, field_number, Eq("digit")).WillOnce(Return(0));
-        EXPECT_INVOKE(mock, field_type, 0).WillRepeatedly(Return(INT4OID));
-        EXPECT_INVOKE(mock, get_value, _, 0).WillRepeatedly(Return(int32_bytes));
-        EXPECT_INVOKE(mock, get_length, _, 0).WillRepeatedly(Return(4));
-        EXPECT_INVOKE(mock, get_isnull, _, 0).WillRepeatedly(Return(false));
-
-        EXPECT_INVOKE(mock, field_number, Eq("text")).WillOnce(Return(1));
-        EXPECT_INVOKE(mock, field_type, 1).WillRepeatedly(Return(TEXTOID));
-        EXPECT_INVOKE(mock, get_value, _, 1).WillRepeatedly(Return(string_bytes));
-        EXPECT_INVOKE(mock, get_length, _, 1).WillRepeatedly(Return(4));
-        EXPECT_INVOKE(mock, get_isnull, _, 1).WillRepeatedly(Return(false));
-
-        fusion_adapted_test_result got;
-        ozo::recv_row(row, oid_map, got);
-        EXPECT_EQ(got.digit, 7);
-        EXPECT_EQ(got.text, "test");
-    }
-
-    SHOULD("throw range_error if number elements of structure does not equal to row size") {
-        fusion_adapted_test_result out;
-        EXPECT_INVOKE(mock, nfields).WillRepeatedly(Return(1));
-
-        EXPECT_THROW(ozo::recv_row(row, oid_map, out), std::range_error);
-    }
-
-    SHOULD("throw range_error if column name corresponding to elements of structure does not found") {
-        fusion_adapted_test_result out;
-        EXPECT_INVOKE(mock, nfields).WillRepeatedly(Return(2));
-
-        EXPECT_INVOKE(mock, field_number, _).WillRepeatedly(Return(-1));
-
-        EXPECT_THROW(ozo::recv_row(row, oid_map, out), std::range_error);
-    }
-
-    SHOULD("throw range_error if row is unadapted and number of rows more than one") {
-        std::int32_t out;
-        EXPECT_INVOKE(mock, nfields).WillRepeatedly(Return(2));
-
-        EXPECT_THROW(ozo::recv_row(row, oid_map, out), std::range_error);
-    }
+    bool got = false;
+    ozo::recv(value, oid_map, got);
+    EXPECT_TRUE(got);
 }
 
-GTEST("ozo::recv_result") {
-    auto oid_map = ozo::empty_oid_map{};
-    StrictGMock<pg_result_mock> mock{};
-    ::ozo::basic_result<pg_result_mock*> res(object(mock));
+TEST_F(recv, should_convert_FLOAT4OID_to_float) {
+    const char bytes[] = { 0x42, 0x28, static_cast<char>(0x85), 0x1F };
 
-    SHOULD("convert INT4OID and TEXTOID to fusion adapted structures vector via back_inserter") {
+    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(FLOAT4OID));
+    EXPECT_CALL(mock, get_value(_, _)).WillRepeatedly(Return(bytes));
+    EXPECT_CALL(mock, get_length(_, _)).WillRepeatedly(Return(4));
+    EXPECT_CALL(mock, get_isnull(_, _)).WillRepeatedly(Return(false));
 
-        const char int32_bytes[] = { 0x00, 0x00, 0x00, 0x07 };
-        const char* string_bytes = "test";
+    float got = 0.0;
+    ozo::recv(value, oid_map, got);
+    EXPECT_EQ(got, 42.13f);
+}
 
-        EXPECT_INVOKE(mock, nfields).WillRepeatedly(Return(2));
-        EXPECT_INVOKE(mock, ntuples).WillRepeatedly(Return(2));
+TEST_F(recv, should_convert_INT2OID_to_int16_t) {
+    const char bytes[] = { 0x00, 0x07 };
 
-        EXPECT_INVOKE(mock, field_number, Eq("digit")).WillRepeatedly(Return(0));
-        EXPECT_INVOKE(mock, field_type, 0).WillRepeatedly(Return(INT4OID));
-        EXPECT_INVOKE(mock, get_value, _, 0).WillRepeatedly(Return(int32_bytes));
-        EXPECT_INVOKE(mock, get_length, _, 0).WillRepeatedly(Return(4));
-        EXPECT_INVOKE(mock, get_isnull, _, 0).WillRepeatedly(Return(false));
+    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(INT2OID));
+    EXPECT_CALL(mock, get_value(_, _)).WillRepeatedly(Return(bytes));
+    EXPECT_CALL(mock, get_length(_, _)).WillRepeatedly(Return(sizeof(bytes)));
+    EXPECT_CALL(mock, get_isnull(_, _)).WillRepeatedly(Return(false));
 
-        EXPECT_INVOKE(mock, field_number, Eq("text")).WillRepeatedly(Return(1));
-        EXPECT_INVOKE(mock, field_type, 1).WillRepeatedly(Return(TEXTOID));
-        EXPECT_INVOKE(mock, get_value, _, 1).WillRepeatedly(Return(string_bytes));
-        EXPECT_INVOKE(mock, get_length, _, 1).WillRepeatedly(Return(4));
-        EXPECT_INVOKE(mock, get_isnull, _, 1).WillRepeatedly(Return(false));
+    int16_t got = 0;
+    ozo::recv(value, oid_map, got);
+    EXPECT_EQ(7, got);
+}
 
-        std::vector<fusion_adapted_test_result> got;
-        ozo::recv_result(res, oid_map, std::back_inserter(got));
-        EXPECT_EQ(got.size(), 2);
-        EXPECT_EQ(got[0].digit, 7);
-        EXPECT_EQ(got[0].text, "test");
-        EXPECT_EQ(got[1].digit, 7);
-        EXPECT_EQ(got[1].text, "test");
-    }
+TEST_F(recv, should_convert_INT4OID_to_int32_t) {
+    const char bytes[] = { 0x00, 0x00, 0x00, 0x07 };
 
-    SHOULD("convert INT4OID and TEXTOID to fusion adapted structures vector via iterator") {
+    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(INT4OID));
+    EXPECT_CALL(mock, get_value(_, _)).WillRepeatedly(Return(bytes));
+    EXPECT_CALL(mock, get_length(_, _)).WillRepeatedly(Return(sizeof(bytes)));
+    EXPECT_CALL(mock, get_isnull(_, _)).WillRepeatedly(Return(false));
 
-        const char int32_bytes[] = { 0x00, 0x00, 0x00, 0x07 };
-        const char* string_bytes = "test";
+    int32_t got = 0;
+    ozo::recv(value, oid_map, got);
+    EXPECT_EQ(7, got);
+}
 
-        EXPECT_INVOKE(mock, nfields).WillRepeatedly(Return(2));
-        EXPECT_INVOKE(mock, ntuples).WillRepeatedly(Return(2));
+TEST_F(recv, should_convert_INT8OID_to_int64_t) {
+    const char bytes[] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x07 };
 
-        EXPECT_INVOKE(mock, field_number, Eq("digit")).WillRepeatedly(Return(0));
-        EXPECT_INVOKE(mock, field_type, 0).WillRepeatedly(Return(INT4OID));
-        EXPECT_INVOKE(mock, get_value, _, 0).WillRepeatedly(Return(int32_bytes));
-        EXPECT_INVOKE(mock, get_length, _, 0).WillRepeatedly(Return(4));
-        EXPECT_INVOKE(mock, get_isnull, _, 0).WillRepeatedly(Return(false));
+    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(INT8OID));
+    EXPECT_CALL(mock, get_value(_, _)).WillRepeatedly(Return(bytes));
+    EXPECT_CALL(mock, get_length(_, _)).WillRepeatedly(Return(sizeof(bytes)));
+    EXPECT_CALL(mock, get_isnull(_, _)).WillRepeatedly(Return(false));
 
-        EXPECT_INVOKE(mock, field_number, Eq("text")).WillRepeatedly(Return(1));
-        EXPECT_INVOKE(mock, field_type, 1).WillRepeatedly(Return(TEXTOID));
-        EXPECT_INVOKE(mock, get_value, _, 1).WillRepeatedly(Return(string_bytes));
-        EXPECT_INVOKE(mock, get_length, _, 1).WillRepeatedly(Return(4));
-        EXPECT_INVOKE(mock, get_isnull, _, 1).WillRepeatedly(Return(false));
+    int64_t got = 0;
+    ozo::recv(value, oid_map, got);
+    EXPECT_EQ(7, got);
+}
 
-        std::vector<fusion_adapted_test_result> got;
-        got.resize(2);
-        ozo::recv_result(res, oid_map, got.begin());
-        EXPECT_EQ(got[0].digit, 7);
-        EXPECT_EQ(got[0].text, "test");
-        EXPECT_EQ(got[1].digit, 7);
-        EXPECT_EQ(got[1].text, "test");
-    }
+TEST_F(recv, should_convert_BYTEAOID_to_std_vector_of_char) {
+    const char* bytes = "test";
+    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(BYTEAOID));
+    EXPECT_CALL(mock, get_value(_, _)).WillRepeatedly(Return(bytes));
+    EXPECT_CALL(mock, get_length(_, _)).WillRepeatedly(Return(4));
+    EXPECT_CALL(mock, get_isnull(_, _)).WillRepeatedly(Return(false));
 
-    SHOULD("convert INT4OID to vector via iterator") {
+    std::vector<char> got;
+    ozo::recv(value, oid_map, got);
+    EXPECT_EQ("test", std::string_view(std::data(got), std::size(got)));
+}
 
-        const char int32_bytes[] = { 0x00, 0x00, 0x00, 0x07 };
+TEST_F(recv, should_convert_TEXTOID_to_std_string) {
+    const char* bytes = "test";
+    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(TEXTOID));
+    EXPECT_CALL(mock, get_value(_, _)).WillRepeatedly(Return(bytes));
+    EXPECT_CALL(mock, get_length(_, _)).WillRepeatedly(Return(4));
+    EXPECT_CALL(mock, get_isnull(_, _)).WillRepeatedly(Return(false));
 
-        EXPECT_INVOKE(mock, nfields).WillRepeatedly(Return(1));
-        EXPECT_INVOKE(mock, ntuples).WillRepeatedly(Return(2));
+    std::string got;
+    ozo::recv(value, oid_map, got);
+    EXPECT_EQ("test", got);
+}
 
-        EXPECT_INVOKE(mock, field_number, Eq("digit")).WillRepeatedly(Return(0));
-        EXPECT_INVOKE(mock, field_type, 0).WillRepeatedly(Return(INT4OID));
-        EXPECT_INVOKE(mock, get_value, _, 0).WillRepeatedly(Return(int32_bytes));
-        EXPECT_INVOKE(mock, get_length, _, 0).WillRepeatedly(Return(4));
-        EXPECT_INVOKE(mock, get_isnull, _, 0).WillRepeatedly(Return(false));
+TEST_F(recv, should_convert_TEXTOID_to_a_nullable_wrapped_std_string_unwrapping_that_nullable) {
+    const char* bytes = "test";
+    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(TEXTOID));
+    EXPECT_CALL(mock, get_value(_, _)).WillRepeatedly(Return(bytes));
+    EXPECT_CALL(mock, get_length(_, _)).WillRepeatedly(Return(4));
+    EXPECT_CALL(mock, get_isnull(_, _)).WillRepeatedly(Return(false));
 
-        std::vector<int32_t> got;
-        got.resize(2);
-        ozo::recv_result(res, oid_map, got.begin());
-        EXPECT_THAT(got, ElementsAre(7, 7));
-    }
+    std::unique_ptr<std::string> got;
+    ozo::recv(value, oid_map, got);
+    EXPECT_TRUE(got);
+    EXPECT_EQ("test", *got);
+}
 
-    SHOULD("returns result result requested") {
-        ::ozo::basic_result<pg_result_mock*> got;
-        ozo::recv_result(res, oid_map, got);
-        EXPECT_INVOKE(mock, ntuples).WillOnce(Return(2));
-        EXPECT_EQ(got.size(), 2);
-    }
+TEST_F(recv, should_set_nullable_to_null_for_a_null_value_of_any_type) {
+    EXPECT_CALL(mock, get_isnull(_, _)).WillRepeatedly(Return(true));
+
+    auto got = std::make_unique<int>(7);
+    ozo::recv(value, oid_map, got);
+    EXPECT_TRUE(!got);
+}
+
+TEST_F(recv, should_throw_for_a_null_value_if_receiving_type_is_not_nullable) {
+    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(TEXTOID));
+    EXPECT_CALL(mock, get_isnull(_, _)).WillRepeatedly(Return(true));
+
+    std::string got;
+    EXPECT_THROW(ozo::recv(value, oid_map, got), std::invalid_argument);
+}
+
+TEST_F(recv, should_convert_TEXTARRAYOID_to_std_vector_of_std_string) {
+    const char bytes[] = {
+        0x00, 0x00, 0x00, 0x01, // dimension count
+        0x00, 0x00, 0x00, 0x00, // data offset
+        0x00, 0x00, 0x00, 0x19, // Oid
+        0x00, 0x00, 0x00, 0x03, // dimension size
+        0x00, 0x00, 0x00, 0x01, // dimension index
+        0x00, 0x00, 0x00, 0x04, // 1st element size
+        't', 'e', 's', 't',     // 1st element
+        0x00, 0x00, 0x00, 0x03, // 2nd element size
+        'f', 'o', 'o',          // 2ndst element
+        0x00, 0x00, 0x00, 0x03, // 3rd element size
+        'b', 'a', 'r',          // 3rd element
+    };
+    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(TEXTARRAYOID));
+    EXPECT_CALL(mock, get_value(_, _)).WillRepeatedly(Return(bytes));
+    EXPECT_CALL(mock, get_length(_, _)).WillRepeatedly(Return(sizeof bytes));
+    EXPECT_CALL(mock, get_isnull(_, _)).WillRepeatedly(Return(false));
+
+    std::vector<std::string> got;
+    ozo::recv(value, oid_map, got);
+    EXPECT_THAT(got, ElementsAre("test", "foo", "bar"));
+}
+
+TEST_F(recv, should_throw_on_multidimential_arrays) {
+    const char bytes[] = {
+        0x00, 0x00, 0x00, 0x02, // dimension count
+        0x00, 0x00, 0x00, 0x00, // data offset
+        0x00, 0x00, 0x00, 0x19, // Oid
+        0x00, 0x00, 0x00, 0x03, // dimension size
+        0x00, 0x00, 0x00, 0x01, // dimension index
+        0x00, 0x00, 0x00, 0x04, // 1st element size
+        't', 'e', 's', 't',     // 1st element
+        0x00, 0x00, 0x00, 0x03, // 2nd element size
+        'f', 'o', 'o',          // 2ndst element
+        0x00, 0x00, 0x00, 0x03, // 3rd element size
+        'b', 'a', 'r',          // 3rd element
+    };
+    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(TEXTARRAYOID));
+    EXPECT_CALL(mock, get_value(_, _)).WillRepeatedly(Return(bytes));
+    EXPECT_CALL(mock, get_length(_, _)).WillRepeatedly(Return(sizeof bytes));
+    EXPECT_CALL(mock, get_isnull(_, _)).WillRepeatedly(Return(false));
+
+    std::vector<std::string> got;
+    ;
+    EXPECT_THROW(ozo::recv(value, oid_map, got), std::range_error);
+}
+
+TEST_F(recv, should_throw_on_inappropriate_element_oid) {
+    const char bytes[] = {
+        0x00, 0x00, 0x00, 0x01, // dimension count
+        0x00, 0x00, 0x00, 0x00, // data offset
+        0x00, 0x00, 0x00, 0x01, // Oid
+        0x00, 0x00, 0x00, 0x03, // dimension size
+        0x00, 0x00, 0x00, 0x01, // dimension index
+        0x00, 0x00, 0x00, 0x04, // 1st element size
+        't', 'e', 's', 't',     // 1st element
+        0x00, 0x00, 0x00, 0x03, // 2nd element size
+        'f', 'o', 'o',          // 2ndst element
+        0x00, 0x00, 0x00, 0x03, // 3rd element size
+        'b', 'a', 'r',          // 3rd element
+    };
+    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(TEXTARRAYOID));
+    EXPECT_CALL(mock, get_value(_, _)).WillRepeatedly(Return(bytes));
+    EXPECT_CALL(mock, get_length(_, _)).WillRepeatedly(Return(sizeof bytes));
+    EXPECT_CALL(mock, get_isnull(_, _)).WillRepeatedly(Return(false));
+
+    std::vector<std::string> got;
+    EXPECT_THROW(ozo::recv(value, oid_map, got), ozo::system_error);
+}
+
+TEST_F(recv, should_throw_on_null_element_for_non_nullable_out_element) {
+    const char bytes[] = {
+        0x00, 0x00, 0x00, 0x01, // dimension count
+        0x00, 0x00, 0x00, 0x00, // data offset
+        0x00, 0x00, 0x00, 0x19, // Oid
+        0x00, 0x00, 0x00, 0x03, // dimension size
+        0x00, 0x00, 0x00, 0x01, // dimension index
+        char(0xFF), char(0xFF), char(0xFF), char(0xFF), // 1st element size
+        0x00, 0x00, 0x00, 0x03, // 2nd element size
+        'f', 'o', 'o',          // 2ndst element
+        0x00, 0x00, 0x00, 0x03, // 3rd element size
+        'b', 'a', 'r',          // 3rd element
+    };
+    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(TEXTARRAYOID));
+    EXPECT_CALL(mock, get_value(_, _)).WillRepeatedly(Return(bytes));
+    EXPECT_CALL(mock, get_length(_, _)).WillRepeatedly(Return(sizeof bytes));
+    EXPECT_CALL(mock, get_isnull(_, _)).WillRepeatedly(Return(false));
+
+    std::vector<std::string> got;
+    EXPECT_THROW(ozo::recv(value, oid_map, got), std::invalid_argument);
+}
+
+TEST_F(recv, should_throw_exception_when_size_of_integral_differs_from_given) {
+    const char bytes[] = { true };
+
+    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(BOOLOID));
+    EXPECT_CALL(mock, get_value(_, _)).WillRepeatedly(Return(bytes));
+    EXPECT_CALL(mock, get_length(_, _)).WillRepeatedly(Return(sizeof(bytes) + 1));
+    EXPECT_CALL(mock, get_isnull(_, _)).WillRepeatedly(Return(false));
+
+    bool got = false;
+    EXPECT_THROW(ozo::recv(value, oid_map, got), std::range_error);
+}
+
+TEST_F(recv, should_read_nothing_when_dimensions_count_is_zero) {
+    const char bytes[] = {
+        0x00, 0x00, 0x00, 0x00, // dimension count
+        0x00, 0x00, 0x00, 0x00, // data offset
+        0x00, 0x00, 0x00, 0x19, // Oid
+    };
+    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(TEXTARRAYOID));
+    EXPECT_CALL(mock, get_value(_, _)).WillRepeatedly(Return(bytes));
+    EXPECT_CALL(mock, get_length(_, _)).WillRepeatedly(Return(sizeof bytes));
+    EXPECT_CALL(mock, get_isnull(_, _)).WillRepeatedly(Return(false));
+
+    std::vector<std::string> got;
+    ozo::recv(value, oid_map, got);
+    EXPECT_THAT(got, ElementsAre());
+}
+
+TEST_F(recv, should_read_nothing_when_dimension_size_is_zero) {
+    const char bytes[] = {
+        0x00, 0x00, 0x00, 0x01, // dimension count
+        0x00, 0x00, 0x00, 0x00, // data offset
+        0x00, 0x00, 0x00, 0x19, // Oid
+        0x00, 0x00, 0x00, 0x00, // dimension size
+        0x00, 0x00, 0x00, 0x01, // dimension index
+    };
+    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(TEXTARRAYOID));
+    EXPECT_CALL(mock, get_value(_, _)).WillRepeatedly(Return(bytes));
+    EXPECT_CALL(mock, get_length(_, _)).WillRepeatedly(Return(sizeof bytes));
+    EXPECT_CALL(mock, get_isnull(_, _)).WillRepeatedly(Return(false));
+
+    std::vector<std::string> got;
+    ozo::recv(value, oid_map, got);
+    EXPECT_THAT(got, ElementsAre());
+}
+
+TEST_F(recv, should_convert_TEXTARRAYOID_to_std_vector_of_std_unique_ptr_of_std_string) {
+    const char bytes[] = {
+        0x00, 0x00, 0x00, 0x01, // dimension count
+        0x00, 0x00, 0x00, 0x00, // data offset
+        0x00, 0x00, 0x00, 0x19, // Oid
+        0x00, 0x00, 0x00, 0x03, // dimension size
+        0x00, 0x00, 0x00, 0x01, // dimension index
+        0x00, 0x00, 0x00, 0x04, // 1st element size
+        't', 'e', 's', 't',     // 1st element
+        0x00, 0x00, 0x00, 0x03, // 2nd element size
+        'f', 'o', 'o',          // 2ndst element
+        0x00, 0x00, 0x00, 0x03, // 3rd element size
+        'b', 'a', 'r',          // 3rd element
+    };
+    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(TEXTARRAYOID));
+    EXPECT_CALL(mock, get_value(_, _)).WillRepeatedly(Return(bytes));
+    EXPECT_CALL(mock, get_length(_, _)).WillRepeatedly(Return(sizeof bytes));
+    EXPECT_CALL(mock, get_isnull(_, _)).WillRepeatedly(Return(false));
+
+    std::vector<std::unique_ptr<std::string>> got;
+    ozo::recv(value, oid_map, got);
+    EXPECT_THAT(got, ElementsAre(
+        Pointee(std::string("test")),
+        Pointee(std::string("foo")),
+        Pointee(std::string("bar"))));
+}
+
+TEST_F(recv, should_reset_nullable_on_null_element) {
+    const char bytes[] = {
+        0x00, 0x00, 0x00, 0x01, // dimension count
+        0x00, 0x00, 0x00, 0x00, // data offset
+        0x00, 0x00, 0x00, 0x19, // Oid
+        0x00, 0x00, 0x00, 0x03, // dimension size
+        0x00, 0x00, 0x00, 0x01, // dimension index
+        char(0xFF), char(0xFF), char(0xFF), char(0xFF), // 1st element size
+        0x00, 0x00, 0x00, 0x03, // 2nd element size
+        'f', 'o', 'o',          // 2ndst element
+        0x00, 0x00, 0x00, 0x03, // 3rd element size
+        'b', 'a', 'r',          // 3rd element
+    };
+    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(TEXTARRAYOID));
+    EXPECT_CALL(mock, get_value(_, _)).WillRepeatedly(Return(bytes));
+    EXPECT_CALL(mock, get_length(_, _)).WillRepeatedly(Return(sizeof bytes));
+    EXPECT_CALL(mock, get_isnull(_, _)).WillRepeatedly(Return(false));
+
+    std::vector<std::unique_ptr<std::string>> got;
+    ozo::recv(value, oid_map, got);
+    EXPECT_THAT(got, ElementsAre(
+        IsNull(),
+        Pointee(std::string("foo")),
+        Pointee(std::string("bar"))));
+}
+
+struct recv_row : Test {
+    ozo::empty_oid_map oid_map{};
+    StrictMock<pg_result_mock> mock{};
+    ::ozo::row<pg_result_mock> row{{&mock, 0, 0}};
+};
+
+TEST_F(recv_row, should_throw_range_error_if_size_of_tuple_does_not_equal_to_row_size) {
+    std::tuple<int, std::string> out;
+    EXPECT_CALL(mock, nfields()).WillRepeatedly(Return(1));
+
+    EXPECT_THROW(ozo::recv_row(row, oid_map, out), std::range_error);
+}
+
+TEST_F(recv_row, should_convert_INT4OID_and_TEXTOID_to_std_tuple_int32_t_std_string) {
+    const char int32_bytes[] = { 0x00, 0x00, 0x00, 0x07 };
+    const char* string_bytes = "test";
+
+    EXPECT_CALL(mock, nfields()).WillRepeatedly(Return(2));
+
+    EXPECT_CALL(mock, field_type(0)).WillRepeatedly(Return(INT4OID));
+    EXPECT_CALL(mock, get_value(_, 0)).WillRepeatedly(Return(int32_bytes));
+    EXPECT_CALL(mock, get_length(_, 0)).WillRepeatedly(Return(4));
+    EXPECT_CALL(mock, get_isnull(_, 0)).WillRepeatedly(Return(false));
+
+    EXPECT_CALL(mock, field_type(1)).WillRepeatedly(Return(TEXTOID));
+    EXPECT_CALL(mock, get_value(_, 1)).WillRepeatedly(Return(string_bytes));
+    EXPECT_CALL(mock, get_length(_, 1)).WillRepeatedly(Return(4));
+    EXPECT_CALL(mock, get_isnull(_, 1)).WillRepeatedly(Return(false));
+
+    std::tuple<int, std::string> got;
+    ozo::recv_row(row, oid_map, got);
+    EXPECT_EQ(std::make_tuple(int32_t(7), std::string("test")), got);
+}
+
+TEST_F(recv_row, should_return_type_mismatch_error_if_size_of_tuple_does_not_equal_to_row_size) {
+    std::tuple<int, std::string> out;
+    EXPECT_CALL(mock, nfields()).WillRepeatedly(Return(1));
+
+    EXPECT_THROW(ozo::recv_row(row, oid_map, out), std::range_error);
+}
+
+TEST_F(recv_row, should_convert_INT4OID_and_TEXTOID_to_fusion_adapted_structure) {
+    const char int32_bytes[] = { 0x00, 0x00, 0x00, 0x07 };
+    const char* string_bytes = "test";
+
+    EXPECT_CALL(mock, nfields()).WillRepeatedly(Return(2));
+
+    EXPECT_CALL(mock, field_number(Eq("digit"))).WillOnce(Return(0));
+    EXPECT_CALL(mock, field_type(0)).WillRepeatedly(Return(INT4OID));
+    EXPECT_CALL(mock, get_value(_, 0)).WillRepeatedly(Return(int32_bytes));
+    EXPECT_CALL(mock, get_length(_, 0)).WillRepeatedly(Return(4));
+    EXPECT_CALL(mock, get_isnull(_, 0)).WillRepeatedly(Return(false));
+
+    EXPECT_CALL(mock, field_number(Eq("text"))).WillOnce(Return(1));
+    EXPECT_CALL(mock, field_type(1)).WillRepeatedly(Return(TEXTOID));
+    EXPECT_CALL(mock, get_value(_, 1)).WillRepeatedly(Return(string_bytes));
+    EXPECT_CALL(mock, get_length(_, 1)).WillRepeatedly(Return(4));
+    EXPECT_CALL(mock, get_isnull(_, 1)).WillRepeatedly(Return(false));
+
+    fusion_adapted_test_result got;
+    ozo::recv_row(row, oid_map, got);
+    EXPECT_EQ(got.digit, 7);
+    EXPECT_EQ(got.text, "test");
+}
+
+TEST_F(recv_row, should_throw_range_error_if_number_elements_of_structure_does_not_equal_to_row_size) {
+    fusion_adapted_test_result out;
+    EXPECT_CALL(mock, nfields()).WillRepeatedly(Return(1));
+
+    EXPECT_THROW(ozo::recv_row(row, oid_map, out), std::range_error);
+}
+
+TEST_F(recv_row, should_throw_range_error_if_column_name_corresponding_to_elements_of_structure_does_not_found) {
+    fusion_adapted_test_result out;
+    EXPECT_CALL(mock, nfields()).WillRepeatedly(Return(2));
+
+    EXPECT_CALL(mock, field_number(_)).WillRepeatedly(Return(-1));
+
+    EXPECT_THROW(ozo::recv_row(row, oid_map, out), std::range_error);
+}
+
+TEST_F(recv_row, should_throw_range_error_if_row_is_unadapted_and_number_of_rows_more_than_one) {
+    std::int32_t out;
+    EXPECT_CALL(mock, nfields()).WillRepeatedly(Return(2));
+
+    EXPECT_THROW(ozo::recv_row(row, oid_map, out), std::range_error);
+}
+
+struct recv_result : Test {
+    ozo::empty_oid_map oid_map{};
+    StrictMock<pg_result_mock> mock{};
+    ::ozo::basic_result<pg_result_mock*> res{&mock};
+};
+
+TEST_F(recv_result, send_convert_INT4OID_and_TEXTOID_to_fusion_adapted_structures_vector_via_back_inserter) {
+    const char int32_bytes[] = { 0x00, 0x00, 0x00, 0x07 };
+    const char* string_bytes = "test";
+
+    EXPECT_CALL(mock, nfields()).WillRepeatedly(Return(2));
+    EXPECT_CALL(mock, ntuples()).WillRepeatedly(Return(2));
+
+    EXPECT_CALL(mock, field_number(Eq("digit"))).WillRepeatedly(Return(0));
+    EXPECT_CALL(mock, field_type(0)).WillRepeatedly(Return(INT4OID));
+    EXPECT_CALL(mock, get_value(_, 0)).WillRepeatedly(Return(int32_bytes));
+    EXPECT_CALL(mock, get_length(_, 0)).WillRepeatedly(Return(4));
+    EXPECT_CALL(mock, get_isnull(_, 0)).WillRepeatedly(Return(false));
+
+    EXPECT_CALL(mock, field_number(Eq("text"))).WillRepeatedly(Return(1));
+    EXPECT_CALL(mock, field_type(1)).WillRepeatedly(Return(TEXTOID));
+    EXPECT_CALL(mock, get_value(_, 1)).WillRepeatedly(Return(string_bytes));
+    EXPECT_CALL(mock, get_length(_, 1)).WillRepeatedly(Return(4));
+    EXPECT_CALL(mock, get_isnull(_, 1)).WillRepeatedly(Return(false));
+
+    std::vector<fusion_adapted_test_result> got;
+    ozo::recv_result(res, oid_map, std::back_inserter(got));
+    EXPECT_EQ(got.size(), 2);
+    EXPECT_EQ(got[0].digit, 7);
+    EXPECT_EQ(got[0].text, "test");
+    EXPECT_EQ(got[1].digit, 7);
+    EXPECT_EQ(got[1].text, "test");
+}
+
+TEST_F(recv_result, send_convert_INT4OID_and_TEXTOID_to_fusion_adapted_structures_vector_via_iterator) {
+    const char int32_bytes[] = { 0x00, 0x00, 0x00, 0x07 };
+    const char* string_bytes = "test";
+
+    EXPECT_CALL(mock, nfields()).WillRepeatedly(Return(2));
+    EXPECT_CALL(mock, ntuples()).WillRepeatedly(Return(2));
+
+    EXPECT_CALL(mock, field_number(Eq("digit"))).WillRepeatedly(Return(0));
+    EXPECT_CALL(mock, field_type(0)).WillRepeatedly(Return(INT4OID));
+    EXPECT_CALL(mock, get_value(_, 0)).WillRepeatedly(Return(int32_bytes));
+    EXPECT_CALL(mock, get_length(_, 0)).WillRepeatedly(Return(4));
+    EXPECT_CALL(mock, get_isnull(_, 0)).WillRepeatedly(Return(false));
+
+    EXPECT_CALL(mock, field_number(Eq("text"))).WillRepeatedly(Return(1));
+    EXPECT_CALL(mock, field_type(1)).WillRepeatedly(Return(TEXTOID));
+    EXPECT_CALL(mock, get_value(_, 1)).WillRepeatedly(Return(string_bytes));
+    EXPECT_CALL(mock, get_length(_, 1)).WillRepeatedly(Return(4));
+    EXPECT_CALL(mock, get_isnull(_, 1)).WillRepeatedly(Return(false));
+
+    std::vector<fusion_adapted_test_result> got;
+    got.resize(2);
+    ozo::recv_result(res, oid_map, got.begin());
+    EXPECT_EQ(got[0].digit, 7);
+    EXPECT_EQ(got[0].text, "test");
+    EXPECT_EQ(got[1].digit, 7);
+    EXPECT_EQ(got[1].text, "test");
+}
+
+TEST_F(recv_result, send_convert_INT4OID_to_vector_via_iterator) {
+    const char int32_bytes[] = { 0x00, 0x00, 0x00, 0x07 };
+
+    EXPECT_CALL(mock, nfields()).WillRepeatedly(Return(1));
+    EXPECT_CALL(mock, ntuples()).WillRepeatedly(Return(2));
+
+    EXPECT_CALL(mock, field_number(Eq("digit"))).WillRepeatedly(Return(0));
+    EXPECT_CALL(mock, field_type(0)).WillRepeatedly(Return(INT4OID));
+    EXPECT_CALL(mock, get_value(_, 0)).WillRepeatedly(Return(int32_bytes));
+    EXPECT_CALL(mock, get_length(_, 0)).WillRepeatedly(Return(4));
+    EXPECT_CALL(mock, get_isnull(_, 0)).WillRepeatedly(Return(false));
+
+    std::vector<int32_t> got;
+    got.resize(2);
+    ozo::recv_result(res, oid_map, got.begin());
+    EXPECT_THAT(got, ElementsAre(7, 7));
+}
+
+TEST_F(recv_result, send_returns_result_then_result_requested) {
+    ::ozo::basic_result<pg_result_mock*> got;
+    ozo::recv_result(res, oid_map, got);
+    EXPECT_CALL(mock, ntuples()).WillOnce(Return(2));
+    EXPECT_EQ(got.size(), 2);
 }
 
 } // namespace
