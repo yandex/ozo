@@ -115,62 +115,64 @@ constexpr auto is_null(const T&) noexcept -> std::enable_if_t<!Nullable<T>, std:
     return {};
 }
 
-template <typename V, typename T, typename Alloc, typename... Args>
-struct allocate_nullable_impl {};
-
-template <typename V, typename... Args>
-struct allocate_nullable_impl<V, std::unique_ptr<V>, std::allocator<V>, Args...> {
-    inline std::unique_ptr<V> operator()(const std::allocator<V>&, Args&&... args) const {
-        return std::make_unique<V>(std::forward<Args>(args)...);
+template <typename T, typename = std::void_t<>>
+struct allocate_nullable_impl {
+    static_assert(Emplaceable<T>, "default implementation uses emplace() method");
+    template <typename Alloc>
+    static void apply(T& out, const Alloc&) {
+        out.emplace();
     }
 };
 
-template <typename V, typename Alloc, typename... Args>
-struct allocate_nullable_impl<V, boost::shared_ptr<V>, Alloc, Args...> {
-    inline boost::shared_ptr<V> operator()(const Alloc& a, Args&&... args) const {
-        return boost::allocate_shared<V, Alloc>(a, std::forward<Args>(args)...);
+template <typename T>
+struct allocate_nullable_impl<std::unique_ptr<T>> {
+    template <typename Alloc>
+    static void apply(std::unique_ptr<T>& out, const Alloc&) {
+        out = std::make_unique<T>();
     }
 };
 
-template <typename V, typename Alloc, typename... Args>
-struct allocate_nullable_impl<V, std::shared_ptr<V>, Alloc, Args...> {
-    inline std::shared_ptr<V> operator()(const Alloc& a, Args&&... args) const {
-        return std::allocate_shared<V, Alloc>(a, std::forward<Args>(args)...);
+template <typename T>
+struct allocate_nullable_impl<boost::scoped_ptr<T>> {
+    template <typename Alloc>
+    static void apply(boost::scoped_ptr<T>& out, const Alloc&) {
+        out.reset(new T{});
     }
 };
 
-template <typename V, typename T, typename Alloc, typename... Args>
-inline T allocate_nullable(const Alloc& a, Args&&... args) {
-    return allocate_nullable_impl<V, T, Alloc, Args...>{}(a, std::forward<Args>(args)...);
-}
+template <typename T>
+struct allocate_nullable_impl<boost::shared_ptr<T>> {
+    template <typename Alloc>
+    static void apply(boost::shared_ptr<T>& out, const Alloc& a) {
+        out = boost::allocate_shared<T, Alloc>(a);
+    }
+};
 
 template <typename T>
-Require<Nullable<T> && Emplaceable<T>>
-init_nullable(T& n) {
+struct allocate_nullable_impl<std::shared_ptr<T>> {
+    template <typename Alloc>
+    static void apply(std::shared_ptr<T>& out, const Alloc& a) {
+        out = std::allocate_shared<T, Alloc>(a);
+    }
+};
+
+template <typename T, typename Alloc>
+inline void allocate_nullable(T& out, const Alloc& a) {
+    static_assert(Nullable<T>, "T must be nullable");
+    allocate_nullable_impl<std::decay_t<T>>::apply(out, a);
+}
+
+template <typename T, typename Alloc = std::allocator<char>>
+inline void init_nullable(T& n, const Alloc& a = Alloc{}) {
+    static_assert(Nullable<T>, "T must be nullable");
     if (!n) {
-        n.emplace();
+        allocate_nullable(n, a);
     }
 }
 
 template <typename T>
-void init_nullable(boost::scoped_ptr<T>& n) {
-    if (!n) {
-        n.reset(new T{});
-    }
-}
-
-template <typename T, typename Alloc = std::allocator<typename T::element_type>>
-Require<Nullable<T> && !Emplaceable<T>>
-init_nullable(T& n, const Alloc& a = Alloc{}) {
-    if (!n) {
-        using V = typename T::element_type;
-        n = allocate_nullable<V, T, Alloc>(a);
-    }
-}
-
-template <typename T>
-Require<Nullable<T>>
-reset_nullable(T& n) {
+inline void reset_nullable(T& n) {
+    static_assert(Nullable<T>, "T must be nullable");
     n.reset();
 }
 

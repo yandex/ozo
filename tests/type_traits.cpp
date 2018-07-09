@@ -1,5 +1,4 @@
 #include <ozo/type_traits.h>
-#include "concept_mock.h"
 
 #include <boost/make_shared.hpp>
 #include <boost/fusion/adapted/std_tuple.hpp>
@@ -8,27 +7,28 @@
 
 #include <boost/hana/adapt_adt.hpp>
 
-#include <GUnit/GTest.h>
+#include <gtest/gtest.h>
+#include <gmock/gmock.h>
 
 namespace hana = ::boost::hana;
 using namespace ::testing;
-using namespace ::ozo::testing;
 
-GTEST("ozo::is_null<nullable>()", "[for non initialized optional returns true]") {
+namespace {
+
+TEST(is_null, should_return_true_for_non_initialized_optional) {
     EXPECT_TRUE(ozo::is_null(boost::optional<int>{}));
 }
 
-GTEST("ozo::is_null<nullable>()", "[for initialized optional returns false]") {
+TEST(is_null, should_return_false_for_initialized_optional) {
     EXPECT_TRUE(!ozo::is_null(boost::optional<int>{0}));
 }
 
-
-GTEST("ozo::is_null<std::weak_ptr>()", "[for valid pointer returns false]") {
+TEST(is_null, should_return_false_for_valid_std_weak_ptr) {
     auto ptr = std::make_shared<int>();
     EXPECT_TRUE(!ozo::is_null(std::weak_ptr<int>{ptr}));
 }
 
-GTEST("ozo::is_null<std::weak_ptr>()", "[for expired pointer returns false]") {
+TEST(is_null, should_return_true_for_expired_std_weak_ptr) {
     std::weak_ptr<int> ptr;
     {
         ptr = std::make_shared<int>();
@@ -36,18 +36,18 @@ GTEST("ozo::is_null<std::weak_ptr>()", "[for expired pointer returns false]") {
     EXPECT_TRUE(ozo::is_null(ptr));
 }
 
-GTEST("ozo::is_null<std::weak_ptr>()", "[for uninitialized pointer returns false]") {
+TEST(is_null, should_return_true_for_non_initialized_std_weak_ptr) {
     std::weak_ptr<int> ptr;
     EXPECT_TRUE(ozo::is_null(ptr));
 }
 
 
-GTEST("ozo::is_null<boost::weak_ptr>()", "[for valid pointer returns false]") {
+TEST(is_null, should_return_false_for_valid_boost_weak_ptr)  {
     auto ptr = boost::make_shared<int>();
     EXPECT_TRUE(!ozo::is_null(boost::weak_ptr<int>(ptr)));
 }
 
-GTEST("ozo::is_null<boost::weak_ptr>()", "[for expired pointer returns false]") {
+TEST(is_null, should_return_true_for_expired_boost_weak_ptr)  {
     boost::weak_ptr<int> ptr;
     {
         ptr = boost::make_shared<int>();
@@ -55,125 +55,95 @@ GTEST("ozo::is_null<boost::weak_ptr>()", "[for expired pointer returns false]") 
     EXPECT_TRUE(ozo::is_null(ptr));
 }
 
-GTEST("ozo::is_null<boost::weak_ptr>()", "[for uninitialized pointer returns false]") {
+TEST(is_null, should_return_true_for_non_initialized_boost_weak_ptr)  {
     boost::weak_ptr<int> ptr;
     EXPECT_TRUE(ozo::is_null(ptr));
 }
 
-GTEST("ozo::is_null<not nullable>()", "[for int returns false]") {
+TEST(is_null, should_return_false_for_non_nullable_type) {
     EXPECT_TRUE(!ozo::is_null(int()));
 }
 
-GTEST("ozo::unwrap_nullable") {
-    SHOULD("unwrap boost::optional") {
-        boost::optional<int> n(7);
-        EXPECT_EQ(ozo::unwrap_nullable(n), 7);
-    }
+TEST(unwrap_nullable, should_unwrap_nullable_type) {
+    boost::optional<int> n(7);
+    EXPECT_EQ(ozo::unwrap_nullable(n), 7);
 }
 
-GTEST("ozo::allocate_nullable") {
-    SHOULD("allocate a std::unique_ptr with default deleter") {
-        using ptr_t = std::unique_ptr<int>;
-        ptr_t p = ozo::allocate_nullable<int, ptr_t>(std::allocator<int>());
-        EXPECT_TRUE(p);
-    }
-    SHOULD("allocate a boost::shared_ptr") {
-        using ptr_t = boost::shared_ptr<int>;
-        ptr_t p = ozo::allocate_nullable<int, ptr_t>(std::allocator<int>());
-        EXPECT_TRUE(p);
-    }
-    SHOULD("allocate a std::shared_ptr") {
-        using ptr_t = std::shared_ptr<int>;
-        ptr_t p = ozo::allocate_nullable<int, ptr_t>(std::allocator<int>());
-        EXPECT_TRUE(p);
-    }
+TEST(unwrap_nullable, should_unwrap_notnullable_type) {
+    int n(7);
+    EXPECT_EQ(ozo::unwrap_nullable(n), 7);
 }
 
-using emplaceable_nullable = emplaceable<
-    operator_not<
-    nullable<
-    concept
->>>;
-
-template <typename V>
-using movable_nullable = move_assignable<
-    has_element<V,
-    operator_not<
-    nullable<
-    concept
->>>>;
-
-// This wrapper has no pure virtual methods,
-// and therefore can be created in allocate_nullable.
-// It simply redirects all calls to a StrictGMock::object
-// supplied via static reference.
-template <typename V>
-class movable_mock_wrapper : public movable_nullable<V>
-{
-public:
-    static boost::optional<movable_nullable<V>&> mock;
-
-    movable_mock_wrapper() = default;
-
-    virtual bool negate() const override { return mock.get().negate(); }
-    virtual void move_assign() override { mock.get().move_assign(); }
-};
-
-template <typename V>
-boost::optional<movable_nullable<V>&> movable_mock_wrapper<V>::mock;
+}
 
 namespace ozo {
+namespace testing {
+
+struct nullable_mock {
+    MOCK_METHOD0(emplace, void());
+    MOCK_CONST_METHOD0(negate, bool());
+    MOCK_METHOD0(reset, void());
+    bool operator!() const { return negate(); }
+};
+
+}// namespace testing
 
 template <>
-inline movable_mock_wrapper<int> allocate_nullable<
-        int,
-        movable_mock_wrapper<int>,
-        std::allocator<int>>(
-            const std::allocator<int>&) {
-    return movable_mock_wrapper<int>{};
-}
+struct is_nullable<StrictMock<testing::nullable_mock>> : ::std::true_type {};
+
+template <>
+struct is_nullable<testing::nullable_mock> : ::std::true_type {};
 
 } // namespace ozo
 
-GTEST("ozo::init_nullable") {
-    SHOULD("initialize an empty Nullable with emplace() if possible") {
-        StrictGMock<emplaceable_nullable> mock{};
-        EXPECT_INVOKE(mock, emplace);
-        EXPECT_INVOKE(mock, negate).WillOnce(Return(true));
-        ozo::init_nullable(mock.object());
-    }
+namespace {
 
-    SHOULD("do nothing with an emplaceable Nullable that contains a value") {
-        StrictGMock<emplaceable_nullable> mock{};
-        EXPECT_INVOKE(mock, negate).WillOnce(Return(false));
-        ozo::init_nullable(mock.object());
-    }
+using namespace ::ozo::testing;
 
-    SHOULD("initialize an empty movable Nullable with a new nullable containing a default-constructed element") {
-        StrictGMock<movable_nullable<int>> mock{};
-        movable_mock_wrapper<int>::mock.reset(mock.object());
-        EXPECT_INVOKE(mock, move_assign);
-        EXPECT_INVOKE(mock, negate).WillOnce(Return(true));
-        auto mock_wrapper = movable_mock_wrapper<int>{};
-        ozo::init_nullable(mock_wrapper);
-    }
-
-    SHOULD("do nothing with a movable Nullable that contains a value") {
-        StrictGMock<movable_nullable<int>> mock{};
-        movable_mock_wrapper<int>::mock.reset(mock.object());
-        EXPECT_INVOKE(mock, negate).WillOnce(Return(false));
-        auto mock_wrapper = movable_mock_wrapper<int>{};
-        ozo::init_nullable(mock_wrapper);
-    }
+TEST(init_nullable, should_initialize_uninitialized_nullable) {
+    StrictMock<nullable_mock> mock{};
+    EXPECT_CALL(mock, negate()).WillOnce(Return(true));
+    EXPECT_CALL(mock, emplace()).WillOnce(Return());
+    ozo::init_nullable(mock);
 }
 
-GTEST("ozo::reset_nullable") {
-    SHOULD("reset a nullable that contains a value") {
-        StrictGMock<resettable<nullable<concept>>> mock{};
-        EXPECT_INVOKE(mock, reset);
-        ozo::reset_nullable(mock.object());
-    }
+TEST(init_nullable, should_pass_initialized_nullable) {
+    StrictMock<nullable_mock> mock{};
+    EXPECT_CALL(mock, negate()).WillOnce(Return(false));
+    ozo::init_nullable(mock);
 }
+
+TEST(init_nullable, should_allocate_std_unique_ptr) {
+    std::unique_ptr<int> ptr{};
+    ozo::init_nullable(ptr);
+    EXPECT_TRUE(ptr);
+}
+
+TEST(init_nullable, should_allocate_std_shared_ptr) {
+    std::shared_ptr<int> ptr{};
+    ozo::init_nullable(ptr);
+    EXPECT_TRUE(ptr);
+}
+
+TEST(init_nullable, should_allocate_boost_scoped_ptr) {
+    boost::scoped_ptr<int> ptr{};
+    ozo::init_nullable(ptr);
+    EXPECT_TRUE(ptr);
+}
+
+TEST(init_nullable, should_allocate_boost_shared_ptr) {
+    boost::shared_ptr<int> ptr{};
+    ozo::init_nullable(ptr);
+    EXPECT_TRUE(ptr);
+}
+
+TEST(reset_nullable, should_reset_nullable) {
+    StrictMock<nullable_mock> mock{};
+    EXPECT_CALL(mock, reset()).WillOnce(Return());
+    ozo::reset_nullable(mock);
+}
+
+}// namespace
 
 namespace ozo {
 namespace testing {
@@ -191,61 +161,66 @@ namespace testing {
 OZO_PG_DEFINE_CUSTOM_TYPE(ozo::testing::some_type, "some_type", dynamic_size)
 OZO_PG_DEFINE_TYPE(ozo::testing::builtin_type, "builtin_type", 5, bytes<8>)
 
-auto oid_map = ozo::register_types<ozo::testing::some_type>();
-
-GTEST("ozo::type_name()", "[for defined type returns name from traits]") {
-    using namespace std::string_literals;
-    EXPECT_EQ(ozo::type_name(ozo::testing::some_type{}), "some_type"s);
-}
-
-GTEST("ozo::size_of()", "[for static size type returns size from traits]") {
-    EXPECT_EQ(ozo::size_of(ozo::testing::builtin_type{}), 8);
-}
-
-GTEST("ozo::size_of()", "[for dynamic size type returns size from objects method size()]") {
-    EXPECT_EQ(ozo::size_of(ozo::testing::some_type{}), 1000);
-}
-
-GTEST("ozo::type_oid()", "[for defined builtin type returns oid from traits]") {
-    EXPECT_EQ(ozo::type_oid(oid_map, ozo::testing::builtin_type{}), 5);
-}
-
-GTEST("ozo::type_oid()", "[for defined custom type returns oid from map]") {
-    const auto val = ozo::testing::some_type{};
-    ozo::set_type_oid<ozo::testing::some_type>(oid_map, 333);
-    EXPECT_EQ(ozo::type_oid(oid_map, val), 333);
-}
-
-GTEST("ozo::accepts_oid()", "[for type with oid in map and same oid argument returns true]") {
-    const auto val = ozo::testing::some_type{};
-    ozo::set_type_oid<ozo::testing::some_type>(oid_map, 222);
-    EXPECT_TRUE(ozo::accepts_oid(oid_map, val, 222));
-}
-
-GTEST("ozo::accepts_oid()", "[for type with oid in map and different oid argument returns false]") {
-    const auto val = ozo::testing::some_type{};
-    ozo::set_type_oid<ozo::testing::some_type>(oid_map, 222);
-    EXPECT_TRUE(!ozo::accepts_oid(oid_map, val, 0));
-}
-
-GTEST("ozo::is_composite<std::string>", "[returns false]") {
-    EXPECT_TRUE(!ozo::is_composite<std::string>::value);
-}
-
-GTEST("ozo::is_composite<std::tuple<T...>>", "[returns true]") {
-    using tuple = std::tuple<int,std::string,double>;
-    EXPECT_TRUE(ozo::is_composite<tuple>::value);
-}
-
 BOOST_FUSION_DEFINE_STRUCT(
     (testing), fusion_adapted,
     (std::string, name)
     (int, age))
 
-GTEST("ozo::is_composite<adapted>", "[with Boost.Fusion adapted structure returns true]") {
+namespace {
+
+using namespace ::ozo::testing;
+
+auto oid_map = ozo::register_types<ozo::testing::some_type>();
+
+TEST(type_name, should_return_type_name_object) {
+    using namespace std::string_literals;
+    EXPECT_EQ(ozo::type_name(ozo::testing::some_type{}), "some_type"s);
+}
+
+TEST(size_of, should_return_size_from_traits_for_static_size_type) {
+    EXPECT_EQ(ozo::size_of(ozo::testing::builtin_type{}), 8);
+}
+
+TEST(size_of, should_return_size_from_method_size_for_dynamic_size_objects) {
+    EXPECT_EQ(ozo::size_of(ozo::testing::some_type{}), 1000);
+}
+
+TEST(type_oid, should_return_oid_from_traits_for_buildin_type) {
+    EXPECT_EQ(ozo::type_oid(oid_map, ozo::testing::builtin_type{}), 5);
+}
+
+TEST(type_oid, should_return_oid_from_oid_map_for_custom_type) {
+    const auto val = ozo::testing::some_type{};
+    ozo::set_type_oid<ozo::testing::some_type>(oid_map, 333);
+    EXPECT_EQ(ozo::type_oid(oid_map, val), 333);
+}
+
+TEST(accepts_oid, should_return_true_for_type_with_oid_in_map_and_same_oid_argument) {
+    const auto val = ozo::testing::some_type{};
+    ozo::set_type_oid<ozo::testing::some_type>(oid_map, 222);
+    EXPECT_TRUE(ozo::accepts_oid(oid_map, val, 222));
+}
+
+TEST(accepts_oid, should_return_false_for_type_with_oid_in_map_and_different_oid_argument) {
+    const auto val = ozo::testing::some_type{};
+    ozo::set_type_oid<ozo::testing::some_type>(oid_map, 222);
+    EXPECT_TRUE(!ozo::accepts_oid(oid_map, val, 0));
+}
+
+TEST(is_composite, should_return_false_for_std_string) {
+    EXPECT_TRUE(!ozo::is_composite<std::string>::value);
+}
+
+TEST(is_composite, should_return_true_for_std_tuple) {
+    using tuple = std::tuple<int,std::string,double>;
+    EXPECT_TRUE(ozo::is_composite<tuple>::value);
+}
+
+TEST(is_composite, should_return_true_for_boost_fusion_adapted_struct) {
     EXPECT_TRUE(ozo::is_composite<testing::fusion_adapted>::value);
 }
 
+} // namespace
 namespace testing {
 
 struct hana_adapted {
@@ -257,6 +232,10 @@ struct hana_adapted {
 
 } // namespace testing
 
-GTEST("ozo::is_composite<adapted>", "[with Boost.Hana adapted structure returns true]") {
+namespace {
+
+TEST(is_composite, should_return_true_for_boost_hana_adapted_struct) {
     EXPECT_TRUE(ozo::is_composite<testing::hana_adapted>::value);
 }
+
+} //namespace
