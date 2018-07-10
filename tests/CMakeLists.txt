@@ -22,6 +22,7 @@ endif()
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-ignored-optimization-argument")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-gnu-string-literal-operator-template")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-gnu-zero-variadic-macro-arguments")
 endif()
 
 find_program(CCACHE_FOUND ccache)
@@ -39,23 +40,19 @@ include_directories(SYSTEM "${PostgreSQL_INCLUDE_DIRS}")
 
 include(ExternalProject)
 ExternalProject_Add(
-    GUnit
-    GIT_REPOSITORY "https://github.com/elsid/GUnit.git"
-    GIT_TAG dev3
+    GoogleTest
+    GIT_REPOSITORY "https://github.com/google/googletest.git"
+    GIT_TAG release-1.8.0
     CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}
     UPDATE_COMMAND ""
     LOG_DOWNLOAD ON
     LOG_CONFIGURE ON
     LOG_BUILD ON
 )
-ExternalProject_Get_Property(GUnit source_dir)
+ExternalProject_Get_Property(GoogleTest source_dir)
 include_directories(SYSTEM "${source_dir}/include")
 include_directories(SYSTEM "${CMAKE_CURRENT_BINARY_DIR}/include")
 link_directories("${CMAKE_CURRENT_BINARY_DIR}/lib")
-
-include_directories(SYSTEM "${source_dir}/libs/gherkin-cpp/include")
-include_directories(SYSTEM "${source_dir}/libs/json/src")
-link_directories("${source_dir}/libs/gherkin-cpp")
 
 set(SOURCES
     async_connect.cpp
@@ -90,13 +87,12 @@ endif()
 set(LIBRARIES
     pthread
     gmock_main
-    gherkin-cpp
     ${Boost_LIBRARIES}
     ${PostgreSQL_LIBRARIES}
 )
 
 add_executable(ozo_tests ${SOURCES})
-add_dependencies(ozo_tests GUnit)
+add_dependencies(ozo_tests GoogleTest)
 target_link_libraries(ozo_tests ${LIBRARIES})
 add_test(ozo_tests ozo_tests)
 
