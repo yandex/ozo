@@ -2,7 +2,7 @@
 
 #include <ozo/asio.h>
 
-#include <GUnit/GTest.h>
+#include <gmock/gmock.h>
 #include <boost/core/demangle.hpp>
 #include "test_error.h"
 
