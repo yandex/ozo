@@ -2,6 +2,7 @@
 
 #include <ozo/connection.h>
 #include <yamail/resource_pool/async/pool.hpp>
+#include <ozo/asio.h>
 
 namespace ozo::impl {
 
@@ -46,8 +47,9 @@ struct pooled_connection {
 template <typename Provider>
 using pooled_connection_ptr = std::shared_ptr<pooled_connection<Provider>>;
 
-template <typename Provider, typename Handler>
+template <typename IoContext, typename Provider, typename Handler>
 struct pooled_connection_wrapper {
+    IoContext& io_;
     Provider provider_;
     Handler handler_;
 
@@ -83,6 +85,7 @@ struct pooled_connection_wrapper {
 
         auto conn = std::make_shared<connection>(std::forward<Handle>(handle));
         if (!conn->empty() && connection_good(conn)) {
+            ec = rebind_io_context(conn, io_);
             return handler_(std::move(ec), std::move(conn));
         }
 
@@ -96,13 +99,13 @@ struct pooled_connection_wrapper {
     }
 };
 
-template <typename P, typename Handler>
-auto wrap_pooled_connection_handler(P&& provider, Handler&& handler) {
+template <typename P, typename IoContext, typename Handler>
+auto wrap_pooled_connection_handler(IoContext& io, P&& provider, Handler&& handler) {
 
     static_assert(ConnectionProvider<P>, "is not a ConnectionProvider");
 
-    return pooled_connection_wrapper<std::decay_t<P>, std::decay_t<Handler>> {
-        std::forward<P>(provider), std::forward<Handler>(handler)
+    return pooled_connection_wrapper<IoContext, std::decay_t<P>, std::decay_t<Handler>> {
+        io, std::forward<P>(provider), std::forward<Handler>(handler)
     };
 }
 
