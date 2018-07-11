@@ -38,6 +38,7 @@ struct connection_mock {
     virtual ozo::error_code start_connection(const std::string&) = 0;
     virtual ozo::error_code assign_socket() = 0;
     virtual void async_request() = 0;
+    virtual ozo::error_code rebind_io_context() = 0;
 
     virtual ~connection_mock() = default;
 };
@@ -54,6 +55,8 @@ struct connection_gmock : connection_mock {
     MOCK_METHOD1(start_connection, ozo::error_code(const std::string&));
     MOCK_METHOD0(assign_socket, ozo::error_code());
     MOCK_METHOD0(async_request, void());
+    MOCK_METHOD0(rebind_io_context, ozo::error_code());
+
 };
 
 inline boost::optional<pg_result> make_pg_result(
@@ -147,6 +150,11 @@ struct connection {
     template <typename Q, typename Out, typename Handler>
     friend void async_request(std::shared_ptr<connection>&& provider, Q&&, Out&&, Handler&&) {
         provider->mock_->async_request();
+    }
+
+    template <typename IoContext>
+    friend ozo::error_code rebind_connection_io_context(connection& c, IoContext&) {
+        return c.mock_->rebind_io_context();
     }
 };
 

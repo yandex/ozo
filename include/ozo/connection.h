@@ -166,8 +166,8 @@ inline decltype(auto) get_io_context(T& conn) noexcept {
 /**
 * Rebinds io_context for the connection
 */
-template <typename T, typename = Require<Connectable<T>>>
-inline error_code rebind_io_context(T& conn, io_context& io) {
+template <typename T, typename IoContext, typename = Require<Connectable<T>>>
+inline error_code rebind_io_context(T& conn, IoContext& io) {
     using impl::rebind_connection_io_context;
     return rebind_connection_io_context(unwrap_connection(conn), io);
 }

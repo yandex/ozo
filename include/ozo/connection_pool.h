@@ -2,6 +2,7 @@
 
 #include <ozo/impl/connection_pool.h>
 #include <ozo/connection_info.h>
+#include <ozo/asio.h>
 
 namespace ozo {
 
@@ -25,7 +26,7 @@ public:
     template <typename Handler>
     void get_connection(io_context& io, duration timeout, Handler&& handler) {
         impl_.get_auto_recycle(io,
-            impl::wrap_pooled_connection_handler(provider_, std::forward<Handler>(handler)),
+            impl::wrap_pooled_connection_handler(io, provider_, std::forward<Handler>(handler)),
             timeout);
     }
 
