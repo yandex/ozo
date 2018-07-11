@@ -24,6 +24,9 @@ inline Require<RawDataWritable<T>, istream&> read(istream& in, T& out) {
 template <typename T>
 inline Require<Integral<T> && sizeof(T) == 1, istream&> read(istream& in, T& out) {
     out = in.get();
+    if (!in) {
+        throw system_error(error::unexpected_eof);
+    }
     return in;
 }
 
