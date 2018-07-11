@@ -15,6 +15,27 @@ namespace {
 using namespace ::testing;
 using ::ozo::testing::pg_result_mock;
 
+struct read : Test {
+    struct badbuf_t : std::streambuf{} badbuf;
+    ozo::istream bad_istream{&badbuf};
+};
+
+TEST_F(read, with_single_byte_type_and_bad_istream_should_throw) {
+    std::int8_t out;
+    EXPECT_THROW(
+        ozo::read(bad_istream, out),
+        ozo::system_error
+    );
+}
+
+TEST_F(read, with_multi_byte_type_and_bad_ostream_should_throw) {
+    std::int64_t out;
+    EXPECT_THROW(
+        ozo::read(bad_istream, out),
+        ozo::system_error
+    );
+}
+
 struct recv : Test {
     ozo::empty_oid_map oid_map{};
     StrictMock<pg_result_mock> mock{};
