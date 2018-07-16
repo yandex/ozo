@@ -73,6 +73,7 @@ set(SOURCES
     base36.cpp
     request_oid_map.cpp
     connection_binder.cpp
+    main.cpp
 )
 
 if(OZO_BUILD_PG_TESTS)
@@ -86,7 +87,7 @@ endif()
 
 set(LIBRARIES
     pthread
-    gmock_main
+    gmock
     ${Boost_LIBRARIES}
     ${PostgreSQL_LIBRARIES}
 )
