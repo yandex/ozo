@@ -1,4 +1,4 @@
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic -Werror -fno-devirtualize")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wsign-compare -pedantic -Werror -fno-devirtualize")
 
 execute_process(COMMAND echo "int main() { return 0;}" OUTPUT_FILE test.cpp)
 execute_process(COMMAND ${CMAKE_CXX_COMPILER} -std=c++17 test.cpp -o a.out RESULT_VARIABLE CPP17_READY_RESULT)

@@ -475,7 +475,7 @@ TEST_F(recv_result, send_convert_INT4OID_and_TEXTOID_to_fusion_adapted_structure
 
     std::vector<fusion_adapted_test_result> got;
     ozo::recv_result(res, oid_map, std::back_inserter(got));
-    EXPECT_EQ(got.size(), 2);
+    EXPECT_EQ(got.size(), 2u);
     EXPECT_EQ(got[0].digit, 7);
     EXPECT_EQ(got[0].text, "test");
     EXPECT_EQ(got[1].digit, 7);
@@ -532,7 +532,7 @@ TEST_F(recv_result, send_returns_result_then_result_requested) {
     ::ozo::basic_result<pg_result_mock*> got;
     ozo::recv_result(res, oid_map, got);
     EXPECT_CALL(mock, ntuples()).WillOnce(Return(2));
-    EXPECT_EQ(got.size(), 2);
+    EXPECT_EQ(got.size(), 2u);
 }
 
 } // namespace

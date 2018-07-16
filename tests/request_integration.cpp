@@ -57,8 +57,8 @@ TEST(request, should_return_selected_variable) {
     ozo::request(conn_info, "SELECT "_SQL + foo, res,
             [&](ozo::error_code ec, auto conn) {
         ASSERT_FALSE(ec) << ec.message() << " | " << error_message(conn) << " | " << get_error_context(conn);
-        ASSERT_EQ(1, res.size());
-        ASSERT_EQ(1, res[0].size());
+        ASSERT_EQ(1u, res.size());
+        ASSERT_EQ(1u, res[0].size());
         EXPECT_EQ(std::string("foo"), res[0][0].data());
         EXPECT_FALSE(ozo::connection_bad(conn));
     });
@@ -79,7 +79,7 @@ TEST(request, should_return_selected_string_array) {
     ozo::request(conn_info, "SELECT "_SQL + foos, std::back_inserter(res),
             [&](ozo::error_code ec, auto conn) {
         ASSERT_FALSE(ec) << ec.message() << " | " << error_message(conn) << " | " << get_error_context(conn);
-        ASSERT_EQ(1, res.size());
+        ASSERT_EQ(1u, res.size());
         EXPECT_THAT(std::get<0>(res[0]), ElementsAre("foo", "buzz", "bar"));
         EXPECT_FALSE(ozo::connection_bad(conn));
     });
@@ -100,7 +100,7 @@ TEST(request, should_return_selected_int_array) {
     ozo::request(conn_info, "SELECT "_SQL + foos, std::back_inserter(res),
             [&](ozo::error_code ec, auto conn) {
         ASSERT_FALSE(ec) << ec.message() << " | " << error_message(conn) << " | " << get_error_context(conn);
-        ASSERT_EQ(1, res.size());
+        ASSERT_EQ(1u, res.size());
         EXPECT_THAT(std::get<0>(res[0]), ElementsAre(1, 22, 333));
         EXPECT_FALSE(ozo::connection_bad(conn));
     });
