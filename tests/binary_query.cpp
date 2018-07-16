@@ -13,17 +13,17 @@ struct binary_query_params_count : ::testing::Test {};
 
 TEST_F(binary_query_params_count, without_parameters_should_be_equal_to_0) {
     const auto query = ozo::make_binary_query("", hana::make_tuple());
-    EXPECT_EQ(query.params_count, 0);
+    EXPECT_EQ(query.params_count, 0u);
 }
 
 TEST_F(binary_query_params_count, with_more_than_0_parameters_should_be_equal_to_that_number) {
     const auto query = ozo::make_binary_query("", hana::make_tuple(true, 42, std::string("text")));
-    EXPECT_EQ(query.params_count, 3);
+    EXPECT_EQ(query.params_count, 3u);
 }
 
 TEST_F(binary_query_params_count, from_query_concept_with_more_than_0_parameters_should_be_equal_to_that_number) {
     const auto query = ozo::make_binary_query(ozo::make_query("", true, 42, std::string("text")));
-    EXPECT_EQ(query.params_count, 3);
+    EXPECT_EQ(query.params_count, 3u);
 }
 
 struct binary_query_text : ::testing::Test {};
@@ -42,7 +42,7 @@ TEST_F(binary_query_types, for_param_should_be_equal_to_type_oid) {
 
 TEST_F(binary_query_types, for_nullptr_should_be_equal_to_0) {
     const auto query = ozo::make_binary_query("", hana::make_tuple(nullptr));
-    EXPECT_EQ(query.types()[0], 0);
+    EXPECT_EQ(query.types()[0], 0u);
 }
 
 TEST_F(binary_query_types, for_not_initialized_std_optional_should_be_equal_to_value_type_oid) {
@@ -76,7 +76,7 @@ struct binary_query_lengths : ::testing::Test {};
 
 TEST_F(binary_query_lengths, should_be_equal_to_parameter_binary_serialized_data_size) {
     const auto query = ozo::make_binary_query("", hana::make_tuple(std::int16_t()));
-    EXPECT_EQ(query.lengths()[0], sizeof(std::int16_t));
+    EXPECT_EQ(query.lengths()[0], static_cast<int>(sizeof(std::int16_t)));
 }
 
 TEST_F(binary_query_lengths, for_std_string_should_be_equal_to_std_string_length) {

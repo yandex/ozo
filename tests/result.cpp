@@ -18,7 +18,7 @@ TEST_F(value, oid_should_call_field_type_with_column) {
 
 TEST_F(value, oid_should_return_field_type_result) {
     EXPECT_CALL(mock, field_type(_)).WillOnce(Return(66));
-    EXPECT_EQ(v.oid(), 66);
+    EXPECT_EQ(v.oid(), 66u);
 }
 
 TEST_F(value, is_text_should_call_field_format_with_column) {
@@ -69,7 +69,7 @@ TEST_F(value, size_should_call_get_length_with_row_and_column) {
 
 TEST_F(value, size_should_return_get_length_result) {
     EXPECT_CALL(mock, get_length(_, _)).WillOnce(Return(777));
-    EXPECT_EQ(v.size(), 777);
+    EXPECT_EQ(v.size(), 777u);
 }
 
 TEST_F(value, is_null_should_call_get_isnull_with_row_and_column) {
@@ -107,7 +107,7 @@ TEST_F(row, empty_should_return_false_if_nfields_returns_not_0) {
 TEST_F(row, size_should_return_nfields_result) {
     EXPECT_CALL(mock, nfields()).WillOnce(Return(3));
 
-    EXPECT_EQ(r.size(), 3);
+    EXPECT_EQ(r.size(), 3u);
 }
 
 TEST_F(row, begin_should_return_end_if_nfields_returns_0) {
@@ -202,7 +202,7 @@ TEST_F(basic_result, empty_should_return_false_if_pg_ntuples_returns_not_0) {
 TEST_F(basic_result, size_should_return_pg_ntuples_result) {
     EXPECT_CALL(mock, ntuples()).WillOnce(Return(43));
 
-    EXPECT_EQ(result.size(), 43);
+    EXPECT_EQ(result.size(), 43u);
 }
 
 TEST_F(basic_result, begin_should_return_end_if_ntuples_returns_0) {

@@ -118,20 +118,20 @@ TEST(query_builder_build, with_text_and_ref_to_not_null_std_unique_ptr_param_ele
     using namespace ozo::literals;
     const auto ptr = std::make_unique<float>(42.13f);
     const auto params = ("SELECT "_SQL + std::cref(ptr)).build().params;
-    EXPECT_EQ(decltype(hana::size(params))::value, 1);
+    EXPECT_EQ(decltype(hana::size(params))::value, 1u);
 }
 
 TEST(query_builder_build, with_text_and_not_null_std_shared_ptr_param_element_returns_query_with_1_param) {
     using namespace ozo::literals;
     const auto ptr = std::make_shared<float>(42.13f);
     const auto params = ("SELECT "_SQL + ptr).build().params;
-    EXPECT_EQ(decltype(hana::size(params))::value, 1);
+    EXPECT_EQ(decltype(hana::size(params))::value, 1u);
 }
 
 TEST(query_builder_build, with_text_and_custom_type_param_element_returns_query_with_1_param) {
     using namespace ozo::literals;
     const auto params = ("SELECT "_SQL + ozo::testing::some_type {}).build().params;
-    EXPECT_EQ(decltype(hana::size(params))::value, 1);
+    EXPECT_EQ(decltype(hana::size(params))::value, 1u);
 }
 
 using namespace ozo::literals;
