@@ -178,21 +178,21 @@ TEST(type_name, should_return_type_name_object) {
 }
 
 TEST(size_of, should_return_size_from_traits_for_static_size_type) {
-    EXPECT_EQ(ozo::size_of(ozo::testing::builtin_type{}), 8);
+    EXPECT_EQ(ozo::size_of(ozo::testing::builtin_type{}), 8u);
 }
 
 TEST(size_of, should_return_size_from_method_size_for_dynamic_size_objects) {
-    EXPECT_EQ(ozo::size_of(ozo::testing::some_type{}), 1000);
+    EXPECT_EQ(ozo::size_of(ozo::testing::some_type{}), 1000u);
 }
 
 TEST(type_oid, should_return_oid_from_traits_for_buildin_type) {
-    EXPECT_EQ(ozo::type_oid(oid_map, ozo::testing::builtin_type{}), 5);
+    EXPECT_EQ(ozo::type_oid(oid_map, ozo::testing::builtin_type{}), 5u);
 }
 
 TEST(type_oid, should_return_oid_from_oid_map_for_custom_type) {
     const auto val = ozo::testing::some_type{};
     ozo::set_type_oid<ozo::testing::some_type>(oid_map, 333);
-    EXPECT_EQ(ozo::type_oid(oid_map, val), 333);
+    EXPECT_EQ(ozo::type_oid(oid_map, val), 333u);
 }
 
 TEST(accepts_oid, should_return_true_for_type_with_oid_in_map_and_same_oid_argument) {

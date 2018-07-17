@@ -36,8 +36,8 @@ TEST(set_oid_map, should_set_oids_for_oid_map_from_oids_result_argument) {
     const ozo::impl::oids_result res = {11, 22};
     ozo::impl::set_oid_map(oid_map, res);
     ozo::impl::get_types_names(ozo::empty_oid_map{});
-    EXPECT_EQ(ozo::type_oid<ozo::testing::custom_type1>(oid_map), 11);
-    EXPECT_EQ(ozo::type_oid<ozo::testing::custom_type2>(oid_map), 22);
+    EXPECT_EQ(ozo::type_oid<ozo::testing::custom_type1>(oid_map), 11u);
+    EXPECT_EQ(ozo::type_oid<ozo::testing::custom_type2>(oid_map), 22u);
 }
 
 TEST(set_oid_map, should_throw_on_oid_map_size_is_not_equal_to_oids_result_size) {

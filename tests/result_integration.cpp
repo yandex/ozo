@@ -31,7 +31,7 @@ TEST(result, should_convert_into_tuple_integer_and_text) {
     std::vector<std::tuple<int32_t, std::string>> r;
     ozo::recv_result(result, oid_map, std::back_inserter(r));
 
-    ASSERT_EQ(r.size(), 1);
+    ASSERT_EQ(r.size(), 1u);
     EXPECT_EQ(std::get<0>(r[0]), 1);
     EXPECT_EQ(std::get<1>(r[0]), "2");
 }
@@ -42,7 +42,7 @@ TEST(result, should_convert_into_tuple_float_and_text) {
     std::vector<std::tuple<float, std::string>> r;
     ozo::recv_result(result, oid_map, std::back_inserter(r));
 
-    ASSERT_EQ(r.size(), 1);
+    ASSERT_EQ(r.size(), 1u);
     EXPECT_EQ(std::get<0>(r[0]), 42.13f);
     EXPECT_EQ(std::get<1>(r[0]), "text");
 }
@@ -69,7 +69,7 @@ TEST(result, should_convert_into_tuple_with_nulls_from_nullables) {
     std::vector<row> r;
     ozo::recv_result(result, oid_map, std::back_inserter(r));
 
-    ASSERT_EQ(r.size(), 1);
+    ASSERT_EQ(r.size(), 1u);
     EXPECT_TRUE(std::get<0>(r[0]));
     EXPECT_EQ(*std::get<0>(r[0]), 7);
     EXPECT_TRUE(std::get<1>(r[0]));
