@@ -109,10 +109,10 @@ auto wrap_pooled_connection_handler(IoContext& io, P&& provider, Handler&& handl
     };
 }
 
-static_assert(Connectable<pooled_connection_ptr<connection<empty_oid_map, no_statistics>>>,
+static_assert(Connectable<pooled_connection_ptr<connection_impl<empty_oid_map, no_statistics>>>,
     "pooled_connection_ptr is not a Connectable concept");
 
-static_assert(ConnectionProvider<pooled_connection_ptr<connection<empty_oid_map, no_statistics>>>,
+static_assert(ConnectionProvider<pooled_connection_ptr<connection_impl<empty_oid_map, no_statistics>>>,
     "pooled_connection_ptr is not a ConnectionProvider concept");
 
 } // namespace ozo::impl

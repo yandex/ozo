@@ -82,31 +82,6 @@ struct connection {
     connection_mock* mock_ = nullptr;
     std::string error_context_;
 
-    friend OidMap& get_connection_oid_map(connection& conn) {
-        return conn.oid_map_;
-    }
-    friend const OidMap& get_connection_oid_map(const connection& conn) {
-        return conn.oid_map_;
-    }
-    friend auto& get_connection_socket(connection& conn) {
-        return conn.socket_;
-    }
-    friend const auto& get_connection_socket(const connection& conn) {
-        return conn.socket_;
-    }
-    friend handle_type& get_connection_handle(connection& conn) {
-        return conn.handle_;
-    }
-    friend const handle_type& get_connection_handle(const connection& conn) {
-        return conn.handle_;
-    }
-    friend std::string& get_connection_error_context(connection& conn) {
-        return conn.error_context_;
-    }
-    friend const std::string& get_connection_error_context(const connection& conn) {
-        return conn.error_context_;
-    }
-
     friend int pq_set_nonblocking(connection& c) {
         return c.mock_->set_nonblocking();
     }

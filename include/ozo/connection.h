@@ -20,6 +20,63 @@ using no_statistics = decltype(hana::make_map());
 template <typename, typename = std::void_t<>>
 struct is_connection : std::false_type {};
 
+template <typename T, typename = std::void_t<>>
+struct get_connection_oid_map_impl {
+    template <typename Conn>
+    constexpr static auto apply(Conn&& c) -> decltype((c.oid_map_)) {
+        return c.oid_map_;
+    }
+};
+
+template <typename T>
+constexpr auto get_connection_oid_map(T&& conn)
+        -> decltype (get_connection_oid_map_impl<std::decay_t<T>>::apply(std::forward<T>(conn))) {
+    return get_connection_oid_map_impl<std::decay_t<T>>::apply(std::forward<T>(conn));
+}
+
+template <typename T, typename = std::void_t<>>
+struct get_connection_socket_impl {
+    template <typename Conn>
+    constexpr static auto apply(Conn&& c) -> decltype((c.socket_)) {
+        return c.socket_;
+    }
+};
+
+template <typename T>
+constexpr auto get_connection_socket(T&& conn)
+        -> decltype(get_connection_socket_impl<std::decay_t<T>>::apply(std::forward<T>(conn))) {
+    return get_connection_socket_impl<std::decay_t<T>>::apply(std::forward<T>(conn));
+}
+
+template <typename T, typename = std::void_t<>>
+struct get_connection_handle_impl {
+    template <typename Conn>
+    constexpr static auto apply(Conn&& c) -> decltype((c.handle_)) {
+        return c.handle_;
+    }
+};
+
+template <typename T>
+constexpr auto get_connection_handle(T&& conn)
+        -> decltype(get_connection_handle_impl<std::decay_t<T>>::apply(std::forward<T>(conn))) {
+    return get_connection_handle_impl<std::decay_t<T>>::apply(std::forward<T>(conn));
+}
+
+template <typename T, typename = std::void_t<>>
+struct get_connection_error_context_impl {
+    template <typename Conn>
+    constexpr static auto apply(Conn&& c) -> decltype((c.error_context_)) {
+        return c.error_context_;
+    }
+};
+
+template <typename T>
+constexpr auto get_connection_error_context(T&& conn)
+        -> decltype(get_connection_error_context_impl<std::decay_t<T>>::apply(std::forward<T>(conn))) {
+    return get_connection_error_context_impl<std::decay_t<T>>::apply(std::forward<T>(conn));
+}
+
+
 /**
 * We define the connection to database not as a concrete class or type,
 * but as an entity which must support some traits. The reason why we
@@ -133,7 +190,6 @@ constexpr connection_traits<std::decay_t<decltype(unwrap_connection(std::declval
 */
 template <typename T, typename = Require<Connectable<T>>>
 inline decltype(auto) get_handle(T&& conn) noexcept {
-    using impl::get_connection_handle;
     return get_connection_handle(
         unwrap_connection(std::forward<T>(conn)));
 }
@@ -151,7 +207,6 @@ inline decltype(auto) get_native_handle(T&& conn) noexcept {
 */
 template <typename T, typename = Require<Connectable<T>>>
 inline decltype(auto) get_socket(T&& conn) noexcept {
-    using impl::get_connection_socket;
     return get_connection_socket(unwrap_connection(std::forward<T>(conn)));
 }
 
@@ -206,8 +261,7 @@ inline bool connection_good(const T& conn) noexcept {
 */
 template <typename T, typename = Require<Connectable<T>>>
 inline std::string_view error_message(T&& conn) {
-    using impl::connection_error_message;
-    return connection_error_message(get_native_handle(conn));
+    return impl::connection_error_message(get_native_handle(conn));
 }
 
 /**
@@ -216,7 +270,6 @@ inline std::string_view error_message(T&& conn) {
 */
 template <typename T, typename = Require<Connectable<T>>>
 inline const auto& get_error_context(const T& conn) {
-    using impl::get_connection_error_context;
     return get_connection_error_context(unwrap_connection(conn));
 }
 
@@ -225,7 +278,6 @@ inline const auto& get_error_context(const T& conn) {
 */
 template <typename T, typename Ctx>
 inline Require<Connectable<T>> set_error_context(T& conn, Ctx&& ctx) {
-    using impl::get_connection_error_context;
     get_connection_error_context(unwrap_connection(conn)) = std::forward<Ctx>(ctx);
 }
 
@@ -243,7 +295,6 @@ inline Require<Connectable<T>> reset_error_context(T& conn) {
 */
 template <typename T, typename = Require<Connectable<T>>>
 inline decltype(auto) get_oid_map(T&& conn) noexcept {
-    using impl::get_connection_oid_map;
     return get_connection_oid_map(unwrap_connection(std::forward<T>(conn)));
 }
 
@@ -252,7 +303,6 @@ inline decltype(auto) get_oid_map(T&& conn) noexcept {
 */
 template <typename T, typename = Require<Connectable<T>>>
 inline decltype(auto) get_statistics(T&& conn) noexcept {
-    using impl::get_connection_statistics;
     return get_connection_statistics(unwrap_connection(std::forward<T>(conn)));
 }
 
