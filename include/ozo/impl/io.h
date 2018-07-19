@@ -1,6 +1,7 @@
 #pragma once
 
 #include <ozo/native_result_handle.h>
+#include <ozo/native_conn_handle.h>
 #include <ozo/connection.h>
 #include <ozo/error.h>
 #include <ozo/binary_query.h>
@@ -64,7 +65,7 @@ inline decltype(auto) pq_connect_poll(T& conn) {
 
 template <typename T, typename = Require<Connectable<T>>>
 inline error_code pq_start_connection(T& conn, const std::string& conninfo) {
-    pg_conn_handle handle(PQconnectStart(conninfo.c_str()), PQfinish);
+    native_conn_handle handle(PQconnectStart(conninfo.c_str()));
     if (!handle) {
         return make_error_code(error::pq_connection_start_failed);
     }

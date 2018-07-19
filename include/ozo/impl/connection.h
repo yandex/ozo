@@ -1,6 +1,6 @@
 #pragma once
 
-#include <libpq-fe.h>
+#include <ozo/native_conn_handle.h>
 
 #include <ozo/asio.h>
 #include <boost/algorithm/string/trim.hpp>
@@ -12,23 +12,19 @@ namespace ozo {
 
 namespace impl {
 
-using pg_native_handle_type = PGconn*;
-
-using pg_conn_handle = std::unique_ptr<PGconn, decltype(&PQfinish)>;
-
 template <typename OidMap, typename Statistics>
 struct connection_impl {
     connection_impl(io_context& io, Statistics statistics)
-    : handle_(nullptr, &PQfinish), socket_(io), statistics_(std::move(statistics)) {}
+    : socket_(io), statistics_(std::move(statistics)) {}
 
-    pg_conn_handle handle_;
+    native_conn_handle handle_;
     asio::posix::stream_descriptor socket_;
     OidMap oid_map_;
     Statistics statistics_; // statistics metatypes to be defined - counter, duration, whatever?
     std::string error_context_;
 };
 
-inline bool connection_status_bad(pg_native_handle_type handle) noexcept {
+inline bool connection_status_bad(PGconn* handle) noexcept {
     return !handle || PQstatus(handle) == CONNECTION_BAD;
 }
 

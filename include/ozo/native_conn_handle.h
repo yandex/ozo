@@ -13,14 +13,14 @@
 namespace std {
 
 template <>
-struct default_delete<PGresult> {
-    void operator() (PGresult *ptr) const { PQclear(ptr); }
+struct default_delete<PGconn> {
+    void operator() (PGconn *ptr) const { PQfinish(ptr); }
 };
 
 } // namespace std
 
 namespace ozo {
 
-using native_result_handle = std::unique_ptr<PGresult>;
+using native_conn_handle = std::unique_ptr<PGconn>;
 
 } // namespace ozo

@@ -10,8 +10,6 @@
 
 namespace ozo {
 
-using impl::pg_conn_handle;
-
 using no_statistics = decltype(hana::make_map());
 
 /**
@@ -99,7 +97,7 @@ constexpr auto get_connection_error_context(T&& conn)
 *     is suppurted only.
 *
 *   * get_connection_handle()
-*     Must return reference or proxy for pg_conn_handle object
+*     Must return reference or proxy for native_conn_handle object
 *
 *   * get_connection_error_context()
 *     Must return reference or proxy for additional error context. There is no
