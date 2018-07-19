@@ -304,24 +304,6 @@ inline decltype(auto) get_statistics(T&& conn) noexcept {
     return get_connection_statistics(unwrap_connection(std::forward<T>(conn)));
 }
 
-// Oid Map helpers
-
-template <typename T, typename C, typename = Require<Connectable<C>>>
-inline decltype(auto) type_oid(C&& conn) noexcept {
-    return type_oid<std::decay_t<T>>(
-        get_oid_map(std::forward<C>(conn)));
-}
-
-template <typename T, typename C, typename = Require<Connectable<C>>>
-inline decltype(auto) type_oid(C&& conn, const T&) noexcept {
-    return type_oid<std::decay_t<T>>(std::forward<C>(conn));
-}
-
-template <typename T, typename C, typename = Require<Connectable<C>>>
-inline void set_type_oid(C&& conn, oid_t oid) noexcept {
-    set_type_oid<T>(get_oid_map(std::forward<C>(conn)), oid);
-}
-
 
 template <typename ConnectionProvider, typename Enable = void>
 struct get_connectable_type {
