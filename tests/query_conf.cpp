@@ -99,11 +99,7 @@ struct query_with_typo_in_name {
 
 struct prohibit_copy_parameter {
     prohibit_copy_parameter() = default;
-
-    prohibit_copy_parameter(const prohibit_copy_parameter&) {
-        EXPECT_TRUE(false);
-    }
-
+    prohibit_copy_parameter(const prohibit_copy_parameter&) = delete;
     prohibit_copy_parameter(prohibit_copy_parameter&& other) = default;
 };
 
