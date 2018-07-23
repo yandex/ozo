@@ -58,27 +58,31 @@ public:
     using duration = typename Pool::duration;
     using connectable_type = typename Pool::connectable_type;
 
-    connection_pool_provider(Pool& pool, io_context& io, duration timeout)
-    : pool_(pool), io_(io), timeout_(timeout) {}
+    connection_pool_provider(Pool& pool, duration timeout)
+    : pool_(pool), timeout_(timeout) {}
 
-    connection_pool_provider(Pool& pool, io_context& io)
-    : connection_pool_provider(pool, io, duration::max()) {}
+    connection_pool_provider(Pool& pool)
+    : connection_pool_provider(pool, duration::max()) {}
 
     template <typename Handler>
-    void operator() (Handler&& h) {
-        pool_.get_connection(io_, timeout_, std::forward<Handler>(h));
+    friend void async_get_connection(connection_pool_provider&& self, io_context& io, Handler&& h) {
+        self.pool_.get_connection(io, self.timeout_, std::forward<Handler>(h));
+    }
+
+    template <typename Handler>
+    friend void async_get_connection(connection_pool_provider& self, io_context& io, Handler&& h) {
+        self.pool_.get_connection(io, self.timeout_, std::forward<Handler>(h));
     }
 
 private:
     Pool& pool_;
-    io_context& io_;
     duration timeout_;
 };
 
 template <typename T>
-inline auto make_provider(connection_pool<T>& pool, io_context& io,
+inline auto make_provider(connection_pool<T>& pool,
     typename connection_pool<T>::duration timeout = connection_pool<T>::duration::max()) {
-    return connection_pool_provider<connection_pool<T>> {pool, io, timeout};
+    return connection_pool_provider<connection_pool<T>> {pool, timeout};
 }
 
 } // namespace ozo

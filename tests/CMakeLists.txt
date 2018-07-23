@@ -73,6 +73,7 @@ set(SOURCES
     base36.cpp
     request_oid_map.cpp
     connection_binder.cpp
+    connection_integration.cpp
     main.cpp
 )
 

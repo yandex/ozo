@@ -11,7 +11,7 @@ namespace {
 
 TEST(make_connection_pool, sould_not_throw) {
     boost::asio::io_context io;
-    const ozo::connection_info<> conn_info(io, "conn info string");
+    const ozo::connection_info<> conn_info("conn info string");
     const ozo::connection_pool_config config;
     EXPECT_NO_THROW(ozo::make_connection_pool(conn_info, config));
 }
@@ -50,7 +50,7 @@ struct connection_provider;
 struct connection_provider_mock {
     using connectable_type = std::shared_ptr<connection<>>;
     using handler_type = std::function<void(error_code, connectable_type)>;
-    MOCK_METHOD1(async_get_connection, void(handler_type));
+    MOCK_METHOD2(async_get_connection, void(io_context&, handler_type));
 
     virtual ~connection_provider_mock() = default;
 };
@@ -61,8 +61,8 @@ struct connection_provider {
     using connectable_type = std::shared_ptr<connection<>>;
 
     template <typename Handler>
-    friend void async_get_connection(connection_provider self, Handler&& h) {
-        self.mock_->async_get_connection(std::forward<Handler>(h));
+    friend void async_get_connection(connection_provider self, io_context& io, Handler&& h) {
+        self.mock_->async_get_connection(io, std::forward<Handler>(h));
     }
 };
 } // namespace ozo::tests
@@ -200,8 +200,8 @@ TEST_F(pooled_connection_wrapper, should_call_async_get_connection_and_invoke_ha
     EXPECT_CALL(handle_mock, value()).WillRepeatedly(ReturnRef(conn));
     EXPECT_CALL(handle_mock, empty()).WillRepeatedly(Return(false));
 
-    EXPECT_CALL(provider_mock, async_get_connection(_))
-        .WillOnce(InvokeArgument<0>(error_code{}, good_conn));
+    EXPECT_CALL(provider_mock, async_get_connection(_, _))
+        .WillOnce(InvokeArgument<1>(error_code{}, good_conn));
 
     EXPECT_CALL(handle_mock, reset(_))
         .WillOnce(Invoke([&](connection<>& c){
@@ -222,8 +222,8 @@ TEST_F(pooled_connection_wrapper, should_call_async_get_connection_and_invoke_ha
 
     EXPECT_CALL(handle_mock, empty()).WillRepeatedly(Return(true));
 
-    EXPECT_CALL(provider_mock, async_get_connection(_))
-        .WillOnce(InvokeArgument<0>(
+    EXPECT_CALL(provider_mock, async_get_connection(_, _))
+        .WillOnce(InvokeArgument<1>(
             error_code{}, std::make_shared<connection<>>())
         );
 
@@ -242,8 +242,8 @@ TEST_F(pooled_connection_wrapper, should_invoke_callback_with_error_if_async_get
 
     EXPECT_CALL(handle_mock, empty()).WillRepeatedly(Return(true));
 
-    EXPECT_CALL(provider_mock, async_get_connection(_))
-        .WillOnce(InvokeArgument<0>(
+    EXPECT_CALL(provider_mock, async_get_connection(_, _))
+        .WillOnce(InvokeArgument<1>(
             error::error, std::make_shared<connection<>>())
         );
 

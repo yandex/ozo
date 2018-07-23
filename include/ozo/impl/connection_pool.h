@@ -89,7 +89,7 @@ struct pooled_connection_wrapper {
             return handler_(std::move(ec), std::move(conn));
         }
 
-        async_get_connection(provider_, wrapper{std::move(handler_), std::move(conn)});
+        async_get_connection(provider_, io_, wrapper{std::move(handler_), std::move(conn)});
     }
 
     template <typename Func>
@@ -102,17 +102,14 @@ struct pooled_connection_wrapper {
 template <typename P, typename IoContext, typename Handler>
 auto wrap_pooled_connection_handler(IoContext& io, P&& provider, Handler&& handler) {
 
-    static_assert(ConnectionProvider<P>, "is not a ConnectionProvider");
+    static_assert(ConnectionProvider<P, IoContext>, "is not a ConnectionProvider");
 
-    return pooled_connection_wrapper<IoContext, std::decay_t<P>, std::decay_t<Handler>> {
+    return pooled_connection_wrapper<std::decay_t<IoContext>, std::decay_t<P>, std::decay_t<Handler>> {
         io, std::forward<P>(provider), std::forward<Handler>(handler)
     };
 }
 
 static_assert(Connectable<pooled_connection_ptr<connection<empty_oid_map, no_statistics>>>,
     "pooled_connection_ptr is not a Connectable concept");
-
-static_assert(ConnectionProvider<pooled_connection_ptr<connection<empty_oid_map, no_statistics>>>,
-    "pooled_connection_ptr is not a ConnectionProvider concept");
 
 } // namespace ozo::impl

@@ -296,7 +296,7 @@ template <typename, typename = std::void_t<>>
 struct is_connection_provider_functor : std::false_type {};
 template <typename T>
 struct is_connection_provider_functor<T, std::void_t<
-    decltype( std::declval<T>() (std::declval<void(error_code, connectable_type<T>)>()) )
+    decltype( std::declval<T>() (std::declval<io_context&>(), std::declval<void(error_code, connectable_type<T>)>()) )
 >> : std::true_type {};
 
 template <typename T>
@@ -308,33 +308,34 @@ constexpr auto ConnectionProviderFunctor = is_connection_provider_functor<std::d
 * of connection providing. E.g. single connection, get connection from
 * pool, lazy connection, retriable connection and so on.
 */
-template <typename T, typename Handler>
+template <typename T, typename IoContext, typename Handler>
 inline Require<ConnectionProviderFunctor<T>>
-async_get_connection(T&& provider, Handler&& handler) {
-    provider(std::forward<Handler>(handler));
+async_get_connection(T&& provider, IoContext& io, Handler&& handler) {
+    provider(io, std::forward<Handler>(handler));
 }
 
 template <typename T, typename Handler>
 inline Require<Connectable<T>>
-async_get_connection(T&& conn, Handler&& handler) {
+async_use_connection(T&& conn, Handler&& handler) {
     reset_error_context(conn);
     decltype(auto) io = get_io_context(conn);
     io.dispatch(detail::bind(
         std::forward<Handler>(handler), error_code{}, std::forward<T>(conn)));
 }
 
-template <typename, typename = std::void_t<>>
+template <typename, typename IoContext, typename = std::void_t<>>
 struct is_connection_provider : std::false_type {};
-template <typename T>
-struct is_connection_provider<T, std::void_t<decltype(
+template <typename T, typename IoContext>
+struct is_connection_provider<T, IoContext, std::void_t<decltype(
     async_get_connection(
         std::declval<T&>(),
+        std::declval<IoContext&>(),
         std::declval<std::function<void(error_code, connectable_type<T>)>>()
     )
 )>> : std::true_type {};
 
-template <typename T>
-constexpr auto ConnectionProvider = is_connection_provider<std::decay_t<T>>::value;
+template <typename T, typename IoContext = io_context>
+constexpr auto ConnectionProvider = is_connection_provider<std::decay_t<T>, std::decay_t<IoContext>>::value;
 
 /**
 * Function to get a connection from provider.
@@ -347,12 +348,12 @@ constexpr auto ConnectionProvider = is_connection_provider<std::decay_t<T>>::val
 *   completion token depent value like void for callback, connection for the
 *   yield_context, std::future<connection> for use_future, and so on.
 */
-template <typename T, typename CompletionToken, typename = Require<ConnectionProvider<T>>>
-auto get_connection(T&& provider, CompletionToken&& token) {
+template <typename T, typename IoContext, typename CompletionToken, typename = Require<ConnectionProvider<T, IoContext>>>
+auto get_connection(T&& provider, IoContext& io, CompletionToken&& token) {
     using signature_t = void (error_code, connectable_type<T>);
     async_completion<CompletionToken, signature_t> init(token);
 
-    async_get_connection(std::forward<T>(provider), init.completion_handler);
+    async_get_connection(std::forward<T>(provider), io, init.completion_handler);
 
     return init.result.get();
 }

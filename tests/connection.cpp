@@ -213,23 +213,23 @@ TEST(reset_error_context, should_resets_error_context) {
     EXPECT_TRUE(conn->error_context_.empty());
 }
 
-struct async_get_connection : Test {
+struct async_use_connection : Test {
     io_context_mock io;
 };
 
-TEST_F(async_get_connection, should_pass_through_the_connection_to_handler) {
+TEST_F(async_use_connection, should_pass_through_the_connection_to_handler) {
     auto conn = std::make_shared<connection<>>(io);
     using callback_mock = callback_gmock<decltype(conn)>;
     StrictMock<callback_mock> cb_mock{};
     EXPECT_CALL(cb_mock, context_preserved()).WillOnce(Return());
     EXPECT_CALL(cb_mock, call(error_code{}, conn)).WillOnce(Return());
-    ozo::async_get_connection(conn, wrap(cb_mock));
+    ozo::async_use_connection(conn, wrap(cb_mock));
 }
 
-TEST_F(async_get_connection, should_reset_connection_error_context) {
+TEST_F(async_use_connection, should_reset_connection_error_context) {
     auto conn = std::make_shared<connection<>>(io);
     conn->error_context_ = "some context here";
-    ozo::async_get_connection(conn, [](error_code, auto conn) {
+    ozo::async_use_connection(conn, [](error_code, auto conn) {
         EXPECT_TRUE(conn->error_context_.empty());
     });
 }

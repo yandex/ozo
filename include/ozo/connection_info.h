@@ -11,7 +11,6 @@ template <
     typename OidMap = empty_oid_map,
     typename Statistics = no_statistics>
 class connection_info {
-    io_context& io_;
     std::string conn_str_;
     Statistics statistics_;
 
@@ -20,14 +19,13 @@ class connection_info {
 public:
     using connectable_type = std::shared_ptr<connection>;
 
-    connection_info(io_context& io, std::string conn_str,
-            Statistics statistics = Statistics{})
-    : io_(io), conn_str_(std::move(conn_str)), statistics_(std::move(statistics)) {}
+    connection_info(std::string conn_str, Statistics statistics = Statistics{})
+    : conn_str_(std::move(conn_str)), statistics_(std::move(statistics)) {}
 
     template <typename Handler>
-    friend void async_get_connection(const connection_info& self, Handler&& h) {
+    friend void async_get_connection(const connection_info& self, io_context& io, Handler&& h) {
         impl::async_connect(self.conn_str_,
-            std::make_shared<connection>(self.io_, self.statistics_),
+            std::make_shared<connection>(io, self.statistics_),
             std::forward<Handler>(h));
     }
 };
