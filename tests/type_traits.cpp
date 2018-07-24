@@ -146,8 +146,7 @@ TEST(reset_nullable, should_reset_nullable) {
 
 }// namespace
 
-namespace ozo {
-namespace tests {
+namespace ozo::tests {
 
 struct some_type {
     std::size_t size() const {
@@ -159,8 +158,7 @@ struct some_type {
 
 struct builtin_type { std::int64_t v = 0; };
 
-}
-}
+} // namespace ozo::tests
 
 OZO_PG_DEFINE_CUSTOM_TYPE(ozo::tests::some_type, "some_type", dynamic_size)
 OZO_PG_DEFINE_TYPE(ozo::tests::builtin_type, "builtin_type", 5, bytes<8>)

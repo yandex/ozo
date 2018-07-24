@@ -4,8 +4,7 @@
 
 #include <ozo/impl/io.h>
 
-namespace ozo {
-namespace tests {
+namespace ozo::tests {
 
 enum class native_handle {bad, good};
 
@@ -183,5 +182,4 @@ inline auto make_connection(connection_mock& mock, io_context& io,
         });
 }
 
-} // namespace tests
-} // namespace ozo
+} // namespace ozo::tests
