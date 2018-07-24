@@ -17,7 +17,7 @@ namespace detail {
 
 class category : public error_category {
 public:
-    const char* name() const throw() { return "yamail::resource_pool::error::detail::category"; }
+    const char* name() const throw() { return "ozo::tests::error::detail::category"; }
 
     std::string message(int value) const {
         switch (code(value)) {
