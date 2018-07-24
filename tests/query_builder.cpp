@@ -78,7 +78,7 @@ TEST(query_builder_params, with_text_and_not_null_pointer_param_elements_returns
 
 } // namespace
 
-namespace ozo::testing {
+namespace ozo::tests {
 
 struct some_type {
     std::size_t size() const {
@@ -86,9 +86,9 @@ struct some_type {
     }
 };
 
-} // namespace ozo::testing
+} // namespace ozo::tests
 
-OZO_PG_DEFINE_CUSTOM_TYPE(ozo::testing::some_type, "some_type", dynamic_size)
+OZO_PG_DEFINE_CUSTOM_TYPE(ozo::tests::some_type, "some_type", dynamic_size)
 
 namespace {
 
@@ -130,7 +130,7 @@ TEST(query_builder_build, with_text_and_not_null_std_shared_ptr_param_element_re
 
 TEST(query_builder_build, with_text_and_custom_type_param_element_returns_query_with_1_param) {
     using namespace ozo::literals;
-    const auto params = ("SELECT "_SQL + ozo::testing::some_type {}).build().params;
+    const auto params = ("SELECT "_SQL + ozo::tests::some_type {}).build().params;
     EXPECT_EQ(decltype(hana::size(params))::value, 1u);
 }
 

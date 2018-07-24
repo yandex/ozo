@@ -3,7 +3,7 @@
 #include <ozo/error.h>
 
 namespace ozo {
-namespace testing {
+namespace tests {
 namespace error {
 
 enum code {
@@ -38,20 +38,20 @@ inline const error_category& get_category() {
 }
 
 } // namespace error
-} // namespace testing
+} // namespace tests
 } // namespace ozo
 
 namespace boost {
 namespace system {
 
 template <>
-struct is_error_code_enum<ozo::testing::error::code> : std::true_type {};
+struct is_error_code_enum<ozo::tests::error::code> : std::true_type {};
 
 } // namespace system
 } // namespace boost
 
 namespace ozo {
-namespace testing {
+namespace tests {
 namespace error {
 
 inline auto make_error_code(const code e) {
@@ -59,5 +59,5 @@ inline auto make_error_code(const code e) {
 }
 
 } // namespace error
-} // namespace testing
+} // namespace tests
 } // namespace ozo

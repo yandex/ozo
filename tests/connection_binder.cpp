@@ -4,11 +4,11 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
-namespace ozo::testing {
+namespace ozo::tests {
     struct custom_type {};
-} // namespace ozo::testing
+} // namespace ozo::tests
 
-OZO_PG_DEFINE_CUSTOM_TYPE(ozo::testing::custom_type, "custom_type", dynamic_size)
+OZO_PG_DEFINE_CUSTOM_TYPE(ozo::tests::custom_type, "custom_type", dynamic_size)
 
 namespace {
 
@@ -18,8 +18,8 @@ struct connection_mock {
     MOCK_METHOD0(request_oid_map, void());
 };
 
-using callback_mock = ozo::testing::callback_mock<>;
-using ozo::testing::wrap;
+using callback_mock = ozo::tests::callback_mock<>;
+using ozo::tests::wrap;
 
 template <typename OidMap = empty_oid_map>
 struct connection_wrapper {
@@ -48,12 +48,12 @@ struct connection_binder : Test {
     }
 
     template <typename Conn>
-    StrictMock<ozo::testing::callback_gmock<std::decay_t<Conn>>>
+    StrictMock<ozo::tests::callback_gmock<std::decay_t<Conn>>>
     make_callback(Conn&&) { return {}; }
 };
 
 TEST_F(connection_binder, should_request_for_oid_when_oid_map_is_not_empty) {
-    auto conn = make_connection(ozo::register_types<ozo::testing::custom_type>());
+    auto conn = make_connection(ozo::register_types<ozo::tests::custom_type>());
     auto callback = make_callback(conn);
 
     EXPECT_CALL(connection, request_oid_map()).WillOnce(Return());
@@ -62,13 +62,13 @@ TEST_F(connection_binder, should_request_for_oid_when_oid_map_is_not_empty) {
 }
 
 TEST_F(connection_binder, should_not_request_for_oid_when_oid_map_is_not_empty_but_error_occured) {
-    auto conn = make_connection(ozo::register_types<ozo::testing::custom_type>());
+    auto conn = make_connection(ozo::register_types<ozo::tests::custom_type>());
     auto callback = make_callback(conn);
 
-    EXPECT_CALL(callback, call(error_code{ozo::testing::error::error}, _))
+    EXPECT_CALL(callback, call(error_code{ozo::tests::error::error}, _))
         .WillOnce(Return());
 
-    ozo::impl::bind_connection_handler(wrap(callback), std::move(conn))(ozo::testing::error::error);
+    ozo::impl::bind_connection_handler(wrap(callback), std::move(conn))(ozo::tests::error::error);
 }
 
 TEST_F(connection_binder, should_not_request_for_oid_when_oid_map_ist_empty) {
