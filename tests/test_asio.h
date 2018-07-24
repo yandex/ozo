@@ -1,5 +1,6 @@
 #pragma once
 
+#include <ozo/detail/bind.h>
 #include <ozo/asio.h>
 
 #include <gmock/gmock.h>
