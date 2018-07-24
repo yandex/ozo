@@ -9,11 +9,13 @@
 namespace {
 
 namespace hana = boost::hana;
+
+using namespace testing;
+
 using ozo::empty_oid_map;
 using ozo::tests::native_handle;
 using callback_mock = ozo::tests::callback_gmock<>;
 using ozo::tests::wrap;
-using testing::StrictMock;
 
 template <typename OidMap>
 struct fixture_impl {
@@ -32,7 +34,7 @@ using fixture = fixture_impl<empty_oid_map>;
 
 template <typename OidMap>
 auto make_fixture(OidMap) { return fixture_impl<OidMap>{}; }
-using namespace testing;
+
 using ozo::error_code;
 
 struct async_connect : Test {};
@@ -94,7 +96,7 @@ TEST_F(async_connect, should_wait_for_write_complete_if_connect_poll_returns_PGR
     fixture f;
     *(f.conn->handle_) = native_handle::good;
 
-    testing::InSequence s;
+    InSequence s;
     EXPECT_CALL(f.connection, start_connection("conninfo")).WillOnce(Return(error_code{}));
     EXPECT_CALL(f.connection, assign_socket()).WillOnce(Return(error_code{}));
 
@@ -111,7 +113,7 @@ TEST_F(async_connect, should_wait_for_read_complete_if_connect_poll_returns_PGRE
     fixture f;
     *(f.conn->handle_) = native_handle::good;
 
-    testing::InSequence s;
+    InSequence s;
     EXPECT_CALL(f.connection, start_connection("conninfo")).WillOnce(Return(error_code{}));
     EXPECT_CALL(f.connection, assign_socket()).WillOnce(Return(error_code{}));
 
@@ -128,7 +130,7 @@ TEST_F(async_connect, should_call_handler_with_no_error_if_connect_poll_returns_
     fixture f;
     *(f.conn->handle_) = native_handle::good;
 
-    testing::InSequence s;
+    InSequence s;
     EXPECT_CALL(f.connection, start_connection("conninfo")).WillOnce(Return(error_code{}));
     EXPECT_CALL(f.connection, assign_socket()).WillOnce(Return(error_code{}));
 
@@ -147,7 +149,7 @@ TEST_F(async_connect, should_call_handler_with_pq_connect_poll_failed_if_connect
     fixture f;
     *(f.conn->handle_) = native_handle::good;
 
-    testing::InSequence s;
+    InSequence s;
     EXPECT_CALL(f.connection, start_connection("conninfo")).WillOnce(Return(error_code{}));
     EXPECT_CALL(f.connection, assign_socket()).WillOnce(Return(error_code{}));
 
@@ -167,7 +169,7 @@ TEST_F(async_connect, should_call_handler_with_pq_connect_poll_failed_if_connect
     fixture f;
     *(f.conn->handle_) = native_handle::good;
 
-    testing::InSequence s;
+    InSequence s;
     EXPECT_CALL(f.connection, start_connection("conninfo")).WillOnce(Return(error_code{}));
     EXPECT_CALL(f.connection, assign_socket()).WillOnce(Return(error_code{}));
 
@@ -187,7 +189,7 @@ TEST_F(async_connect, should_call_handler_with_the_error_if_polling_operation_in
     fixture f;
     *(f.conn->handle_) = native_handle::good;
 
-    testing::InSequence s;
+    InSequence s;
     EXPECT_CALL(f.connection, start_connection("conninfo")).WillOnce(Return(error_code{}));
     EXPECT_CALL(f.connection, assign_socket()).WillOnce(Return(error_code{}));
 

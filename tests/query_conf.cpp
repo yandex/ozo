@@ -171,15 +171,17 @@ BOOST_HANA_ADAPT_STRUCT(
 );
 
 namespace {
-    using namespace testing;
-    using namespace ozo::tests;
-    using namespace ozo::detail;
-    using namespace ozo::detail::text_parser;
 
-    using qtp = query_text_part;
-    using qpn = query_parameter_name;
+using namespace testing;
+using namespace ozo::tests;
 
-    namespace hana = boost::hana;
+namespace hana = boost::hana;
+
+using namespace ozo::detail;
+using namespace ozo::detail::text_parser;
+
+using qtp = query_text_part;
+using qpn = query_parameter_name;
 
 TEST(parse_query_conf, should_for_empty_const_char_array_return_empty_description) {
     EXPECT_THAT(ozo::detail::parse_query_conf(""), ElementsAre());
@@ -324,15 +326,6 @@ TEST(parse_query_conf, should_for_comment_in_query_statement_text_return_text_wi
     );
 }
 
-} // namespace
-
-
-namespace {
-    using namespace testing;
-    using namespace ozo::tests;
-
-    namespace hana = boost::hana;
-
 TEST(check_for_duplicates, should_not_throw_for_empty_queries) {
     EXPECT_NO_THROW(ozo::detail::check_for_duplicates(hana::tuple<>()));
 }
@@ -362,15 +355,6 @@ TEST(check_for_duplicates, should_throw_for_multiple_queries_with_two_equal) {
     >();
     EXPECT_THROW(ozo::detail::check_for_duplicates(queries), std::invalid_argument);
 }
-
-} // namespace
-
-namespace {
-using namespace testing;
-using namespace ozo::tests;
-using namespace ozo::detail;
-
-namespace hana = boost::hana;
 
 TEST(check_for_duplicates, should_return_empty_set_for_empty_queries) {
     const auto result = ozo::detail::check_for_duplicates({});
