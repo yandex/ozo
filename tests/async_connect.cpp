@@ -21,11 +21,11 @@ template <typename OidMap>
 struct fixture_impl {
     StrictMock<ozo::tests::connection_gmock> connection{};
     StrictMock<callback_mock> callback{};
-    StrictMock<ozo::tests::executor_gmock> io_context{};
+    StrictMock<ozo::tests::executor_gmock> executor{};
     StrictMock<ozo::tests::executor_gmock> strand{};
     StrictMock<ozo::tests::strand_executor_service_gmock> strand_service{};
     StrictMock<ozo::tests::stream_descriptor_gmock> socket{};
-    ozo::tests::io_context io{io_context, strand_service};
+    ozo::tests::io_context io{executor, strand_service};
     decltype(ozo::tests::make_connection(connection, io, socket)) conn =
             ozo::tests::make_connection(connection, io, socket);
 };
@@ -56,7 +56,7 @@ TEST_F(async_connect, should_call_handler_with_pq_connection_start_failed_on_err
     EXPECT_CALL(f.connection, start_connection("conninfo"))
         .WillOnce(Return(error_code{ozo::error::pq_connection_start_failed}));
 
-    EXPECT_CALL(f.io_context, post(_)).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(f.executor, post(_)).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(f.callback, context_preserved()).WillOnce(Return());
     EXPECT_CALL(f.callback, call(error_code{ozo::error::pq_connection_start_failed}))
         .WillOnce(Return());
@@ -70,7 +70,7 @@ TEST_F(async_connect, should_call_handler_with_pq_connection_status_bad_if_conne
 
     EXPECT_CALL(f.connection, start_connection("conninfo")).WillOnce(Return(error_code{}));
 
-    EXPECT_CALL(f.io_context, post(_)).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(f.executor, post(_)).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(f.callback, context_preserved()).WillOnce(Return());
     EXPECT_CALL(f.callback, call(error_code{ozo::error::pq_connection_status_bad}))
         .WillOnce(Return());
@@ -85,7 +85,7 @@ TEST_F(async_connect, should_call_handler_with_error_if_assign_socket_returns_er
     EXPECT_CALL(f.connection, start_connection("conninfo")).WillOnce(Return(error_code{}));
     EXPECT_CALL(f.connection, assign_socket()).WillOnce(Return(error_code{ozo::tests::error::error}));
 
-    EXPECT_CALL(f.io_context, post(_)).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(f.executor, post(_)).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(f.callback, context_preserved()).WillOnce(Return());
     EXPECT_CALL(f.callback, call(error_code{ozo::tests::error::error})).WillOnce(Return());
 
@@ -139,7 +139,7 @@ TEST_F(async_connect, should_call_handler_with_no_error_if_connect_poll_returns_
 
     EXPECT_CALL(f.connection, connect_poll()).WillOnce(Return(PGRES_POLLING_OK));
 
-    EXPECT_CALL(f.io_context, post(_)).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(f.executor, post(_)).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(f.callback, context_preserved()).WillOnce(Return());
     EXPECT_CALL(f.callback, call(error_code{})).WillOnce(Return());
     ozo::impl::make_async_connect_op(f.conn, wrap(f.callback)).perform("conninfo");
@@ -158,7 +158,7 @@ TEST_F(async_connect, should_call_handler_with_pq_connect_poll_failed_if_connect
 
     EXPECT_CALL(f.connection, connect_poll()).WillOnce(Return(PGRES_POLLING_FAILED));
 
-    EXPECT_CALL(f.io_context, post(_)).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(f.executor, post(_)).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(f.callback, context_preserved()).WillOnce(Return());
     EXPECT_CALL(f.callback, call(error_code{ozo::error::pq_connect_poll_failed}))
         .WillOnce(Return());
@@ -178,7 +178,7 @@ TEST_F(async_connect, should_call_handler_with_pq_connect_poll_failed_if_connect
 
     EXPECT_CALL(f.connection, connect_poll()).WillOnce(Return(PGRES_POLLING_ACTIVE));
 
-    EXPECT_CALL(f.io_context, post(_)).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(f.executor, post(_)).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(f.callback, context_preserved()).WillOnce(Return());
     EXPECT_CALL(f.callback, call(error_code{ozo::error::pq_connect_poll_failed}))
         .WillOnce(Return());
@@ -197,7 +197,7 @@ TEST_F(async_connect, should_call_handler_with_the_error_if_polling_operation_in
         .WillOnce(InvokeArgument<0>(ozo::tests::error::error));
     EXPECT_CALL(f.callback, context_preserved()).WillOnce(Return());
 
-    EXPECT_CALL(f.io_context, post(_)).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(f.executor, post(_)).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(f.callback, context_preserved()).WillOnce(Return());
     EXPECT_CALL(f.callback, call(error_code{ozo::tests::error::error}))
         .WillOnce(Return());
