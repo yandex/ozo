@@ -147,14 +147,17 @@ TEST(reset_nullable, should_reset_nullable) {
 
 namespace ozo {
 namespace tests {
-    struct some_type {
-        std::size_t size() const {
-            return 1000;
-        }
-        decltype(auto) begin() const { return std::addressof(v_);}
-        char v_;
-    };
-    struct builtin_type { std::int64_t v = 0; };
+
+struct some_type {
+    std::size_t size() const {
+        return 1000;
+    }
+    decltype(auto) begin() const { return std::addressof(v_);}
+    char v_;
+};
+
+struct builtin_type { std::int64_t v = 0; };
+
 }
 }
 
