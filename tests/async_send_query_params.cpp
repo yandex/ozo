@@ -54,18 +54,18 @@ TEST_F(async_send_query_params_op, should_set_non_blocking_mode_and_send_query_p
 }
 
 TEST_F(async_send_query_params_op, should_set_error_state_and_cancel_io_and_invoke_callback_with_error_if_pg_set_nonbloking_failed) {
-        EXPECT_CALL(m.connection, set_nonblocking()).WillOnce(Return(-1));
-        EXPECT_CALL(m.socket, cancel(_)).WillOnce(Return());
-        EXPECT_CALL(m.io_context, post(_)).WillOnce(InvokeArgument<0>());
-        EXPECT_CALL(m.strand, dispatch(_)).WillOnce(InvokeArgument<0>());
-        EXPECT_CALL(m.callback, context_preserved()).WillOnce(Return());
-        EXPECT_CALL(m.callback, call(error_code{ozo::error::pg_set_nonblocking_failed}, _))
-            .WillOnce(Return());
+    EXPECT_CALL(m.connection, set_nonblocking()).WillOnce(Return(-1));
+    EXPECT_CALL(m.socket, cancel(_)).WillOnce(Return());
+    EXPECT_CALL(m.io_context, post(_)).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(m.strand, dispatch(_)).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(m.callback, context_preserved()).WillOnce(Return());
+    EXPECT_CALL(m.callback, call(error_code{ozo::error::pg_set_nonblocking_failed}, _))
+        .WillOnce(Return());
 
-        ozo::impl::make_async_send_query_params_op(m.ctx, fake_query{}).perform();
+    ozo::impl::make_async_send_query_params_op(m.ctx, fake_query{}).perform();
 
-        EXPECT_EQ(m.ctx->state, ozo::impl::query_state::error);
-    }
+    EXPECT_EQ(m.ctx->state, ozo::impl::query_state::error);
+}
 
 TEST_F(async_send_query_params_op, should_call_send_query_params_while_it_returns_error) {
     // According to the documentation
