@@ -328,7 +328,7 @@ namespace impl {
 
 class category : public error_category {
 public:
-    const char* name() const throw() { return "ozo::error::category"; }
+    const char* name() const noexcept { return "ozo::error::category"; }
 
     std::string message(int value) const {
         switch (code(value)) {
@@ -395,7 +395,7 @@ namespace impl {
 
 class category : public error_category {
 public:
-    const char* name() const throw() { return "ozo::sqlstate::category"; }
+    const char* name() const noexcept { return "ozo::sqlstate::category"; }
 
     std::string message(int value) const {
         #define __OZO_SQLSTATE_NAME(value) case value: return std::string(#value) + "(" + detail::ltob36(value) + ")";
