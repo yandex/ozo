@@ -45,7 +45,7 @@ struct connection_binder : Test {
     StrictMock<connection_mock> connection{};
     template <typename OidMap>
     auto make_connection(OidMap oid_map) {
-        return ::connection_wrapper<OidMap>{connection, oid_map};
+        return connection_wrapper<OidMap>{connection, oid_map};
     }
 
     template <typename Conn>
