@@ -1,10 +1,10 @@
-#include <gtest/gtest.h>
-#include <gmock/gmock.h>
+#include "test_asio.h"
 
 #include <ozo/connection_info.h>
 #include <ozo/impl/request_oid_map.h>
 
-#include "test_asio.h"
+#include <gtest/gtest.h>
+#include <gmock/gmock.h>
 
 namespace ozo::tests {
 

@@ -1,11 +1,11 @@
+#include "connection_mock.h"
+#include "test_error.h"
+
 #include <ozo/connection_info.h>
 #include <ozo/connection_pool.h>
 
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
-
-#include "connection_mock.h"
-#include "test_error.h"
 
 namespace {
 

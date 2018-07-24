@@ -1,11 +1,11 @@
-#include <gtest/gtest.h>
-#include <gmock/gmock.h>
-
 #include <ozo/query_builder.h>
 
 #include <boost/hana/size.hpp>
 
 #include <limits>
+
+#include <gtest/gtest.h>
+#include <gmock/gmock.h>
 
 namespace {
 

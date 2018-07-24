@@ -1,6 +1,3 @@
-#include <gtest/gtest.h>
-#include <gmock/gmock.h>
-
 #include <ozo/request.h>
 #include <ozo/connection_info.h>
 #include <ozo/connection_pool.h>
@@ -8,6 +5,9 @@
 #include <ozo/request.h>
 
 #include <boost/asio/spawn.hpp>
+
+#include <gtest/gtest.h>
+#include <gmock/gmock.h>
 
 namespace ozo::tests {
 struct custom_type {};
