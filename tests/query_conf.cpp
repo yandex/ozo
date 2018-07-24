@@ -14,41 +14,41 @@
 namespace ozo {
 namespace detail {
 
-bool operator ==(const query_text_part& lhs, const query_text_part& rhs) {
+static bool operator ==(const query_text_part& lhs, const query_text_part& rhs) {
     return lhs.value == rhs.value;
 }
 
-bool operator ==(const query_parameter_name& lhs, const query_parameter_name& rhs) {
+static bool operator ==(const query_parameter_name& lhs, const query_parameter_name& rhs) {
     return lhs.value == rhs.value;
 }
 
-bool operator ==(const parsed_query& lhs, const parsed_query& rhs) {
+static bool operator ==(const parsed_query& lhs, const parsed_query& rhs) {
     return lhs.name == rhs.name && lhs.text == rhs.text;
 }
 
-std::ostream& operator <<(std::ostream& stream, const query_text_part& value) {
+static std::ostream& operator <<(std::ostream& stream, const query_text_part& value) {
     return stream << "query_text_part {\"" << value.value << "\"}";
 }
 
-std::ostream& operator <<(std::ostream& stream, const query_parameter_name& value) {
+static std::ostream& operator <<(std::ostream& stream, const query_parameter_name& value) {
     return stream << "query_parameter_name {\"" << value.value << "\"}";
 }
 
-std::ostream& operator <<(std::ostream& stream, const query_text_element& value) {
+static std::ostream& operator <<(std::ostream& stream, const query_text_element& value) {
     return boost::apply_visitor([&] (const auto& v) -> std::ostream& { return stream << v; }, value);
 }
 
-std::ostream& operator <<(std::ostream& stream, const parsed_query& value) {
+static std::ostream& operator <<(std::ostream& stream, const parsed_query& value) {
     stream << "parsed_query {\"" << value.name << "\", {";
     boost::for_each(value.text, [&] (const auto& v) { stream << v << ", "; });
     return stream << "}}";
 }
 
-bool operator ==(const query_description& lhs, const query_description& rhs) {
+static bool operator ==(const query_description& lhs, const query_description& rhs) {
     return lhs.name == rhs.name && lhs.text == rhs.text;
 }
 
-std::ostream& operator <<(std::ostream& stream, const query_description& value) {
+static std::ostream& operator <<(std::ostream& stream, const query_description& value) {
     return stream << "query_description {\"" << value.name << "\", \"" << value.text << "\"}";
 }
 
@@ -57,7 +57,7 @@ std::ostream& operator <<(std::ostream& stream, const query_description& value) 
 namespace impl {
 
 template < class ... ParamsT>
-bool operator ==(const query<ParamsT ...>& lhs, const query<ParamsT ...>& rhs) {
+static bool operator ==(const query<ParamsT ...>& lhs, const query<ParamsT ...>& rhs) {
     return lhs.text == rhs.text && lhs.params == rhs.params;
 }
 
