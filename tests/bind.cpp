@@ -5,13 +5,10 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
-using ozo::tests::asio_post;
-using ozo::tests::callback_gmock;
-using ozo::tests::wrap;
-
 namespace {
 
 using namespace testing;
+using namespace ozo::tests;
 
 struct bind : Test {
     StrictMock<callback_gmock<int>> cb_mock{};

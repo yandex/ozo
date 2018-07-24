@@ -14,7 +14,7 @@ BOOST_FUSION_DEFINE_STRUCT((),
 namespace {
 
 using namespace testing;
-using ozo::tests::pg_result_mock;
+using namespace ozo::tests;
 
 struct read : Test {
     struct badbuf_t : std::streambuf{} badbuf;

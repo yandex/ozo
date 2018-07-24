@@ -19,14 +19,11 @@ namespace {
 
 namespace hana = boost::hana;
 
+using namespace testing;
+using namespace ozo::tests;
+
 template <typename ...Ts>
 using rows_of = std::vector<std::tuple<Ts...>>;
-
-}
-
-namespace {
-
-using namespace testing;
 
 TEST(request, should_return_error_and_bad_connect_for_invalid_connection_info) {
     using namespace ozo::literals;
@@ -113,7 +110,7 @@ TEST(request, should_fill_oid_map_when_oid_map_is_not_empty) {
     namespace asio = boost::asio;
 
     ozo::io_context io;
-    constexpr const auto oid_map = ozo::register_types<ozo::tests::custom_type>();
+    constexpr const auto oid_map = ozo::register_types<custom_type>();
     ozo::connection_info<> conn_info(io, OZO_PG_TEST_CONNINFO);
     ozo::connection_info<std::decay_t<decltype(oid_map)>> conn_info_with_oid_map(io, OZO_PG_TEST_CONNINFO);
 
@@ -122,7 +119,7 @@ TEST(request, should_fill_oid_map_when_oid_map_is_not_empty) {
         auto conn = ozo::request(conn_info, "DROP TYPE IF EXISTS custom_type"_SQL, result, yield);
         ozo::request(conn, "CREATE TYPE custom_type AS ()"_SQL, result, yield);
         auto conn_with_oid_map = ozo::get_connection(conn_info_with_oid_map, yield);
-        EXPECT_NE(ozo::type_oid<ozo::tests::custom_type>(ozo::get_oid_map(conn_with_oid_map)), ozo::null_oid);
+        EXPECT_NE(ozo::type_oid<custom_type>(ozo::get_oid_map(conn_with_oid_map)), ozo::null_oid);
     });
 
     io.run();
