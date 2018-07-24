@@ -5,10 +5,10 @@
 
 namespace ozo {
 
-using error_code = ::boost::system::error_code;
-using system_error = ::boost::system::system_error;
-using error_category = ::boost::system::error_category;
-using error_condition = ::boost::system::error_condition;
+using error_code = boost::system::error_code;
+using system_error = boost::system::system_error;
+using error_category = boost::system::error_category;
+using error_condition = boost::system::error_condition;
 
 // OZO related errors
 namespace error {

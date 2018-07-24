@@ -26,7 +26,7 @@ struct binder {
 
     template <typename Function>
     friend void asio_handler_invoke(Function&& f, binder* ctx) {
-        using ::boost::asio::asio_handler_invoke;
+        using boost::asio::asio_handler_invoke;
         asio_handler_invoke(std::forward<Function>(f), std::addressof(ctx->handler_));
     }
 };

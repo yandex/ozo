@@ -4,7 +4,7 @@
 
 namespace ozo {
 
-namespace asio = ::boost::asio;
+namespace asio = boost::asio;
 using asio::async_completion;
 using io_context = asio::io_service;
 

@@ -6,12 +6,12 @@
 
 namespace {
 
-namespace hana = ::boost::hana;
+namespace hana = boost::hana;
 using ozo::empty_oid_map;
 using ozo::tests::native_handle;
 using callback_mock = ozo::tests::callback_gmock<>;
 using ozo::tests::wrap;
-using ::testing::StrictMock;
+using testing::StrictMock;
 
 template <typename OidMap>
 struct fixture_impl {

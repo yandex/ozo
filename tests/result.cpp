@@ -2,13 +2,13 @@
 
 namespace {
 
-using namespace ::testing;
+using namespace testing;
 
-using ::ozo::tests::pg_result_mock;
+using ozo::tests::pg_result_mock;
 
 struct value : Test {
     StrictMock<pg_result_mock> mock{};
-    ::ozo::value<pg_result_mock> v{{&mock, 1, 2}};
+    ozo::value<pg_result_mock> v{{&mock, 1, 2}};
 };
 
 TEST_F(value, oid_should_call_field_type_with_column) {
@@ -22,32 +22,32 @@ TEST_F(value, oid_should_return_field_type_result) {
 }
 
 TEST_F(value, is_text_should_call_field_format_with_column) {
-    EXPECT_CALL(mock, field_format(2)).WillOnce(Return(::ozo::impl::result_format::text));
+    EXPECT_CALL(mock, field_format(2)).WillOnce(Return(ozo::impl::result_format::text));
     v.is_text();
 }
 
 TEST_F(value, is_text_should_return_true_if_field_format_results_result_format_text) {
-    EXPECT_CALL(mock, field_format(2)).WillOnce(Return(::ozo::impl::result_format::text));
+    EXPECT_CALL(mock, field_format(2)).WillOnce(Return(ozo::impl::result_format::text));
     EXPECT_TRUE(v.is_text());
 }
 
 TEST_F(value, is_text_should_return_false_if_field_format_results_result_format_binary) {
-    EXPECT_CALL(mock, field_format(2)).WillOnce(Return(::ozo::impl::result_format::binary));
+    EXPECT_CALL(mock, field_format(2)).WillOnce(Return(ozo::impl::result_format::binary));
     EXPECT_FALSE(v.is_text());
 }
 
 TEST_F(value, is_binary_should_call_field_format_with_column) {
-    EXPECT_CALL(mock, field_format(2)).WillOnce(Return(::ozo::impl::result_format::text));
+    EXPECT_CALL(mock, field_format(2)).WillOnce(Return(ozo::impl::result_format::text));
     v.is_binary();
 }
 
 TEST_F(value, is_binary_should_return_false_if_field_format_results_result_format_text) {
-    EXPECT_CALL(mock, field_format(_)).WillOnce(Return(::ozo::impl::result_format::text));
+    EXPECT_CALL(mock, field_format(_)).WillOnce(Return(ozo::impl::result_format::text));
     EXPECT_FALSE(v.is_binary());
 }
 
 TEST_F(value, is_binary_should_return_true_if_field_format_results_result_format_binary) {
-    EXPECT_CALL(mock, field_format(_)).WillOnce(Return(::ozo::impl::result_format::binary));
+    EXPECT_CALL(mock, field_format(_)).WillOnce(Return(ozo::impl::result_format::binary));
     EXPECT_TRUE(v.is_binary());
 }
 
@@ -89,7 +89,7 @@ TEST_F(value, is_null_should_return_false_if_get_isnull_returns_false) {
 
 struct row : Test {
     StrictMock<pg_result_mock> mock{};
-    ::ozo::row<pg_result_mock> r{{&mock, 0, 0}};
+    ozo::row<pg_result_mock> r{{&mock, 0, 0}};
 };
 
 TEST_F(row, empty_should_return_true_if_nfields_returns_0) {
@@ -184,7 +184,7 @@ TEST_F(row, at_from_name_should_throw_std_out_of_range_if_column_name_not_found)
 
 struct basic_result : Test {
     StrictMock<pg_result_mock> mock{};
-    ::ozo::basic_result<pg_result_mock*> result{&mock};
+    ozo::basic_result<pg_result_mock*> result{&mock};
 };
 
 TEST_F(basic_result, empty_should_return_true_if_pg_ntuples_returns_0) {

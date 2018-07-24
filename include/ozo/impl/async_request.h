@@ -13,7 +13,7 @@ template <typename Connection, typename Handler>
 struct operation_context {
     std::decay_t<Connection> conn;
     std::decay_t<Handler> handler;
-    using strand_type = ::ozo::strand<decltype(get_io_context(conn))>;
+    using strand_type = ozo::strand<decltype(get_io_context(conn))>;
     strand_type strand{get_io_context(conn)};
     query_state state = query_state::send_in_progress;
 
@@ -134,7 +134,7 @@ struct async_send_query_params_op {
 
     template <typename Func>
     friend void asio_handler_invoke(Func&& f, async_send_query_params_op* ctx) {
-        using ::boost::asio::asio_handler_invoke;
+        using boost::asio::asio_handler_invoke;
         asio_handler_invoke(std::forward<Func>(f), get_handler_context(ctx->ctx_));
     }
 };
@@ -256,7 +256,7 @@ struct async_get_result_op : boost::asio::coroutine {
 
     template <typename Func>
     friend void asio_handler_invoke(Func&& f, async_get_result_op* ctx) {
-        using ::boost::asio::asio_handler_invoke;
+        using boost::asio::asio_handler_invoke;
         asio_handler_invoke(std::forward<Func>(f), get_handler_context(ctx->ctx_));
     }
 };
@@ -299,7 +299,7 @@ struct async_request_op {
 
     template <typename Func>
     friend void asio_handler_invoke(Func&& f, async_request_op* ctx) {
-        using ::boost::asio::asio_handler_invoke;
+        using boost::asio::asio_handler_invoke;
         asio_handler_invoke(std::forward<Func>(f), std::addressof(ctx->handler_));
     }
 };

@@ -65,7 +65,7 @@ struct async_connect_op {
 
     template <typename Func>
     friend void asio_handler_invoke(Func&& f, async_connect_op* ctx) {
-        using ::boost::asio::asio_handler_invoke;
+        using boost::asio::asio_handler_invoke;
         asio_handler_invoke(std::forward<Func>(f), std::addressof(ctx->handler_));
     }
 };
@@ -100,7 +100,7 @@ struct connection_binder {
 
     template <typename Func>
     friend void asio_handler_invoke(Func&& f, connection_binder* ctx) {
-        using ::boost::asio::asio_handler_invoke;
+        using boost::asio::asio_handler_invoke;
         asio_handler_invoke(std::forward<Func>(f),
             std::addressof(ctx->handler_));
     }

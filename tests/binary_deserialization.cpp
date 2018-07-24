@@ -12,8 +12,8 @@ BOOST_FUSION_DEFINE_STRUCT((),
 
 namespace {
 
-using namespace ::testing;
-using ::ozo::tests::pg_result_mock;
+using namespace testing;
+using ozo::tests::pg_result_mock;
 
 struct read : Test {
     struct badbuf_t : std::streambuf{} badbuf;
@@ -39,7 +39,7 @@ TEST_F(read, with_multi_byte_type_and_bad_ostream_should_throw) {
 struct recv : Test {
     ozo::empty_oid_map oid_map{};
     StrictMock<pg_result_mock> mock{};
-    ::ozo::value<pg_result_mock> value{{&mock, 0, 0}};
+    ozo::value<pg_result_mock> value{{&mock, 0, 0}};
 };
 
 TEST_F(recv, should_throw_system_error_if_oid_does_not_match_the_type) {
@@ -363,7 +363,7 @@ TEST_F(recv, should_reset_nullable_on_null_element) {
 struct recv_row : Test {
     ozo::empty_oid_map oid_map{};
     StrictMock<pg_result_mock> mock{};
-    ::ozo::row<pg_result_mock> row{{&mock, 0, 0}};
+    ozo::row<pg_result_mock> row{{&mock, 0, 0}};
 };
 
 TEST_F(recv_row, should_throw_range_error_if_size_of_tuple_does_not_equal_to_row_size) {
@@ -451,7 +451,7 @@ TEST_F(recv_row, should_throw_range_error_if_row_is_unadapted_and_number_of_rows
 struct recv_result : Test {
     ozo::empty_oid_map oid_map{};
     StrictMock<pg_result_mock> mock{};
-    ::ozo::basic_result<pg_result_mock*> res{&mock};
+    ozo::basic_result<pg_result_mock*> res{&mock};
 };
 
 TEST_F(recv_result, send_convert_INT4OID_and_TEXTOID_to_fusion_adapted_structures_vector_via_back_inserter) {
@@ -529,7 +529,7 @@ TEST_F(recv_result, send_convert_INT4OID_to_vector_via_iterator) {
 }
 
 TEST_F(recv_result, send_returns_result_then_result_requested) {
-    ::ozo::basic_result<pg_result_mock*> got;
+    ozo::basic_result<pg_result_mock*> got;
     ozo::recv_result(res, oid_map, got);
     EXPECT_CALL(mock, ntuples()).WillOnce(Return(2));
     EXPECT_EQ(got.size(), 2u);

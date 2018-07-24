@@ -102,19 +102,19 @@ template <typename T>
 constexpr auto InsertIterator = is_insert_iterator<T>::value;
 
 template <typename T>
-constexpr auto FusionSequence = ::boost::fusion::traits::is_sequence<std::decay_t<T>>::value;
+constexpr auto FusionSequence = boost::fusion::traits::is_sequence<std::decay_t<T>>::value;
 
 template <typename T>
-constexpr auto HanaSequence = ::boost::hana::Sequence<std::decay_t<T>>::value;
+constexpr auto HanaSequence = boost::hana::Sequence<std::decay_t<T>>::value;
 
 template <typename T>
-constexpr auto HanaStruct = ::boost::hana::Struct<std::decay_t<T>>::value;
+constexpr auto HanaStruct = boost::hana::Struct<std::decay_t<T>>::value;
 
 template <typename T>
-constexpr auto HanaString = decltype(::boost::hana::is_a<::boost::hana::string_tag>(std::declval<T>()))::value;
+constexpr auto HanaString = decltype(boost::hana::is_a<boost::hana::string_tag>(std::declval<T>()))::value;
 
 template <typename T>
-constexpr auto HanaTuple = decltype(::boost::hana::is_a<::boost::hana::tuple_tag>(std::declval<T>()))::value;
+constexpr auto HanaTuple = decltype(boost::hana::is_a<boost::hana::tuple_tag>(std::declval<T>()))::value;
 
 template <typename T, typename = std::void_t<>>
 struct is_fusion_adapted_struct : std::false_type {};

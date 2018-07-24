@@ -32,10 +32,10 @@
 
 namespace ozo {
 
-namespace hana = ::boost::hana;
+namespace hana = boost::hana;
 using namespace hana::literals;
 
-namespace fusion = ::boost::fusion;
+namespace fusion = boost::fusion;
 /**
 * PostgreSQL OID type - object identificator
 */
@@ -52,31 +52,31 @@ constexpr null_oid_t null_oid;
 * nullable.
 */
 template <typename T, typename Enable = void>
-struct is_nullable : ::std::false_type {};
+struct is_nullable : std::false_type {};
 
 /**
 * These next types are nullable
 */
 template <typename T>
-struct is_nullable<::boost::optional<T>> : ::std::true_type {};
+struct is_nullable<boost::optional<T>> : std::true_type {};
 
 #ifdef __OZO_STD_OPTIONAL
 template <typename T>
-struct is_nullable<__OZO_STD_OPTIONAL<T>> : ::std::true_type {};
+struct is_nullable<__OZO_STD_OPTIONAL<T>> : std::true_type {};
 #endif
 
 template <typename T>
-struct is_nullable<::boost::scoped_ptr<T>> : ::std::true_type {};
+struct is_nullable<boost::scoped_ptr<T>> : std::true_type {};
 template <typename T, typename Deleter>
-struct is_nullable<::std::unique_ptr<T, Deleter>> : ::std::true_type {};
+struct is_nullable<std::unique_ptr<T, Deleter>> : std::true_type {};
 template <typename T>
-struct is_nullable<::boost::shared_ptr<T>> : ::std::true_type {};
+struct is_nullable<boost::shared_ptr<T>> : std::true_type {};
 template <typename T>
-struct is_nullable<::std::shared_ptr<T>> : ::std::true_type {};
+struct is_nullable<std::shared_ptr<T>> : std::true_type {};
 template <typename T>
-struct is_nullable<::boost::weak_ptr<T>> : ::std::true_type {};
+struct is_nullable<boost::weak_ptr<T>> : std::true_type {};
 template <typename T>
-struct is_nullable<::std::weak_ptr<T>> : ::std::true_type {};
+struct is_nullable<std::weak_ptr<T>> : std::true_type {};
 
 template <typename T>
 constexpr auto Nullable = is_nullable<std::decay_t<T>>::value;
@@ -101,12 +101,12 @@ inline auto is_null(const T& v) noexcept -> std::enable_if_t<Nullable<T>, bool> 
 }
 
 template <typename T>
-inline auto is_null(const ::boost::weak_ptr<T>& v) noexcept {
+inline auto is_null(const boost::weak_ptr<T>& v) noexcept {
     return is_null(v.lock());
 }
 
 template <typename T>
-inline auto is_null(const ::std::weak_ptr<T>& v) noexcept {
+inline auto is_null(const std::weak_ptr<T>& v) noexcept {
     return is_null(v.lock());
 }
 
@@ -180,12 +180,12 @@ inline void reset_nullable(T& n) {
 * Indicates if type is an array
 */
 template <typename T>
-struct is_array : ::std::false_type {};
+struct is_array : std::false_type {};
 
 template <typename T, typename Alloc>
-struct is_array<::std::vector<T, Alloc>> : ::std::true_type {};
+struct is_array<std::vector<T, Alloc>> : std::true_type {};
 template <typename T, typename Alloc>
-struct is_array<::std::list<T, Alloc>> : ::std::true_type {};
+struct is_array<std::list<T, Alloc>> : std::true_type {};
 
 /**
 * Helper indicates if type is string
@@ -201,7 +201,7 @@ struct is_string<std::basic_string<C, T, A>> : std::true_type {};
 */
 template <typename T>
 using is_fusion_adapted = std::integral_constant<bool,
-    ::boost::fusion::traits::is_sequence<T>::value
+    boost::fusion::traits::is_sequence<T>::value
 >;
 
 /**
@@ -355,12 +355,12 @@ constexpr auto size_of(const T& v) noexcept -> typename std::enable_if<
 #endif
 
 #define OZO_PG_DEFINE_TYPE_ARRAY_NULLABLES(Type, Name, Oid) \
-    OZO_PG_DEFINE_TYPE_ARRAY(::boost::optional<Type>, Name, Oid) \
+    OZO_PG_DEFINE_TYPE_ARRAY(boost::optional<Type>, Name, Oid) \
     OZO_PG_DEFINE_TYPE_ARRAY_OZO_OPTIONAL(Type, Name, Oid) \
-    OZO_PG_DEFINE_TYPE_ARRAY(::boost::scoped_ptr<Type>, Name, Oid) \
-    OZO_PG_DEFINE_TYPE_ARRAY(::std::unique_ptr<Type>, Name, Oid) \
-    OZO_PG_DEFINE_TYPE_ARRAY(::boost::shared_ptr<Type>, Name, Oid) \
-    OZO_PG_DEFINE_TYPE_ARRAY(::std::shared_ptr<Type>, Name, Oid)
+    OZO_PG_DEFINE_TYPE_ARRAY(boost::scoped_ptr<Type>, Name, Oid) \
+    OZO_PG_DEFINE_TYPE_ARRAY(std::unique_ptr<Type>, Name, Oid) \
+    OZO_PG_DEFINE_TYPE_ARRAY(boost::shared_ptr<Type>, Name, Oid) \
+    OZO_PG_DEFINE_TYPE_ARRAY(std::shared_ptr<Type>, Name, Oid)
 
 #define OZO_PG_DEFINE_TYPE_AND_ARRAY(Type, Name, Oid, ArrayOid, Size) \
     OZO_PG_DEFINE_TYPE(Type, Name, Oid, Size) \

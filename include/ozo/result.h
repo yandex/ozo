@@ -64,7 +64,7 @@ inline const T* data(const value<Result>& v) {
 template <typename Result>
 class row {
 public:
-    using value = ::ozo::value<Result>;
+    using value = ozo::value<Result>;
     using coordinates = typename value::coordinates;
 
     class const_iterator : public boost::iterator_facade<
@@ -139,7 +139,7 @@ private:
 template <typename T>
 class basic_result {
 public:
-    using row = ::ozo::row<std::decay_t<decltype(*std::declval<T>())>>;
+    using row = ozo::row<std::decay_t<decltype(*std::declval<T>())>>;
     using value = typename row::value;
     using coordinates = typename row::coordinates;
 
