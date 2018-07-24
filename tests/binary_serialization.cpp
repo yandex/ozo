@@ -1,7 +1,7 @@
+#include <ozo/binary_serialization.h>
+
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
-
-#include <ozo/binary_serialization.h>
 
 namespace {
 

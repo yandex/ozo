@@ -1,10 +1,10 @@
 #include <ozo/concept.h>
 
-#include <gtest/gtest.h>
-#include <gmock/gmock.h>
-
 #include <list>
 #include <vector>
+
+#include <gtest/gtest.h>
+#include <gmock/gmock.h>
 
 namespace {
 

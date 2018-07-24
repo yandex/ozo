@@ -1,11 +1,13 @@
 #pragma once
 
+#include "test_error.h"
+
 #include <ozo/detail/bind.h>
 #include <ozo/asio.h>
 
-#include <gmock/gmock.h>
 #include <boost/core/demangle.hpp>
-#include "test_error.h"
+
+#include <gmock/gmock.h>
 
 namespace ozo {
 namespace tests {

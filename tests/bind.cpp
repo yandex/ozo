@@ -1,5 +1,7 @@
-#include <ozo/detail/bind.h>
 #include "test_asio.h"
+
+#include <ozo/detail/bind.h>
+
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 

@@ -1,6 +1,8 @@
-#include <ozo/impl/async_request.h>
-#include "test_error.h"
 #include "connection_mock.h"
+#include "test_error.h"
+
+#include <ozo/impl/async_request.h>
+
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 

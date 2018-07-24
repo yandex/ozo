@@ -2,6 +2,8 @@
 
 #include <ozo/error.h>
 
+#include <sstream>
+
 namespace ozo {
 namespace tests {
 namespace error {

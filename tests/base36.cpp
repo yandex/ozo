@@ -1,4 +1,5 @@
 #include <ozo/detail/base36.h>
+
 #include <gtest/gtest.h>
 
 namespace {

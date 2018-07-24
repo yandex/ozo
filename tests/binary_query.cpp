@@ -1,9 +1,9 @@
-#include <gtest/gtest.h>
-#include <gmock/gmock.h>
-
 #include <ozo/binary_query.h>
 
 #include <iterator>
+
+#include <gtest/gtest.h>
+#include <gmock/gmock.h>
 
 namespace {
 

@@ -1,6 +1,3 @@
-#include <gtest/gtest.h>
-#include <gmock/gmock.h>
-
 #include <ozo/query_conf.h>
 
 #include <boost/hana/adapt_struct.hpp>
@@ -10,6 +7,9 @@
 
 #include <string_view>
 #include <cstring>
+
+#include <gtest/gtest.h>
+#include <gmock/gmock.h>
 
 namespace ozo {
 namespace detail {
