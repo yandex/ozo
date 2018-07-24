@@ -10,8 +10,8 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
-namespace hana = ::boost::hana;
-using namespace ::testing;
+namespace hana = boost::hana;
+using namespace testing;
 
 namespace {
 
@@ -89,16 +89,16 @@ struct nullable_mock {
 }// namespace tests
 
 template <>
-struct is_nullable<StrictMock<tests::nullable_mock>> : ::std::true_type {};
+struct is_nullable<StrictMock<ozo::tests::nullable_mock>> : std::true_type {};
 
 template <>
-struct is_nullable<tests::nullable_mock> : ::std::true_type {};
+struct is_nullable<ozo::tests::nullable_mock> : std::true_type {};
 
 } // namespace ozo
 
 namespace {
 
-using namespace ::ozo::tests;
+using namespace ozo::tests;
 
 TEST(init_nullable, should_initialize_uninitialized_nullable) {
     StrictMock<nullable_mock> mock{};
@@ -168,7 +168,7 @@ BOOST_FUSION_DEFINE_STRUCT(
 
 namespace {
 
-using namespace ::ozo::tests;
+using namespace ozo::tests;
 
 auto oid_map = ozo::register_types<ozo::tests::some_type>();
 

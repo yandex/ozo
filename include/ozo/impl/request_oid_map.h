@@ -71,7 +71,7 @@ struct request_oid_map_op {
 
     template <typename Func>
     friend void asio_handler_invoke(Func&& f, request_oid_map_op* ctx) {
-        using ::boost::asio::asio_handler_invoke;
+        using boost::asio::asio_handler_invoke;
         asio_handler_invoke(std::forward<Func>(f), std::addressof(ctx->handler_));
     }
 };

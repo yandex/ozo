@@ -72,7 +72,7 @@ struct pooled_connection_wrapper {
 
         template <typename Func>
         friend void asio_handler_invoke(Func&& f, wrapper* ctx) {
-            using ::boost::asio::asio_handler_invoke;
+            using boost::asio::asio_handler_invoke;
             asio_handler_invoke(std::forward<Func>(f), std::addressof(ctx->handler_));
         }
     };
@@ -94,7 +94,7 @@ struct pooled_connection_wrapper {
 
     template <typename Func>
     friend void asio_handler_invoke(Func&& f, pooled_connection_wrapper* ctx) {
-        using ::boost::asio::asio_handler_invoke;
+        using boost::asio::asio_handler_invoke;
         asio_handler_invoke(std::forward<Func>(f), std::addressof(ctx->handler_));
     }
 };

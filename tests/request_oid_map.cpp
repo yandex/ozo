@@ -18,7 +18,7 @@ OZO_PG_DEFINE_CUSTOM_TYPE(ozo::tests::custom_type2, "custom_type2", dynamic_size
 
 namespace {
 
-using namespace ::testing;
+using namespace testing;
 
 TEST(get_types_names, should_return_empty_container_for_empty_oid_map) {
     auto type_names = ozo::impl::get_types_names(ozo::empty_oid_map{});

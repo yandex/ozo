@@ -5,7 +5,7 @@
 
 namespace ozo::tests {
 
-using namespace ::testing;
+using namespace testing;
 
 struct pg_result_mock {
     MOCK_CONST_METHOD1(field_type, ozo::oid_t(int column));

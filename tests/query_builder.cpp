@@ -9,7 +9,7 @@
 
 namespace {
 
-namespace hana = ::boost::hana;
+namespace hana = boost::hana;
 
 TEST(detail_to_string, with_0_returns_0_s) {
     using namespace hana::literals;

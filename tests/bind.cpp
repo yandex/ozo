@@ -9,7 +9,7 @@ using ozo::tests::wrap;
 
 namespace {
 
-using namespace ::testing;
+using namespace testing;
 
 struct bind : Test {
     StrictMock<callback_gmock<int>> cb_mock{};

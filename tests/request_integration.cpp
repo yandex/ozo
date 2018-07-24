@@ -17,7 +17,7 @@ OZO_PG_DEFINE_CUSTOM_TYPE(ozo::tests::custom_type, "custom_type", dynamic_size)
 
 namespace {
 
-namespace hana = ::boost::hana;
+namespace hana = boost::hana;
 
 template <typename ...Ts>
 using rows_of = std::vector<std::tuple<Ts...>>;
@@ -26,7 +26,7 @@ using rows_of = std::vector<std::tuple<Ts...>>;
 
 namespace {
 
-using namespace ::testing;
+using namespace testing;
 
 TEST(request, should_return_error_and_bad_connect_for_invalid_connection_info) {
     using namespace ozo::literals;
