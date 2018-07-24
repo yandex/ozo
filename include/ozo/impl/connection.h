@@ -98,8 +98,8 @@ inline auto connection_error_message(pg_native_handle_type handle) {
     return v;
 }
 
-template <typename Connection>
-inline error_code rebind_connection_io_context(Connection& conn, io_context& io) {
+template <typename Connection, typename IoContext>
+inline error_code rebind_connection_io_context(Connection& conn, IoContext& io) {
     if (std::addressof(get_io_context(conn)) != std::addressof(io)) {
         decltype(auto) socket = get_socket(conn);
         std::decay_t<decltype(socket)> s{io};
