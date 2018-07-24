@@ -8,7 +8,7 @@
 #include "test_error.h"
 
 namespace ozo {
-namespace testing {
+namespace tests {
 
 template <typename Handler>
 inline void asio_post(Handler h) {
@@ -52,12 +52,12 @@ struct io_context {
 
     template <typename Handler>
     void post(Handler&& h) {
-        ::ozo::testing::post(executor_, std::forward<Handler>(h));
+        ::ozo::tests::post(executor_, std::forward<Handler>(h));
     }
 
     template <typename Handler>
     void dispatch(Handler&& h) {
-        ::ozo::testing::dispatch(executor_, std::forward<Handler>(h));
+        ::ozo::tests::dispatch(executor_, std::forward<Handler>(h));
     }
 };
 
@@ -67,10 +67,10 @@ struct strand {
     strand(const io_context& io) : e_(io.strand_.get_executor()) {}
 
     template <typename Handler>
-    void post(Handler&& h) { ::ozo::testing::post(e_, std::forward<Handler>(h));}
+    void post(Handler&& h) { ::ozo::tests::post(e_, std::forward<Handler>(h));}
 
     template <typename Handler>
-    void dispatch(Handler&& h) { ::ozo::testing::dispatch(e_, std::forward<Handler>(h));}
+    void dispatch(Handler&& h) { ::ozo::tests::dispatch(e_, std::forward<Handler>(h));}
 
     template <typename Op>
     struct wrapper {
@@ -88,7 +88,7 @@ struct strand {
             if (!*(ctx->active_)) {
                 auto active = ctx->active_;
                 *active = true;
-                ::ozo::testing::dispatch(ctx->e_, std::forward<Func>(f));
+                ::ozo::tests::dispatch(ctx->e_, std::forward<Func>(f));
                 *active = false;
             } else {
                 using boost::asio::asio_handler_invoke;
@@ -148,12 +148,12 @@ struct stream_descriptor {
     io_context& get_io_service() { return *io_;}
 };
 
-} // namespace testing
+} // namespace tests
 
 template <>
-struct asio_strand<testing::io_context> { using type = testing::strand; };
+struct asio_strand<tests::io_context> { using type = tests::strand; };
 
-namespace testing {
+namespace tests {
 
 template <typename ... Args>
 struct callback_mock {
@@ -214,5 +214,5 @@ inline callback_handler<callback_gmock<Ts...>> wrap(::testing::StrictMock<callba
     return {mock};
 }
 
-} // namespace testing
+} // namespace tests
 } // namespace ozo

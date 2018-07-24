@@ -3,9 +3,9 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
-using ozo::testing::asio_post;
-using ozo::testing::callback_gmock;
-using ozo::testing::wrap;
+using ozo::tests::asio_post;
+using ozo::tests::callback_gmock;
+using ozo::tests::wrap;
 
 namespace {
 

@@ -18,7 +18,7 @@ TEST(make_connection_pool, sould_not_throw) {
 
 } //namespace
 
-namespace ozo::testing {
+namespace ozo::tests {
 
 struct pool_handle_mock {
     using value_type = connection<>;
@@ -65,18 +65,18 @@ struct connection_provider {
         self.mock_->async_get_connection(std::forward<Handler>(h));
     }
 };
-} // namespace ozo::testing
+} // namespace ozo::tests
 
 namespace ozo::impl {
 template <>
-struct get_connection_pool<ozo::testing::connection_provider> {
-    using type = ozo::testing::connection_pool;
+struct get_connection_pool<ozo::tests::connection_provider> {
+    using type = ozo::tests::connection_pool;
 };
 } // namespace ozo::impl
 
 namespace {
 
-using namespace ozo::testing;
+using namespace ozo::tests;
 using namespace ::testing;
 
 struct pooled_connection : Test {
@@ -139,9 +139,9 @@ struct pooled_connection_wrapper : Test {
     StrictMock<callback_gmock<pooled_connection_ptr>> callback_mock;
     StrictMock<connection_gmock> connection_mock{};
     StrictMock<pool_handle_mock> handle_mock{};
-    StrictMock<::ozo::testing::executor_gmock> executor_mock{};
-    StrictMock<ozo::testing::strand_executor_service_gmock> strand_mock{};
-    ::ozo::testing::io_context io{executor_mock, strand_mock};
+    StrictMock<::ozo::tests::executor_gmock> executor_mock{};
+    StrictMock<ozo::tests::strand_executor_service_gmock> strand_mock{};
+    ::ozo::tests::io_context io{executor_mock, strand_mock};
 
     auto make_connection(native_handle h) {
         auto conn = connection<>{};

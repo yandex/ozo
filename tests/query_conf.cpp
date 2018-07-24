@@ -63,7 +63,7 @@ bool operator ==(const query<ParamsT ...>& lhs, const query<ParamsT ...>& rhs) {
 
 } // namespace impl
 
-namespace testing {
+namespace tests {
 
 using namespace boost::hana::literals;
 
@@ -151,28 +151,28 @@ struct require_copy_struct_query {
     using parameters_type = require_copy_struct;
 };
 
-} // namespace testing
+} // namespace tests
 } // namespace ozo
 
 BOOST_HANA_ADAPT_STRUCT(
-    ozo::testing::struct_parameters,
+    ozo::tests::struct_parameters,
     string,
     number
 );
 
 BOOST_HANA_ADAPT_STRUCT(
-    ozo::testing::prohibit_copy_struct,
+    ozo::tests::prohibit_copy_struct,
     v
 );
 
 BOOST_HANA_ADAPT_STRUCT(
-    ozo::testing::require_copy_struct,
+    ozo::tests::require_copy_struct,
     v
 );
 
 namespace {
     using namespace testing;
-    using namespace ozo::testing;
+    using namespace ozo::tests;
     using namespace ozo::detail;
     using namespace ozo::detail::text_parser;
 
@@ -329,7 +329,7 @@ TEST(parse_query_conf, should_for_comment_in_query_statement_text_return_text_wi
 
 namespace {
     using namespace testing;
-    using namespace ozo::testing;
+    using namespace ozo::tests;
 
     namespace hana = boost::hana;
 
@@ -367,7 +367,7 @@ TEST(check_for_duplicates, should_throw_for_multiple_queries_with_two_equal) {
 
 namespace {
 using namespace testing;
-using namespace ozo::testing;
+using namespace ozo::tests;
 using namespace ozo::detail;
 
 namespace hana = boost::hana;
@@ -566,7 +566,7 @@ TEST(make_query_conf, should_return_two_descriptions_and_two_queries_for_two_des
 
 
 TEST(get_query_name, should_return_std_string_view_of_static_field_name_for_query_type) {
-    EXPECT_EQ(ozo::get_query_name<ozo::testing::query_without_parameters>(),
+    EXPECT_EQ(ozo::get_query_name<ozo::tests::query_without_parameters>(),
               std::string_view("query without parameters"));
 }
 

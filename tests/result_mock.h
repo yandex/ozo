@@ -3,7 +3,7 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
-namespace ozo::testing {
+namespace ozo::tests {
 
 using namespace ::testing;
 
@@ -50,4 +50,4 @@ struct pg_result_mock {
     }
 };
 
-} // namespace ozo::testing
+} // namespace ozo::tests

@@ -7,16 +7,16 @@
 namespace {
 
 namespace hana = ::boost::hana;
-using namespace ozo::testing;
-using callback_mock = ozo::testing::callback_gmock<connection_ptr<>>;
+using namespace ozo::tests;
+using callback_mock = ozo::tests::callback_gmock<connection_ptr<>>;
 struct fixture {
     testing::StrictMock<connection_gmock> connection{};
     testing::StrictMock<callback_mock> callback{};
-    testing::StrictMock<ozo::testing::executor_gmock> io_context{};
-    testing::StrictMock<ozo::testing::executor_gmock> strand{};
-    testing::StrictMock<ozo::testing::strand_executor_service_gmock> strand_service{};
-    testing::StrictMock<ozo::testing::stream_descriptor_gmock> socket{};
-    ozo::testing::io_context io{io_context, strand_service};
+    testing::StrictMock<ozo::tests::executor_gmock> io_context{};
+    testing::StrictMock<ozo::tests::executor_gmock> strand{};
+    testing::StrictMock<ozo::tests::strand_executor_service_gmock> strand_service{};
+    testing::StrictMock<ozo::tests::stream_descriptor_gmock> socket{};
+    ozo::tests::io_context io{io_context, strand_service};
     decltype(make_connection(connection, io, socket)) conn =
             make_connection(connection, io, socket);
 
@@ -95,7 +95,7 @@ TEST_F(async_send_query_params_op, should_exit_immediately_if_query_state_is_err
 TEST_F(async_send_query_params_op, should_exit_immediately_if_query_state_is_error_and_called_with_error) {
     m.ctx->state=ozo::impl::query_state::error;
 
-    ozo::impl::make_async_send_query_params_op(m.ctx, fake_query{})(::ozo::testing::error::error);
+    ozo::impl::make_async_send_query_params_op(m.ctx, fake_query{})(::ozo::tests::error::error);
 
     EXPECT_EQ(m.ctx->state, ::ozo::impl::query_state::error);
 }
@@ -111,7 +111,7 @@ TEST_F(async_send_query_params_op, should_exit_immediately_if_query_state_is_sen
 TEST_F(async_send_query_params_op, should_exit_immediately_if_query_state_is_send_finish_and_called_with_error) {
     m.ctx->state=ozo::impl::query_state::send_finish;
 
-    ozo::impl::make_async_send_query_params_op(m.ctx, fake_query{})(::ozo::testing::error::error);
+    ozo::impl::make_async_send_query_params_op(m.ctx, fake_query{})(::ozo::tests::error::error);
 
     EXPECT_EQ(m.ctx->state, ::ozo::impl::query_state::send_finish);
 }
@@ -121,10 +121,10 @@ TEST_F(async_send_query_params_op, should_invoke_callback_with_given_error_if_ca
     EXPECT_CALL(m.io_context, post(_)).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(m.strand, dispatch(_)).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(m.callback, context_preserved()).WillOnce(Return());
-    EXPECT_CALL(m.callback, call(error_code{::ozo::testing::error::error}, _)).WillOnce(Return());
+    EXPECT_CALL(m.callback, call(error_code{::ozo::tests::error::error}, _)).WillOnce(Return());
 
     m.ctx->state=ozo::impl::query_state::send_in_progress;
-    ozo::impl::make_async_send_query_params_op(m.ctx, fake_query{})(::ozo::testing::error::error);
+    ozo::impl::make_async_send_query_params_op(m.ctx, fake_query{})(::ozo::tests::error::error);
 
     EXPECT_EQ(m.ctx->state, ::ozo::impl::query_state::error);
 }

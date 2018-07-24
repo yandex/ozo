@@ -4,7 +4,7 @@ namespace {
 
 using namespace ::testing;
 
-using ::ozo::testing::pg_result_mock;
+using ::ozo::tests::pg_result_mock;
 
 struct value : Test {
     StrictMock<pg_result_mock> mock{};

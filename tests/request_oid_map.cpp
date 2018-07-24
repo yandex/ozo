@@ -6,15 +6,15 @@
 
 #include "test_asio.h"
 
-namespace ozo::testing {
+namespace ozo::tests {
 
     struct custom_type1 {};
     struct custom_type2 {};
 
-} // namespace ozo::testing
+} // namespace ozo::tests
 
-OZO_PG_DEFINE_CUSTOM_TYPE(ozo::testing::custom_type1, "custom_type1", dynamic_size)
-OZO_PG_DEFINE_CUSTOM_TYPE(ozo::testing::custom_type2, "custom_type2", dynamic_size)
+OZO_PG_DEFINE_CUSTOM_TYPE(ozo::tests::custom_type1, "custom_type1", dynamic_size)
+OZO_PG_DEFINE_CUSTOM_TYPE(ozo::tests::custom_type2, "custom_type2", dynamic_size)
 
 namespace {
 
@@ -27,27 +27,27 @@ TEST(get_types_names, should_return_empty_container_for_empty_oid_map) {
 
 TEST(get_types_names, should_return_type_names_from_oid_map) {
     auto type_names = ozo::impl::get_types_names(
-        ozo::register_types<ozo::testing::custom_type1, ozo::testing::custom_type2>());
+        ozo::register_types<ozo::tests::custom_type1, ozo::tests::custom_type2>());
     EXPECT_THAT(type_names, ElementsAre("custom_type1", "custom_type2"));
 }
 
 TEST(set_oid_map, should_set_oids_for_oid_map_from_oids_result_argument) {
-    auto oid_map = ozo::register_types<ozo::testing::custom_type1, ozo::testing::custom_type2>();
+    auto oid_map = ozo::register_types<ozo::tests::custom_type1, ozo::tests::custom_type2>();
     const ozo::impl::oids_result res = {11, 22};
     ozo::impl::set_oid_map(oid_map, res);
     ozo::impl::get_types_names(ozo::empty_oid_map{});
-    EXPECT_EQ(ozo::type_oid<ozo::testing::custom_type1>(oid_map), 11u);
-    EXPECT_EQ(ozo::type_oid<ozo::testing::custom_type2>(oid_map), 22u);
+    EXPECT_EQ(ozo::type_oid<ozo::tests::custom_type1>(oid_map), 11u);
+    EXPECT_EQ(ozo::type_oid<ozo::tests::custom_type2>(oid_map), 22u);
 }
 
 TEST(set_oid_map, should_throw_on_oid_map_size_is_not_equal_to_oids_result_size) {
-    auto oid_map = ozo::register_types<ozo::testing::custom_type1, ozo::testing::custom_type2>();
+    auto oid_map = ozo::register_types<ozo::tests::custom_type1, ozo::tests::custom_type2>();
     const ozo::impl::oids_result res = {11};
     EXPECT_THROW(ozo::impl::set_oid_map(oid_map, res), std::length_error);
 }
 
 TEST(set_oid_map, should_throw_on_null_oid_in_oids_result) {
-    auto oid_map = ozo::register_types<ozo::testing::custom_type1, ozo::testing::custom_type2>();
+    auto oid_map = ozo::register_types<ozo::tests::custom_type1, ozo::tests::custom_type2>();
     const ozo::impl::oids_result res = {11, ozo::null_oid};
     EXPECT_THROW(ozo::impl::set_oid_map(oid_map, res), std::invalid_argument);
 }
@@ -76,8 +76,8 @@ struct connection {
 };
 
 TEST(request_oid_map_op, should_call_handler_with_oid_request_failed_error_when_oid_map_length_differs_from_result_length) {
-using namespace ozo::testing;
-    StrictMock<ozo::testing::callback_gmock<connection<>>> cb_mock {};
+using namespace ozo::tests;
+    StrictMock<ozo::tests::callback_gmock<connection<>>> cb_mock {};
     auto operation = ozo::impl::make_async_request_oid_map_op(wrap(cb_mock));
     operation.res_ = std::make_shared<ozo::impl::oids_result>(1);
 

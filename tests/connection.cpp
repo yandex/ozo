@@ -16,7 +16,7 @@ namespace {
 namespace hana = boost::hana;
 
 using namespace testing;
-using namespace ozo::testing;
+using namespace ozo::tests;
 
 using ozo::error_code;
 using ozo::empty_oid_map;
