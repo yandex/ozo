@@ -31,12 +31,12 @@ struct executor_gmock : executor_mock {
 
 template <typename Op>
 inline void post(executor_mock& e, Op op) {
-    e.post([op=std::move(op)] () mutable { asio_post(std::move(op));});
+    e.post([op = std::move(op)] () mutable { asio_post(std::move(op));});
 }
 
 template <typename Op>
 inline void dispatch(executor_mock& e, Op op) {
-    e.dispatch([op=std::move(op)] () mutable { asio_post(std::move(op));});
+    e.dispatch([op = std::move(op)] () mutable { asio_post(std::move(op));});
 }
 
 struct strand_executor_service_mock {
@@ -133,14 +133,14 @@ struct stream_descriptor {
 
     template <typename ConstBufferSequence, typename WriteHandler>
     void async_write_some(ConstBufferSequence const &, WriteHandler&& h) {
-        mock_->async_write_some([h=std::forward<WriteHandler>(h)] (auto e) {
+        mock_->async_write_some([h = std::forward<WriteHandler>(h)] (auto e) {
             asio_post(ozo::detail::bind(std::move(h), std::move(e)));
         });
     }
 
     template <typename BufferSequence, typename ReadHandler>
     void async_read_some(BufferSequence&&, ReadHandler&& h) {
-        mock_->async_read_some([h=std::forward<ReadHandler>(h)] (auto e) {
+        mock_->async_read_some([h = std::forward<ReadHandler>(h)] (auto e) {
             asio_post(ozo::detail::bind(std::move(h), std::move(e)));
         });
     }
