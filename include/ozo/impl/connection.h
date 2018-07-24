@@ -92,7 +92,7 @@ inline const auto& get_connection_error_context(
 inline auto connection_error_message(pg_native_handle_type handle) {
     std::string_view v(PQerrorMessage(handle));
     auto trim_pos = v.find_last_not_of(' ');
-    if(trim_pos != v.npos) {
+    if (trim_pos != v.npos) {
         v.remove_suffix(v.size() - trim_pos);
     }
     return v;
