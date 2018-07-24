@@ -89,7 +89,7 @@ TEST_F(async_send_query_params_op, should_call_send_query_params_while_it_return
 }
 
 TEST_F(async_send_query_params_op, should_exit_immediately_if_query_state_is_error_and_called_with_no_error) {
-    m.ctx->state=ozo::impl::query_state::error;
+    m.ctx->state = ozo::impl::query_state::error;
 
     ozo::impl::make_async_send_query_params_op(m.ctx, fake_query{})();
 
@@ -97,7 +97,7 @@ TEST_F(async_send_query_params_op, should_exit_immediately_if_query_state_is_err
 }
 
 TEST_F(async_send_query_params_op, should_exit_immediately_if_query_state_is_error_and_called_with_error) {
-    m.ctx->state=ozo::impl::query_state::error;
+    m.ctx->state = ozo::impl::query_state::error;
 
     ozo::impl::make_async_send_query_params_op(m.ctx, fake_query{})(ozo::tests::error::error);
 
@@ -105,7 +105,7 @@ TEST_F(async_send_query_params_op, should_exit_immediately_if_query_state_is_err
 }
 
 TEST_F(async_send_query_params_op, should_exit_immediately_if_query_state_is_send_finish_and_called_with_no_error) {
-    m.ctx->state=ozo::impl::query_state::send_finish;
+    m.ctx->state = ozo::impl::query_state::send_finish;
 
     ozo::impl::make_async_send_query_params_op(m.ctx, fake_query{})();
 
@@ -113,7 +113,7 @@ TEST_F(async_send_query_params_op, should_exit_immediately_if_query_state_is_sen
 }
 
 TEST_F(async_send_query_params_op, should_exit_immediately_if_query_state_is_send_finish_and_called_with_error) {
-    m.ctx->state=ozo::impl::query_state::send_finish;
+    m.ctx->state = ozo::impl::query_state::send_finish;
 
     ozo::impl::make_async_send_query_params_op(m.ctx, fake_query{})(ozo::tests::error::error);
 
@@ -127,7 +127,7 @@ TEST_F(async_send_query_params_op, should_invoke_callback_with_given_error_if_ca
     EXPECT_CALL(m.callback, context_preserved()).WillOnce(Return());
     EXPECT_CALL(m.callback, call(error_code{ozo::tests::error::error}, _)).WillOnce(Return());
 
-    m.ctx->state=ozo::impl::query_state::send_in_progress;
+    m.ctx->state = ozo::impl::query_state::send_in_progress;
     ozo::impl::make_async_send_query_params_op(m.ctx, fake_query{})(ozo::tests::error::error);
 
     EXPECT_EQ(m.ctx->state, ozo::impl::query_state::error);
@@ -137,7 +137,7 @@ TEST_F(async_send_query_params_op, should_exit_if_flush_output_returns_send_fini
     EXPECT_CALL(m.connection, flush_output())
         .WillOnce(Return(ozo::impl::query_state::send_finish));
 
-    m.ctx->state=ozo::impl::query_state::send_in_progress;
+    m.ctx->state = ozo::impl::query_state::send_in_progress;
     ozo::impl::make_async_send_query_params_op(m.ctx, fake_query{})();
 
     EXPECT_EQ(m.ctx->state, ozo::impl::query_state::send_finish);
@@ -153,7 +153,7 @@ TEST_F(async_send_query_params_op, should_invoke_callback_with_pg_flush_failed_i
     EXPECT_CALL(m.callback, call(error_code{ozo::error::pg_flush_failed}, _))
         .WillOnce(Return());
 
-    m.ctx->state=ozo::impl::query_state::send_in_progress;
+    m.ctx->state = ozo::impl::query_state::send_in_progress;
     ozo::impl::make_async_send_query_params_op(m.ctx, fake_query{})();
 
     EXPECT_EQ(m.ctx->state, ozo::impl::query_state::error);
@@ -165,7 +165,7 @@ TEST_F(async_send_query_params_op, should_wait_for_write_if_flush_output_returns
     EXPECT_CALL(m.socket, async_write_some(_))
         .WillOnce(Return());
 
-    m.ctx->state=ozo::impl::query_state::send_in_progress;
+    m.ctx->state = ozo::impl::query_state::send_in_progress;
     ozo::impl::make_async_send_query_params_op(m.ctx, fake_query{})();
 
     EXPECT_EQ(m.ctx->state, ozo::impl::query_state::send_in_progress);
@@ -181,7 +181,7 @@ TEST_F(async_send_query_params_op, should_wait_for_write_in_strand) {
     EXPECT_CALL(m.connection, flush_output()).InSequence(s)
         .WillOnce(Return(ozo::impl::query_state::send_finish));
 
-    m.ctx->state=ozo::impl::query_state::send_in_progress;
+    m.ctx->state = ozo::impl::query_state::send_in_progress;
     ozo::impl::make_async_send_query_params_op(m.ctx, fake_query{})();
 }
 
