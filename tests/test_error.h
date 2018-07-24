@@ -17,9 +17,9 @@ namespace detail {
 
 class category : public error_category {
 public:
-    const char* name() const noexcept { return "ozo::tests::error::detail::category"; }
+    const char* name() const noexcept override { return "ozo::tests::error::detail::category"; }
 
-    std::string message(int value) const {
+    std::string message(int value) const override {
         switch (code(value)) {
             case ok:
                 return "no error";

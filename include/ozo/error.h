@@ -328,9 +328,9 @@ namespace impl {
 
 class category : public error_category {
 public:
-    const char* name() const noexcept { return "ozo::error::category"; }
+    const char* name() const noexcept override { return "ozo::error::category"; }
 
-    std::string message(int value) const {
+    std::string message(int value) const override {
         switch (code(value)) {
             case ok:
                 return "no error";
@@ -395,9 +395,9 @@ namespace impl {
 
 class category : public error_category {
 public:
-    const char* name() const noexcept { return "ozo::sqlstate::category"; }
+    const char* name() const noexcept override { return "ozo::sqlstate::category"; }
 
-    std::string message(int value) const {
+    std::string message(int value) const override {
         #define __OZO_SQLSTATE_NAME(value) case value: return std::string(#value) + "(" + detail::ltob36(value) + ")";
         switch (value) {
             __OZO_SQLSTATE_NAME(successful_completion)
