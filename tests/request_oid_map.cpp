@@ -8,8 +8,8 @@
 
 namespace ozo::tests {
 
-    struct custom_type1 {};
-    struct custom_type2 {};
+struct custom_type1 {};
+struct custom_type2 {};
 
 } // namespace ozo::tests
 
