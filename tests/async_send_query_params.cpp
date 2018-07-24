@@ -9,22 +9,24 @@
 namespace {
 
 namespace hana = boost::hana;
+
+using namespace testing;
 using namespace ozo::tests;
+
 using callback_mock = ozo::tests::callback_gmock<connection_ptr<>>;
 
 struct fixture {
-    testing::StrictMock<connection_gmock> connection{};
-    testing::StrictMock<callback_mock> callback{};
-    testing::StrictMock<ozo::tests::executor_gmock> io_context{};
-    testing::StrictMock<ozo::tests::executor_gmock> strand{};
-    testing::StrictMock<ozo::tests::strand_executor_service_gmock> strand_service{};
-    testing::StrictMock<ozo::tests::stream_descriptor_gmock> socket{};
+    StrictMock<connection_gmock> connection{};
+    StrictMock<callback_mock> callback{};
+    StrictMock<ozo::tests::executor_gmock> io_context{};
+    StrictMock<ozo::tests::executor_gmock> strand{};
+    StrictMock<ozo::tests::strand_executor_service_gmock> strand_service{};
+    StrictMock<ozo::tests::stream_descriptor_gmock> socket{};
     ozo::tests::io_context io{io_context, strand_service};
     decltype(make_connection(connection, io, socket)) conn =
             make_connection(connection, io, socket);
 
     auto make_operation_context() {
-        using namespace testing;
         EXPECT_CALL(strand_service, get_executor()).WillOnce(ReturnRef(strand));
         return ozo::impl::make_operation_context(conn, wrap(callback));
     }
@@ -35,7 +37,6 @@ struct fixture {
 
 };
 
-using namespace testing;
 using ozo::error_code;
 
 struct async_send_query_params_op : Test {

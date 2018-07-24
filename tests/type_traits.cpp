@@ -10,10 +10,11 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
-namespace hana = boost::hana;
-using namespace testing;
-
 namespace {
+
+namespace hana = boost::hana;
+
+using namespace testing;
 
 TEST(is_null, should_return_true_for_non_initialized_optional) {
     EXPECT_TRUE(ozo::is_null(boost::optional<int>{}));

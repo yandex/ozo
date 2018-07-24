@@ -9,21 +9,24 @@
 namespace {
 
 namespace hana = boost::hana;
+
+using namespace testing;
 using namespace ozo::tests;
+
 using callback_mock = ozo::tests::callback_gmock<connection_ptr<>>;
+
 struct fixture {
-    testing::StrictMock<connection_gmock> connection{};
-    testing::StrictMock<callback_mock> callback{};
-    testing::StrictMock<ozo::tests::executor_gmock> io_context{};
-    testing::StrictMock<ozo::tests::executor_gmock> strand{};
-    testing::StrictMock<ozo::tests::strand_executor_service_gmock> strand_service{};
-    testing::StrictMock<ozo::tests::stream_descriptor_gmock> socket{};
+    StrictMock<connection_gmock> connection{};
+    StrictMock<callback_mock> callback{};
+    StrictMock<ozo::tests::executor_gmock> io_context{};
+    StrictMock<ozo::tests::executor_gmock> strand{};
+    StrictMock<ozo::tests::strand_executor_service_gmock> strand_service{};
+    StrictMock<ozo::tests::stream_descriptor_gmock> socket{};
     ozo::tests::io_context io{io_context, strand_service};
     decltype(make_connection(connection, io, socket)) conn =
             make_connection(connection, io, socket);
 
     auto make_operation_context() {
-        using namespace testing;
         EXPECT_CALL(strand_service, get_executor()).WillOnce(ReturnRef(strand));
         return ozo::impl::make_operation_context(conn, wrap(callback));
     }
@@ -35,7 +38,6 @@ struct fixture {
 };
 
 using ozo::impl::query_state;
-using namespace testing;
 using ozo::error_code;
 
 struct async_get_result_op : Test {
@@ -58,7 +60,7 @@ TEST_F(async_get_result_op, perform_sould_preserve_query_state) {
 }
 
 struct async_get_result_op_call : async_get_result_op,
-        testing::WithParamInterface<error_code> {
+        WithParamInterface<error_code> {
 };
 
 TEST_P(async_get_result_op_call, when_query_state_is_error_should_exit_and_preserve_state){
@@ -70,11 +72,11 @@ TEST_P(async_get_result_op_call, when_query_state_is_error_should_exit_and_prese
 INSTANTIATE_TEST_CASE_P(
     with_any_error_code,
     async_get_result_op_call,
-    testing::Values(error_code{}, error_code{error::error}));
+    Values(error_code{}, error_code{error::error}));
 
 
 struct async_get_result_op_call_with_error : async_get_result_op,
-        testing::WithParamInterface<query_state> {
+        WithParamInterface<query_state> {
 };
 
 TEST_P(async_get_result_op_call_with_error, should_post_callback_with_given_error) {
@@ -115,7 +117,7 @@ TEST_P(async_get_result_op_call_with_error, should_set_query_state_in_error) {
 INSTANTIATE_TEST_CASE_P(
     with_query_state_NOT_error,
     async_get_result_op_call_with_error,
-    testing::Values(query_state::send_in_progress, query_state::send_finish));
+    Values(query_state::send_in_progress, query_state::send_finish));
 
 struct process_mock {
     MOCK_CONST_METHOD0(call, void());
@@ -410,7 +412,7 @@ TEST_F(async_get_result, should_post_callback_with_error_from_result_and_consume
 }
 
 struct async_get_result_ : async_get_result,
-        testing::WithParamInterface<ExecStatusType> {
+        WithParamInterface<ExecStatusType> {
 };
 
 TEST_P(async_get_result_, should_post_callback_with_error_from_result_and_consume_result) {
@@ -446,6 +448,6 @@ TEST_P(async_get_result_, should_post_callback_with_error_from_result_and_consum
 INSTANTIATE_TEST_CASE_P(
     with_unexpected_result_status,
     async_get_result_,
-    testing::Values(PGRES_COPY_OUT, PGRES_COPY_IN, PGRES_COPY_BOTH, PGRES_NONFATAL_ERROR));
+    Values(PGRES_COPY_OUT, PGRES_COPY_IN, PGRES_COPY_BOTH, PGRES_NONFATAL_ERROR));
 
 } // namespace
