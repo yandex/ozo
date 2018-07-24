@@ -92,6 +92,8 @@ OZO_PG_DEFINE_CUSTOM_TYPE(ozo::tests::some_type, "some_type", dynamic_size)
 
 namespace {
 
+using namespace ozo::tests;
+
 TEST(query_builder_build, with_one_text_element_returns_query_with_text_equal_to_input) {
     using namespace ozo::literals;
     EXPECT_EQ(std::string_view(hana::to<const char*>("SELECT 1"_SQL.build().text)),
@@ -130,7 +132,7 @@ TEST(query_builder_build, with_text_and_not_null_std_shared_ptr_param_element_re
 
 TEST(query_builder_build, with_text_and_custom_type_param_element_returns_query_with_1_param) {
     using namespace ozo::literals;
-    const auto params = ("SELECT "_SQL + ozo::tests::some_type {}).build().params;
+    const auto params = ("SELECT "_SQL + some_type {}).build().params;
     EXPECT_EQ(decltype(hana::size(params))::value, 1u);
 }
 

@@ -139,9 +139,9 @@ struct pooled_connection_wrapper : Test {
     StrictMock<callback_gmock<pooled_connection_ptr>> callback_mock;
     StrictMock<connection_gmock> connection_mock{};
     StrictMock<pool_handle_mock> handle_mock{};
-    StrictMock<ozo::tests::executor_gmock> executor_mock{};
-    StrictMock<ozo::tests::strand_executor_service_gmock> strand_mock{};
-    ozo::tests::io_context io{executor_mock, strand_mock};
+    StrictMock<executor_gmock> executor_mock{};
+    StrictMock<strand_executor_service_gmock> strand_mock{};
+    io_context io{executor_mock, strand_mock};
 
     auto make_connection(native_handle h) {
         auto conn = connection<>{};

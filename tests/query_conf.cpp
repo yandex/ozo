@@ -550,7 +550,7 @@ TEST(make_query_conf, should_return_two_descriptions_and_two_queries_for_two_des
 
 
 TEST(get_query_name, should_return_std_string_view_of_static_field_name_for_query_type) {
-    EXPECT_EQ(ozo::get_query_name<ozo::tests::query_without_parameters>(),
+    EXPECT_EQ(ozo::get_query_name<query_without_parameters>(),
               std::string_view("query without parameters"));
 }
 

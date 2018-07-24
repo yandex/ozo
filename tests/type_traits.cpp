@@ -90,10 +90,10 @@ struct nullable_mock {
 }// namespace tests
 
 template <>
-struct is_nullable<StrictMock<ozo::tests::nullable_mock>> : std::true_type {};
+struct is_nullable<StrictMock<tests::nullable_mock>> : std::true_type {};
 
 template <>
-struct is_nullable<ozo::tests::nullable_mock> : std::true_type {};
+struct is_nullable<tests::nullable_mock> : std::true_type {};
 
 } // namespace ozo
 
@@ -160,8 +160,8 @@ struct builtin_type { std::int64_t v = 0; };
 
 } // namespace ozo::tests
 
-OZO_PG_DEFINE_CUSTOM_TYPE(ozo::tests::some_type, "some_type", dynamic_size)
-OZO_PG_DEFINE_TYPE(ozo::tests::builtin_type, "builtin_type", 5, bytes<8>)
+OZO_PG_DEFINE_CUSTOM_TYPE(some_type, "some_type", dynamic_size)
+OZO_PG_DEFINE_TYPE(builtin_type, "builtin_type", 5, bytes<8>)
 
 BOOST_FUSION_DEFINE_STRUCT(
     (ozo)(tests), fusion_adapted,
@@ -172,40 +172,40 @@ namespace {
 
 using namespace ozo::tests;
 
-auto oid_map = ozo::register_types<ozo::tests::some_type>();
+auto oid_map = ozo::register_types<some_type>();
 
 TEST(type_name, should_return_type_name_object) {
     using namespace std::string_literals;
-    EXPECT_EQ(ozo::type_name(ozo::tests::some_type{}), "some_type"s);
+    EXPECT_EQ(ozo::type_name(some_type{}), "some_type"s);
 }
 
 TEST(size_of, should_return_size_from_traits_for_static_size_type) {
-    EXPECT_EQ(ozo::size_of(ozo::tests::builtin_type{}), 8u);
+    EXPECT_EQ(ozo::size_of(builtin_type{}), 8u);
 }
 
 TEST(size_of, should_return_size_from_method_size_for_dynamic_size_objects) {
-    EXPECT_EQ(ozo::size_of(ozo::tests::some_type{}), 1000u);
+    EXPECT_EQ(ozo::size_of(some_type{}), 1000u);
 }
 
 TEST(type_oid, should_return_oid_from_traits_for_buildin_type) {
-    EXPECT_EQ(ozo::type_oid(oid_map, ozo::tests::builtin_type{}), 5u);
+    EXPECT_EQ(ozo::type_oid(oid_map, builtin_type{}), 5u);
 }
 
 TEST(type_oid, should_return_oid_from_oid_map_for_custom_type) {
-    const auto val = ozo::tests::some_type{};
-    ozo::set_type_oid<ozo::tests::some_type>(oid_map, 333);
+    const auto val = some_type{};
+    ozo::set_type_oid<some_type>(oid_map, 333);
     EXPECT_EQ(ozo::type_oid(oid_map, val), 333u);
 }
 
 TEST(accepts_oid, should_return_true_for_type_with_oid_in_map_and_same_oid_argument) {
-    const auto val = ozo::tests::some_type{};
-    ozo::set_type_oid<ozo::tests::some_type>(oid_map, 222);
+    const auto val = some_type{};
+    ozo::set_type_oid<some_type>(oid_map, 222);
     EXPECT_TRUE(ozo::accepts_oid(oid_map, val, 222));
 }
 
 TEST(accepts_oid, should_return_false_for_type_with_oid_in_map_and_different_oid_argument) {
-    const auto val = ozo::tests::some_type{};
-    ozo::set_type_oid<ozo::tests::some_type>(oid_map, 222);
+    const auto val = some_type{};
+    ozo::set_type_oid<some_type>(oid_map, 222);
     EXPECT_TRUE(!ozo::accepts_oid(oid_map, val, 0));
 }
 
@@ -219,7 +219,7 @@ TEST(is_composite, should_return_true_for_std_tuple) {
 }
 
 TEST(is_composite, should_return_true_for_boost_fusion_adapted_struct) {
-    EXPECT_TRUE(ozo::is_composite<ozo::tests::fusion_adapted>::value);
+    EXPECT_TRUE(ozo::is_composite<fusion_adapted>::value);
 }
 
 } // namespace
@@ -238,7 +238,7 @@ struct hana_adapted {
 namespace {
 
 TEST(is_composite, should_return_true_for_boost_hana_adapted_struct) {
-    EXPECT_TRUE(ozo::is_composite<ozo::tests::hana_adapted>::value);
+    EXPECT_TRUE(ozo::is_composite<hana_adapted>::value);
 }
 
 } //namespace
