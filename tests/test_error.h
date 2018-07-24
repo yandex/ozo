@@ -4,9 +4,7 @@
 
 #include <sstream>
 
-namespace ozo {
-namespace tests {
-namespace error {
+namespace ozo::tests::error {
 
 enum code {
     ok, // to do no use error code 0
@@ -39,27 +37,19 @@ inline const error_category& get_category() {
     return instance;
 }
 
-} // namespace error
-} // namespace tests
-} // namespace ozo
+} // namespace ozo::tests::error
 
-namespace boost {
-namespace system {
+namespace boost::system {
 
 template <>
 struct is_error_code_enum<ozo::tests::error::code> : std::true_type {};
 
-} // namespace system
-} // namespace boost
+} // namespace boost::system
 
-namespace ozo {
-namespace tests {
-namespace error {
+namespace ozo::tests::error {
 
 inline auto make_error_code(const code e) {
     return boost::system::error_code(static_cast<int>(e), get_category());
 }
 
-} // namespace error
-} // namespace tests
-} // namespace ozo
+} // namespace ozo::tests::error
