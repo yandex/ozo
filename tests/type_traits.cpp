@@ -172,8 +172,6 @@ namespace {
 
 using namespace ozo::tests;
 
-auto oid_map = ozo::register_types<some_type>();
-
 TEST(type_name, should_return_type_name_object) {
     using namespace std::string_literals;
     EXPECT_EQ(ozo::type_name(some_type{}), "some_type"s);
@@ -188,22 +186,28 @@ TEST(size_of, should_return_size_from_method_size_for_dynamic_size_objects) {
 }
 
 TEST(type_oid, should_return_oid_from_traits_for_buildin_type) {
+    const auto oid_map = ozo::register_types<>();
     EXPECT_EQ(ozo::type_oid(oid_map, builtin_type{}), 5u);
 }
 
 TEST(type_oid, should_return_oid_from_oid_map_for_custom_type) {
+    auto oid_map = ozo::register_types<some_type>();
     const auto val = some_type{};
     ozo::set_type_oid<some_type>(oid_map, 333);
     EXPECT_EQ(ozo::type_oid(oid_map, val), 333u);
 }
 
-TEST(accepts_oid, should_return_true_for_type_with_oid_in_map_and_same_oid_argument) {
+struct accepts_oid : Test {
+    decltype(ozo::register_types<some_type>()) oid_map = ozo::register_types<some_type>();
+};
+
+TEST_F(accepts_oid, should_return_true_for_type_with_oid_in_map_and_same_oid_argument) {
     const auto val = some_type{};
     ozo::set_type_oid<some_type>(oid_map, 222);
     EXPECT_TRUE(ozo::accepts_oid(oid_map, val, 222));
 }
 
-TEST(accepts_oid, should_return_false_for_type_with_oid_in_map_and_different_oid_argument) {
+TEST_F(accepts_oid, should_return_false_for_type_with_oid_in_map_and_different_oid_argument) {
     const auto val = some_type{};
     ozo::set_type_oid<some_type>(oid_map, 222);
     EXPECT_TRUE(!ozo::accepts_oid(oid_map, val, 0));
