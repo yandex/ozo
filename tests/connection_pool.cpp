@@ -11,7 +11,7 @@ namespace {
 
 TEST(make_connection_pool, sould_not_throw) {
     boost::asio::io_context io;
-    const ozo::connection_info<> conn_info(io, "conn info string");
+    ozo::connection_info<> conn_info("conn info string");
     const ozo::connection_pool_config config;
     EXPECT_NO_THROW(ozo::make_connection_pool(conn_info, config));
 }
@@ -59,6 +59,7 @@ struct connection_provider {
     connection_provider_mock* mock_ = nullptr;
 
     using connection_type = std::shared_ptr<connection<>>;
+    using source_type = connection_provider;
 
     template <typename Handler>
     friend void async_get_connection(connection_provider self, Handler&& h) {

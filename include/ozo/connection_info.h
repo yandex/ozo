@@ -1,5 +1,6 @@
 #pragma once
 
+#include <ozo/connector.h>
 #include <ozo/connection.h>
 #include <ozo/impl/async_connect.h>
 
@@ -11,29 +12,27 @@ template <
     typename OidMap = empty_oid_map,
     typename Statistics = no_statistics>
 class connection_info {
-    io_context& io_;
-    std::string conn_str_;
-    Statistics statistics_;
-
-    using connection = impl::connection_impl<OidMap, Statistics>;
+    std::string conn_str;
+    Statistics statistics;
 
 public:
+    using connection = impl::connection_impl<OidMap, Statistics>;
     using connection_type = std::shared_ptr<connection>;
 
-    connection_info(io_context& io, std::string conn_str,
-            Statistics statistics = Statistics{})
-    : io_(io), conn_str_(std::move(conn_str)), statistics_(std::move(statistics)) {}
+    connection_info(std::string conn_str, Statistics statistics = Statistics{})
+            : conn_str(std::move(conn_str)), statistics(std::move(statistics)) {
+    }
 
     template <typename Handler>
-    void async_get_connection(Handler&& h) const {
-        impl::async_connect(conn_str_,
-            std::make_shared<connection>(io_, statistics_),
-            std::forward<Handler>(h));
+    void operator ()(io_context& io, Handler&& handler) const {
+        impl::async_connect(
+            conn_str,
+            std::make_shared<connection>(io, statistics),
+            std::forward<Handler>(handler)
+        );
     }
 };
 
-static_assert(
-    ConnectionProvider<connection_info<>>,
-    "connection_info does not fit ConnectionProvider concept");
+static_assert(ConnectionProvider<connector<connection_info<>>>, "is not a ConnectionProvider");
 
 } // namespace ozo
