@@ -12,8 +12,8 @@ namespace impl {
 */
 template <typename Handler, typename Connection>
 struct async_connect_op {
-    static_assert(Connectable<Connection>,
-        "Connection type does not meet Connectable requirements");
+    static_assert(ozo::Connection<Connection>,
+        "Connection type does not meet Connection requirements");
 
     Connection& conn_;
     Handler handler_;
@@ -114,7 +114,7 @@ inline auto bind_connection_handler(Handler&& base, Connection&& conn) {
 }
 
 template <typename T, typename Handler>
-inline Require<Connectable<T>> async_connect(std::string conninfo, T&& conn,
+inline Require<Connection<T>> async_connect(std::string conninfo, T&& conn,
         Handler&& handler) {
 
     decltype(auto) conn_ref = unwrap_connection(conn);

@@ -16,7 +16,7 @@ using no_statistics = decltype(hana::make_map());
 * Marker to tag a connection type.
 */
 template <typename, typename = std::void_t<>>
-struct is_connection : std::false_type {};
+struct is_pure_connection : std::false_type {};
 
 template <typename T, typename = std::void_t<>>
 struct get_connection_oid_map_impl {
@@ -107,7 +107,7 @@ constexpr auto get_connection_error_context(T&& conn)
 *     connection too. Currently std::string supported as a context object.
 */
 template <typename T>
-struct is_connection<T, std::void_t<
+struct is_pure_connection<T, std::void_t<
     decltype(get_connection_oid_map(std::declval<T&>())),
     decltype(get_connection_socket(std::declval<T&>())),
     decltype(get_connection_handle(std::declval<T&>())),
@@ -124,9 +124,6 @@ struct is_connection_wrapper : is_nullable<T> {};
 
 template <typename T>
 constexpr auto ConnectionWrapper = is_connection_wrapper<std::decay_t<T>>::value;
-
-template <typename T>
-constexpr auto Connection = is_connection<std::decay_t<T>>::value;
 
 /**
 * Connection type traits
@@ -164,29 +161,29 @@ inline decltype(auto) unwrap_connection(T&& conn,
 }
 
 template <typename, typename = std::void_t<>>
-struct is_connectable : std::false_type {};
+struct is_connection : std::false_type {};
 
 template <typename T>
-struct is_connectable <T, std::void_t<
+struct is_connection <T, std::void_t<
     decltype(unwrap_connection(std::declval<T&>()))
->>: std::integral_constant<bool, Connection<
-    decltype(unwrap_connection(std::declval<T&>()))
->> {};
+>>: is_pure_connection<
+    std::decay_t<decltype(unwrap_connection(std::declval<T&>()))>
+> {};
 
 template <typename T>
-constexpr auto Connectable = is_connectable<std::decay_t<T>>::value;
+constexpr auto Connection = is_connection<std::decay_t<T>>::value;
 
 /**
 * Function to get connection traits type from object
 */
-template <typename T, typename = Require<Connectable<T>>>
+template <typename T, typename = Require<Connection<T>>>
 constexpr connection_traits<std::decay_t<decltype(unwrap_connection(std::declval<T>()))>>
     get_connection_traits(T&&) noexcept {return {};}
 
 /**
 * Returns PostgreSQL connection handle of the connection.
 */
-template <typename T, typename = Require<Connectable<T>>>
+template <typename T, typename = Require<Connection<T>>>
 inline decltype(auto) get_handle(T&& conn) noexcept {
     return get_connection_handle(
         unwrap_connection(std::forward<T>(conn)));
@@ -195,7 +192,7 @@ inline decltype(auto) get_handle(T&& conn) noexcept {
 /**
 * Returns PostgreSQL native connection handle of the connection.
 */
-template <typename T, typename = Require<Connectable<T>>>
+template <typename T, typename = Require<Connection<T>>>
 inline decltype(auto) get_native_handle(T&& conn) noexcept {
     return get_handle(std::forward<T>(conn)).get();
 }
@@ -203,7 +200,7 @@ inline decltype(auto) get_native_handle(T&& conn) noexcept {
 /**
 * Returns socket stream object of the connection.
 */
-template <typename T, typename = Require<Connectable<T>>>
+template <typename T, typename = Require<Connection<T>>>
 inline decltype(auto) get_socket(T&& conn) noexcept {
     return get_connection_socket(unwrap_connection(std::forward<T>(conn)));
 }
@@ -211,7 +208,7 @@ inline decltype(auto) get_socket(T&& conn) noexcept {
 /**
 * Returns io_context for connection is bound to.
 */
-template <typename T, typename = Require<Connectable<T>>>
+template <typename T, typename = Require<Connection<T>>>
 inline decltype(auto) get_io_context(T& conn) noexcept {
     return get_socket(conn).get_io_service();
 }
@@ -219,7 +216,7 @@ inline decltype(auto) get_io_context(T& conn) noexcept {
 /**
 * Rebinds io_context for the connection
 */
-template <typename T, typename IoContext, typename = Require<Connectable<T>>>
+template <typename T, typename IoContext, typename = Require<Connection<T>>>
 inline error_code rebind_io_context(T& conn, IoContext& io) {
     using impl::rebind_connection_io_context;
     return rebind_connection_io_context(unwrap_connection(conn), io);
@@ -229,7 +226,7 @@ inline error_code rebind_io_context(T& conn, IoContext& io) {
 * Indicates if connection is bad
 */
 template <typename T>
-inline Require<Connectable<T> && !OperatorNot<T>,
+inline Require<Connection<T> && !OperatorNot<T>,
 bool> connection_bad(const T& conn) noexcept {
     using impl::connection_status_bad;
     return connection_status_bad(get_native_handle(conn));
@@ -249,7 +246,7 @@ bool> connection_bad(const T& conn) noexcept {
 /**
 * Indicates if connection is not bad
 */
-template <typename T, typename = Require<Connectable<T>>>
+template <typename T, typename = Require<Connection<T>>>
 inline bool connection_good(const T& conn) noexcept {
     return !connection_bad(conn);
 }
@@ -257,7 +254,7 @@ inline bool connection_good(const T& conn) noexcept {
 /**
 * Returns string view on native libpq connection error
 */
-template <typename T, typename = Require<Connectable<T>>>
+template <typename T, typename = Require<Connection<T>>>
 inline std::string_view error_message(T&& conn) {
     return impl::connection_error_message(get_native_handle(conn));
 }
@@ -266,7 +263,7 @@ inline std::string_view error_message(T&& conn) {
 * Getter of additional error context. for error occured while operating
 * with connection.
 */
-template <typename T, typename = Require<Connectable<T>>>
+template <typename T, typename = Require<Connection<T>>>
 inline const auto& get_error_context(const T& conn) {
     return get_connection_error_context(unwrap_connection(conn));
 }
@@ -275,7 +272,7 @@ inline const auto& get_error_context(const T& conn) {
 * Set the connection error context.
 */
 template <typename T, typename Ctx>
-inline Require<Connectable<T>> set_error_context(T& conn, Ctx&& ctx) {
+inline Require<Connection<T>> set_error_context(T& conn, Ctx&& ctx) {
     get_connection_error_context(unwrap_connection(conn)) = std::forward<Ctx>(ctx);
 }
 
@@ -283,7 +280,7 @@ inline Require<Connectable<T>> set_error_context(T& conn, Ctx&& ctx) {
 * Reset the connection error context.
 */
 template <typename T>
-inline Require<Connectable<T>> reset_error_context(T& conn) {
+inline Require<Connection<T>> reset_error_context(T& conn) {
     using ctx_type = std::decay_t<decltype(get_error_context(conn))>;
     set_error_context(conn, ctx_type{});
 }
@@ -291,7 +288,7 @@ inline Require<Connectable<T>> reset_error_context(T& conn) {
 /**
 * Returns type oids map of the connection
 */
-template <typename T, typename = Require<Connectable<T>>>
+template <typename T, typename = Require<Connection<T>>>
 inline decltype(auto) get_oid_map(T&& conn) noexcept {
     return get_connection_oid_map(unwrap_connection(std::forward<T>(conn)));
 }
@@ -299,26 +296,26 @@ inline decltype(auto) get_oid_map(T&& conn) noexcept {
 /**
 * Returns statistics object of the connection
 */
-template <typename T, typename = Require<Connectable<T>>>
+template <typename T, typename = Require<Connection<T>>>
 inline decltype(auto) get_statistics(T&& conn) noexcept {
     return get_connection_statistics(unwrap_connection(std::forward<T>(conn)));
 }
 
 
 template <typename ConnectionProvider, typename Enable = void>
-struct get_connectable_type {
-    using type = typename std::decay_t<ConnectionProvider>::connectable_type;
+struct get_connection_type {
+    using type = typename std::decay_t<ConnectionProvider>::connection_type;
 };
 
 template <typename ConnectionProvider>
-using connectable_type = typename get_connectable_type<ConnectionProvider>::type;
+using connection_type = typename get_connection_type<ConnectionProvider>::type;
 
 /**
 * Connection is Connection Provider itself, so we need to define connection
 * type it provides.
 */
 template <typename T>
-struct get_connectable_type<T, Require<Connectable<T>>> {
+struct get_connection_type<T, Require<Connection<T>>> {
     using type = std::decay_t<T>;
 };
 
@@ -326,7 +323,7 @@ template <typename, typename = std::void_t<>>
 struct is_connection_provider_functor : std::false_type {};
 template <typename T>
 struct is_connection_provider_functor<T, std::void_t<
-    decltype( std::declval<T>() (std::declval<void(error_code, connectable_type<T>)>()) )
+    decltype( std::declval<T>() (std::declval<void(error_code, connection_type<T>)>()) )
 >> : std::true_type {};
 
 template <typename T>
@@ -345,7 +342,7 @@ async_get_connection(T&& provider, Handler&& handler) {
 }
 
 template <typename T, typename Handler>
-inline Require<Connectable<T>>
+inline Require<Connection<T>>
 async_get_connection(T&& conn, Handler&& handler) {
     reset_error_context(conn);
     decltype(auto) io = get_io_context(conn);
@@ -359,7 +356,7 @@ template <typename T>
 struct is_connection_provider<T, std::void_t<decltype(
     async_get_connection(
         std::declval<T&>(),
-        std::declval<std::function<void(error_code, connectable_type<T>)>>()
+        std::declval<std::function<void(error_code, connection_type<T>)>>()
     )
 )>> : std::true_type {};
 
@@ -379,7 +376,7 @@ constexpr auto ConnectionProvider = is_connection_provider<std::decay_t<T>>::val
 */
 template <typename T, typename CompletionToken, typename = Require<ConnectionProvider<T>>>
 auto get_connection(T&& provider, CompletionToken&& token) {
-    using signature_t = void (error_code, connectable_type<T>);
+    using signature_t = void (error_code, connection_type<T>);
     async_completion<CompletionToken, signature_t> init(token);
 
     async_get_connection(std::forward<T>(provider), init.completion_handler);

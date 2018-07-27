@@ -21,7 +21,7 @@ public:
 
     using duration = yamail::resource_pool::time_traits::duration;
     using time_point = yamail::resource_pool::time_traits::time_point;
-    using connectable_type = impl::pooled_connection_ptr<P>;
+    using connection_type = impl::pooled_connection_ptr<P>;
 
     template <typename Handler>
     void get_connection(io_context& io, duration timeout, Handler&& handler) {
@@ -56,7 +56,7 @@ public:
     static_assert(ConnectionPool<Pool>, "Pool must be ConnectionPool");
 
     using duration = typename Pool::duration;
-    using connectable_type = typename Pool::connectable_type;
+    using connection_type = typename Pool::connection_type;
 
     connection_pool_provider(Pool& pool, io_context& io, duration timeout)
     : pool_(pool), io_(io), timeout_(timeout) {}

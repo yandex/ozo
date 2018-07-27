@@ -89,17 +89,17 @@ static_assert(ozo::Connection<connection<>>,
     "connection does not meet Connection requirements");
 static_assert(ozo::ConnectionWrapper<connection_ptr<>>,
     "connection_ptr does not meet ConnectionWrapper requirements");
-static_assert(ozo::Connectable<connection<>>,
-    "connection does not meet Connectable requirements");
-static_assert(ozo::Connectable<connection_ptr<>>,
-    "connection_ptr does not meet Connectable requirements");
+static_assert(ozo::Connection<connection<>>,
+    "connection does not meet Connection requirements");
+static_assert(ozo::Connection<connection_ptr<>>,
+    "connection_ptr does not meet Connection requirements");
 
 static_assert(!ozo::Connection<int>,
     "int meets Connection requirements unexpectedly");
 static_assert(!ozo::ConnectionWrapper<int>,
     "int meets ConnectionWrapper requirements unexpectedly");
-static_assert(!ozo::Connectable<int>,
-    "int meets Connectable requirements unexpectedly");
+static_assert(!ozo::Connection<int>,
+    "int meets Connection requirements unexpectedly");
 
 struct connection_good : Test {
     io_context_mock io;

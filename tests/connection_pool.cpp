@@ -48,8 +48,8 @@ struct connection_pool {
 
 struct connection_provider;
 struct connection_provider_mock {
-    using connectable_type = std::shared_ptr<connection<>>;
-    using handler_type = std::function<void(error_code, connectable_type)>;
+    using connection_type = std::shared_ptr<connection<>>;
+    using handler_type = std::function<void(error_code, connection_type)>;
     MOCK_METHOD1(async_get_connection, void(handler_type));
 
     virtual ~connection_provider_mock() = default;
@@ -58,7 +58,7 @@ struct connection_provider_mock {
 struct connection_provider {
     connection_provider_mock* mock_ = nullptr;
 
-    using connectable_type = std::shared_ptr<connection<>>;
+    using connection_type = std::shared_ptr<connection<>>;
 
     template <typename Handler>
     friend void async_get_connection(connection_provider self, Handler&& h) {

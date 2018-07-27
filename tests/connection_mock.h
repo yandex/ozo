@@ -140,10 +140,10 @@ static_assert(ozo::Connection<connection<>>,
     "connection does not meet Connection requirements");
 static_assert(ozo::ConnectionWrapper<connection_ptr<>>,
     "connection_ptr does not meet ConnectionWrapper requirements");
-static_assert(ozo::Connectable<connection<>>,
-    "connection does not meet Connectable requirements");
-static_assert(ozo::Connectable<connection_ptr<>>,
-    "connection_ptr does not meet Connectable requirements");
+static_assert(ozo::Connection<connection<>>,
+    "connection does not meet Connection requirements");
+static_assert(ozo::Connection<connection_ptr<>>,
+    "connection_ptr does not meet Connection requirements");
 
 template <typename OidMap = empty_oid_map>
 inline auto make_connection(connection_mock& mock, io_context& io,

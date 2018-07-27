@@ -18,7 +18,7 @@ class connection_info {
     using connection = impl::connection_impl<OidMap, Statistics>;
 
 public:
-    using connectable_type = std::shared_ptr<connection>;
+    using connection_type = std::shared_ptr<connection>;
 
     connection_info(io_context& io, std::string conn_str,
             Statistics statistics = Statistics{})
