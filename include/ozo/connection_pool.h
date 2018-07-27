@@ -65,7 +65,7 @@ public:
     : connection_pool_provider(pool, io, duration::max()) {}
 
     template <typename Handler>
-    void operator() (Handler&& h) {
+    void async_get_connection(Handler&& h) {
         pool_.get_connection(io_, timeout_, std::forward<Handler>(h));
     }
 

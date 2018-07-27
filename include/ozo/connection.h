@@ -302,7 +302,7 @@ inline decltype(auto) get_statistics(T&& conn) noexcept {
 }
 
 
-template <typename ConnectionProvider, typename Enable = void>
+template <typename ConnectionProvider, typename = std::void_t<>>
 struct get_connection_type {
     using type = typename std::decay_t<ConnectionProvider>::connection_type;
 };
@@ -310,48 +310,24 @@ struct get_connection_type {
 template <typename ConnectionProvider>
 using connection_type = typename get_connection_type<ConnectionProvider>::type;
 
-/**
-* Connection is Connection Provider itself, so we need to define connection
-* type it provides.
-*/
-template <typename T>
-struct get_connection_type<T, Require<Connection<T>>> {
-    using type = std::decay_t<T>;
+template <typename T, typename = std::void_t<>>
+struct async_get_connection_impl {
+    template <typename Provider, typename Handler>
+    static constexpr auto apply(Provider&& p, Handler&& h) ->
+        decltype(p.async_get_connection(std::forward<Handler>(h))) {
+        p.async_get_connection(std::forward<Handler>(h));
+    }
 };
 
-template <typename, typename = std::void_t<>>
-struct is_connection_provider_functor : std::false_type {};
-template <typename T>
-struct is_connection_provider_functor<T, std::void_t<
-    decltype( std::declval<T>() (std::declval<void(error_code, connection_type<T>)>()) )
->> : std::true_type {};
-
-template <typename T>
-constexpr auto ConnectionProviderFunctor = is_connection_provider_functor<std::decay_t<T>>::value;
-
-/**
-* Function to get connection from provider asynchronously via callback.
-* This is customization point which allows to work with different kinds
-* of connection providing. E.g. single connection, get connection from
-* pool, lazy connection, retriable connection and so on.
-*/
 template <typename T, typename Handler>
-inline Require<ConnectionProviderFunctor<T>>
-async_get_connection(T&& provider, Handler&& handler) {
-    provider(std::forward<Handler>(handler));
-}
-
-template <typename T, typename Handler>
-inline Require<Connection<T>>
-async_get_connection(T&& conn, Handler&& handler) {
-    reset_error_context(conn);
-    decltype(auto) io = get_io_context(conn);
-    io.dispatch(detail::bind(
-        std::forward<Handler>(handler), error_code{}, std::forward<T>(conn)));
+inline auto async_get_connection(T&& provider, Handler&& handler)
+         -> decltype(async_get_connection_impl<std::decay_t<T>>::apply(std::forward<T>(provider), std::forward<Handler>(handler))) {
+    return async_get_connection_impl<std::decay_t<T>>::apply(std::forward<T>(provider), std::forward<Handler>(handler));
 }
 
 template <typename, typename = std::void_t<>>
 struct is_connection_provider : std::false_type {};
+
 template <typename T>
 struct is_connection_provider<T, std::void_t<decltype(
     async_get_connection(
@@ -374,8 +350,10 @@ constexpr auto ConnectionProvider = is_connection_provider<std::decay_t<T>>::val
 *   completion token depent value like void for callback, connection for the
 *   yield_context, std::future<connection> for use_future, and so on.
 */
-template <typename T, typename CompletionToken, typename = Require<ConnectionProvider<T>>>
-auto get_connection(T&& provider, CompletionToken&& token) {
+template <typename T, typename CompletionToken>
+inline auto get_connection(T&& provider, CompletionToken&& token) {
+    static_assert(ConnectionProvider<T>, "T is not a ConnectionProvider concept");
+
     using signature_t = void (error_code, connection_type<T>);
     async_completion<CompletionToken, signature_t> init(token);
 
@@ -383,5 +361,25 @@ auto get_connection(T&& provider, CompletionToken&& token) {
 
     return init.result.get();
 }
+
+template <typename T>
+struct async_get_connection_impl<T, Require<Connection<T>>> {
+    template <typename Conn, typename Handler>
+    static constexpr void apply(Conn&& c, Handler&& h) {
+        reset_error_context(c);
+        decltype(auto) io = get_io_context(c);
+        io.dispatch(detail::bind(
+            std::forward<Handler>(h), error_code{}, std::forward<Conn>(c)));
+    }
+};
+
+/**
+* Connection is Connection Provider itself, so we need to define connection
+* type it provides.
+*/
+template <typename T>
+struct get_connection_type<T, Require<Connection<T>>> {
+    using type = std::decay_t<T>;
+};
 
 } // namespace ozo

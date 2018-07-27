@@ -25,9 +25,9 @@ public:
     : io_(io), conn_str_(std::move(conn_str)), statistics_(std::move(statistics)) {}
 
     template <typename Handler>
-    friend void async_get_connection(const connection_info& self, Handler&& h) {
-        impl::async_connect(self.conn_str_,
-            std::make_shared<connection>(self.io_, self.statistics_),
+    void async_get_connection(Handler&& h) const {
+        impl::async_connect(conn_str_,
+            std::make_shared<connection>(io_, statistics_),
             std::forward<Handler>(h));
     }
 };
