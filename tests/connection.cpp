@@ -240,4 +240,35 @@ TEST(rebind_connection_io_context, should_return_error_when_socket_assign_fails_
     EXPECT_EQ(ozo::impl::rebind_connection_io_context(conn, new_io), error_code(error::code::error));
 }
 
+struct fake_native_pq_handle {
+    std::string message;
+    friend const char* PQerrorMessage(const fake_native_pq_handle& self) {
+        return self.message.c_str();
+    }
+};
+
+TEST(connection_error_message, should_trim_trailing_soaces){
+    fake_native_pq_handle handle{"error message with trailing spaces   "};
+    EXPECT_EQ(std::string(ozo::impl::connection_error_message(handle)),
+        "error message with trailing spaces");
+}
+
+TEST(connection_error_message, should_preserve_string_without_trailing_spaces){
+    fake_native_pq_handle handle{"error message without trailing spaces"};
+    EXPECT_EQ(std::string(ozo::impl::connection_error_message(handle)),
+        "error message without trailing spaces");
+}
+
+TEST(connection_error_message, should_preserve_empty_string){
+    fake_native_pq_handle handle{""};
+    EXPECT_EQ(std::string(ozo::impl::connection_error_message(handle)),
+        "");
+}
+
+TEST(connection_error_message, should_return_empty_string_for_string_of_spaces){
+    fake_native_pq_handle handle{"    "};
+    EXPECT_EQ(std::string(ozo::impl::connection_error_message(handle)),
+        "");
+}
+
 } //namespace
