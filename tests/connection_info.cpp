@@ -11,6 +11,7 @@ TEST(connection_info, sould_return_error_and_bad_connect_for_invalid_connection_
 
     ozo::get_connection(conn_info, [](ozo::error_code ec, auto conn){
         EXPECT_TRUE(ec);
+        EXPECT_TRUE(!ozo::error_message(conn).empty());
         EXPECT_TRUE(ozo::connection_bad(conn));
     });
 
