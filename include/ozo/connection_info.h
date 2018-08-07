@@ -15,19 +15,19 @@ class connection_info {
     std::string conn_str_;
     Statistics statistics_;
 
-    using connection = impl::connection<OidMap, Statistics>;
+    using connection = impl::connection_impl<OidMap, Statistics>;
 
 public:
-    using connectable_type = std::shared_ptr<connection>;
+    using connection_type = std::shared_ptr<connection>;
 
     connection_info(io_context& io, std::string conn_str,
             Statistics statistics = Statistics{})
     : io_(io), conn_str_(std::move(conn_str)), statistics_(std::move(statistics)) {}
 
     template <typename Handler>
-    friend void async_get_connection(const connection_info& self, Handler&& h) {
-        impl::async_connect(self.conn_str_,
-            std::make_shared<connection>(self.io_, self.statistics_),
+    void async_get_connection(Handler&& h) const {
+        impl::async_connect(conn_str_,
+            std::make_shared<connection>(io_, statistics_),
             std::forward<Handler>(h));
     }
 };

@@ -80,30 +80,6 @@ struct connection {
 
     explicit connection(io_context_mock& io) : socket_(io) {}
 
-    friend OidMap& get_connection_oid_map(connection& conn) {
-        return conn.oid_map_;
-    }
-    friend const OidMap& get_connection_oid_map(const connection& conn) {
-        return conn.oid_map_;
-    }
-    friend socket_mock& get_connection_socket(connection& conn) {
-        return conn.socket_;
-    }
-    friend const socket_mock& get_connection_socket(const connection& conn) {
-        return conn.socket_;
-    }
-    friend handle_type& get_connection_handle(connection& conn) {
-        return conn.handle_;
-    }
-    friend const handle_type& get_connection_handle(const connection& conn) {
-        return conn.handle_;
-    }
-    friend std::string& get_connection_error_context(connection& conn) {
-        return conn.error_context_;
-    }
-    friend const std::string& get_connection_error_context(const connection& conn) {
-        return conn.error_context_;
-    }
 };
 
 template <typename ...Ts>
@@ -113,17 +89,17 @@ static_assert(ozo::Connection<connection<>>,
     "connection does not meet Connection requirements");
 static_assert(ozo::ConnectionWrapper<connection_ptr<>>,
     "connection_ptr does not meet ConnectionWrapper requirements");
-static_assert(ozo::Connectable<connection<>>,
-    "connection does not meet Connectable requirements");
-static_assert(ozo::Connectable<connection_ptr<>>,
-    "connection_ptr does not meet Connectable requirements");
+static_assert(ozo::Connection<connection<>>,
+    "connection does not meet Connection requirements");
+static_assert(ozo::Connection<connection_ptr<>>,
+    "connection_ptr does not meet Connection requirements");
 
 static_assert(!ozo::Connection<int>,
     "int meets Connection requirements unexpectedly");
 static_assert(!ozo::ConnectionWrapper<int>,
     "int meets ConnectionWrapper requirements unexpectedly");
-static_assert(!ozo::Connectable<int>,
-    "int meets Connectable requirements unexpectedly");
+static_assert(!ozo::Connection<int>,
+    "int meets Connection requirements unexpectedly");
 
 struct connection_good : Test {
     io_context_mock io;
@@ -262,6 +238,37 @@ TEST(rebind_connection_io_context, should_return_error_when_socket_assign_fails_
         .WillOnce(SetArgReferee<0>(error_code(error::code::error)));
 
     EXPECT_EQ(ozo::impl::rebind_connection_io_context(conn, new_io), error_code(error::code::error));
+}
+
+struct fake_native_pq_handle {
+    std::string message;
+    friend const char* PQerrorMessage(const fake_native_pq_handle& self) {
+        return self.message.c_str();
+    }
+};
+
+TEST(connection_error_message, should_trim_trailing_soaces){
+    fake_native_pq_handle handle{"error message with trailing spaces   "};
+    EXPECT_EQ(std::string(ozo::impl::connection_error_message(handle)),
+        "error message with trailing spaces");
+}
+
+TEST(connection_error_message, should_preserve_string_without_trailing_spaces){
+    fake_native_pq_handle handle{"error message without trailing spaces"};
+    EXPECT_EQ(std::string(ozo::impl::connection_error_message(handle)),
+        "error message without trailing spaces");
+}
+
+TEST(connection_error_message, should_preserve_empty_string){
+    fake_native_pq_handle handle{""};
+    EXPECT_EQ(std::string(ozo::impl::connection_error_message(handle)),
+        "");
+}
+
+TEST(connection_error_message, should_return_empty_string_for_string_of_spaces){
+    fake_native_pq_handle handle{"    "};
+    EXPECT_EQ(std::string(ozo::impl::connection_error_message(handle)),
+        "");
 }
 
 } //namespace

@@ -9,7 +9,7 @@ namespace ozo::impl {
 template <typename Provider>
 struct get_connection_pool {
     using type = yamail::resource_pool::async::pool<
-        std::decay_t<decltype(unwrap_connection(std::declval<connectable_type<Provider>&>()))>
+        std::decay_t<decltype(unwrap_connection(std::declval<connection_type<Provider>&>()))>
     >;
 };
 
@@ -62,7 +62,7 @@ struct pooled_connection_wrapper {
 
         template <typename Conn>
         void operator () (error_code ec, Conn&& conn) {
-            static_assert(std::is_same_v<connectable_type<Provider>, std::decay_t<Conn>>,
+            static_assert(std::is_same_v<connection_type<Provider>, std::decay_t<Conn>>,
                 "Conn must connectiable type of Provider");
             if (!ec) {
                 conn_->reset(std::move(unwrap_connection(conn)));
@@ -109,10 +109,10 @@ auto wrap_pooled_connection_handler(IoContext& io, P&& provider, Handler&& handl
     };
 }
 
-static_assert(Connectable<pooled_connection_ptr<connection<empty_oid_map, no_statistics>>>,
-    "pooled_connection_ptr is not a Connectable concept");
+static_assert(Connection<pooled_connection_ptr<connection_impl<empty_oid_map, no_statistics>>>,
+    "pooled_connection_ptr is not a Connection concept");
 
-static_assert(ConnectionProvider<pooled_connection_ptr<connection<empty_oid_map, no_statistics>>>,
+static_assert(ConnectionProvider<pooled_connection_ptr<connection_impl<empty_oid_map, no_statistics>>>,
     "pooled_connection_ptr is not a ConnectionProvider concept");
 
 } // namespace ozo::impl
