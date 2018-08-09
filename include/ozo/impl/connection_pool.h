@@ -6,19 +6,19 @@
 
 namespace ozo::impl {
 
-template <typename Provider>
+template <typename Source>
 struct get_connection_pool {
     using type = yamail::resource_pool::async::pool<
-        std::decay_t<decltype(unwrap_connection(std::declval<connection_type<Provider>&>()))>
+        std::decay_t<decltype(unwrap_connection(std::declval<connection_type<Source>&>()))>
     >;
 };
 
-template <typename Provider>
-using connection_pool = typename get_connection_pool<Provider>::type;
+template <typename Source>
+using connection_pool = typename get_connection_pool<Source>::type;
 
-template <typename Provider>
+template <typename Source>
 struct pooled_connection {
-    using handle_type = typename connection_pool<Provider>::handle;
+    using handle_type = typename connection_pool<Source>::handle;
     using underlying_type = typename handle_type::value_type;
 
     handle_type handle_;
@@ -44,8 +44,8 @@ struct pooled_connection {
         return unwrap_connection(*(conn.handle_));
     }
 };
-template <typename Provider>
-using pooled_connection_ptr = std::shared_ptr<pooled_connection<Provider>>;
+template <typename Source>
+using pooled_connection_ptr = std::shared_ptr<pooled_connection<Source>>;
 
 template <typename IoContext, typename Provider, typename Handler>
 struct pooled_connection_wrapper {
@@ -53,8 +53,8 @@ struct pooled_connection_wrapper {
     Provider provider_;
     Handler handler_;
 
-    using connection = pooled_connection<Provider>;
-    using connection_ptr = pooled_connection_ptr<Provider>;
+    using connection = pooled_connection<typename Provider::source_type>;
+    using connection_ptr = pooled_connection_ptr<typename Provider::source_type>;
 
     struct wrapper {
         Handler handler_;

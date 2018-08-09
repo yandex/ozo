@@ -319,6 +319,17 @@ struct async_get_connection_impl {
     }
 };
 
+template <typename, typename = std::void_t<>>
+struct is_connection_source : std::false_type {};
+
+template <typename T>
+struct is_connection_source<T, std::void_t<
+    connection_type<T>
+>> : std::true_type {};
+
+template <typename T>
+constexpr auto ConnectionSource = is_connection_source<std::decay_t<T>>::value;
+
 template <typename T, typename Handler>
 inline auto async_get_connection(T&& provider, Handler&& handler)
          -> decltype(async_get_connection_impl<std::decay_t<T>>::apply(std::forward<T>(provider), std::forward<Handler>(handler))) {
