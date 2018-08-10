@@ -5,7 +5,7 @@
 
 namespace {
 
-TEST(connection_info, sould_return_error_and_bad_connect_for_invalid_connection_info) {
+TEST(connection_info, should_return_error_and_bad_connect_for_invalid_connection_info) {
     ozo::io_context io;
     ozo::connection_info<> conn_info("invalid connection info");
 
