@@ -9,7 +9,7 @@
 
 namespace {
 
-TEST(make_connection_pool, sould_not_throw) {
+TEST(make_connection_pool, should_not_throw) {
     boost::asio::io_context io;
     ozo::connection_info<> conn_info("conn info string");
     const ozo::connection_pool_config config;

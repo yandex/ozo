@@ -44,14 +44,14 @@ struct async_get_result_op : Test {
     fixture m;
 };
 
-TEST_F(async_get_result_op, perform_sould_post_continuation_within_strand) {
+TEST_F(async_get_result_op, perform_should_post_continuation_within_strand) {
     EXPECT_CALL(m.executor, post(_)).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(m.strand, dispatch(_)).WillOnce(Return());
 
     ozo::impl::make_async_get_result_op(m.ctx, [](auto, auto){}).perform();
 }
 
-TEST_F(async_get_result_op, perform_sould_preserve_query_state) {
+TEST_F(async_get_result_op, perform_should_preserve_query_state) {
     EXPECT_CALL(m.executor, post(_)).WillOnce(Return());
 
     ozo::impl::make_async_get_result_op(m.ctx, [](auto, auto){}).perform();
