@@ -150,6 +150,38 @@ struct stream_descriptor {
     io_context& get_io_service() { return *io_;}
 };
 
+struct steady_timer_mock {
+    virtual ~steady_timer_mock() = default;
+    virtual std::size_t expires_after(const asio::steady_timer::duration& expiry_time) = 0;
+    virtual void async_wait(std::function<void(error_code)> handler) = 0;
+    virtual std::size_t cancel() = 0;
+};
+
+struct steady_timer_gmock : steady_timer_mock {
+    MOCK_METHOD1(expires_after, std::size_t (const asio::steady_timer::duration&));
+    MOCK_METHOD1(async_wait, void (std::function<void(error_code)>));
+    MOCK_METHOD0(cancel, std::size_t ());
+};
+
+struct steady_timer {
+    steady_timer_mock& impl;
+
+    std::size_t expires_after(const asio::steady_timer::duration& expiry_time) {
+        return impl.expires_after(expiry_time);
+    }
+
+    template <typename Handler>
+    void async_wait(Handler&& handler) {
+        return impl.async_wait([h = std::forward<Handler>(handler)] (auto e) {
+            asio_post(ozo::detail::bind(std::move(h), std::move(e)));
+        });
+    }
+
+    std::size_t cancel() {
+        return impl.cancel();
+    }
+};
+
 } // namespace tests
 
 template <>
