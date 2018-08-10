@@ -366,7 +366,6 @@ public:
                 return "result_status_bad_response - the server's response was not understood";
             case oid_request_failed:
                 return "error during request oids from a database";
-
         }
         return "no message for value: " + std::to_string(value);
     }

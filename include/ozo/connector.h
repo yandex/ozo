@@ -62,4 +62,13 @@ auto make_connector(Base& base, io_context& io, Args&& ... args) {
     );
 }
 
+template <class Base, class ... Args>
+auto make_connector(const Base& base, io_context& io, Args&& ... args) {
+    return connector<const std::decay_t<Base>, std::decay_t<Args> ...>(
+        base,
+        io,
+        std::make_tuple(std::forward<Args>(args) ...)
+    );
+}
+
 } // namespace ozo

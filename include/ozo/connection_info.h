@@ -24,9 +24,11 @@ public:
     }
 
     template <typename Handler>
-    void operator ()(io_context& io, Handler&& handler) const {
+    void operator ()(io_context& io, Handler&& handler,
+            time_traits::duration timeout = time_traits::duration::max()) const {
         impl::async_connect(
             conn_str,
+            timeout,
             std::make_shared<connection>(io, statistics),
             std::forward<Handler>(handler)
         );

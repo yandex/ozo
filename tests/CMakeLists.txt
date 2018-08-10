@@ -81,6 +81,7 @@ if(OZO_BUILD_PG_TESTS)
         ${SOURCES}
         result_integration.cpp
         request_integration.cpp
+        get_connection_integration.cpp
     )
     add_definitions(-DOZO_PG_TEST_CONNINFO="${OZO_PG_TEST_CONNINFO}")
 endif()
