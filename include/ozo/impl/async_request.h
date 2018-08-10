@@ -325,9 +325,9 @@ template <typename T>
 struct async_request_out_handler {
     T out;
 
-    template <typename Conn>
-    void operator() (native_result_handle&& h, Conn& conn) {
-        ozo::result res(std::move(h));
+    template <typename Handle, typename Conn>
+    void operator() (Handle&& h, Conn& conn) {
+        auto res = ozo::make_result(std::forward<Handle>(h));
         ozo::recv_result(res, get_oid_map(conn), out);
     }
 };

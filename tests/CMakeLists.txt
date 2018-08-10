@@ -75,6 +75,9 @@ set(SOURCES
     detail/base36.cpp
     impl/request_oid_map.cpp
     impl/request_oid_map_handler.cpp
+    impl/async_start_transaction.cpp
+    impl/async_end_transaction.cpp
+    impl/transaction.cpp
     main.cpp
 )
 
@@ -85,6 +88,7 @@ if(OZO_BUILD_PG_TESTS)
         request_integration.cpp
         get_connection_integration.cpp
         execute_integration.cpp
+        transaction_integration.cpp
     )
     add_definitions(-DOZO_PG_TEST_CONNINFO="${OZO_PG_TEST_CONNINFO}")
 endif()
