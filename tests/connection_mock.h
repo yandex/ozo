@@ -3,6 +3,7 @@
 #include "test_asio.h"
 
 #include <ozo/impl/io.h>
+#include <ozo/impl/transaction.h>
 
 namespace ozo::tests {
 
@@ -38,6 +39,7 @@ struct connection_mock {
     virtual ozo::error_code start_connection(const std::string&) = 0;
     virtual ozo::error_code assign_socket() = 0;
     virtual void async_request() = 0;
+    virtual void async_execute() = 0;
     virtual ozo::error_code rebind_io_context() = 0;
 
     virtual ~connection_mock() = default;
@@ -55,6 +57,7 @@ struct connection_gmock : connection_mock {
     MOCK_METHOD1(start_connection, ozo::error_code(const std::string&));
     MOCK_METHOD0(assign_socket, ozo::error_code());
     MOCK_METHOD0(async_request, void());
+    MOCK_METHOD0(async_execute, void());
     MOCK_METHOD0(rebind_io_context, ozo::error_code());
 
 };
@@ -122,8 +125,6 @@ struct connection {
         return c.mock_->get_result();
     }
 
-
-
     friend int pq_connect_poll(connection& c) {
         return c.mock_->connect_poll();
     }
@@ -140,6 +141,18 @@ struct connection {
     template <typename Q, typename Out, typename Handler>
     friend void async_request(std::shared_ptr<connection>&& provider, Q&&, Out&&, Handler&&) {
         provider->mock_->async_request();
+    }
+
+    template <typename Q, typename Handler>
+    friend void async_execute(std::shared_ptr<connection>& provider, Q&&, Handler&&) {
+        provider->mock_->async_execute();
+    }
+
+    template <typename Q, typename Handler>
+    friend void async_execute(ozo::impl::transaction<std::shared_ptr<connection>>&& transaction, Q&&, Handler&&) {
+        std::shared_ptr<connection> connection;
+        transaction.take_connection(connection);
+        connection->mock_->async_execute();
     }
 
     template <typename IoContext>
