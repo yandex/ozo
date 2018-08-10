@@ -1,5 +1,6 @@
 #pragma once
 
+#include <ozo/detail/do_nothing.h>
 #include <ozo/impl/async_request.h>
 
 namespace ozo {
@@ -12,7 +13,7 @@ void async_execute(P&& provider, Q&& query, Handler&& handler) {
     async_get_connection(std::forward<P>(provider),
         impl::make_async_request_op(
             std::forward<Q>(query),
-            [] (auto, auto) {},
+            detail::do_nothing {},
             std::forward<Handler>(handler)
         )
     );
