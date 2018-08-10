@@ -1,4 +1,3 @@
-#include <ozo/request.h>
 #include <ozo/connection_info.h>
 #include <ozo/connection_pool.h>
 #include <ozo/query_builder.h>
