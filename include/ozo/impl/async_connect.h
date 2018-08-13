@@ -15,12 +15,12 @@ struct async_connect_op {
     static_assert(ozo::Connection<Connection>,
         "Connection type does not meet Connection requirements");
 
-    Connection& conn_;
+    Connection conn_;
     Handler handler_;
 
     void done(error_code ec = error_code{}) {
         get_io_context(conn_)
-            .post(detail::bind(std::move(handler_), std::move(ec)));
+            .post(detail::bind(std::move(handler_), std::move(ec), std::move(conn_)));
     }
 
     void perform(const std::string& conninfo) {
@@ -71,10 +71,10 @@ struct async_connect_op {
 };
 
 template <typename Connection, typename Handler>
-inline auto make_async_connect_op(Connection& conn,
+inline auto make_async_connect_op(Connection&& conn,
         Handler&& handler) {
     return async_connect_op<std::decay_t<Handler>, std::decay_t<Connection>> {
-        conn, std::forward<Handler>(handler)
+        std::forward<Connection>(conn), std::forward<Handler>(handler)
     };
 }
 
@@ -84,42 +84,39 @@ inline void request_oid_map(Connection&& conn, Handler&& handler) {
         .perform(std::forward<Connection>(conn));
 }
 
-template <typename Handler, typename Connection>
-struct connection_binder {
+template <typename Handler>
+struct request_oid_map_handler {
     Handler handler_;
-    Connection conn_;
 
-    void operator() (error_code ec) {
+    template <typename Connection>
+    void operator() (error_code ec, Connection&& conn) {
         using namespace hana::literals;
-        if (ec || empty(get_oid_map(conn_))) {
-            handler_(std::move(ec), std::move(conn_));
+        if (ec || empty(get_oid_map(conn))) {
+            handler_(std::move(ec), std::forward<Connection>(conn));
         } else {
-            request_oid_map(std::move(conn_), std::move(handler_));
+            request_oid_map(std::forward<Connection>(conn), std::move(handler_));
         }
     }
 
     template <typename Func>
-    friend void asio_handler_invoke(Func&& f, connection_binder* ctx) {
+    friend void asio_handler_invoke(Func&& f, request_oid_map_handler* ctx) {
         using boost::asio::asio_handler_invoke;
         asio_handler_invoke(std::forward<Func>(f),
             std::addressof(ctx->handler_));
     }
 };
 
-template <typename Handler, typename Connection>
-inline auto bind_connection_handler(Handler&& base, Connection&& conn) {
-    return connection_binder<std::decay_t<Handler>, std::decay_t<Connection>> {
-        std::forward<Handler>(base), std::forward<Connection>(conn)
-    };
+template <typename Handler>
+inline auto make_request_oid_map_handler(Handler&& base) {
+    return request_oid_map_handler<std::decay_t<Handler>> {std::forward<Handler>(base)};
 }
 
 template <typename T, typename Handler>
 inline Require<Connection<T>> async_connect(std::string conninfo, T&& conn,
         Handler&& handler) {
-
-    decltype(auto) conn_ref = unwrap_connection(conn);
-    make_async_connect_op(conn_ref,
-        bind_connection_handler(std::forward<Handler>(handler), std::forward<T>(conn))
+    make_async_connect_op(
+        std::forward<T>(conn),
+        make_request_oid_map_handler(std::forward<Handler>(handler))
     ).perform(conninfo);
 }
 

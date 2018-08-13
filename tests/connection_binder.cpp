@@ -41,44 +41,46 @@ struct connection_wrapper {
     }
 };
 
-struct connection_binder : Test {
+struct request_oid_map_handler : Test {
     StrictMock<connection_mock> connection{};
+
     template <typename OidMap>
     auto make_connection(OidMap oid_map) {
         return connection_wrapper<OidMap>{connection, oid_map};
     }
 
     template <typename Conn>
-    StrictMock<callback_gmock<std::decay_t<Conn>>>
-    make_callback(Conn&&) { return {}; }
+    auto make_callback(Conn&&) {
+        return StrictMock<callback_gmock<std::decay_t<Conn>>> {};
+    }
 };
 
-TEST_F(connection_binder, should_request_for_oid_when_oid_map_is_not_empty) {
+TEST_F(request_oid_map_handler, should_request_for_oid_when_oid_map_is_not_empty) {
     auto conn = make_connection(ozo::register_types<custom_type>());
     auto callback = make_callback(conn);
 
     EXPECT_CALL(connection, request_oid_map()).WillOnce(Return());
 
-    ozo::impl::bind_connection_handler(wrap(callback), std::move(conn))(error_code{});
+    ozo::impl::make_request_oid_map_handler(wrap(callback))(error_code{}, std::move(conn));
 }
 
-TEST_F(connection_binder, should_not_request_for_oid_when_oid_map_is_not_empty_but_error_occured) {
+TEST_F(request_oid_map_handler, should_not_request_for_oid_when_oid_map_is_not_empty_but_error_occured) {
     auto conn = make_connection(ozo::register_types<custom_type>());
     auto callback = make_callback(conn);
 
     EXPECT_CALL(callback, call(error_code{error::error}, _))
         .WillOnce(Return());
 
-    ozo::impl::bind_connection_handler(wrap(callback), std::move(conn))(error::error);
+    ozo::impl::make_request_oid_map_handler(wrap(callback))(error::error, std::move(conn));
 }
 
-TEST_F(connection_binder, should_not_request_for_oid_when_oid_map_ist_empty) {
+TEST_F(request_oid_map_handler, should_not_request_for_oid_when_oid_map_ist_empty) {
     auto conn = make_connection(ozo::register_types<>());
     auto callback = make_callback(conn);
 
     EXPECT_CALL(callback, call(error_code{}, _)).WillOnce(Return());
 
-    ozo::impl::bind_connection_handler(wrap(callback), std::move(conn))(error_code{});
+    ozo::impl::make_request_oid_map_handler(wrap(callback))(error_code{}, std::move(conn));
 }
 
 } // namespace
