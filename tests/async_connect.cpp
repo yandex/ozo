@@ -35,9 +35,9 @@ auto make_fixture(OidMap) { return fixture_impl<OidMap>{}; }
 
 using ozo::error_code;
 
-struct async_connect : Test {};
+struct async_connect_op : Test {};
 
-TEST_F(async_connect, should_start_connection_assign_socket_and_wait_for_compile) {
+TEST_F(async_connect_op, should_start_connection_assign_socket_and_wait_for_compile) {
     fixture f;
     *(f.conn->handle_) = native_handle::good;
 
@@ -47,7 +47,7 @@ TEST_F(async_connect, should_start_connection_assign_socket_and_wait_for_compile
     ozo::impl::make_async_connect_op(f.conn, wrap(f.callback)).perform("conninfo");
 }
 
-TEST_F(async_connect, should_call_handler_with_pq_connection_start_failed_on_error_in_start_connection) {
+TEST_F(async_connect_op, should_call_handler_with_pq_connection_start_failed_on_error_in_start_connection) {
     fixture f;
     *(f.conn->handle_) = native_handle::good;
 
@@ -62,7 +62,7 @@ TEST_F(async_connect, should_call_handler_with_pq_connection_start_failed_on_err
     ozo::impl::make_async_connect_op(f.conn, wrap(f.callback)).perform("conninfo");
 }
 
-TEST_F(async_connect, should_call_handler_with_pq_connection_status_bad_if_connection_status_is_bad) {
+TEST_F(async_connect_op, should_call_handler_with_pq_connection_status_bad_if_connection_status_is_bad) {
     fixture f;
     *(f.conn->handle_) = native_handle::bad;
 
@@ -76,7 +76,7 @@ TEST_F(async_connect, should_call_handler_with_pq_connection_status_bad_if_conne
     ozo::impl::make_async_connect_op(f.conn, wrap(f.callback)).perform("conninfo");
 }
 
-TEST_F(async_connect, should_call_handler_with_error_if_assign_socket_returns_error) {
+TEST_F(async_connect_op, should_call_handler_with_error_if_assign_socket_returns_error) {
     fixture f;
     *(f.conn->handle_) = native_handle::good;
 
@@ -90,7 +90,7 @@ TEST_F(async_connect, should_call_handler_with_error_if_assign_socket_returns_er
     ozo::impl::make_async_connect_op(f.conn, wrap(f.callback)).perform("conninfo");
 }
 
-TEST_F(async_connect, should_wait_for_write_complete_if_connect_poll_returns_PGRES_POLLING_WRITING) {
+TEST_F(async_connect_op, should_wait_for_write_complete_if_connect_poll_returns_PGRES_POLLING_WRITING) {
     fixture f;
     *(f.conn->handle_) = native_handle::good;
 
@@ -107,7 +107,7 @@ TEST_F(async_connect, should_wait_for_write_complete_if_connect_poll_returns_PGR
     ozo::impl::make_async_connect_op(f.conn, wrap(f.callback)).perform("conninfo");
 }
 
-TEST_F(async_connect, should_wait_for_read_complete_if_connect_poll_returns_PGRES_POLLING_READING) {
+TEST_F(async_connect_op, should_wait_for_read_complete_if_connect_poll_returns_PGRES_POLLING_READING) {
     fixture f;
     *(f.conn->handle_) = native_handle::good;
 
@@ -124,7 +124,7 @@ TEST_F(async_connect, should_wait_for_read_complete_if_connect_poll_returns_PGRE
     ozo::impl::make_async_connect_op(f.conn, wrap(f.callback)).perform("conninfo");
 }
 
-TEST_F(async_connect, should_call_handler_with_no_error_if_connect_poll_returns_PGRES_POLLING_OK) {
+TEST_F(async_connect_op, should_call_handler_with_no_error_if_connect_poll_returns_PGRES_POLLING_OK) {
     fixture f;
     *(f.conn->handle_) = native_handle::good;
 
@@ -143,7 +143,7 @@ TEST_F(async_connect, should_call_handler_with_no_error_if_connect_poll_returns_
     ozo::impl::make_async_connect_op(f.conn, wrap(f.callback)).perform("conninfo");
 }
 
-TEST_F(async_connect, should_call_handler_with_pq_connect_poll_failed_if_connect_poll_returns_PGRES_POLLING_FAILED) {
+TEST_F(async_connect_op, should_call_handler_with_pq_connect_poll_failed_if_connect_poll_returns_PGRES_POLLING_FAILED) {
     fixture f;
     *(f.conn->handle_) = native_handle::good;
 
@@ -163,7 +163,7 @@ TEST_F(async_connect, should_call_handler_with_pq_connect_poll_failed_if_connect
     ozo::impl::make_async_connect_op(f.conn, wrap(f.callback)).perform("conninfo");
 }
 
-TEST_F(async_connect, should_call_handler_with_pq_connect_poll_failed_if_connect_poll_returns_PGRES_POLLING_ACTIVE) {
+TEST_F(async_connect_op, should_call_handler_with_pq_connect_poll_failed_if_connect_poll_returns_PGRES_POLLING_ACTIVE) {
     fixture f;
     *(f.conn->handle_) = native_handle::good;
 
@@ -183,7 +183,7 @@ TEST_F(async_connect, should_call_handler_with_pq_connect_poll_failed_if_connect
     ozo::impl::make_async_connect_op(f.conn, wrap(f.callback)).perform("conninfo");
 }
 
-TEST_F(async_connect, should_call_handler_with_the_error_if_polling_operation_invokes_callback_with_it) {
+TEST_F(async_connect_op, should_call_handler_with_the_error_if_polling_operation_invokes_callback_with_it) {
     fixture f;
     *(f.conn->handle_) = native_handle::good;
 
