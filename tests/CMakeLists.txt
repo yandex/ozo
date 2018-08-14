@@ -72,7 +72,7 @@ set(SOURCES
     async_get_result.cpp
     base36.cpp
     request_oid_map.cpp
-    connection_binder.cpp
+    request_oid_map_handler.cpp
     main.cpp
 )
 
