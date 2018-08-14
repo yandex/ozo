@@ -28,10 +28,10 @@ struct fixture {
 
     auto make_operation_context() {
         EXPECT_CALL(strand_service, get_executor()).WillOnce(ReturnRef(strand));
-        return ozo::impl::make_operation_context(conn, wrap(callback));
+        return ozo::impl::make_request_operation_context(conn, wrap(callback));
     }
 
-    decltype(ozo::impl::make_operation_context(conn, wrap(callback))) ctx;
+    decltype(ozo::impl::make_request_operation_context(conn, wrap(callback))) ctx;
 
     fixture() : ctx(make_operation_context()) {}
 
