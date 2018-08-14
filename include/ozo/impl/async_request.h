@@ -10,57 +10,57 @@ namespace ozo {
 namespace impl {
 
 template <typename Connection, typename Handler>
-struct operation_context {
+struct request_operation_context {
     std::decay_t<Connection> conn;
     std::decay_t<Handler> handler;
     using strand_type = ozo::strand<decltype(get_io_context(conn))>;
     strand_type strand{get_io_context(conn)};
     query_state state = query_state::send_in_progress;
 
-    operation_context(Connection conn, Handler handler)
+    request_operation_context(Connection conn, Handler handler)
       : conn(std::forward<Connection>(conn)),
         handler(std::forward<Handler>(handler)) {}
 };
 
 template <typename Connection, typename Handler>
-inline decltype(auto) make_operation_context(Connection&& conn, Handler&& h) {
-    return std::make_shared<operation_context<Connection, Handler>>(
+inline decltype(auto) make_request_operation_context(Connection&& conn, Handler&& h) {
+    return std::make_shared<request_operation_context<Connection, Handler>>(
         std::forward<Connection>(conn), std::forward<Handler>(h)
     );
 }
 
 template <typename ...Ts>
-using operation_context_ptr = std::shared_ptr<operation_context<Ts...>>;
+using request_operation_context_ptr = std::shared_ptr<request_operation_context<Ts...>>;
 
 template <typename ...Ts>
-inline auto& get_connection(const operation_context_ptr<Ts...>& ctx) noexcept {
+inline auto& get_connection(const request_operation_context_ptr<Ts...>& ctx) noexcept {
     return ctx->conn;
 }
 
 template <typename ...Ts>
-inline decltype(auto) get_handler_context(const operation_context_ptr<Ts...>& ctx) noexcept {
+inline decltype(auto) get_handler_context(const request_operation_context_ptr<Ts...>& ctx) noexcept {
     return std::addressof(ctx->handler);
 }
 
 template <typename ...Ts>
-inline query_state get_query_state(const operation_context_ptr<Ts...>& ctx) noexcept {
+inline query_state get_query_state(const request_operation_context_ptr<Ts...>& ctx) noexcept {
     return ctx->state;
 }
 
 template <typename ...Ts>
-inline void set_query_state(const operation_context_ptr<Ts...>& ctx,
+inline void set_query_state(const request_operation_context_ptr<Ts...>& ctx,
         query_state state) noexcept {
     ctx->state = state;
 }
 
 template <typename Oper, typename ...Ts>
-inline void post(const operation_context_ptr<Ts...>& ctx, Oper&& op) {
+inline void post(const request_operation_context_ptr<Ts...>& ctx, Oper&& op) {
     post(get_connection(ctx),
         bind_executor(ctx->strand, std::forward<Oper>(op)));
 }
 
 template <typename ...Ts>
-inline void done(const operation_context_ptr<Ts...>& ctx, error_code ec) {
+inline void done(const request_operation_context_ptr<Ts...>& ctx, error_code ec) {
     set_query_state(ctx, query_state::error);
     decltype(auto) conn = get_connection(ctx);
     error_code _;
@@ -69,19 +69,19 @@ inline void done(const operation_context_ptr<Ts...>& ctx, error_code ec) {
 }
 
 template <typename ...Ts>
-inline void done(const operation_context_ptr<Ts...>& ctx) {
+inline void done(const request_operation_context_ptr<Ts...>& ctx) {
     post(ctx, detail::bind(
         std::move(ctx->handler), error_code{}, get_connection(ctx)));
 }
 
 template <typename Continuation, typename ...Ts>
-inline void write_poll(const operation_context_ptr<Ts...>& ctx, Continuation&& c) {
+inline void write_poll(const request_operation_context_ptr<Ts...>& ctx, Continuation&& c) {
     using asio::bind_executor;
     write_poll(get_connection(ctx), bind_executor(ctx->strand, std::forward<Continuation>(c)));
 }
 
 template <typename Continuation, typename ...Ts>
-inline void read_poll(const operation_context_ptr<Ts...>& ctx, Continuation&& c) {
+inline void read_poll(const request_operation_context_ptr<Ts...>& ctx, Continuation&& c) {
     using asio::bind_executor;
     read_poll(get_connection(ctx), bind_executor(ctx->strand, std::forward<Continuation>(c)));
 }
@@ -291,7 +291,7 @@ struct async_request_op {
             return handler_(ec, std::move(conn));
         }
 
-        auto ctx = make_operation_context(std::move(conn), std::move(handler_));
+        auto ctx = make_request_operation_context(std::move(conn), std::move(handler_));
 
         async_send_query_params(ctx, std::move(query_));
         async_get_result(std::move(ctx), std::move(out_));
