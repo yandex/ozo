@@ -25,7 +25,7 @@ inline ostream& send(ostream& out, const oid_map_t<M>& oid_map, const In& in) {
 }
 
 template <typename T, typename Alloc>
-struct send_impl<std::vector<T, Alloc>> {
+struct send_impl<std::vector<T, Alloc>, Require<!std::is_same_v<T, char>>> {
     template <typename M>
     static ostream& apply(ostream& out, const oid_map_t<M>& oid_map, const std::vector<T, Alloc>& in) {
         using value_type = std::decay_t<T>;
@@ -37,22 +37,6 @@ struct send_impl<std::vector<T, Alloc>> {
                 send(out, oid_map, v);
             });
         return out;
-    }
-};
-
-template <typename Alloc>
-struct send_impl<std::vector<char, Alloc>> {
-    template <typename M>
-    static ostream& apply(ostream& out, const oid_map_t<M>&, const std::vector<char, Alloc>& in) {
-        return write(out, in);
-    }
-};
-
-template <>
-struct send_impl<boost::uuids::uuid> {
-    template <typename M>
-    static ostream& apply(ostream& out, const oid_map_t<M>&, const boost::uuids::uuid& in) {
-        return write(out, in);
     }
 };
 
