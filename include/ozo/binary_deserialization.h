@@ -56,7 +56,12 @@ bool recv_null(bool is_null, Out& out) {
 template <typename Out, typename = std::void_t<>>
 struct recv_impl{
     template <typename M>
-    static istream& apply(istream& in, int32_t, const oid_map_t<M>&, Out& out) {
+    static istream& apply(istream& in, int32_t size, const oid_map_t<M>&, Out& out) {
+        if constexpr (is_dynamic_size<Out>::value) {
+            out.resize(size);
+        } else {
+            (void)size;
+        }
         return read(in, out);
     }
 };
@@ -72,27 +77,9 @@ inline istream& recv(istream& in, int32_t size, const oid_map_t<M>& oids, Out& o
     return recv_impl<std::decay_t<Out>>::apply(in, size, oids, out);
 }
 
-template <>
-struct recv_impl<std::string> {
-    template <typename M>
-    static istream& apply(istream& in, int32_t size, const oid_map_t<M>&, std::string& out) {
-        out.resize(size);
-        return read(in, out);
-    }
-};
-
-template <typename Alloc>
-struct recv_impl<std::vector<char, Alloc>> {
-    template <typename M>
-    static istream& apply(istream& in, int32_t size, const oid_map_t<M>&, std::vector<char, Alloc>& out) {
-        out.resize(size);
-        return read(in, out);
-    }
-};
-
-template <typename Out, typename Alloc>
-struct recv_impl<std::vector<Out, Alloc>> {
-    using value_type = std::vector<Out, Alloc>;
+template <typename T, typename Alloc>
+struct recv_impl<std::vector<T, Alloc>, Require<!std::is_same_v<T, char>>> {
+    using value_type = std::vector<T, Alloc>;
 
     template <typename M>
     static istream& apply(istream& in, int32_t, const oid_map_t<M>& oids, value_type& out) {
