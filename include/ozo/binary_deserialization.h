@@ -219,4 +219,9 @@ basic_result<T>& recv_result(basic_result<T>& in, const oid_map_t<M>&, basic_res
     return out;
 }
 
+template <typename T, typename M>
+basic_result<T>& recv_result(basic_result<T>& in, const oid_map_t<M>& oid_map, std::reference_wrapper<basic_result<T>> out) {
+    return recv_result(in, oid_map, out.get());
+}
+
 } // namespace ozo

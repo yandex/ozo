@@ -80,4 +80,28 @@ TEST(result, should_convert_into_tuple_with_nulls_from_nullables) {
     EXPECT_FALSE(std::get<4>(r[0]));
 }
 
+TEST(result, for_raw_result_should_move_in_to_out) {
+    auto result = execute_query("SELECT 1");
+    auto oid_map = ozo::empty_oid_map();
+    ozo::result out;
+    const auto handle = result.handle().get();
+
+    ozo::recv_result(result, oid_map, out);
+
+    EXPECT_EQ(result.handle(), nullptr);
+    EXPECT_EQ(out.handle().get(), handle);
+}
+
+TEST(result, for_result_and_reference_wrapper_of_result_should_move_in_to_out) {
+    auto result = execute_query("SELECT 1");
+    auto oid_map = ozo::empty_oid_map();
+    ozo::result out;
+    const auto handle = result.handle().get();
+
+    ozo::recv_result(result, oid_map, std::ref(out));
+
+    EXPECT_EQ(result.handle(), nullptr);
+    EXPECT_EQ(out.handle().get(), handle);
+}
+
 } // namespace

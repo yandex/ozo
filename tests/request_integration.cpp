@@ -32,7 +32,7 @@ TEST(request, should_return_error_and_bad_connect_for_invalid_connection_info) {
     ozo::connection_info<> conn_info("invalid connection info");
 
     ozo::result res;
-    ozo::request(ozo::make_connector(conn_info, io), "SELECT 1"_SQL + " + 1"_SQL, res,
+    ozo::request(ozo::make_connector(conn_info, io), "SELECT 1"_SQL + " + 1"_SQL, std::ref(res),
             [](ozo::error_code ec, auto conn) {
         EXPECT_TRUE(ec);
         EXPECT_TRUE(ozo::connection_bad(conn));
@@ -50,7 +50,7 @@ TEST(request, should_return_selected_variable) {
 
     ozo::result res;
     const std::string foo = "foo";
-    ozo::request(ozo::make_connector(conn_info, io), "SELECT "_SQL + foo, res,
+    ozo::request(ozo::make_connector(conn_info, io), "SELECT "_SQL + foo, std::ref(res),
             [&](ozo::error_code ec, auto conn) {
         ASSERT_FALSE(ec) << ec.message() << " | " << error_message(conn) << " | " << get_error_context(conn);
         ASSERT_EQ(1u, res.size());
@@ -115,8 +115,8 @@ TEST(request, should_fill_oid_map_when_oid_map_is_not_empty) {
 
     asio::spawn(io, [&] (asio::yield_context yield) {
         ozo::result result;
-        auto conn = ozo::request(ozo::make_connector(conn_info, io), "DROP TYPE IF EXISTS custom_type"_SQL, result, yield);
-        ozo::request(conn, "CREATE TYPE custom_type AS ()"_SQL, result, yield);
+        auto conn = ozo::request(ozo::make_connector(conn_info, io), "DROP TYPE IF EXISTS custom_type"_SQL, std::ref(result), yield);
+        ozo::request(conn, "CREATE TYPE custom_type AS ()"_SQL, std::ref(result), yield);
         auto conn_with_oid_map = ozo::get_connection(ozo::make_connector(conn_info_with_oid_map, io), yield);
         EXPECT_NE(ozo::type_oid<custom_type>(ozo::get_oid_map(conn_with_oid_map)), ozo::null_oid);
     });
@@ -134,7 +134,7 @@ TEST(request, should_request_with_connection_pool) {
     auto pool = ozo::make_connection_pool(conn_info, config);
     asio::spawn(io, [&] (asio::yield_context yield) {
         ozo::result result;
-        ozo::request(ozo::make_connector(pool, io), "SELECT 1"_SQL, result, yield);
+        ozo::request(ozo::make_connector(pool, io), "SELECT 1"_SQL, std::ref(result), yield);
     });
 
     io.run();
