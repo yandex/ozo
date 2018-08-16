@@ -324,32 +324,41 @@ struct async_request_op {
 template <typename T>
 struct async_request_out_handler {
     T out;
+
     template <typename Conn>
     void operator() (native_result_handle&& h, Conn& conn) {
-        auto res = ozo::result(std::move(h));
+        ozo::result res(std::move(h));
         ozo::recv_result(res, get_oid_map(conn), out);
     }
 };
 
-template <typename Query, typename Out, typename Handler>
-inline auto make_async_request_op(Query&& query, Out&& out, Handler&& handler) {
-    return impl::async_request_op<async_request_out_handler<Out>,
-            std::decay_t<Query>, std::decay_t<Handler>>{
-        {std::forward<Out>(out)},
+template <typename T>
+auto make_async_request_out_handler(T&& out) {
+    return async_request_out_handler<std::decay_t<T>> {std::forward<T>(out)};
+}
+
+template <typename Query, typename OutHandler, typename Handler>
+inline auto make_async_request_op(Query&& query, OutHandler&& out, Handler&& handler) {
+    using result_type = impl::async_request_op<
+        std::decay_t<OutHandler>,
+        std::decay_t<Query>,
+        std::decay_t<Handler>
+    >;
+    return result_type {
+        std::forward<OutHandler>(out),
         std::forward<Query>(query),
         std::forward<Handler>(handler)
     };
 }
 
 template <typename P, typename Q, typename Out, typename Handler>
-inline void async_request(P&& provider, Q&& query, Out&& out,
-        Handler&& handler) {
+inline void async_request(P&& provider, Q&& query, Out&& out, Handler&& handler) {
     static_assert(ConnectionProvider<P>, "is not a ConnectionProvider");
     static_assert(Query<Q> || QueryBuilder<Q>, "is neither Query nor QueryBuilder");
     async_get_connection(std::forward<P>(provider),
         impl::make_async_request_op(
             std::forward<Q>(query),
-            std::forward<Out>(out),
+            make_async_request_out_handler(std::forward<Out>(out)),
             std::forward<Handler>(handler)
         )
     );
