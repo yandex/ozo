@@ -139,6 +139,7 @@ struct stream_descriptor_mock {
     virtual void async_write_some(std::function<void(error_code)> handler) = 0;
     virtual void async_read_some(std::function<void(error_code)> handler) = 0;
     virtual void cancel(error_code&) = 0;
+    virtual void close(error_code&) = 0;
     virtual ~stream_descriptor_mock() = default;
 };
 
@@ -146,6 +147,7 @@ struct stream_descriptor_gmock : stream_descriptor_mock {
     MOCK_METHOD1(async_write_some, void(std::function<void(error_code)>));
     MOCK_METHOD1(async_read_some, void(std::function<void(error_code)>));
     MOCK_METHOD1(cancel, void(error_code&));
+    MOCK_METHOD1(close, void(error_code&));
 };
 
 struct stream_descriptor {
@@ -171,6 +173,10 @@ struct stream_descriptor {
     }
 
     void cancel(error_code& ec) { mock_->cancel(ec);}
+
+    void close(error_code& ec) {
+        mock_->close(ec);
+    }
 
     io_context& get_io_service() { return *io_;}
 };
