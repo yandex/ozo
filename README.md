@@ -10,7 +10,11 @@ The library leverages the power of template metaprogramming, providing convenien
 
 ### API
 
-Since the project is on early state of developmet it lacks of documentation. We understand the importance of good docs and are working hard on this problem. But until the work isn't done there are [unit tests](tests/request_integration.cpp) which can help you understand the main use-cases of OZO on this early state of the project. We also have a C++Now'18 talk about OZO. The persentation is [here](https://github.com/boostcon/cppnow_presentations_2018/blob/master/05-09-2018_wednesday/design_and_implementation_of_dbms_asynchronous_client_library__roman_siromakha__cppnow_05092018.pdf). Video will be provided later at [C++Now 2018 playlist](https://www.youtube.com/watch?v=QFIOE1jKv30&list=PL_AKIMJc4roVSbTTfHReQTl1dc9ms0lWH).
+Since the project is on early state of development it lacks of documentation. We understand the importance of good docs and are working hard on this problem. Complete documentation is on the way, but now:
+
+* look at our brand new [HOW TO](docs/howto.md),
+* learn more about main use-cases from [unit tests](tests/request_integration.cpp),
+* See our [C++Now'18 talk about OZO](https://youtu.be/-1zbaxuUsMA) with [presentation](https://github.com/boostcon/cppnow_presentations_2018/blob/master/05-09-2018_wednesday/design_and_implementation_of_dbms_asynchronous_client_library__roman_siromakha__cppnow_05092018.pdf).
 
 ## Dependencies
 
