@@ -65,12 +65,26 @@ inline boost::optional<pg_result> make_pg_result(
 }
 
 struct fake_query {
+    hana::tuple<> params;
+
     template <typename T>
     friend decltype(auto) make_binary_query(fake_query query,
             const ozo::oid_map_t<T>&) {
         return std::move(query);
     }
+
+    template <class ... Ts>
+    friend const char* get_query_text(const fake_query&) {
+        return "fake query";
+    }
+
+    template <class ... Ts>
+    friend const auto& get_query_params(const fake_query& self) {
+        return self.params;
+    }
 };
+
+static_assert(Query<fake_query>, "fake_query is not a Query");
 
 template <typename OidMap = empty_oid_map>
 struct connection {
