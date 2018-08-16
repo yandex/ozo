@@ -139,7 +139,8 @@ private:
 template <typename T>
 class basic_result {
 public:
-    using row = ozo::row<std::decay_t<decltype(*std::declval<T>())>>;
+    using handle_type = T;
+    using row = ozo::row<std::decay_t<decltype(*std::declval<handle_type>())>>;
     using value = typename row::value;
     using coordinates = typename row::coordinates;
 
@@ -175,7 +176,7 @@ public:
     using iterator = const_iterator;
 
     basic_result() = default;
-    basic_result(T res) : res_(std::move(res)) {}
+    basic_result(handle_type res) : res_(std::move(res)) {}
 
     const_iterator begin() const noexcept { return {{std::addressof(*res_), 0, 0}}; }
 
@@ -194,8 +195,16 @@ public:
         return (*this)[i];
     }
 
+    handle_type& handle() {
+        return res_;
+    }
+
+    const handle_type& handle() const {
+        return res_;
+    }
+
 private:
-    T res_;
+    handle_type res_;
 };
 
 using result = basic_result<native_result_handle>;
