@@ -794,5 +794,16 @@ template <typename T>
 struct get_connection_type<T, Require<Connection<T>>> {
     using type = std::decay_t<T>;
 };
+
+template <typename T>
+inline void close_connection(T&& conn) {
+    static_assert(Connection<T>, "T is not a Connection concept");
+
+    error_code ec;
+    get_socket(conn).close(ec);
+    get_handle(std::forward<T>(conn)).reset();
+}
+
 ///@}
+
 } // namespace ozo
