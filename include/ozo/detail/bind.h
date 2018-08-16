@@ -22,7 +22,7 @@ struct binder {
     std::decay_t<Handler> handler_;
     std::decay_t<Tuple> args_;
 
-    auto operator() () { return std::apply(handler_, args_); }
+    auto operator() () { return std::apply(std::move(handler_), std::move(args_)); }
 
     template <typename Function>
     friend void asio_handler_invoke(Function&& f, binder* ctx) {
