@@ -208,5 +208,6 @@ private:
 };
 
 using result = basic_result<native_result_handle>;
+using shared_result = basic_result<shared_native_result_handle>;
 
 } // namespace ozo

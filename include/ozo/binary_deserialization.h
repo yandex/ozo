@@ -237,4 +237,13 @@ basic_result<T>& recv_result(basic_result<T>& in, const oid_map_t<M>& oid_map, s
     return recv_result(in, oid_map, out.get());
 }
 
+template <typename M>
+basic_result<shared_native_result_handle>& recv_result(basic_result<native_result_handle>& in,
+        const oid_map_t<M>&, basic_result<shared_native_result_handle>& out) {
+    out = basic_result<shared_native_result_handle>(
+        shared_native_result_handle(in.handle().release(), std::default_delete<PGresult> {})
+    );
+    return out;
+}
+
 } // namespace ozo

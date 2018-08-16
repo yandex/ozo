@@ -22,5 +22,6 @@ struct default_delete<PGresult> {
 namespace ozo {
 
 using native_result_handle = std::unique_ptr<PGresult>;
+using shared_native_result_handle = std::shared_ptr<PGresult>;
 
 } // namespace ozo

@@ -104,4 +104,16 @@ TEST(result, for_result_and_reference_wrapper_of_result_should_move_in_to_out) {
     EXPECT_EQ(out.handle().get(), handle);
 }
 
+TEST(result, for_result_and_shared_result_should_move_in_to_out) {
+    auto result = execute_query("SELECT 1");
+    auto oid_map = ozo::empty_oid_map();
+    ozo::shared_result out;
+    const auto handle = result.handle().get();
+
+    ozo::recv_result(result, oid_map, out);
+
+    EXPECT_EQ(result.handle(), nullptr);
+    EXPECT_EQ(out.handle().get(), handle);
+}
+
 } // namespace
