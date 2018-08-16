@@ -15,8 +15,7 @@ using namespace ozo::tests;
 
 using ozo::empty_oid_map;
 
-template <typename OidMap>
-struct fixture_impl {
+struct fixture {
     StrictMock<connection_gmock> connection{};
     StrictMock<executor_gmock> executor{};
     StrictMock<executor_gmock> strand{};
@@ -30,18 +29,13 @@ struct fixture_impl {
     steady_timer timer_wrapper {timer};
     decltype(ozo::impl::make_connect_operation_context(conn, wrap(callback), timer_wrapper)) context;
 
-    fixture_impl() : context(make_operation_context()) {}
-
     auto make_operation_context() {
         EXPECT_CALL(strand_service, get_executor()).WillOnce(ReturnRef(strand));
         return ozo::impl::make_connect_operation_context(conn, wrap(callback), timer_wrapper);
     }
+
+    fixture() : context(make_operation_context()) {}
 };
-
-using fixture = fixture_impl<empty_oid_map>;
-
-template <typename OidMap>
-auto make_fixture(OidMap) { return fixture_impl<OidMap>{}; }
 
 using ozo::error_code;
 using ozo::time_traits;
