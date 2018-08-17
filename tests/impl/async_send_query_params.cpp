@@ -64,7 +64,7 @@ TEST_F(async_send_query_params_op, should_set_error_state_and_cancel_io_and_invo
     EXPECT_CALL(m.connection, set_nonblocking()).WillOnce(Return(-1));
     EXPECT_CALL(m.socket, cancel(_)).WillOnce(Return());
     EXPECT_CALL(m.callback, get_executor()).WillOnce(Return(ozo::tests::executor {&m.callback_executor}));
-    EXPECT_CALL(m.executor, post(_)).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(m.strand, post(_)).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(m.callback_executor, dispatch(_)).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(m.callback, call(error_code{ozo::error::pg_set_nonblocking_failed}, _))
         .WillOnce(Return());
@@ -131,7 +131,7 @@ TEST_F(async_send_query_params_op, should_invoke_callback_with_given_error_if_ca
 
     EXPECT_CALL(m.socket, cancel(_)).WillOnce(Return());
     EXPECT_CALL(m.callback, get_executor()).WillOnce(Return(ozo::tests::executor {&m.callback_executor}));
-    EXPECT_CALL(m.executor, post(_)).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(m.strand, post(_)).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(m.callback_executor, dispatch(_)).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(m.callback, call(error_code{error::error}, _))
         .WillOnce(Return());
@@ -159,7 +159,7 @@ TEST_F(async_send_query_params_op, should_invoke_callback_with_pg_flush_failed_i
         .WillOnce(Return(ozo::impl::query_state::error));
     EXPECT_CALL(m.socket, cancel(_)).WillOnce(Return());
     EXPECT_CALL(m.callback, get_executor()).WillOnce(Return(ozo::tests::executor {&m.callback_executor}));
-    EXPECT_CALL(m.executor, post(_)).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(m.strand, post(_)).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(m.callback_executor, dispatch(_)).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(m.callback, call(error_code{ozo::error::pg_flush_failed}, _))
         .WillOnce(Return());

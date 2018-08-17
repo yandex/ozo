@@ -14,12 +14,6 @@ struct cancel_timer_handler {
         get_timer(connection).cancel();
         handler(ec, std::forward<Connection>(connection));
     }
-
-    using executor_type = decltype(asio::get_associated_executor(handler));
-
-    auto get_executor() const noexcept {
-        return asio::get_associated_executor(handler);
-    }
 };
 
 template <typename Handler>

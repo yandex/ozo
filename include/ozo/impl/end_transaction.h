@@ -5,7 +5,8 @@
 namespace ozo::impl {
 
 template <typename T, typename Query, typename CompletionToken>
-auto end_transaction(transaction<T>&& transaction, Query&& query, CompletionToken&& token) {
+auto end_transaction(transaction<T>&& transaction, Query&& query,
+        const time_traits::duration& timeout, CompletionToken&& token) {
     using signature = void (error_code, T);
 
     async_completion<CompletionToken, signature> init(token);
@@ -13,6 +14,7 @@ auto end_transaction(transaction<T>&& transaction, Query&& query, CompletionToke
     async_end_transaction(
         std::move(transaction),
         std::forward<Query>(query),
+        timeout,
         init.completion_handler
     );
 

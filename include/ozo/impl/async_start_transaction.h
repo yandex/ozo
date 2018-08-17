@@ -11,9 +11,9 @@ struct async_start_transaction_op {
     Handler handler;
 
     template <typename T, typename Query>
-    void perform(T&& provider, Query&& query) {
+    void perform(T&& provider, Query&& query, const time_traits::duration& timeout) {
         static_assert(ConnectionProvider<T>, "T is not a ConnectionProvider");
-        async_execute(std::forward<T>(provider), std::forward<Query>(query), std::move(*this));
+        async_execute(std::forward<T>(provider), std::forward<Query>(query), timeout, std::move(*this));
     }
 
     template <typename Connection>
@@ -31,14 +31,14 @@ struct async_start_transaction_op {
 
 template <typename Handler>
 auto make_async_start_transaction_op(Handler&& handler) {
-    using result_type = async_start_transaction_op<std::decay_t<Handler>>;
-    return result_type {std::forward<Handler>(handler)};
+    return async_start_transaction_op<std::decay_t<Handler>> {std::forward<Handler>(handler)};
 }
 
 template <typename T, typename Query, typename Handler>
-Require<ConnectionProvider<T>> async_start_transaction(T&& provider, Query&& query, Handler&& handler) {
+Require<ConnectionProvider<T>> async_start_transaction(T&& provider, Query&& query,
+        const time_traits::duration& timeout, Handler&& handler) {
     make_async_start_transaction_op(std::forward<Handler>(handler))
-        .perform(std::forward<T>(provider), std::forward<Query>(query));
+        .perform(std::forward<T>(provider), std::forward<Query>(query), timeout);
 }
 
 } // namespace ozo::impl

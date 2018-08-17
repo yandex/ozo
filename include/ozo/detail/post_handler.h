@@ -17,12 +17,6 @@ struct post_handler {
         decltype(auto) io = get_io_context(connection);
         asio::post(io, detail::bind(std::move(handler), std::move(ec), std::forward<Connection>(connection)));
     }
-
-    using executor_type = decltype(asio::get_associated_executor(handler));
-
-    auto get_executor() const noexcept {
-        return asio::get_associated_executor(handler);
-    }
 };
 
 template <typename Handler>

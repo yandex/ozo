@@ -70,15 +70,15 @@ struct async_connect_op {
 
     void perform(const std::string& conninfo, const time_traits::duration& timeout) {
         if (error_code ec = start_connection(get_connection(context), conninfo)) {
-            return cancel(ec);
+            return done(ec);
         }
 
         if (connection_bad(get_connection(context))) {
-            return cancel(error::pq_connection_status_bad);
+            return done(error::pq_connection_status_bad);
         }
 
         if (error_code ec = assign_socket(get_connection(context))) {
-            return cancel(ec);
+            return done(ec);
         }
 
         get_timer(get_connection(context)).expires_after(timeout);
@@ -113,23 +113,7 @@ struct async_connect_op {
     }
 
     void done(error_code ec = error_code {}) {
-        decltype(auto) io = get_io_context(get_connection(context));
-
-        asio::post(io,
-            asio::bind_executor(
-                get_executor(),
-                detail::bind(
-                    std::move(get_handler(context)),
-                    std::move(ec), std::move(get_connection(context))
-                )
-            )
-        );
-    }
-
-    void cancel(error_code ec = error_code {}) {
-        decltype(auto) io = get_io_context(get_connection(context));
-
-        asio::post(io,
+        asio::post(get_executor(),
             detail::bind(
                 std::move(get_handler(context)),
                 std::move(ec), std::move(get_connection(context))
