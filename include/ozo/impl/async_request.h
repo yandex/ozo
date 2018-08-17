@@ -53,10 +53,25 @@ inline void set_query_state(const request_operation_context_ptr<Ts...>& ctx,
     ctx->state = state;
 }
 
+template <typename ... Ts>
+auto& get_executor(const request_operation_context_ptr<Ts ...>& context) noexcept {
+    return context->strand;
+}
+
+template <typename ... Ts>
+auto& get_query(const request_operation_context_ptr<Ts ...>& context) noexcept {
+    return context->query;
+}
+
+template <typename ... Ts>
+auto& get_handler(const request_operation_context_ptr<Ts ...>& context) noexcept {
+    return context->handler;
+}
+
 template <typename Oper, typename ...Ts>
 inline void post(const request_operation_context_ptr<Ts...>& ctx, Oper&& op) {
     post(get_connection(ctx),
-        bind_executor(ctx->strand, std::forward<Oper>(op)));
+        bind_executor(get_executor(ctx), std::forward<Oper>(op)));
 }
 
 template <typename ...Ts>
@@ -65,25 +80,24 @@ inline void done(const request_operation_context_ptr<Ts...>& ctx, error_code ec)
     decltype(auto) conn = get_connection(ctx);
     error_code _;
     get_socket(conn).cancel(_);
-    post(ctx, detail::bind(std::move(ctx->handler), std::move(ec), conn));
+    post(ctx, detail::bind(get_handler(ctx), std::move(ec), conn));
 }
 
 template <typename ...Ts>
 inline void done(const request_operation_context_ptr<Ts...>& ctx) {
-    post(ctx, detail::bind(
-        std::move(ctx->handler), error_code{}, get_connection(ctx)));
+    post(ctx, detail::bind(get_handler(ctx), error_code{}, get_connection(ctx)));
 }
 
 template <typename Continuation, typename ...Ts>
 inline void write_poll(const request_operation_context_ptr<Ts...>& ctx, Continuation&& c) {
     using asio::bind_executor;
-    write_poll(get_connection(ctx), bind_executor(ctx->strand, std::forward<Continuation>(c)));
+    write_poll(get_connection(ctx), bind_executor(get_executor(ctx), std::forward<Continuation>(c)));
 }
 
 template <typename Continuation, typename ...Ts>
 inline void read_poll(const request_operation_context_ptr<Ts...>& ctx, Continuation&& c) {
     using asio::bind_executor;
-    read_poll(get_connection(ctx), bind_executor(ctx->strand, std::forward<Continuation>(c)));
+    read_poll(get_connection(ctx), bind_executor(get_executor(ctx), std::forward<Continuation>(c)));
 }
 
 template <typename Context, typename BinaryQuery>
