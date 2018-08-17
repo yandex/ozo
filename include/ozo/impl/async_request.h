@@ -1,11 +1,16 @@
 #pragma once
 
-#include <ozo/connection.h>
-#include <ozo/binary_query.h>
-#include <ozo/query_builder.h>
-#include <ozo/binary_deserialization.h>
+#include <ozo/detail/cancel_timer_handler.h>
+#include <ozo/detail/post_handler.h>
+#include <ozo/detail/timeout_handler.h>
 #include <ozo/impl/io.h>
+#include <ozo/binary_deserialization.h>
+#include <ozo/binary_query.h>
+#include <ozo/connection.h>
+#include <ozo/query_builder.h>
+#include <ozo/time_traits.h>
 
+#include <boost/asio/bind_executor.hpp>
 #include <boost/asio/coroutine.hpp>
 
 namespace ozo {
@@ -80,12 +85,14 @@ inline void done(const request_operation_context_ptr<Ts...>& ctx, error_code ec)
     decltype(auto) conn = get_connection(ctx);
     error_code _;
     get_socket(conn).cancel(_);
-    post(get_connection(ctx), detail::bind(get_handler(ctx), std::move(ec), conn));
+    asio::post(get_executor(ctx),
+        detail::bind(std::move(get_handler(ctx)), std::move(ec), conn));
 }
 
 template <typename ...Ts>
 inline void done(const request_operation_context_ptr<Ts...>& ctx) {
-    post(get_connection(ctx), detail::bind(get_handler(ctx), error_code{}, get_connection(ctx)));
+    asio::post(get_executor(ctx),
+        detail::bind(std::move(get_handler(ctx)), error_code {}, get_connection(ctx)));
 }
 
 template <typename Continuation, typename ...Ts>
@@ -191,6 +198,15 @@ struct async_get_result_op : boost::asio::coroutine {
         post(ctx_, *this);
     }
 
+    void done() {
+        return impl::done(ctx_);
+    }
+
+    void done(error_code ec) {
+        set_error_context(get_connection(ctx_), "error while get request result");
+        return impl::done(ctx_, ec);
+    }
+
     void operator() (error_code ec = error_code{}, std::size_t = 0) {
         // In case when query error state has been set by send query params
         // operation skip handle and do nothing more.
@@ -204,14 +220,14 @@ struct async_get_result_op : boost::asio::coroutine {
             if (ec == asio::error::bad_descriptor) {
                 ec = asio::error::operation_aborted;
             }
-            return done(ctx_, ec);
+            return done(ec);
         }
 
         reenter(*this) {
             while (is_busy(get_connection(ctx_))) {
                 yield read_poll(ctx_, *this);
                 if (auto err = consume_input(get_connection(ctx_))) {
-                    return done(ctx_, err);
+                    return done(err);
                 }
             }
 
@@ -226,19 +242,19 @@ struct async_get_result_op : boost::asio::coroutine {
                         consume_result(get_connection(ctx_));
                         return;
                     case PGRES_COMMAND_OK:
-                        done(ctx_);
+                        done();
                         consume_result(get_connection(ctx_));
                         return;
                     case PGRES_BAD_RESPONSE:
-                        done(ctx_, error::result_status_bad_response);
+                        done(error::result_status_bad_response);
                         consume_result(get_connection(ctx_));
                         return;
                     case PGRES_EMPTY_QUERY:
-                        done(ctx_, error::result_status_empty_query);
+                        done(error::result_status_empty_query);
                         consume_result(get_connection(ctx_));
                         return;
                     case PGRES_FATAL_ERROR:
-                        done(ctx_, result_error(*res));
+                        done(result_error(*res));
                         consume_result(get_connection(ctx_));
                         return;
                     case PGRES_COPY_OUT:
@@ -248,10 +264,10 @@ struct async_get_result_op : boost::asio::coroutine {
                         break;
                 }
                 set_error_context(get_connection(ctx_), get_result_status_name(status));
-                done(ctx_, error::result_status_unexpected);
+                done(error::result_status_unexpected);
                 consume_result(get_connection(ctx_));
             } else {
-                done(ctx_);
+                done();
             }
         }
     }
@@ -262,9 +278,9 @@ struct async_get_result_op : boost::asio::coroutine {
             process_(std::forward<Result>(res), get_connection(ctx_));
         } catch (const std::exception& e) {
             set_error_context(get_connection(ctx_), e.what());
-            return done(ctx_, error::bad_result_process);
+            return done(error::bad_result_process);
         }
-        done(ctx_);
+        done();
     }
 
     template <typename Connection>
@@ -307,6 +323,7 @@ template <typename OutHandler, typename Query, typename Handler>
 struct async_request_op {
     OutHandler out_;
     Query query_;
+    time_traits::duration timeout_;
     Handler handler_;
 
     template <typename Connection>
@@ -315,7 +332,16 @@ struct async_request_op {
             return handler_(ec, std::move(conn));
         }
 
-        auto ctx = make_request_operation_context(std::move(conn), std::move(handler_));
+        auto ctx = make_request_operation_context(
+            std::move(conn),
+            detail::make_cancel_timer_handler(
+                detail::make_post_handler(std::move(handler_))
+            )
+        );
+
+        get_timer(get_connection(ctx)).expires_after(timeout_);
+        get_timer(get_connection(ctx)).async_wait(asio::bind_executor(get_executor(ctx),
+            detail::make_timeout_handler(get_socket(get_connection(ctx)))));
 
         async_send_query_params(ctx, std::move(query_));
         async_get_result(std::move(ctx), std::move(out_));
@@ -339,7 +365,7 @@ auto make_async_request_out_handler(T&& out) {
 }
 
 template <typename Query, typename OutHandler, typename Handler>
-inline auto make_async_request_op(Query&& query, OutHandler&& out, Handler&& handler) {
+inline auto make_async_request_op(Query&& query, const time_traits::duration& timeout, OutHandler&& out, Handler&& handler) {
     using result_type = impl::async_request_op<
         std::decay_t<OutHandler>,
         std::decay_t<Query>,
@@ -348,17 +374,19 @@ inline auto make_async_request_op(Query&& query, OutHandler&& out, Handler&& han
     return result_type {
         std::forward<OutHandler>(out),
         std::forward<Query>(query),
+        timeout,
         std::forward<Handler>(handler)
     };
 }
 
 template <typename P, typename Q, typename Out, typename Handler>
-inline void async_request(P&& provider, Q&& query, Out&& out, Handler&& handler) {
+inline void async_request(P&& provider, Q&& query, const time_traits::duration& timeout, Out&& out, Handler&& handler) {
     static_assert(ConnectionProvider<P>, "is not a ConnectionProvider");
     static_assert(Query<Q> || QueryBuilder<Q>, "is neither Query nor QueryBuilder");
     async_get_connection(std::forward<P>(provider),
-        impl::make_async_request_op(
+        make_async_request_op(
             std::forward<Q>(query),
+            timeout,
             make_async_request_out_handler(std::forward<Out>(out)),
             std::forward<Handler>(handler)
         )

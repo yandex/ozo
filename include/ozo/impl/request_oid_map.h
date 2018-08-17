@@ -1,6 +1,7 @@
 #pragma once
 
 #include <ozo/impl/async_request.h>
+#include <ozo/time_traits.h>
 
 namespace ozo::impl {
 
@@ -55,7 +56,13 @@ struct request_oid_map_op {
 
     template <typename Connection>
     void perform(Connection&& conn) {
-        async_request(std::forward<Connection>(conn), make_oids_query(get_oid_map(conn)), std::back_inserter(*res_), *this);
+        async_request(
+            std::forward<Connection>(conn),
+            make_oids_query(get_oid_map(conn)),
+            time_traits::duration::max(),
+            std::back_inserter(*res_),
+            *this
+        );
     }
 
     template <typename Connection>

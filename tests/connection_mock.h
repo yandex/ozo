@@ -4,6 +4,7 @@
 
 #include <ozo/impl/io.h>
 #include <ozo/impl/transaction.h>
+#include <ozo/time_traits.h>
 
 namespace ozo::tests {
 
@@ -139,17 +140,18 @@ struct connection {
     }
 
     template <typename Q, typename Out, typename Handler>
-    friend void async_request(std::shared_ptr<connection>&& provider, Q&&, Out&&, Handler&&) {
+    friend void async_request(std::shared_ptr<connection>&& provider, Q&&, const ozo::time_traits::duration&, Out&&, Handler&&) {
         provider->mock_->async_request();
     }
 
     template <typename Q, typename Handler>
-    friend void async_execute(std::shared_ptr<connection>& provider, Q&&, Handler&&) {
+    friend void async_execute(std::shared_ptr<connection>& provider, Q&&, const ozo::time_traits::duration&, Handler&&) {
         provider->mock_->async_execute();
     }
 
     template <typename Q, typename Handler>
-    friend void async_execute(ozo::impl::transaction<std::shared_ptr<connection>>&& transaction, Q&&, Handler&&) {
+    friend void async_execute(ozo::impl::transaction<std::shared_ptr<connection>>&& transaction, Q&&,
+            const ozo::time_traits::duration&, Handler&&) {
         std::shared_ptr<connection> connection;
         transaction.take_connection(connection);
         connection->mock_->async_execute();

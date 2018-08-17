@@ -80,6 +80,7 @@ set(SOURCES
     impl/async_start_transaction.cpp
     impl/async_end_transaction.cpp
     impl/transaction.cpp
+    impl/async_request.cpp
     main.cpp
 )
 

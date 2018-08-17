@@ -140,4 +140,46 @@ TEST(request, should_request_with_connection_pool) {
     io.run();
 }
 
+TEST(request, should_call_handler_with_error_for_zero_timeout) {
+    using namespace ozo::literals;
+    namespace asio = boost::asio;
+
+    ozo::io_context io;
+    const ozo::connection_info<> conn_info(OZO_PG_TEST_CONNINFO);
+    const ozo::time_traits::duration timeout(0);
+
+    ozo::result res;
+    std::atomic_flag called {};
+    ozo::request(ozo::make_connector(conn_info, io), "SELECT 1"_SQL, timeout, std::ref(res),
+            [&](ozo::error_code ec, auto conn) {
+        EXPECT_FALSE(called.test_and_set());
+        EXPECT_EQ(ec, boost::system::error_condition(boost::system::errc::operation_canceled));
+        EXPECT_FALSE(ozo::connection_bad(conn));
+        EXPECT_EQ(ozo::get_error_context(conn), "error while get request result");
+    });
+
+    io.run();
+}
+
+TEST(request, should_return_result_for_max_timeout) {
+    using namespace ozo::literals;
+    namespace asio = boost::asio;
+
+    ozo::io_context io;
+    const ozo::connection_info<> conn_info(OZO_PG_TEST_CONNINFO);
+    const auto timeout = ozo::time_traits::duration::max();
+
+    rows_of<std::int32_t> res;
+    std::atomic_flag called {};
+    ozo::request(ozo::make_connector(conn_info, io), "SELECT 1"_SQL, timeout, std::back_inserter(res),
+            [&](ozo::error_code ec, auto conn) {
+        EXPECT_FALSE(called.test_and_set());
+        ASSERT_FALSE(ec) << ec.message() << " | " << error_message(conn) << " | " << get_error_context(conn);
+        EXPECT_THAT(res, ElementsAre(std::make_tuple(1)));
+        EXPECT_FALSE(ozo::connection_bad(conn));
+    });
+
+    io.run();
+}
+
 } // namespace

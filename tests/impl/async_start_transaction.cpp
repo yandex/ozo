@@ -11,6 +11,7 @@ using namespace testing;
 using namespace ozo::tests;
 
 using ozo::error_code;
+using ozo::time_traits;
 
 struct async_start_transaction : Test {
     StrictMock<connection_gmock> connection {};
@@ -23,6 +24,7 @@ struct async_start_transaction : Test {
     StrictMock<steady_timer_gmock> timer {};
     io_context io {executor, strand_service};
     decltype(make_connection(connection, io, socket, timer)) conn = make_connection(connection, io, socket, timer);
+    time_traits::duration timeout {42};
 };
 
 TEST_F(async_start_transaction, should_call_async_execute) {
@@ -30,7 +32,7 @@ TEST_F(async_start_transaction, should_call_async_execute) {
 
     EXPECT_CALL(connection, async_execute()).WillOnce(Return());
 
-    ozo::impl::async_start_transaction(conn, fake_query {}, wrap(callback));
+    ozo::impl::async_start_transaction(conn, fake_query {}, timeout, wrap(callback));
 }
 
 } // namespace
