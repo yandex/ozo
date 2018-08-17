@@ -54,8 +54,10 @@ include_directories(SYSTEM "${source_dir}/include")
 include_directories(SYSTEM "${CMAKE_CURRENT_BINARY_DIR}/include")
 link_directories("${CMAKE_CURRENT_BINARY_DIR}/lib")
 
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}")
+
 set(SOURCES
-    async_connect.cpp
+    impl/async_connect.cpp
     binary_deserialization.cpp
     binary_query.cpp
     binary_serialization.cpp
@@ -68,11 +70,11 @@ set(SOURCES
     type_traits.cpp
     concept.cpp
     result.cpp
-    async_send_query_params.cpp
-    async_get_result.cpp
-    base36.cpp
-    request_oid_map.cpp
-    request_oid_map_handler.cpp
+    impl/async_send_query_params.cpp
+    impl/async_get_result.cpp
+    detail/base36.cpp
+    impl/request_oid_map.cpp
+    impl/request_oid_map_handler.cpp
     main.cpp
 )
 
