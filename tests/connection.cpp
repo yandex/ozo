@@ -87,17 +87,9 @@ using connection_ptr = std::shared_ptr<connection<Ts...>>;
 
 static_assert(ozo::Connection<connection<>>,
     "connection does not meet Connection requirements");
-static_assert(ozo::ConnectionWrapper<connection_ptr<>>,
-    "connection_ptr does not meet ConnectionWrapper requirements");
-static_assert(ozo::Connection<connection<>>,
-    "connection does not meet Connection requirements");
 static_assert(ozo::Connection<connection_ptr<>>,
     "connection_ptr does not meet Connection requirements");
 
-static_assert(!ozo::Connection<int>,
-    "int meets Connection requirements unexpectedly");
-static_assert(!ozo::ConnectionWrapper<int>,
-    "int meets ConnectionWrapper requirements unexpectedly");
 static_assert(!ozo::Connection<int>,
     "int meets Connection requirements unexpectedly");
 

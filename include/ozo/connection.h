@@ -12,20 +12,13 @@ namespace ozo {
 
 using no_statistics = decltype(hana::make_map());
 
-
-template <typename T, typename = std::void_t<>>
-struct is_connection_wrapper : is_nullable<T> {};
-
-template <typename T>
-constexpr auto ConnectionWrapper = is_connection_wrapper<std::decay_t<T>>::value;
-
 /**
 * Overloaded version of unwrap function for Connection.
 * Returns connection object itself.
 */
 template <typename T>
 inline decltype(auto) unwrap_connection(T&& conn,
-        Require<!ConnectionWrapper<T>>* = 0) noexcept {
+        Require<!Nullable<T>>* = 0) noexcept {
     return std::forward<T>(conn);
 }
 
@@ -35,7 +28,7 @@ inline decltype(auto) unwrap_connection(T&& conn,
 */
 template <typename T>
 inline decltype(auto) unwrap_connection(T&& conn,
-        Require<ConnectionWrapper<T>>* = 0) noexcept {
+        Require<Nullable<T>>* = 0) noexcept {
     return unwrap_connection(*conn);
 }
 
@@ -222,7 +215,7 @@ bool> connection_bad(const T& conn) noexcept {
 * ConnectionWraper with operator !
 */
 template <typename T>
-inline Require<ConnectionWrapper<T> && OperatorNot<T>,
+inline Require<Nullable<T> && OperatorNot<T>,
 bool> connection_bad(const T& conn) noexcept {
     using impl::connection_status_bad;
     return !conn || connection_status_bad(get_native_handle(conn));
