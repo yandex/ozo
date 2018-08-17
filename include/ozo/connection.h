@@ -12,11 +12,32 @@ namespace ozo {
 
 using no_statistics = decltype(hana::make_map());
 
+
+template <typename T, typename = std::void_t<>>
+struct is_connection_wrapper : is_nullable<T> {};
+
+template <typename T>
+constexpr auto ConnectionWrapper = is_connection_wrapper<std::decay_t<T>>::value;
+
 /**
-* Marker to tag a connection type.
+* Overloaded version of unwrap function for Connection.
+* Returns connection object itself.
 */
-template <typename, typename = std::void_t<>>
-struct is_pure_connection : std::false_type {};
+template <typename T>
+inline decltype(auto) unwrap_connection(T&& conn,
+        Require<!ConnectionWrapper<T>>* = 0) noexcept {
+    return std::forward<T>(conn);
+}
+
+/**
+* Unwraps wrapped connection recusively.
+* Returns unwrapped connection object.
+*/
+template <typename T>
+inline decltype(auto) unwrap_connection(T&& conn,
+        Require<ConnectionWrapper<T>>* = 0) noexcept {
+    return unwrap_connection(*conn);
+}
 
 template <typename T, typename = std::void_t<>>
 struct get_connection_oid_map_impl {
@@ -88,8 +109,26 @@ constexpr auto get_connection_timer(T&& conn)
     return get_connection_timer_impl<std::decay_t<T>>::apply(std::forward<T>(conn));
 }
 
+template <typename, typename = std::void_t<>>
+struct is_connection : std::false_type {};
+template <typename T>
+struct is_connection<T, std::void_t<
+    decltype(get_connection_oid_map(unwrap_connection(std::declval<T&>()))),
+    decltype(get_connection_socket(unwrap_connection(std::declval<T&>()))),
+    decltype(get_connection_handle(unwrap_connection(std::declval<T&>()))),
+    decltype(get_connection_error_context(unwrap_connection(std::declval<T&>()))),
+    decltype(get_connection_timer(unwrap_connection(std::declval<T&>()))),
+    decltype(get_connection_oid_map(unwrap_connection(std::declval<const T&>()))),
+    decltype(get_connection_socket(unwrap_connection(std::declval<const T&>()))),
+    decltype(get_connection_handle(unwrap_connection(std::declval<const T&>()))),
+    decltype(get_connection_error_context(unwrap_connection(std::declval<const T&>()))),
+    decltype(get_connection_timer(unwrap_connection(std::declval<const T&>())))
+>> : std::true_type {};
+
+
 /**
-* We define the connection to database not as a concrete class or type,
+* /breif Connection concept
+* We define the Connection to database not as a concrete class or type,
 * but as an entity which must support some traits. The reason why we
 * choose such strategy is - we want to provide flexibility and extension ability
 * for implementation and testing. User can implemet a connection bound additional
@@ -124,81 +163,7 @@ constexpr auto get_connection_timer(T&& conn)
 *     Should provide boost::asio::basic_waitable_timer like interface.
 */
 template <typename T>
-struct is_pure_connection<T, std::void_t<
-    decltype(get_connection_oid_map(std::declval<T&>())),
-    decltype(get_connection_socket(std::declval<T&>())),
-    decltype(get_connection_handle(std::declval<T&>())),
-    decltype(get_connection_error_context(std::declval<T&>())),
-    decltype(get_connection_timer(std::declval<T&>())),
-    decltype(get_connection_oid_map(std::declval<const T&>())),
-    decltype(get_connection_socket(std::declval<const T&>())),
-    decltype(get_connection_handle(std::declval<const T&>())),
-    decltype(get_connection_error_context(std::declval<const T&>())),
-    decltype(get_connection_timer(std::declval<const T&>()))
->> : std::true_type {};
-
-
-template <typename T, typename = std::void_t<>>
-struct is_connection_wrapper : is_nullable<T> {};
-
-template <typename T>
-constexpr auto ConnectionWrapper = is_connection_wrapper<std::decay_t<T>>::value;
-
-/**
-* Connection type traits
-*/
-template <typename T>
-struct connection_traits {
-    using oid_map = std::decay_t<decltype(get_connection_oid_map(std::declval<T&>()))>;
-    using socket = std::decay_t<decltype(get_connection_socket(std::declval<T&>()))>;
-    using handle = std::decay_t<decltype(get_connection_handle(std::declval<T&>()))>;
-    using error_context = std::decay_t<decltype(get_connection_error_context(std::declval<T&>()))>;
-    using timer = std::decay_t<decltype(get_connection_timer(std::declval<T&>()))>;
-};
-
-/**
-* Connection public access functions section
-*/
-
-/**
-* Overloaded version of unwrap function for Connection.
-* Returns connection object itself.
-*/
-template <typename T>
-inline decltype(auto) unwrap_connection(T&& conn,
-        Require<!ConnectionWrapper<T>>* = 0) noexcept {
-    return std::forward<T>(conn);
-}
-
-/**
-* Unwraps wrapped connection recusively.
-* Returns unwrapped connection object.
-*/
-template <typename T>
-inline decltype(auto) unwrap_connection(T&& conn,
-        Require<ConnectionWrapper<T>>* = 0) noexcept {
-    return unwrap_connection(*conn);
-}
-
-template <typename, typename = std::void_t<>>
-struct is_connection : std::false_type {};
-
-template <typename T>
-struct is_connection <T, std::void_t<
-    decltype(unwrap_connection(std::declval<T&>()))
->>: is_pure_connection<
-    std::decay_t<decltype(unwrap_connection(std::declval<T&>()))>
-> {};
-
-template <typename T>
 constexpr auto Connection = is_connection<std::decay_t<T>>::value;
-
-/**
-* Function to get connection traits type from object
-*/
-template <typename T, typename = Require<Connection<T>>>
-constexpr connection_traits<std::decay_t<decltype(unwrap_connection(std::declval<T>()))>>
-    get_connection_traits(T&&) noexcept {return {};}
 
 /**
 * Returns PostgreSQL connection handle of the connection.
