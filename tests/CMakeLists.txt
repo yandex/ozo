@@ -1,5 +1,7 @@
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wsign-compare -pedantic -Werror")
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 execute_process(COMMAND echo "int main() { return 0;}" OUTPUT_FILE test.cpp)
 execute_process(COMMAND ${CMAKE_CXX_COMPILER} -std=c++17 test.cpp -o a.out RESULT_VARIABLE CPP17_READY_RESULT)
 execute_process(COMMAND rm test.cpp OUTPUT_QUIET ERROR_QUIET)
