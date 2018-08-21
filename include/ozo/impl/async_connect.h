@@ -1,5 +1,7 @@
 #pragma once
 
+#include <ozo/detail/cancel_timer_handler.h>
+#include <ozo/detail/post_handler.h>
 #include <ozo/impl/io.h>
 #include <ozo/impl/request_oid_map.h>
 #include <ozo/time_traits.h>
@@ -83,25 +85,17 @@ template <typename Context>
 struct async_connect_op {
     Context context;
 
-    void done(error_code ec = error_code {}) {
-        get_timer(get_connection(context)).cancel();
-
-        decltype(auto) io = get_io_context(get_connection(context));
-
-        asio::post(io, detail::bind(std::move(get_handler(context)), std::move(ec), std::move(get_connection(context))));
-    }
-
     void perform(const std::string& conninfo, const time_traits::duration& timeout) {
         if (error_code ec = start_connection(get_connection(context), conninfo)) {
-            return done(ec);
+            return cancel(ec);
         }
 
         if (connection_bad(get_connection(context))) {
-            return done(error::pq_connection_status_bad);
+            return cancel(error::pq_connection_status_bad);
         }
 
         if (error_code ec = assign_socket(get_connection(context))) {
-            return done(ec);
+            return cancel(ec);
         }
 
         get_timer(get_connection(context)).expires_after(timeout);
@@ -135,16 +129,35 @@ struct async_connect_op {
         done(error::pq_connect_poll_failed);
     }
 
+    void done(error_code ec = error_code {}) {
+        decltype(auto) io = get_io_context(get_connection(context));
+
+        asio::post(io,
+            asio::bind_executor(
+                get_executor(),
+                detail::bind(
+                    std::move(get_handler(context)),
+                    std::move(ec), std::move(get_connection(context))
+                )
+            )
+        );
+    }
+
+    void cancel(error_code ec = error_code {}) {
+        decltype(auto) io = get_io_context(get_connection(context));
+
+        asio::post(io,
+            detail::bind(
+                std::move(get_handler(context)),
+                std::move(ec), std::move(get_connection(context))
+            )
+        );
+    }
+
     using executor_type = std::decay_t<decltype(impl::get_executor(context))>;
 
     auto get_executor() const noexcept {
         return impl::get_executor(context);
-    }
-
-    template <typename Function>
-    friend void asio_handler_invoke(Function&& function, async_connect_op* operation) {
-        using boost::asio::asio_handler_invoke;
-        asio_handler_invoke(std::forward<Function>(function), get_handler_context(operation->context));
     }
 };
 
@@ -165,24 +178,11 @@ struct request_oid_map_handler {
 
     template <typename Connection>
     void operator() (error_code ec, Connection&& conn) {
-        using namespace hana::literals;
         if (ec || empty(get_oid_map(conn))) {
             handler_(std::move(ec), std::forward<Connection>(conn));
         } else {
             request_oid_map(std::forward<Connection>(conn), std::move(handler_));
         }
-    }
-
-    using executor_type = decltype(asio::get_associated_executor(handler_));
-
-    auto get_executor() const noexcept {
-        return asio::get_associated_executor(handler_);
-    }
-
-    template <typename Func>
-    friend void asio_handler_invoke(Func&& f, request_oid_map_handler* ctx) {
-        using boost::asio::asio_handler_invoke;
-        asio_handler_invoke(std::forward<Func>(f), std::addressof(ctx->handler_));
     }
 };
 
@@ -197,7 +197,11 @@ inline Require<Connection<ConnectionT>> async_connect(std::string conninfo, cons
     make_async_connect_op(
         make_connect_operation_context(
             std::forward<ConnectionT>(connection),
-            make_request_oid_map_handler(std::forward<Handler>(handler))
+            make_request_oid_map_handler(
+                detail::make_cancel_timer_handler(
+                    detail::make_post_handler(std::forward<Handler>(handler))
+                )
+            )
         )
     ).perform(conninfo, timeout);
 }
