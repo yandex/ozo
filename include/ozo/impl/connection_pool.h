@@ -36,16 +36,22 @@ struct pooled_connection {
             handle_.waste();
         }
     }
-
-    friend auto& unwrap_connection(pooled_connection& conn) noexcept {
-        return unwrap_connection(*(conn.handle_));
-    }
-    friend const auto& unwrap_connection(const pooled_connection& conn) noexcept {
-        return unwrap_connection(*(conn.handle_));
-    }
 };
 template <typename Source>
 using pooled_connection_ptr = std::shared_ptr<pooled_connection<Source>>;
+
+} // namespace ozo::impl
+namespace ozo {
+template <typename T>
+struct unwrap_connection_impl<impl::pooled_connection<T>> {
+    template <typename Conn>
+    static constexpr decltype(auto) apply(Conn&& conn) noexcept {
+        return unwrap_connection(*(conn.handle_));
+    }
+};
+} // namespace ozo
+
+namespace ozo::impl {
 
 template <typename IoContext, typename Provider, typename Handler>
 struct pooled_connection_wrapper {

@@ -12,25 +12,34 @@ namespace ozo {
 
 using no_statistics = decltype(hana::make_map());
 
-/**
-* Overloaded version of unwrap function for Connection.
-* Returns connection object itself.
-*/
-template <typename T>
-inline decltype(auto) unwrap_connection(T&& conn,
-        Require<!Nullable<T>>* = 0) noexcept {
-    return std::forward<T>(conn);
-}
+template <typename, typename = std::void_t<>>
+struct unwrap_connection_impl {
+    template <typename Conn>
+    static constexpr decltype(auto) apply(Conn&& conn) noexcept {
+        return std::forward<Conn>(conn);
+    }
+};
 
 /**
-* Unwraps wrapped connection recusively.
-* Returns unwrapped connection object.
+ * @brief Unwrap connection if wrapped with Nullable
+ *
+ * Unwraps wrapped connection recusively. Returns unwrapped connection object.
+ *
+ * @param conn wrapped or unwrapped connection
+ * @return unwrapped connection
 */
 template <typename T>
-inline decltype(auto) unwrap_connection(T&& conn,
-        Require<Nullable<T>>* = 0) noexcept {
-    return unwrap_connection(*conn);
+inline constexpr decltype(auto) unwrap_connection(T&& conn) noexcept {
+    return unwrap_connection_impl<std::decay_t<T>>::apply(std::forward<T>(conn));
 }
+
+template <typename T>
+struct unwrap_connection_impl<T, Require<Nullable<T>>>{
+    template <typename Conn>
+    static constexpr decltype(auto) apply(Conn&& conn) noexcept {
+        return unwrap_connection(*conn);
+    }
+};
 
 template <typename T, typename = std::void_t<>>
 struct get_connection_oid_map_impl {
