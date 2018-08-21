@@ -2,6 +2,7 @@
 
 #include <ozo/detail/cancel_timer_handler.h>
 #include <ozo/detail/post_handler.h>
+#include <ozo/detail/timeout_handler.h>
 #include <ozo/impl/io.h>
 #include <ozo/impl/request_oid_map.h>
 #include <ozo/time_traits.h>
@@ -60,24 +61,6 @@ auto& get_executor(const connect_operation_context_ptr<Ts ...>& context) {
     return context->strand;
 }
 
-template <typename Socket>
-struct timeout_handler {
-    Socket& socket;
-
-    void operator() (error_code ec) {
-        if (ec == asio::error::operation_aborted) {
-            return;
-        } else {
-            socket.cancel(ec);
-        }
-    }
-};
-
-template <typename Socket>
-inline auto make_timeout_handler(Socket& socket) {
-    return timeout_handler<std::decay_t<Socket>> {socket};
-}
-
 /**
 * Asynchronous connection operation
 */
@@ -100,7 +83,7 @@ struct async_connect_op {
 
         get_timer(get_connection(context)).expires_after(timeout);
         get_timer(get_connection(context)).async_wait(asio::bind_executor(get_executor(),
-            make_timeout_handler(get_socket(get_connection(context)))));
+            detail::make_timeout_handler(get_socket(get_connection(context)))));
 
         return write_poll(get_connection(context), *this);
     }
