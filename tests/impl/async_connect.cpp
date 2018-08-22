@@ -21,12 +21,12 @@ struct fixture {
     StrictMock<executor_gmock> strand{};
     StrictMock<strand_executor_service_gmock> strand_service{};
     StrictMock<stream_descriptor_gmock> socket{};
+    StrictMock<steady_timer_gmock> timer{};
     io_context io{executor, strand_service};
-    decltype(make_connection(connection, io, socket)) conn =
-            make_connection(connection, io, socket);
+    decltype(make_connection(connection, io, socket, timer)) conn =
+            make_connection(connection, io, socket, timer);
     StrictMock<callback_gmock<decltype(conn)>> callback{};
-    StrictMock<steady_timer_gmock> timer;
-    steady_timer timer_wrapper {timer};
+    steady_timer timer_wrapper {&timer};
     decltype(ozo::impl::make_connect_operation_context(conn, wrap(callback), timer_wrapper)) context;
 
     auto make_operation_context() {

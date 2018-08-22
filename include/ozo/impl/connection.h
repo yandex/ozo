@@ -4,6 +4,7 @@
 #include <ozo/asio.h>
 
 #include <boost/algorithm/string/trim.hpp>
+#include <boost/asio/steady_timer.hpp>
 #include <boost/asio/posix/stream_descriptor.hpp>
 
 #include <string>
@@ -16,13 +17,14 @@ namespace impl {
 template <typename OidMap, typename Statistics>
 struct connection_impl {
     connection_impl(io_context& io, Statistics statistics)
-    : socket_(io), statistics_(std::move(statistics)) {}
+        : socket_(io), statistics_(std::move(statistics)), timer_(io) {}
 
     native_conn_handle handle_;
     asio::posix::stream_descriptor socket_;
     OidMap oid_map_;
     Statistics statistics_; // statistics metatypes to be defined - counter, duration, whatever?
     std::string error_context_;
+    asio::steady_timer timer_;
 };
 
 inline bool connection_status_bad(PGconn* handle) noexcept {
