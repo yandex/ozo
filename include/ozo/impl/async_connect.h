@@ -5,6 +5,9 @@
 #include <ozo/time_traits.h>
 #include <ozo/connection.h>
 
+#include <boost/asio/steady_timer.hpp>
+#include <boost/asio/strand.hpp>
+
 namespace ozo {
 namespace impl {
 

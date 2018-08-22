@@ -1,12 +1,13 @@
 #pragma once
 
 #include <ozo/native_conn_handle.h>
-
 #include <ozo/asio.h>
+
 #include <boost/algorithm/string/trim.hpp>
+#include <boost/asio/posix/stream_descriptor.hpp>
+
 #include <string>
 #include <sstream>
-
 
 namespace ozo {
 
