@@ -16,6 +16,10 @@ namespace ozo {
 /**
  * @defgroup Concepts
  * @brief Library-wide concepts emulation mechanism
+ *
+ * We decide to use Concept-style meta programming to make easy to extend, adapt and test the
+ * library. So here is our own reinvented wheel of C++ Concepts built on template constants and
+ * std::enable_if.
  */
 ///@{
 /**
@@ -243,7 +247,7 @@ struct is_emplaceable<T, std::void_t<decltype(std::declval<T&>().emplace())>> : 
 /**
  * @brief Emplaceable concept
  *
- * Inticates if container T can emplace it's element with default constructor
+ * Indicates if container T can emplace it's element with default constructor
  * @tparam T - type to examine
  */
 template <typename T>
