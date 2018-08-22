@@ -2,7 +2,6 @@
 
 #include <ozo/connection.h>
 
-#include <boost/make_shared.hpp>
 #include <boost/fusion/adapted/std_tuple.hpp>
 #include <boost/fusion/adapted/struct/define_struct.hpp>
 #include <boost/fusion/include/define_struct.hpp>
@@ -13,6 +12,7 @@
 
 namespace {
 
+namespace asio = boost::asio;
 namespace hana = boost::hana;
 
 using namespace testing;
@@ -77,9 +77,9 @@ struct connection {
     socket_mock socket_;
     OidMap oid_map_;
     std::string error_context_;
+    steady_timer timer_;
 
     explicit connection(io_context_mock& io) : socket_(io) {}
-
 };
 
 template <typename ...Ts>

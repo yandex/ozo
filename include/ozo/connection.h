@@ -74,6 +74,19 @@ constexpr auto get_connection_error_context(T&& conn)
     return get_connection_error_context_impl<std::decay_t<T>>::apply(std::forward<T>(conn));
 }
 
+template <typename T, typename = std::void_t<>>
+struct get_connection_timer_impl {
+    template <typename Conn>
+    constexpr static auto apply(Conn&& c) -> decltype((c.timer_)) {
+        return c.timer_;
+    }
+};
+
+template <typename T>
+constexpr auto get_connection_timer(T&& conn)
+        -> decltype(get_connection_timer_impl<std::decay_t<T>>::apply(std::forward<T>(conn))) {
+    return get_connection_timer_impl<std::decay_t<T>>::apply(std::forward<T>(conn));
+}
 
 /**
 * We define the connection to database not as a concrete class or type,
@@ -105,6 +118,10 @@ constexpr auto get_connection_error_context(T&& conn)
 *     we decide to use connection for this purpose since native libpq error message is
 *     bound to connection and all asyncronous operation of the library is bound to
 *     connection too. Currently std::string supported as a context object.
+*
+*   * get_connection_timer()
+*     Must return reference or proxy for timer to plan operations cancel by timeout.
+*     Should provide boost::asio::basic_waitable_timer like interface.
 */
 template <typename T>
 struct is_pure_connection<T, std::void_t<
@@ -112,10 +129,12 @@ struct is_pure_connection<T, std::void_t<
     decltype(get_connection_socket(std::declval<T&>())),
     decltype(get_connection_handle(std::declval<T&>())),
     decltype(get_connection_error_context(std::declval<T&>())),
+    decltype(get_connection_timer(std::declval<T&>())),
     decltype(get_connection_oid_map(std::declval<const T&>())),
     decltype(get_connection_socket(std::declval<const T&>())),
     decltype(get_connection_handle(std::declval<const T&>())),
-    decltype(get_connection_error_context(std::declval<const T&>()))
+    decltype(get_connection_error_context(std::declval<const T&>())),
+    decltype(get_connection_timer(std::declval<const T&>()))
 >> : std::true_type {};
 
 
@@ -134,6 +153,7 @@ struct connection_traits {
     using socket = std::decay_t<decltype(get_connection_socket(std::declval<T&>()))>;
     using handle = std::decay_t<decltype(get_connection_handle(std::declval<T&>()))>;
     using error_context = std::decay_t<decltype(get_connection_error_context(std::declval<T&>()))>;
+    using timer = std::decay_t<decltype(get_connection_timer(std::declval<T&>()))>;
 };
 
 /**
@@ -301,6 +321,13 @@ inline decltype(auto) get_statistics(T&& conn) noexcept {
     return get_connection_statistics(unwrap_connection(std::forward<T>(conn)));
 }
 
+/**
+* Returns timer for connection operations.
+*/
+template <typename T, typename = Require<Connection<T>>>
+inline decltype(auto) get_timer(T&& conn) noexcept {
+    return get_connection_timer(unwrap_connection(std::forward<T>(conn)));
+}
 
 template <typename ConnectionProvider, typename = std::void_t<>>
 struct get_connection_type {

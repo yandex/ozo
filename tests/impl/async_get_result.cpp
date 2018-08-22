@@ -22,9 +22,10 @@ struct fixture {
     StrictMock<executor_gmock> strand{};
     StrictMock<strand_executor_service_gmock> strand_service{};
     StrictMock<stream_descriptor_gmock> socket{};
+    StrictMock<steady_timer_gmock> timer{};
     io_context io{executor, strand_service};
-    decltype(make_connection(connection, io, socket)) conn =
-            make_connection(connection, io, socket);
+    decltype(make_connection(connection, io, socket, timer)) conn =
+            make_connection(connection, io, socket, timer);
 
     auto make_operation_context() {
         EXPECT_CALL(strand_service, get_executor()).WillOnce(ReturnRef(strand));

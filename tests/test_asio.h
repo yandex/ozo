@@ -164,21 +164,21 @@ struct steady_timer_gmock : steady_timer_mock {
 };
 
 struct steady_timer {
-    steady_timer_mock& impl;
+    steady_timer_mock* impl = nullptr;
 
     std::size_t expires_after(const asio::steady_timer::duration& expiry_time) {
-        return impl.expires_after(expiry_time);
+        return impl->expires_after(expiry_time);
     }
 
     template <typename Handler>
     void async_wait(Handler&& handler) {
-        return impl.async_wait([h = std::forward<Handler>(handler)] (auto e) {
+        return impl->async_wait([h = std::forward<Handler>(handler)] (auto e) {
             asio_post(ozo::detail::bind(std::move(h), std::move(e)));
         });
     }
 
     std::size_t cancel() {
-        return impl.cancel();
+        return impl->cancel();
     }
 };
 

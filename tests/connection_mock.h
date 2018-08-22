@@ -95,6 +95,7 @@ struct connection {
     OidMap oid_map_;
     connection_mock* mock_ = nullptr;
     std::string error_context_;
+    steady_timer timer_;
 
     friend int pq_set_nonblocking(connection& c) {
         return c.mock_->set_nonblocking();
@@ -161,13 +162,14 @@ static_assert(ozo::Connection<connection_ptr<>>,
 
 template <typename OidMap = empty_oid_map>
 inline auto make_connection(connection_mock& mock, io_context& io,
-        stream_descriptor_mock& socket_mock, OidMap oid_map = OidMap{}) {
+        stream_descriptor_mock& socket_mock, steady_timer_mock& timer, OidMap oid_map = OidMap{}) {
     return std::make_shared<connection<OidMap>>(connection<OidMap>{
             std::make_unique<native_handle>(native_handle::bad),
             stream_descriptor{io, socket_mock},
             oid_map,
             std::addressof(mock),
-            ""
+            "",
+            steady_timer {&timer}
         });
 }
 

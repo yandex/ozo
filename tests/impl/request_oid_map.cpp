@@ -74,6 +74,8 @@ struct connection {
     friend const std::string& get_connection_error_context(const connection& self) {
         return self.error_context;
     }
+    friend void get_connection_timer(connection&) {}
+    friend void get_connection_timer(const connection&) {}
 };
 
 TEST(request_oid_map_op, should_call_handler_with_oid_request_failed_error_when_oid_map_length_differs_from_result_length) {
