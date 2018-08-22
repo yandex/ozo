@@ -26,12 +26,11 @@ struct fixture {
     decltype(make_connection(connection, io, socket, timer)) conn =
             make_connection(connection, io, socket, timer);
     StrictMock<callback_gmock<decltype(conn)>> callback{};
-    steady_timer timer_wrapper {&timer};
-    decltype(ozo::impl::make_connect_operation_context(conn, wrap(callback), timer_wrapper)) context;
+    decltype(ozo::impl::make_connect_operation_context(conn, wrap(callback))) context;
 
     auto make_operation_context() {
         EXPECT_CALL(strand_service, get_executor()).WillOnce(ReturnRef(strand));
-        return ozo::impl::make_connect_operation_context(conn, wrap(callback), timer_wrapper);
+        return ozo::impl::make_connect_operation_context(conn, wrap(callback));
     }
 
     fixture() : context(make_operation_context()) {}

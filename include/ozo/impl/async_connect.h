@@ -11,31 +11,28 @@
 namespace ozo {
 namespace impl {
 
-template <typename ConnectionT, typename Handler, typename Timer>
+template <typename ConnectionT, typename Handler>
 struct connect_operation_context {
     static_assert(Connection<ConnectionT>, "ConnectionT is not a Connection");
 
     ConnectionT connection;
     Handler handler;
-    Timer timer;
     ozo::strand<decltype(get_io_context(connection))> strand {get_io_context(connection)};
 
-    connect_operation_context(ConnectionT connection, Handler handler, Timer timer)
+    connect_operation_context(ConnectionT connection, Handler handler)
             : connection(std::move(connection)),
-              handler(std::move(handler)),
-              timer(std::move(timer)) {}
+              handler(std::move(handler)) {}
 };
 
 template <typename ... Ts>
 using connect_operation_context_ptr = std::shared_ptr<connect_operation_context<Ts ...>>;
 
-template <typename Connection, typename Handler, typename Timer>
-auto make_connect_operation_context(Connection&& connection, Handler&& handler, Timer&& timer) {
-    using context_type = connect_operation_context<std::decay_t<Connection>, std::decay_t<Handler>, std::decay_t<Timer>>;
+template <typename Connection, typename Handler>
+auto make_connect_operation_context(Connection&& connection, Handler&& handler) {
+    using context_type = connect_operation_context<std::decay_t<Connection>, std::decay_t<Handler>>;
     return std::make_shared<context_type>(
         std::forward<Connection>(connection),
-        std::forward<Handler>(handler),
-        std::forward<Timer>(timer)
+        std::forward<Handler>(handler)
     );
 }
 
@@ -57,11 +54,6 @@ decltype(auto) get_handler_context(const connect_operation_context_ptr<Ts ...>& 
 template <typename ... Ts>
 auto& get_executor(const connect_operation_context_ptr<Ts ...>& context) {
     return context->strand;
-}
-
-template <typename ... Ts>
-auto& get_timer(const connect_operation_context_ptr<Ts ...>& context) {
-    return context->timer;
 }
 
 template <typename Socket>
@@ -90,7 +82,7 @@ struct async_connect_op {
     Context context;
 
     void done(error_code ec = error_code {}) {
-        get_timer(context).cancel();
+        get_timer(get_connection(context)).cancel();
 
         get_io_context(get_connection(context))
             .post(detail::bind(std::move(get_handler(context)), std::move(ec), std::move(get_connection(context))));
@@ -109,8 +101,8 @@ struct async_connect_op {
             return done(ec);
         }
 
-        get_timer(context).expires_after(timeout);
-        get_timer(context).async_wait(bind_executor(get_executor(context),
+        get_timer(get_connection(context)).expires_after(timeout);
+        get_timer(get_connection(context)).async_wait(bind_executor(get_executor(context),
             make_timeout_handler(get_socket(get_connection(context)))));
 
         return write_poll(get_connection(context), bind_executor(get_executor(context), *this));
@@ -190,8 +182,7 @@ inline Require<Connection<ConnectionT>> async_connect(std::string conninfo, cons
     make_async_connect_op(
         make_connect_operation_context(
             std::forward<ConnectionT>(connection),
-            make_request_oid_map_handler(std::forward<Handler>(handler)),
-            asio::steady_timer(get_io_context(connection))
+            make_request_oid_map_handler(std::forward<Handler>(handler))
         )
     ).perform(conninfo, timeout);
 }
