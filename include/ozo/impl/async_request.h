@@ -6,6 +6,9 @@
 #include <ozo/binary_deserialization.h>
 #include <ozo/impl/io.h>
 
+#include <boost/asio/bind_executor.hpp>
+#include <boost/asio/coroutine.hpp>
+
 namespace ozo {
 namespace impl {
 

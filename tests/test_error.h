@@ -2,6 +2,8 @@
 
 #include <ozo/error.h>
 
+#include <boost/asio/steady_timer.hpp>
+
 #include <sstream>
 
 namespace ozo::tests::error {
