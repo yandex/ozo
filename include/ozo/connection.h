@@ -89,7 +89,7 @@ struct get_connection_oid_map_impl {
 };
 
 /**
- * @defgroup Connection_Concept Connection concept
+ * @defgroup Connection_Concept Concept
  * @ingroup Connection
  * @brief Database connection concept description
  */
@@ -344,7 +344,7 @@ template <typename T>
 constexpr auto Connection = is_connection<std::decay_t<T>>::value;
 
 /**
- * @defgroup Connection_Api Connection api
+ * @defgroup Connection_Api API
  * @ingroup Connection
  * @brief OZO connection public API description
  */
@@ -359,8 +359,9 @@ constexpr auto Connection = is_connection<std::decay_t<T>>::value;
  * @param conn --- Connection
  * @return refernce to a wrapped PostgreSQL connection handle
  */
-template <typename T, typename = Require<Connection<T>>>
+template <typename T>
 inline decltype(auto) get_handle(T&& conn) noexcept {
+    static_assert(Connection<T>, "T must be a Connection");
     return get_connection_handle(
         unwrap_connection(std::forward<T>(conn)));
 }
@@ -376,8 +377,9 @@ inline decltype(auto) get_handle(T&& conn) noexcept {
  * @param conn --- Connection
  * @return PQConn* --- native handle
  */
-template <typename T, typename = Require<Connection<T>>>
+template <typename T>
 inline decltype(auto) get_native_handle(T&& conn) noexcept {
+    static_assert(Connection<T>, "T must be a Connection");
     return get_handle(std::forward<T>(conn)).get();
 }
 
@@ -389,8 +391,9 @@ inline decltype(auto) get_native_handle(T&& conn) noexcept {
  * @param conn --- Connection
  * @return socket stream object of the connection
  */
-template <typename T, typename = Require<Connection<T>>>
+template <typename T>
 inline decltype(auto) get_socket(T&& conn) noexcept {
+    static_assert(Connection<T>, "T must be a Connection");
     return get_connection_socket(unwrap_connection(std::forward<T>(conn)));
 }
 
@@ -400,8 +403,9 @@ inline decltype(auto) get_socket(T&& conn) noexcept {
  * @param conn --- Connection
  * @return `io_context` of socket stream object of the connection
  */
-template <typename T, typename = Require<Connection<T>>>
+template <typename T>
 inline decltype(auto) get_io_context(T& conn) noexcept {
+    static_assert(Connection<T>, "T must be a Connection");
     return get_socket(conn).get_io_service();
 }
 
@@ -412,8 +416,9 @@ inline decltype(auto) get_io_context(T& conn) noexcept {
  * @param io --- io_context to which conn must be bound
  * @return `error_code` in case of error has been occured
  */
-template <typename T, typename IoContext, typename = Require<Connection<T>>>
+template <typename T, typename IoContext>
 inline error_code rebind_io_context(T& conn, IoContext& io) {
+    static_assert(Connection<T>, "T must be a Connection");
     using impl::rebind_connection_io_context;
     return rebind_connection_io_context(unwrap_connection(conn), io);
 }
@@ -427,21 +432,15 @@ inline error_code rebind_io_context(T& conn, IoContext& io) {
  * @return `true` if connection is in bad or null state, `false` - otherwise.
  */
 template <typename T>
-inline Require<Connection<T> && !OperatorNot<T>,
-bool> connection_bad(const T& conn) noexcept {
+inline bool connection_bad(const T& conn) noexcept {
+    static_assert(Connection<T>, "T must be a Connection");
+    if constexpr (Nullable<T>) {
+        if (!conn) {
+            return true;
+        }
+    }
     using impl::connection_status_bad;
     return connection_status_bad(get_native_handle(conn));
-}
-
-/**
-* Indicates if connection is bad. Overloaded version for
-* ConnectionWraper with operator !
-*/
-template <typename T>
-inline Require<Nullable<T> && OperatorNot<T>,
-bool> connection_bad(const T& conn) noexcept {
-    using impl::connection_status_bad;
-    return !conn || connection_status_bad(get_native_handle(conn));
 }
 
 /**
@@ -454,8 +453,9 @@ bool> connection_bad(const T& conn) noexcept {
  * @param conn --- Connection to check
  * @return `false` if connection is in bad state, `true` - otherwise
  */
-template <typename T, typename = Require<Connection<T>>>
+template <typename T>
 inline bool connection_good(const T& conn) noexcept {
+    static_assert(Connection<T>, "T must be a Connection");
     return !connection_bad(conn);
 }
 
@@ -468,8 +468,9 @@ inline bool connection_good(const T& conn) noexcept {
  * @param conn --- Connection to get message from
  * @return `std::string_view` contains a message
  */
-template <typename T, typename = Require<Connection<T>>>
+template <typename T>
 inline std::string_view error_message(T&& conn) {
+    static_assert(Connection<T>, "T must be a Connection");
     return impl::connection_error_message(get_native_handle(conn));
 }
 
@@ -487,8 +488,9 @@ inline std::string_view error_message(T&& conn) {
  * @param conn --- Connection to get context from
  * @return `std::string` contains a context
  */
-template <typename T, typename = Require<Connection<T>>>
+template <typename T>
 inline const auto& get_error_context(const T& conn) {
+    static_assert(Connection<T>, "T must be a Connection");
     return get_connection_error_context(unwrap_connection(conn));
 }
 
@@ -506,7 +508,8 @@ inline const auto& get_error_context(const T& conn) {
  * @param ctx --- context to set, now only `std::string` is supported
  */
 template <typename T, typename Ctx>
-inline Require<Connection<T>> set_error_context(T& conn, Ctx&& ctx) {
+inline void set_error_context(T& conn, Ctx&& ctx) {
+    static_assert(Connection<T>, "T must be a Connection");
     get_connection_error_context(unwrap_connection(conn)) = std::forward<Ctx>(ctx);
 }
 
@@ -522,7 +525,8 @@ inline Require<Connection<T>> set_error_context(T& conn, Ctx&& ctx) {
  * @param conn --- Connection to reset context to
  */
 template <typename T>
-inline Require<Connection<T>> reset_error_context(T& conn) {
+inline void reset_error_context(T& conn) {
+    static_assert(Connection<T>, "T must be a Connection");
     using ctx_type = std::decay_t<decltype(get_error_context(conn))>;
     set_error_context(conn, ctx_type{});
 }
@@ -536,8 +540,9 @@ inline Require<Connection<T>> reset_error_context(T& conn) {
  * @param conn --- Connection to access OID map of
  * @return --- OID map of the Connection
  */
-template <typename T, typename = Require<Connection<T>>>
+template <typename T>
 inline decltype(auto) get_oid_map(T&& conn) noexcept {
+    static_assert(Connection<T>, "T must be a Connection");
     return get_connection_oid_map(unwrap_connection(std::forward<T>(conn)));
 }
 
@@ -549,8 +554,9 @@ inline decltype(auto) get_oid_map(T&& conn) noexcept {
  * @param conn --- Connection to access statistics of
  * @return --- statistics of the Connection
  */
-template <typename T, typename = Require<Connection<T>>>
+template <typename T>
 inline decltype(auto) get_statistics(T&& conn) noexcept {
+    static_assert(Connection<T>, "T must be a Connection");
     return get_connection_statistics(unwrap_connection(std::forward<T>(conn)));
 }
 
@@ -576,7 +582,7 @@ inline decltype(auto) get_timer(T&& conn) noexcept {
 
 ///@}
 /**
- * @defgroup Connection_Provider Connection provider
+ * @defgroup Connection_Provider Provider
  * @ingroup Connection
  * @brief OZO connection provider related entities
  *
