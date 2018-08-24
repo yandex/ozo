@@ -27,30 +27,18 @@ inline bool connection_status_bad(const native_handle* h) {
     return *h == native_handle::bad;
 }
 
-struct io_context_mock {
-    template <typename Handler>
-    void post(Handler&& h) {
-        asio_post(std::forward<Handler>(h));
-    }
-
-    template <typename Handler>
-    void dispatch(Handler&& h) {
-        asio_post(std::forward<Handler>(h));
-    }
-};
-
 struct native_handle_mock {
     MOCK_METHOD1(assign, void (ozo::error_code&));
     MOCK_METHOD0(release, void ());
 };
 
 struct socket_mock {
-    io_context_mock* io_;
+    io_context* io_;
     std::shared_ptr<native_handle_mock> native_handle_ = std::make_shared<native_handle_mock>();
 
-    socket_mock(io_context_mock& io) : io_(std::addressof(io)) {}
+    socket_mock(io_context& io) : io_(std::addressof(io)) {}
 
-    io_context_mock& get_io_service() {
+    io_context& get_io_service() {
         return *io_;
     }
 
@@ -79,7 +67,7 @@ struct connection {
     std::string error_context_;
     steady_timer timer_;
 
-    explicit connection(io_context_mock& io) : socket_(io) {}
+    explicit connection(io_context& io) : socket_(io) {}
 };
 
 template <typename ...Ts>
@@ -102,7 +90,7 @@ static_assert(!ozo::Connection<int>,
     "int meets Connection requirements unexpectedly");
 
 struct connection_good : Test {
-    io_context_mock io;
+    io_context io;
 };
 
 TEST_F(connection_good, should_return_false_for_object_with_bad_handle) {
@@ -123,7 +111,7 @@ TEST_F(connection_good, should_return_true_for_object_with_good_handle) {
 }
 
 struct connection_bad : Test {
-    io_context_mock io;
+    io_context io;
 };
 
 TEST_F(connection_bad, should_return_true_for_object_with_bad_handle) {
@@ -144,7 +132,7 @@ TEST_F(connection_bad, should_return_false_for_object_with_good_handle) {
 }
 
 TEST(unwrap_connection, should_return_connection_reference_for_connection_wrapper) {
-    io_context_mock io;
+    io_context io;
     auto conn = std::make_shared<connection<>>(io);
 
     EXPECT_EQ(
@@ -154,7 +142,7 @@ TEST(unwrap_connection, should_return_connection_reference_for_connection_wrappe
 }
 
 TEST(unwrap_connection, should_return_argument_reference_for_connection) {
-    io_context_mock io;
+    io_context io;
     connection<> conn(io);
 
     EXPECT_EQ(
@@ -164,7 +152,7 @@ TEST(unwrap_connection, should_return_argument_reference_for_connection) {
 }
 
 TEST(get_error_context, should_returns_reference_to_error_context) {
-    io_context_mock io;
+    io_context io;
     auto conn = std::make_shared<connection<>>(io);
 
     EXPECT_EQ(
@@ -174,7 +162,7 @@ TEST(get_error_context, should_returns_reference_to_error_context) {
 }
 
 TEST(set_error_context, should_set_error_context) {
-    io_context_mock io;
+    io_context io;
     auto conn = std::make_shared<connection<>>(io);
     ozo::set_error_context(conn, "brand new super context");
 
@@ -182,7 +170,7 @@ TEST(set_error_context, should_set_error_context) {
 }
 
 TEST(reset_error_context, should_resets_error_context) {
-    io_context_mock io;
+    io_context io;
     auto conn = std::make_shared<connection<>>(io);
     conn->error_context_ = "brand new super context";
     ozo::reset_error_context(conn);
@@ -190,37 +178,49 @@ TEST(reset_error_context, should_resets_error_context) {
 }
 
 struct async_get_connection : Test {
-    io_context_mock io;
+    StrictMock<executor_gmock> executor;
+    StrictMock<executor_gmock> callback_executor;
+    io_context io {executor};
 };
 
 TEST_F(async_get_connection, should_pass_through_the_connection_to_handler) {
     auto conn = std::make_shared<connection<>>(io);
-    using callback_mock = callback_gmock<decltype(conn)>;
-    StrictMock<callback_mock> cb_mock{};
-    EXPECT_CALL(cb_mock, context_preserved()).WillOnce(Return());
+    StrictMock<callback_gmock<decltype(conn)>> cb_mock{};
+
+    const InSequence s;
+
+    EXPECT_CALL(cb_mock, get_executor()).WillOnce(Return(ozo::tests::executor {&callback_executor}));
+    EXPECT_CALL(callback_executor, on_work_started()).WillOnce(Return());
+    EXPECT_CALL(executor, dispatch(_)).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(callback_executor, dispatch(_)).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(cb_mock, call(error_code{}, conn)).WillOnce(Return());
+    EXPECT_CALL(callback_executor, on_work_finished()).WillOnce(Return());
+
     ozo::async_get_connection(conn, wrap(cb_mock));
 }
 
 TEST_F(async_get_connection, should_reset_connection_error_context) {
     auto conn = std::make_shared<connection<>>(io);
     conn->error_context_ = "some context here";
+
+    EXPECT_CALL(executor, dispatch(_)).WillOnce(InvokeArgument<0>());
+
     ozo::async_get_connection(conn, [](error_code, auto conn) {
         EXPECT_TRUE(conn->error_context_.empty());
     });
 }
 
 TEST(rebind_connection_io_context, should_leave_same_io_context_and_socket_when_address_of_new_io_is_equal_to_old) {
-    io_context_mock io;
+    io_context io;
     connection<> conn(io);
     EXPECT_EQ(ozo::impl::rebind_connection_io_context(conn, io), error_code());
     EXPECT_EQ(std::addressof(ozo::get_io_context(conn)), std::addressof(io));
 }
 
 TEST(rebind_connection_io_context, should_change_socket_when_address_of_new_io_is_not_equal_to_old) {
-    io_context_mock old_io;
+    io_context old_io;
     connection<> conn(old_io);
-    io_context_mock new_io;
+    io_context new_io;
 
     EXPECT_CALL(*ozo::get_socket(conn).native_handle(), assign(_)).WillOnce(Return());
     EXPECT_CALL(*ozo::get_socket(conn).native_handle(), release()).WillOnce(Return());
@@ -230,9 +230,9 @@ TEST(rebind_connection_io_context, should_change_socket_when_address_of_new_io_i
 }
 
 TEST(rebind_connection_io_context, should_return_error_when_socket_assign_fails_with_error) {
-    io_context_mock old_io;
+    io_context old_io;
     connection<> conn(old_io);
-    io_context_mock new_io;
+    io_context new_io;
 
     EXPECT_CALL(*ozo::get_socket(conn).native_handle(), assign(_))
         .WillOnce(SetArgReferee<0>(error_code(error::code::error)));
