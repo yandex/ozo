@@ -19,8 +19,8 @@ namespace detail {
  */
 template <typename Handler, typename Tuple>
 struct binder {
-    std::decay_t<Handler> handler_;
-    std::decay_t<Tuple> args_;
+    Handler handler_;
+    Tuple args_;
 
     auto operator() () { return std::apply(std::move(handler_), std::move(args_)); }
 
@@ -33,7 +33,11 @@ struct binder {
 
 template <typename Handler, typename ... Args>
 inline auto bind(Handler&& h, Args&& ... args) {
-    return binder<Handler, decltype(std::make_tuple(std::forward<Args>(args)...))> {
+    using result_type = binder<
+        std::decay_t<Handler>,
+        std::decay_t<decltype(std::make_tuple(std::forward<Args>(args)...))>
+    >;
+    return result_type {
         std::forward<Handler>(h),
         std::make_tuple(std::forward<Args>(args)...)
     };
