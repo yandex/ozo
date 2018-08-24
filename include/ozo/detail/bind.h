@@ -2,6 +2,9 @@
 
 #include <tuple>
 #include <utility>
+
+#include <ozo/asio.h>
+
 #include <boost/asio/handler_invoke_hook.hpp>
 
 namespace ozo {
@@ -24,11 +27,17 @@ struct binder {
 
     auto operator() () { return std::apply(std::move(handler_), std::move(args_)); }
 
-    template <typename Function>
-    friend void asio_handler_invoke(Function&& f, binder* ctx) {
-        using boost::asio::asio_handler_invoke;
-        asio_handler_invoke(std::forward<Function>(f), std::addressof(ctx->handler_));
+    using executor_type = decltype(asio::get_associated_executor(handler_));
+
+    auto get_executor() const noexcept {
+        return asio::get_associated_executor(handler_);
     }
+
+//    template <typename Function>
+//    friend void asio_handler_invoke(Function&& f, binder* ctx) {
+//        using boost::asio::asio_handler_invoke;
+//        asio_handler_invoke(std::forward<Function>(f), std::addressof(ctx->handler_));
+//    }
 };
 
 template <typename Handler, typename ... Args>

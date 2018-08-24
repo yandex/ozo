@@ -16,8 +16,7 @@ template <typename Connection, typename Handler>
 struct request_operation_context {
     std::decay_t<Connection> conn;
     std::decay_t<Handler> handler;
-    using strand_type = ozo::strand<decltype(get_io_context(conn))>;
-    strand_type strand{get_io_context(conn)};
+    ozo::strand<decltype(get_io_context(conn))> strand {get_io_context(conn)};
     query_state state = query_state::send_in_progress;
 
     request_operation_context(Connection conn, Handler handler)
@@ -73,8 +72,7 @@ auto& get_handler(const request_operation_context_ptr<Ts ...>& context) noexcept
 
 template <typename Oper, typename ...Ts>
 inline void post(const request_operation_context_ptr<Ts...>& ctx, Oper&& op) {
-    post(get_connection(ctx),
-        bind_executor(get_executor(ctx), std::forward<Oper>(op)));
+    post(get_connection(ctx), std::forward<Oper>(op));
 }
 
 template <typename ...Ts>
@@ -83,24 +81,22 @@ inline void done(const request_operation_context_ptr<Ts...>& ctx, error_code ec)
     decltype(auto) conn = get_connection(ctx);
     error_code _;
     get_socket(conn).cancel(_);
-    post(ctx, detail::bind(get_handler(ctx), std::move(ec), conn));
+    post(get_connection(ctx), detail::bind(get_handler(ctx), std::move(ec), conn));
 }
 
 template <typename ...Ts>
 inline void done(const request_operation_context_ptr<Ts...>& ctx) {
-    post(ctx, detail::bind(get_handler(ctx), error_code{}, get_connection(ctx)));
+    post(get_connection(ctx), detail::bind(get_handler(ctx), error_code{}, get_connection(ctx)));
 }
 
 template <typename Continuation, typename ...Ts>
 inline void write_poll(const request_operation_context_ptr<Ts...>& ctx, Continuation&& c) {
-    using asio::bind_executor;
-    write_poll(get_connection(ctx), bind_executor(get_executor(ctx), std::forward<Continuation>(c)));
+    write_poll(get_connection(ctx), std::forward<Continuation>(c));
 }
 
 template <typename Continuation, typename ...Ts>
 inline void read_poll(const request_operation_context_ptr<Ts...>& ctx, Continuation&& c) {
-    using asio::bind_executor;
-    read_poll(get_connection(ctx), bind_executor(get_executor(ctx), std::forward<Continuation>(c)));
+    read_poll(get_connection(ctx), std::forward<Continuation>(c));
 }
 
 template <typename Context, typename BinaryQuery>
@@ -149,10 +145,16 @@ struct async_send_query_params_op {
         }
     }
 
-    template <typename Func>
-    friend void asio_handler_invoke(Func&& f, async_send_query_params_op* ctx) {
+    using executor_type = std::decay_t<decltype(impl::get_executor(ctx_))>;
+
+    auto get_executor() const noexcept {
+        return impl::get_executor(ctx_);
+    }
+
+    template <typename Function>
+    friend void asio_handler_invoke(Function&& f, async_send_query_params_op* ctx) {
         using boost::asio::asio_handler_invoke;
-        asio_handler_invoke(std::forward<Func>(f), get_handler_context(ctx->ctx_));
+        asio_handler_invoke(std::forward<Function>(f), get_handler_context(ctx->ctx_));
     }
 };
 
@@ -271,10 +273,16 @@ struct async_get_result_op : boost::asio::coroutine {
         while(get_result(conn));
     }
 
-    template <typename Func>
-    friend void asio_handler_invoke(Func&& f, async_get_result_op* ctx) {
+    using executor_type = std::decay_t<decltype(impl::get_executor(ctx_))>;
+
+    auto get_executor() const noexcept {
+        return impl::get_executor(ctx_);
+    }
+
+    template <typename Function>
+    friend void asio_handler_invoke(Function&& f, async_get_result_op* ctx) {
         using boost::asio::asio_handler_invoke;
-        asio_handler_invoke(std::forward<Func>(f), get_handler_context(ctx->ctx_));
+        asio_handler_invoke(std::forward<Function>(f), get_handler_context(ctx->ctx_));
     }
 };
 
@@ -314,10 +322,10 @@ struct async_request_op {
         async_get_result(std::move(ctx), std::move(out_));
     }
 
-    template <typename Func>
-    friend void asio_handler_invoke(Func&& f, async_request_op* ctx) {
-        using boost::asio::asio_handler_invoke;
-        asio_handler_invoke(std::forward<Func>(f), std::addressof(ctx->handler_));
+    using executor_type = decltype(asio::get_associated_executor(handler_));
+
+    auto get_executor() const noexcept {
+        return asio::get_associated_executor(handler_);
     }
 };
 

@@ -6,6 +6,9 @@
 #include <ozo/error.h>
 #include <ozo/binary_query.h>
 #include <ozo/detail/bind.h>
+
+#include <boost/asio/post.hpp>
+
 #include <libpq-fe.h>
 
 namespace ozo {
@@ -108,7 +111,7 @@ inline const char* pq_get_value(const PGresult& res, int row, int column) noexce
 }
 
 inline std::size_t pq_get_length(const PGresult& res, int row, int column) noexcept {
-    return PQgetlength(std::addressof(res), row, column);
+    return static_cast<std::size_t>(PQgetlength(std::addressof(res), row, column));
 }
 
 inline bool pq_get_isnull(const PGresult& res, int row, int column) noexcept {
@@ -205,7 +208,7 @@ inline void read_poll(T& conn, Handler&& h) {
 // Shortcut for post operation with connection associated executor
 template <typename T, typename Oper, typename = Require<Connection<T>>>
 inline void post(T& conn, Oper&& op) {
-    get_io_context(conn).post(std::forward<Oper>(op));
+    asio::post(get_io_context(conn), std::forward<Oper>(op));
 }
 
 template <typename T, typename = Require<Connection<T>>>
