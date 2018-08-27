@@ -70,12 +70,6 @@ struct pooled_connection_wrapper {
             handler_(std::move(ec), std::move(conn_));
         }
 
-        using executor_type = decltype(asio::get_associated_executor(handler_));
-
-        auto get_executor() const noexcept {
-            return asio::get_associated_executor(handler_);
-        }
-
         template <typename Func>
         friend void asio_handler_invoke(Func&& f, wrapper* ctx) {
             using boost::asio::asio_handler_invoke;
@@ -96,12 +90,6 @@ struct pooled_connection_wrapper {
         }
 
         async_get_connection(provider_, wrapper{std::move(handler_), std::move(conn)});
-    }
-
-    using executor_type = decltype(asio::get_associated_executor(handler_));
-
-    auto get_executor() const noexcept {
-        return asio::get_associated_executor(handler_);
     }
 
     template <typename Func>
