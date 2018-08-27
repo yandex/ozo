@@ -8,7 +8,7 @@
 
 namespace {
 
-namespace asio = boost::asio;
+namespace hana = boost::hana;
 
 using namespace testing;
 using namespace ozo::tests;
@@ -22,12 +22,10 @@ struct fixture {
     StrictMock<strand_executor_service_gmock> strand_service{};
     StrictMock<stream_descriptor_gmock> socket{};
     StrictMock<steady_timer_gmock> timer{};
-    io_context io {executor, strand_service};
+    io_context io{executor, strand_service};
     decltype(make_connection(connection, io, socket, timer)) conn =
             make_connection(connection, io, socket, timer);
-    StrictMock<executor_gmock> callback_executor{};
     StrictMock<callback_gmock<decltype(conn)>> callback{};
-
     decltype(ozo::impl::make_connect_operation_context(conn, wrap(callback))) context;
 
     auto make_operation_context() {
@@ -68,13 +66,10 @@ TEST_F(async_connect_op, should_call_handler_with_pq_connection_start_failed_on_
         .WillOnce(Return(error_code{ozo::error::pq_connection_start_failed}));
     EXPECT_CALL(f.timer, cancel()).WillOnce(Return(0));
 
-    EXPECT_CALL(f.callback, get_executor()).WillOnce(Return(ozo::tests::executor {&f.callback_executor}));
-    EXPECT_CALL(f.callback_executor, on_work_started()).WillOnce(Return());
     EXPECT_CALL(f.executor, post(_)).WillOnce(InvokeArgument<0>());
-    EXPECT_CALL(f.callback_executor, dispatch(_)).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(f.callback, context_preserved()).WillOnce(Return());
     EXPECT_CALL(f.callback, call(error_code{ozo::error::pq_connection_start_failed}, f.conn))
         .WillOnce(Return());
-    EXPECT_CALL(f.callback_executor, on_work_finished()).WillOnce(Return());
 
     ozo::impl::make_async_connect_op(f.context).perform("conninfo", time_traits::duration(42));
 }
@@ -88,13 +83,10 @@ TEST_F(async_connect_op, should_call_handler_with_pq_connection_status_bad_if_co
     EXPECT_CALL(f.connection, start_connection("conninfo")).WillOnce(Return(error_code{}));
     EXPECT_CALL(f.timer, cancel()).WillOnce(Return(0));
 
-    EXPECT_CALL(f.callback, get_executor()).WillOnce(Return(ozo::tests::executor {&f.callback_executor}));
-    EXPECT_CALL(f.callback_executor, on_work_started()).WillOnce(Return());
     EXPECT_CALL(f.executor, post(_)).WillOnce(InvokeArgument<0>());
-    EXPECT_CALL(f.callback_executor, dispatch(_)).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(f.callback, context_preserved()).WillOnce(Return());
     EXPECT_CALL(f.callback, call(error_code{ozo::error::pq_connection_status_bad}, f.conn))
         .WillOnce(Return());
-    EXPECT_CALL(f.callback_executor, on_work_finished()).WillOnce(Return());
 
     ozo::impl::make_async_connect_op(f.context).perform("conninfo", time_traits::duration(42));
 }
@@ -109,12 +101,9 @@ TEST_F(async_connect_op, should_call_handler_with_error_if_assign_socket_returns
     EXPECT_CALL(f.connection, assign_socket()).WillOnce(Return(error_code{error::error}));
     EXPECT_CALL(f.timer, cancel()).WillOnce(Return(0));
 
-    EXPECT_CALL(f.callback, get_executor()).WillOnce(Return(ozo::tests::executor {&f.callback_executor}));
-    EXPECT_CALL(f.callback_executor, on_work_started()).WillOnce(Return());
     EXPECT_CALL(f.executor, post(_)).WillOnce(InvokeArgument<0>());
-    EXPECT_CALL(f.callback_executor, dispatch(_)).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(f.callback, context_preserved()).WillOnce(Return());
     EXPECT_CALL(f.callback, call(error_code{error::error}, f.conn)).WillOnce(Return());
-    EXPECT_CALL(f.callback_executor, on_work_finished()).WillOnce(Return());
 
     ozo::impl::make_async_connect_op(f.context).perform("conninfo", time_traits::duration(42));
 }
@@ -132,7 +121,8 @@ TEST_F(async_connect_op, should_wait_for_write_complete_if_connect_poll_returns_
     EXPECT_CALL(f.timer, async_wait(_)).WillOnce(Return());
     EXPECT_CALL(f.socket, async_write_some(_)).WillOnce(InvokeArgument<0>(error_code{}));
 
-    EXPECT_CALL(f.strand, post(_)).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(f.strand, dispatch(_)).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(f.callback, context_preserved()).WillOnce(Return());
     EXPECT_CALL(f.connection, connect_poll()).WillOnce(Return(PGRES_POLLING_WRITING));
 
     EXPECT_CALL(f.socket, async_write_some(_)).WillOnce(Return());
@@ -153,7 +143,8 @@ TEST_F(async_connect_op, should_wait_for_read_complete_if_connect_poll_returns_P
 
     EXPECT_CALL(f.socket, async_write_some(_)).WillOnce(InvokeArgument<0>(error_code{}));
 
-    EXPECT_CALL(f.strand, post(_)).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(f.strand, dispatch(_)).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(f.callback, context_preserved()).WillOnce(Return());
 
     EXPECT_CALL(f.connection, connect_poll()).WillOnce(Return(PGRES_POLLING_READING));
 
@@ -175,17 +166,15 @@ TEST_F(async_connect_op, should_call_handler_with_no_error_if_connect_poll_retur
 
     EXPECT_CALL(f.socket, async_write_some(_)).WillOnce(InvokeArgument<0>(error_code{}));
 
-    EXPECT_CALL(f.strand, post(_)).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(f.strand, dispatch(_)).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(f.callback, context_preserved()).WillOnce(Return());
 
     EXPECT_CALL(f.connection, connect_poll()).WillOnce(Return(PGRES_POLLING_OK));
     EXPECT_CALL(f.timer, cancel()).WillOnce(Return(1));
 
-    EXPECT_CALL(f.callback, get_executor()).WillOnce(Return(ozo::tests::executor {&f.callback_executor}));
-    EXPECT_CALL(f.callback_executor, on_work_started()).WillOnce(Return());
     EXPECT_CALL(f.executor, post(_)).WillOnce(InvokeArgument<0>());
-    EXPECT_CALL(f.callback_executor, dispatch(_)).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(f.callback, context_preserved()).WillOnce(Return());
     EXPECT_CALL(f.callback, call(error_code{}, f.conn)).WillOnce(Return());
-    EXPECT_CALL(f.callback_executor, on_work_finished()).WillOnce(Return());
 
     ozo::impl::make_async_connect_op(f.context).perform("conninfo", time_traits::duration(42));
 }
@@ -203,17 +192,15 @@ TEST_F(async_connect_op, should_call_handler_with_pq_connect_poll_failed_if_conn
 
     EXPECT_CALL(f.socket, async_write_some(_)).WillOnce(InvokeArgument<0>(error_code{}));
 
-    EXPECT_CALL(f.strand, post(_)).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(f.strand, dispatch(_)).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(f.callback, context_preserved()).WillOnce(Return());
     EXPECT_CALL(f.connection, connect_poll()).WillOnce(Return(PGRES_POLLING_FAILED));
     EXPECT_CALL(f.timer, cancel()).WillOnce(Return(1));
 
-    EXPECT_CALL(f.callback, get_executor()).WillOnce(Return(ozo::tests::executor {&f.callback_executor}));
-    EXPECT_CALL(f.callback_executor, on_work_started()).WillOnce(Return());
     EXPECT_CALL(f.executor, post(_)).WillOnce(InvokeArgument<0>());
-    EXPECT_CALL(f.callback_executor, dispatch(_)).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(f.callback, context_preserved()).WillOnce(Return());
     EXPECT_CALL(f.callback, call(error_code{ozo::error::pq_connect_poll_failed}, f.conn))
         .WillOnce(Return());
-    EXPECT_CALL(f.callback_executor, on_work_finished()).WillOnce(Return());
 
     ozo::impl::make_async_connect_op(f.context).perform("conninfo", time_traits::duration(42));
 }
@@ -231,18 +218,16 @@ TEST_F(async_connect_op, should_call_handler_with_pq_connect_poll_failed_if_conn
 
     EXPECT_CALL(f.socket, async_write_some(_)).WillOnce(InvokeArgument<0>(error_code{}));
 
-    EXPECT_CALL(f.strand, post(_)).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(f.strand, dispatch(_)).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(f.callback, context_preserved()).WillOnce(Return());
 
     EXPECT_CALL(f.connection, connect_poll()).WillOnce(Return(PGRES_POLLING_ACTIVE));
     EXPECT_CALL(f.timer, cancel()).WillOnce(Return(1));
 
-    EXPECT_CALL(f.callback, get_executor()).WillOnce(Return(ozo::tests::executor {&f.callback_executor}));
-    EXPECT_CALL(f.callback_executor, on_work_started()).WillOnce(Return());
     EXPECT_CALL(f.executor, post(_)).WillOnce(InvokeArgument<0>());
-    EXPECT_CALL(f.callback_executor, dispatch(_)).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(f.callback, context_preserved()).WillOnce(Return());
     EXPECT_CALL(f.callback, call(error_code{ozo::error::pq_connect_poll_failed}, f.conn))
         .WillOnce(Return());
-    EXPECT_CALL(f.callback_executor, on_work_finished()).WillOnce(Return());
 
     ozo::impl::make_async_connect_op(f.context).perform("conninfo", time_traits::duration(42));
 }
@@ -260,16 +245,14 @@ TEST_F(async_connect_op, should_call_handler_with_the_error_if_polling_operation
 
     EXPECT_CALL(f.socket, async_write_some(_)).WillOnce(InvokeArgument<0>(error::error));
 
-    EXPECT_CALL(f.strand, post(_)).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(f.strand, dispatch(_)).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(f.callback, context_preserved()).WillOnce(Return());
     EXPECT_CALL(f.timer, cancel()).WillOnce(Return(1));
 
-    EXPECT_CALL(f.callback, get_executor()).WillOnce(Return(ozo::tests::executor {&f.callback_executor}));
-    EXPECT_CALL(f.callback_executor, on_work_started()).WillOnce(Return());
     EXPECT_CALL(f.executor, post(_)).WillOnce(InvokeArgument<0>());
-    EXPECT_CALL(f.callback_executor, dispatch(_)).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(f.callback, context_preserved()).WillOnce(Return());
     EXPECT_CALL(f.callback, call(error_code{error::error}, f.conn))
         .WillOnce(Return());
-    EXPECT_CALL(f.callback_executor, on_work_finished()).WillOnce(Return());
 
     ozo::impl::make_async_connect_op(f.context).perform("conninfo", time_traits::duration(42));
 }
@@ -292,7 +275,7 @@ TEST_F(async_connect_op, should_cancel_socket_on_timeout) {
 
     ozo::impl::make_async_connect_op(f.context).perform("conninfo", time_traits::duration(42));
 
-    EXPECT_CALL(f.strand, post(_)).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(f.strand, dispatch(_)).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(f.socket, cancel(_)).WillOnce(Return());
 
     on_timeout(error_code {});
@@ -313,21 +296,19 @@ TEST_F(async_connect_op, should_not_cancel_socket_for_aborted_timer_async_wait) 
 
     EXPECT_CALL(f.socket, async_write_some(_)).WillOnce(InvokeArgument<0>(error_code{}));
 
-    EXPECT_CALL(f.strand, post(_)).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(f.strand, dispatch(_)).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(f.callback, context_preserved()).WillOnce(Return());
 
     EXPECT_CALL(f.connection, connect_poll()).WillOnce(Return(PGRES_POLLING_OK));
     EXPECT_CALL(f.timer, cancel()).WillOnce(Return(1));
 
-    EXPECT_CALL(f.callback, get_executor()).WillOnce(Return(ozo::tests::executor {&f.callback_executor}));
-    EXPECT_CALL(f.callback_executor, on_work_started()).WillOnce(Return());
     EXPECT_CALL(f.executor, post(_)).WillOnce(InvokeArgument<0>());
-    EXPECT_CALL(f.callback_executor, dispatch(_)).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(f.callback, context_preserved()).WillOnce(Return());
     EXPECT_CALL(f.callback, call(error_code{}, f.conn)).WillOnce(Return());
-    EXPECT_CALL(f.callback_executor, on_work_finished()).WillOnce(Return());
 
     ozo::impl::make_async_connect_op(f.context).perform("conninfo", time_traits::duration(42));
 
-    EXPECT_CALL(f.strand, post(_)).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(f.strand, dispatch(_)).WillOnce(InvokeArgument<0>());
 
     on_timeout(error_code {boost::asio::error::operation_aborted});
 }

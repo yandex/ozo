@@ -5,10 +5,8 @@
 #include <ozo/time_traits.h>
 #include <ozo/connection.h>
 
-#include <boost/asio/bind_executor.hpp>
 #include <boost/asio/steady_timer.hpp>
 #include <boost/asio/strand.hpp>
-#include <boost/asio/post.hpp>
 
 namespace ozo {
 namespace impl {
@@ -86,9 +84,8 @@ struct async_connect_op {
     void done(error_code ec = error_code {}) {
         get_timer(get_connection(context)).cancel();
 
-        decltype(auto) io = get_io_context(get_connection(context));
-
-        asio::post(io, detail::bind(std::move(get_handler(context)), std::move(ec), std::move(get_connection(context))));
+        get_io_context(get_connection(context))
+            .post(detail::bind(std::move(get_handler(context)), std::move(ec), std::move(get_connection(context))));
     }
 
     void perform(const std::string& conninfo, const time_traits::duration& timeout) {
@@ -105,10 +102,10 @@ struct async_connect_op {
         }
 
         get_timer(get_connection(context)).expires_after(timeout);
-        get_timer(get_connection(context)).async_wait(asio::bind_executor(get_executor(),
+        get_timer(get_connection(context)).async_wait(bind_executor(get_executor(context),
             make_timeout_handler(get_socket(get_connection(context)))));
 
-        return write_poll(get_connection(context), *this);
+        return write_poll(get_connection(context), bind_executor(get_executor(context), *this));
     }
 
     void operator () (error_code ec, std::size_t = 0) {
@@ -122,10 +119,10 @@ struct async_connect_op {
                 return done();
 
             case PGRES_POLLING_WRITING:
-                return write_poll(get_connection(context), *this);
+                return write_poll(get_connection(context), std::move(*this));
 
             case PGRES_POLLING_READING:
-                return read_poll(get_connection(context), *this);
+                return read_poll(get_connection(context), std::move(*this));
 
             case PGRES_POLLING_FAILED:
             case PGRES_POLLING_ACTIVE:
@@ -133,12 +130,6 @@ struct async_connect_op {
         }
 
         done(error::pq_connect_poll_failed);
-    }
-
-    using executor_type = std::decay_t<decltype(impl::get_executor(context))>;
-
-    auto get_executor() const noexcept {
-        return impl::get_executor(context);
     }
 
     template <typename Function>
@@ -171,12 +162,6 @@ struct request_oid_map_handler {
         } else {
             request_oid_map(std::forward<Connection>(conn), std::move(handler_));
         }
-    }
-
-    using executor_type = decltype(asio::get_associated_executor(handler_));
-
-    auto get_executor() const noexcept {
-        return asio::get_associated_executor(handler_);
     }
 
     template <typename Func>
