@@ -1,0 +1,2 @@
+ignore:
+  - "include/ozo/impl/result_status.h"
