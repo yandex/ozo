@@ -14,16 +14,12 @@ namespace tests {
 
 struct executor_mock {
     virtual ~executor_mock() = default;
-    virtual void on_work_started() const = 0;
-    virtual void on_work_finished() const = 0;
     virtual void dispatch(std::function<void ()>) const = 0;
     virtual void post(std::function<void ()>) const = 0;
     virtual void defer(std::function<void ()>) const = 0;
 };
 
 struct executor_gmock : executor_mock {
-    MOCK_CONST_METHOD0(on_work_started, void ());
-    MOCK_CONST_METHOD0(on_work_finished, void ());
     MOCK_CONST_METHOD1(dispatch, void (std::function<void ()>));
     MOCK_CONST_METHOD1(post, void (std::function<void ()>));
     MOCK_CONST_METHOD1(defer, void (std::function<void ()>));
@@ -52,13 +48,9 @@ struct executor {
         return *context_;
     }
 
-    void on_work_started() const {
-        return impl->on_work_started();
-    }
+    void on_work_started() const {}
 
-    void on_work_finished() const {
-        return impl->on_work_finished();
-    }
+    void on_work_finished() const {}
 
     template <typename Function>
     void dispatch(Function&& f, std::allocator<void>) const {
@@ -119,13 +111,9 @@ struct strand {
         return context_;
     }
 
-    void on_work_started() const {
-        return executor_.on_work_started();
-    }
+    void on_work_started() const {}
 
-    void on_work_finished() const {
-        return executor_.on_work_finished();
-    }
+    void on_work_finished() const {}
 
     template <typename Function, typename Allocator>
     void dispatch(Function&& f, Allocator) const {

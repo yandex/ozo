@@ -50,10 +50,8 @@ TEST_F(async_send_query_params_op, should_set_non_blocking_mode_and_send_query_p
 
     EXPECT_CALL(m.connection, set_nonblocking()).WillOnce(Return(0));
     EXPECT_CALL(m.connection, send_query_params()).WillOnce(Return(1));
-    EXPECT_CALL(m.strand, on_work_started()).WillOnce(Return());
     EXPECT_CALL(m.executor, post(_)).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(m.strand, dispatch(_)).WillOnce(Return());
-    EXPECT_CALL(m.strand, on_work_finished()).WillOnce(Return());
 
     ozo::impl::make_async_send_query_params_op(m.ctx, fake_query{}).perform();
 
@@ -66,12 +64,10 @@ TEST_F(async_send_query_params_op, should_set_error_state_and_cancel_io_and_invo
     EXPECT_CALL(m.connection, set_nonblocking()).WillOnce(Return(-1));
     EXPECT_CALL(m.socket, cancel(_)).WillOnce(Return());
     EXPECT_CALL(m.callback, get_executor()).WillOnce(Return(ozo::tests::executor {&m.callback_executor}));
-    EXPECT_CALL(m.callback_executor, on_work_started()).WillOnce(Return());
     EXPECT_CALL(m.executor, post(_)).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(m.callback_executor, dispatch(_)).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(m.callback, call(error_code{ozo::error::pg_set_nonblocking_failed}, _))
         .WillOnce(Return());
-    EXPECT_CALL(m.callback_executor, on_work_finished()).WillOnce(Return());
 
     ozo::impl::make_async_send_query_params_op(m.ctx, fake_query{}).perform();
 
@@ -91,9 +87,7 @@ TEST_F(async_send_query_params_op, should_call_send_query_params_while_it_return
     EXPECT_CALL(m.connection, send_query_params()).InSequence(s).WillOnce(Return(0));
     EXPECT_CALL(m.connection, send_query_params()).InSequence(s).WillOnce(Return(0));
     EXPECT_CALL(m.connection, send_query_params()).InSequence(s).WillOnce(Return(1));
-    EXPECT_CALL(m.strand, on_work_started()).InSequence(s).WillOnce(Return());
     EXPECT_CALL(m.executor, post(_)).InSequence(s).WillOnce(Return());
-    EXPECT_CALL(m.strand, on_work_finished()).InSequence(s).WillOnce(Return());
 
     ozo::impl::make_async_send_query_params_op(m.ctx, fake_query{}).perform();
 
@@ -137,12 +131,10 @@ TEST_F(async_send_query_params_op, should_invoke_callback_with_given_error_if_ca
 
     EXPECT_CALL(m.socket, cancel(_)).WillOnce(Return());
     EXPECT_CALL(m.callback, get_executor()).WillOnce(Return(ozo::tests::executor {&m.callback_executor}));
-    EXPECT_CALL(m.callback_executor, on_work_started()).WillOnce(Return());
     EXPECT_CALL(m.executor, post(_)).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(m.callback_executor, dispatch(_)).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(m.callback, call(error_code{error::error}, _))
         .WillOnce(Return());
-    EXPECT_CALL(m.callback_executor, on_work_finished()).WillOnce(Return());
 
     m.ctx->state = ozo::impl::query_state::send_in_progress;
     ozo::impl::make_async_send_query_params_op(m.ctx, fake_query{})(error::error);
@@ -167,12 +159,10 @@ TEST_F(async_send_query_params_op, should_invoke_callback_with_pg_flush_failed_i
         .WillOnce(Return(ozo::impl::query_state::error));
     EXPECT_CALL(m.socket, cancel(_)).WillOnce(Return());
     EXPECT_CALL(m.callback, get_executor()).WillOnce(Return(ozo::tests::executor {&m.callback_executor}));
-    EXPECT_CALL(m.callback_executor, on_work_started()).WillOnce(Return());
     EXPECT_CALL(m.executor, post(_)).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(m.callback_executor, dispatch(_)).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(m.callback, call(error_code{ozo::error::pg_flush_failed}, _))
         .WillOnce(Return());
-    EXPECT_CALL(m.callback_executor, on_work_finished()).WillOnce(Return());
 
     m.ctx->state = ozo::impl::query_state::send_in_progress;
     ozo::impl::make_async_send_query_params_op(m.ctx, fake_query{})();
