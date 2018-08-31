@@ -8,6 +8,8 @@
 #include <ozo/detail/bind.h>
 #include <ozo/impl/connection.h>
 
+#include <boost/asio/dispatch.hpp>
+
 namespace ozo {
 
 /**
@@ -784,8 +786,7 @@ struct async_get_connection_impl<T, Require<Connection<T>>> {
     static constexpr void apply(Conn&& c, Handler&& h) {
         reset_error_context(c);
         decltype(auto) io = get_io_context(c);
-        io.dispatch(detail::bind(
-            std::forward<Handler>(h), error_code{}, std::forward<Conn>(c)));
+        asio::dispatch(io, detail::bind(std::forward<Handler>(h), error_code{}, std::forward<Conn>(c)));
     }
 };
 
