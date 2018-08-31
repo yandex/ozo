@@ -577,8 +577,9 @@ inline decltype(auto) get_statistics(T&& conn) noexcept {
  * @param conn --- Connection to access statistics of
  * @return --- return reference or proxy for a timer
  */
-template <typename T, typename = Require<Connection<T>>>
+template <typename T>
 inline decltype(auto) get_timer(T&& conn) noexcept {
+    static_assert(Connection<T>, "T must be a Connection");
     return get_connection_timer(unwrap_connection(std::forward<T>(conn)));
 }
 
