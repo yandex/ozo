@@ -22,7 +22,7 @@ enum class result_format : int {
 
 /**
 * Query states. The values similar to PQflush function results.
-* This state is used to synchrinaize async query parameters
+* This state is used to synchronize async query parameters
 * send process with async query result receiving process.
 */
 enum class query_state : int {
@@ -32,18 +32,6 @@ enum class query_state : int {
 };
 
 namespace pq {
-
-template <typename T, typename Handler, typename = Require<Connection<T>>>
-inline void pq_write_poll(T& conn, Handler&& h) {
-    get_socket(conn).async_write_some(
-            asio::null_buffers(), std::forward<Handler>(h));
-}
-
-template <typename T, typename Handler, typename = Require<Connection<T>>>
-inline void pq_read_poll(T& conn, Handler&& h) {
-    get_socket(conn).async_read_some(
-            asio::null_buffers(), std::forward<Handler>(h));
-}
 
 template <typename T, typename = Require<Connection<T>>>
 inline decltype(auto) pq_connect_poll(T& conn) {
@@ -179,14 +167,14 @@ inline error_code assign_socket(T& conn) {
 
 template <typename T, typename Handler, typename = Require<Connection<T>>>
 inline void write_poll(T& conn, Handler&& h) {
-    using pq::pq_write_poll;
-    pq_write_poll(unwrap_connection(conn), std::forward<Handler>(h));
+    get_socket(unwrap_connection(conn)).async_write_some(
+            asio::null_buffers(), std::forward<Handler>(h));
 }
 
 template <typename T, typename Handler, typename = Require<Connection<T>>>
 inline void read_poll(T& conn, Handler&& h) {
-    using pq::pq_read_poll;
-    pq_read_poll(unwrap_connection(conn), std::forward<Handler>(h));
+    get_socket(unwrap_connection(conn)).async_read_some(
+            asio::null_buffers(), std::forward<Handler>(h));
 }
 
 // Shortcut for post operation with connection associated executor
