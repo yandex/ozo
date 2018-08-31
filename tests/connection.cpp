@@ -182,11 +182,9 @@ TEST_F(async_get_connection, should_pass_through_the_connection_to_handler) {
     const InSequence s;
 
     EXPECT_CALL(cb_mock, get_executor()).WillOnce(Return(ozo::tests::executor {&callback_executor}));
-    EXPECT_CALL(callback_executor, on_work_started()).WillOnce(Return());
     EXPECT_CALL(executor, dispatch(_)).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(callback_executor, dispatch(_)).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(cb_mock, call(error_code{}, conn)).WillOnce(Return());
-    EXPECT_CALL(callback_executor, on_work_finished()).WillOnce(Return());
 
     ozo::async_get_connection(conn, wrap(cb_mock));
 }
