@@ -6,15 +6,30 @@
 
 namespace ozo {
 
+/**
+ * @brief Connection pool config
+ *
+ * @ingroup ConnectionPool
+ *
+ * Allows to setup how many connection keep open, how much simultanious requests could be,
+ * and how log keep connection open
+ */
 struct connection_pool_config {
-    std::size_t capacity = 10;
-    std::size_t queue_capacity = 128;
-    time_traits::duration idle_timeout = std::chrono::seconds(60);
+    std::size_t capacity = 10; //!< maximum number of stored connections
+    std::size_t queue_capacity = 128; //!< maximum number of queued requests to get available connection
+    time_traits::duration idle_timeout = std::chrono::seconds(60); //!< time interval to close connection after last usage
 };
 
+/**
+ * @brief Connection pool timeouts
+ *
+ * @ingroup ConnectionPool
+ *
+ * Request specific time restrictions to get open connection from connection pool
+ */
 struct connection_pool_timeouts {
-    time_traits::duration connect = std::chrono::seconds(10);
-    time_traits::duration queue = std::chrono::seconds(10);
+    time_traits::duration connect = std::chrono::seconds(10); //!< maximum time interval to establish connection with DBMS
+    time_traits::duration queue = std::chrono::seconds(10); //!< maximum time interval to wait for available connection handle in conneciton pool
 };
 
 template <typename Source>
