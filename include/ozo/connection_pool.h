@@ -9,24 +9,34 @@ namespace ozo {
 struct connection_pool_config {
     std::size_t capacity = 10;
     std::size_t queue_capacity = 128;
+    time_traits::duration idle_timeout = std::chrono::seconds(60);
+};
+
+struct connection_pool_timeouts {
+    time_traits::duration connect = std::chrono::seconds(10);
+    time_traits::duration queue = std::chrono::seconds(10);
 };
 
 template <typename Source>
 class connection_pool {
 public:
     connection_pool(Source source, const connection_pool_config& config)
-    : impl_(config.capacity, config.queue_capacity), source_(std::move(source)) {}
+    : impl_(config.capacity, config.queue_capacity, config.idle_timeout),
+      source_(std::move(source)) {}
 
-    using duration = yamail::resource_pool::time_traits::duration;
-    using time_point = yamail::resource_pool::time_traits::time_point;
     using connection_type = impl::pooled_connection_ptr<Source>;
 
     template <typename Handler>
-    void operator ()(io_context& io, Handler&& handler, duration timeout = duration::max()) {
+    void operator ()(io_context& io, Handler&& handler,
+            const connection_pool_timeouts& timeouts = connection_pool_timeouts {}) {
         impl_.get_auto_recycle(
             io,
-            impl::wrap_pooled_connection_handler(io, make_connector(source_, io), std::forward<Handler>(handler)),
-            timeout
+            impl::wrap_pooled_connection_handler(
+                io,
+                make_connector(source_, io, timeouts.connect),
+                std::forward<Handler>(handler)
+            ),
+            timeouts.queue
         );
     }
 
