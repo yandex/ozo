@@ -3,6 +3,25 @@
 #include <ozo/detail/base36.h>
 #include <boost/system/system_error.hpp>
 
+/**
+ * @defgroup Errors
+ * @brief Errors system and codes description
+ *
+ * This section is dedicated to the errors and it's description. We use
+ * <a href="https://www.boost.org/doc/libs/1_66_0/libs/system/doc/index.html">Boost.System</a>'s
+ * error_code since it is provided by the
+ * <a href="https://www.boost.org/doc/libs/1_66_0/doc/html/boost_asio/using.html">
+ * Boost version of Asio</a>. So it looks like this:
+ *
+ * @code
+using error_code = boost::system::error_code;
+using system_error = boost::system::system_error;
+using error_category = boost::system::error_category;
+using error_condition = boost::system::error_condition;
+ * @endcode
+ *
+ * This may be configurable in future and std::error_code support may be added.
+ */
 namespace ozo {
 
 using error_code = boost::system::error_code;
@@ -10,29 +29,44 @@ using system_error = boost::system::system_error;
 using error_category = boost::system::error_category;
 using error_condition = boost::system::error_condition;
 
-// OZO related errors
 namespace error {
 
+/**
+ * @brief OZO related error codes
+ *
+ * @ingroup Errors
+ *
+ * Enumeration of error codes provided by the OZO library. Mainly it contains errors related
+ * to underlying libpq functions errors, data reflection and so on. In most cases the additional context
+ * may be acquired with error_message and get_error_context functions.
+ */
 enum code {
-    ok, // to do not use error code 0
-    pq_connection_start_failed, // PQConnectionStart function failed
-    pq_socket_failed, // PQSocket returned -1 as fd - it seems like there is no connection
-    pq_connection_status_bad, // PQstatus returned CONNECTION_BAD
-    pq_connect_poll_failed, // PQconnectPoll function failed
-    oid_type_mismatch, // no conversion possible from oid to user-supplied type
-    unexpected_eof, // unecpected EOF while data read
-    pg_send_query_params_failed, // PQsendQueryParams function failed
-    pg_consume_input_failed, // PQconsumeInput function failed
-    pg_set_nonblocking_failed, // PQsetnonblocking function failed
-    pg_flush_failed, // PQflush function failed
-    bad_result_process, // error while processing or converting result from the database
-    no_sql_state_found, // no sql state has been found in database query execution error reply
-    result_status_unexpected, // got unexpected status from query result
-    result_status_empty_query, // the string sent to the server was empty
-    result_status_bad_response, // the server's response was not understood
-    oid_request_failed, // error during request oids from a database
+    ok, //!< a place holder to do not use error code 0
+    pq_connection_start_failed, //!< libpq PQConnectionStart function failed
+    pq_socket_failed, //!< libpq PQSocket returned -1 as fd
+    pq_connection_status_bad, //!< libpq PQstatus returned CONNECTION_BAD
+    pq_connect_poll_failed, //!< libpq PQconnectPoll function failed
+    oid_type_mismatch, //!< no conversion possible from oid to user-supplied type - the type what user expected is not the same as one which is received from a database
+    unexpected_eof, //!< unexpected EOF while data read - something wrong with incoming data from database, data ends unexpectedly
+    pg_send_query_params_failed, //!< libpq PQsendQueryParams function failed
+    pg_consume_input_failed, //!< libpq PQconsumeInput function failed
+    pg_set_nonblocking_failed, //!< libpq PQsetnonblocking function failed
+    pg_flush_failed, //!< libpq PQflush function failed
+    bad_result_process, //!< error while processing or converting result from the database
+    no_sql_state_found, //!< no sql state has been found in database query execution error reply
+    result_status_unexpected, //!< got unexpected status from query result
+    result_status_empty_query, //!< the string sent to the server was empty
+    result_status_bad_response, //!< the server's response was not understood
+    oid_request_failed, //!< error during request oids from a database
 };
 
+/**
+ * @brief OZO related errors category
+ *
+ * OZO related errors category object is used to construct error_code.
+ *
+ * @return `const error_category&` --- reference to the category object
+ */
 const error_category& category() noexcept;
 
 } // namespace error
@@ -41,10 +75,13 @@ const error_category& category() noexcept;
 namespace sqlstate {
 
 /**
-* This set of error conditions can not be complete, since new versions
-* of PostgreSQL can add another ones and user can create new ones inside
-* a DB logic. So this set can be used to determine most of sql states
-* but not all.
+* @brief SQL state error conditions
+*
+* @ingroup Errors
+*
+* This is a set of error conditions. It may not be complete, since new versions
+* of PostgreSQL may add another sql state codes and users may create new ones inside
+* a DB logic. So this set may be used to match most of sql states but not all.
 */
 enum code {
     successful_completion = 0, // 00000
@@ -345,7 +382,7 @@ public:
             case oid_type_mismatch:
                 return "no conversion possible from oid to user-supplied type";
             case unexpected_eof:
-                return "unecpected EOF while data read";
+                return "unexpected EOF while data read";
             case pg_send_query_params_failed:
                 return "pg_send_query_params_failed - PQsendQueryParams function failed";
             case pg_consume_input_failed:
