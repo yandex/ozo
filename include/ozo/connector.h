@@ -5,14 +5,42 @@
 
 namespace ozo {
 
+/**
+ * @brief Default implementation of ConnectionProvider
+ *
+ * @ingroup Connection_Provider
+ *
+ * This is default implementation of the ConnectionProvider concept. It binds
+ * `io_context`, additional parameters and ConnectionSource implementation object to
+ * bea able provide a Connection via get_connection functionality.
+ *
+ * @tparam Base --- ConnectionSource implementation
+ * @tparam Args --- ConnectionSource additional parameters types.
+ */
 template <typename Base, typename ... Args>
 class connector {
 public:
     static_assert(ConnectionSource<Base>, "is not a ConnectionSource");
 
+    /**
+     * Source type according to ConnectionProvider requirements
+     */
     using source_type = Base;
+    /**
+     * Connection implementation type according to ConnectionProvider requirements.
+     * Specifies the Connection implementation type which can be obtained from this provider.
+     */
     using connection_type = typename source_type::connection_type;
 
+    /**
+     * @brief Construct a new connector object
+     *
+     * Constructor as it is.
+     *
+     * @param base --- ConnectionSource implementation object
+     * @param io --- `io_context` for connect IO
+     * @param args --- additional arguments to be passed to ConnectionSource to create Connection
+     */
     connector(Base& base, io_context& io, std::tuple<Args ...>&& args)
             : base(base), io(io), args(std::move(args)) {
     }
