@@ -592,6 +592,26 @@ inline decltype(auto) get_timer(T&& conn) noexcept {
  * ConnectionProvider is a concept of entity which is provide connection for further usage.
  */
 ///@{
+
+/**
+ * @brief Connection type getter
+ *
+ * This type describes connection type from a ConnectionProvider. By default
+ * it assumes on ConnectionProvider::connection_type type, like this (`exposition only`):
+ *
+@code
+template <typename ConnectionProvider, typename = std::void_t<>>
+struct get_connection_type {
+    using type = typename std::decay_t<ConnectionProvider>::connection_type;
+};
+@endcode
+ *
+ * **Customization point**
+ *
+ * Here you can specify how to obtain Connection type from your own ConnectionProvider.
+ *
+ * @tparam ConnectionProvider
+ */
 template <typename ConnectionProvider, typename = std::void_t<>>
 struct get_connection_type {
     using type = typename std::decay_t<ConnectionProvider>::connection_type;
@@ -601,7 +621,7 @@ struct get_connection_type {
  * @brief Gives exact type of Connection which ConnectionProvider or ConnectionSource provide
  *
  * This type alias can be used to determine exact type of Connection which can be obtained from a
- * ConnectionSource or ConnectionProvider type.
+ * ConnectionSource or ConnectionProvider type. It uses get_connection_type to get Connection type.
  *
  * @tparam ConnectionProvider - ConnectionSource or ConnectionProvider type.
  */
@@ -631,8 +651,17 @@ struct is_connection_source<T, std::void_t<decltype(
 /**
  * @brief ConnectionSource concept
  *
- * Connection source is a concept of type which can construct and establish connection
- * to a database. Connection must be a function or a functor with this signature:
+ * Before all we need to connect to our database server. First of all we need to know
+ * how to connect. Since we are smart enough, we know at least two possible ways - make
+ * a connection or get a connection from a pool of ones. How to be? It depends on. But
+ * we still need to know how to do it. So, the ConnectionSource is what we need! This entity
+ * tell us how to do it. ConnectionSource is a concept of type which can construct and
+ * establish connection to a database.
+ *
+ * ConnectionSource has provide information about Connection type it constructs. This can
+ * be done via ozo::connection_type and it's customization.
+ *
+ * ConnectionSource must be a function or a functor with such signature:
  * @code
     void (io_context io, Handler h, SourceRelatedAdditionalArgs&&...);
  * @endcode
@@ -665,7 +694,8 @@ struct is_connection_source<T, std::void_t<decltype(
  * **Customization point**
  *
  * This concept is a customization point for adding or modifying existing connection
- * sources to specify custom behaviour of connection establishing.
+ * sources to specify custom behaviour of connection establishing. Have fun and find
+ * the best solution you want.
  *
  * @tparam T - ConnectionSource to examine
  */
@@ -698,15 +728,21 @@ struct is_connection_provider<T, std::void_t<decltype(
  * ConnectionProvider must provide Connection by means of underlying ConnectionSource.
  * In case of connection has been provided successful ConnectionProvider must dispatch
  * Handler with empty error_code as the first argument and provided Connection as the
- * second one. In case of failure --- error_code with appropriate value and allocated
+ * second one. In case of failure --- `error_code` with appropriate value and allocated
  * Connection with additional error context if it possible.
  *
- * Note, Connection is a ConnectionProvider and provide self as Connection.
+ * Note, Connection is a ConnectionProvider itself and provides self as a Connection.
  *
  * **Customization point**
  *
- * This concept is a customization point. By default ConnectionProvider must have
- * `async_get_connection` member function with signature:
+ * First of all ConnectionProvider must deliver information about connection type it provides.
+ * It can be implemented in two ways. By defining a `connection_type` nested type or specializing
+ * ozo::get_connection_type template.
+ *
+ * By the second ozo::get_connection() needs be supported. It can be done in two ways: by implementing
+ * `async_get_connection` member function, or specializing async_get_connection_impl template.
+ *
+ * The `async_get_connection` member function has to have this signature:
  * @code
     void async_get_connection(Handler&& h);
  * @endcode
@@ -717,9 +753,7 @@ struct is_connection_provider<T, std::void_t<decltype(
     void (error_code ec, connection_type<ConnectionProvider> conn);
  * @endcode
  *
- * This behaviour can be customized via async_get_connection_impl specialization.
- *
- * See get_connection for more details.
+ * See ozo::connector - the default implementation and ozo::get_connection() description for more details.
  * @tparam T - type to examine.
  */
 template <typename T>
@@ -756,7 +790,7 @@ constexpr auto ConnectionProvider = is_connection_provider<std::decay_t<T>>::val
         static constexpr void apply(Conn&& c, Handler&& h) {
             reset_error_context(c);
             decltype(auto) io = get_io_context(c);
-            io.dispatch(detail::bind(
+            asio::dispatch(io, detail::bind(
                 std::forward<Handler>(h), error_code{}, std::forward<Conn>(c)));
         }
     };
