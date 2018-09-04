@@ -5,15 +5,15 @@
     <tab type="mainpage" visible="yes" title=""/>
     <tab type="pages" visible="yes" title="" intro=""/>
     <tab type="modules" visible="yes" title="API Reference" intro="User API reference of OZO"/>
-    <tab type="namespaces" visible="yes" title="">
-      <tab type="namespacelist" visible="yes" title="" intro=""/>
-      <tab type="namespacemembers" visible="yes" title="" intro=""/>
+    <tab type="namespaces" visible="no" title="">
+      <tab type="namespacelist" visible="no" title="" intro=""/>
+      <tab type="namespacemembers" visible="no" title="" intro=""/>
     </tab>
     <tab type="classes" visible="no" title="">
-      <tab type="classlist" visible="yes" title="" intro=""/>
-      <tab type="classindex" visible="$ALPHABETICAL_INDEX" title=""/>
-      <tab type="hierarchy" visible="yes" title="" intro=""/>
-      <tab type="classmembers" visible="yes" title="" intro=""/>
+      <tab type="classlist" visible="no" title="" intro=""/>
+      <tab type="classindex" visible="no" title=""/>
+      <tab type="hierarchy" visible="no" title="" intro=""/>
+      <tab type="classmembers" visible="no" title="" intro=""/>
     </tab>
     <tab type="files" visible="no" title="">
       <tab type="filelist" visible="yes" title="" intro=""/>
@@ -29,7 +29,7 @@
     <includes visible="$SHOW_INCLUDE_FILES"/>
     <memberdecl>
       <nestedclasses visible="yes" title=""/>
-      <publictypes title=""/>
+      <publictypes title="Types"/>
       <services title=""/>
       <interfaces title=""/>
       <publicslots title=""/>
@@ -61,16 +61,16 @@
       <related title="" subtitle=""/>
       <membergroups visible="yes"/>
     </memberdecl>
-    <detaileddescription title=""/>
+    <detaileddescription title="Description"/>
     <inheritancegraph visible="$CLASS_GRAPH"/>
     <collaborationgraph visible="$COLLABORATION_GRAPH"/>
     <memberdef>
       <inlineclasses title=""/>
-      <typedefs title=""/>
+      <typedefs title="Types"/>
       <enums title=""/>
       <services title=""/>
       <interfaces title=""/>
-      <constructors title=""/>
+      <constructors title="Constructors"/>
       <functions title=""/>
       <related title=""/>
       <variables title=""/>
@@ -89,16 +89,16 @@
       <nestednamespaces visible="yes" title=""/>
       <constantgroups visible="yes" title=""/>
       <classes visible="yes" title=""/>
-      <typedefs title=""/>
+      <typedefs title="Types"/>
       <enums title=""/>
       <functions title=""/>
       <variables title=""/>
       <membergroups visible="yes"/>
     </memberdecl>
-    <detaileddescription title=""/>
+    <detaileddescription title="Description"/>
     <memberdef>
       <inlineclasses title=""/>
-      <typedefs title=""/>
+      <typedefs title="Types"/>
       <enums title=""/>
       <functions title=""/>
       <variables title=""/>
@@ -147,7 +147,7 @@
       <namespaces visible="yes" title=""/>
       <classes visible="yes" title=""/>
       <defines title=""/>
-      <typedefs title=""/>
+      <typedefs title="Types"/>
       <enums title=""/>
       <enumvalues title=""/>
       <functions title=""/>
@@ -161,12 +161,12 @@
       <friends title=""/>
       <membergroups visible="yes"/>
     </memberdecl>
-    <detaileddescription title=""/>
+    <detaileddescription title="Description"/>
     <memberdef>
       <pagedocs/>
       <inlineclasses title=""/>
       <defines title=""/>
-      <typedefs title=""/>
+      <typedefs title="Types"/>
       <enums title=""/>
       <enumvalues title=""/>
       <functions title=""/>
