@@ -171,7 +171,7 @@ inline const auto on_parameter_name = [] (const auto& ctx) {
     x3::_val(ctx).text.push_back(query_parameter_name {x3::_attr(ctx)});
 };
 
-inline const auto text_part_def = +lexeme[string("::") | +(char_ - char_(':') - char_('\0'))][on_text_part];
+inline const auto text_part_def = +lexeme[string("::") | string(":=") | +(char_ - char_(':') - char_('\0'))][on_text_part];
 inline const auto parameter_name_def = lit(':') >> lexeme[+char_("_0-9A-Za-z")];
 inline const auto text_def = *(parameter_name[on_parameter_name] | text_part[on_text]) >> eoi;
 
