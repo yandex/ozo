@@ -45,7 +45,11 @@ namespace ozo {
 * @returns Type if Condition is true
 */
 template <bool Condition, typename Type = void>
+#ifdef OZO_DOCUMENTATION
+using Require = Type;
+#else
 using Require = std::enable_if_t<Condition, Type>;
+#endif
 
 
 template <typename T, typename = std::void_t<>>
@@ -59,6 +63,7 @@ struct has_operator_not<T, std::void_t<decltype(!std::declval<T>())>>
  *
  * Return true if T has operator !(), false in other case
  * @tparam T - type to examine
+ * @hideinitializer
  */
 template <typename T>
 constexpr auto OperatorNot = has_operator_not<std::decay_t<T>>::value;
@@ -80,6 +85,7 @@ struct is_output_iterator<T, typename std::enable_if<
  *
  * Returns true if T is output iterator
  * @tparam T - type to examine
+ * @hideinitializer
  */
 template <typename T>
 constexpr auto OutputIterator = is_output_iterator<T>::value;
@@ -101,6 +107,7 @@ struct is_forward_iterator<T, typename std::enable_if<
  *
  * Returns true if T meets forward_iterator conditions
  * @tparam T - type to examine
+ * @hideinitializer
  */
 template <typename T>
 constexpr auto ForwardIterator = is_forward_iterator<T>::value;
@@ -120,6 +127,7 @@ struct is_iterable<T, typename std::enable_if<
  *
  * Determines whether T can be iterated through via begin() end() functions
  * @tparam T - type to examine
+ * @hideinitializer
  */
 template <typename T>
 constexpr auto Iterable = is_iterable<T>::value;
@@ -138,6 +146,7 @@ struct is_insert_iterator<T, typename std::enable_if<
  *
  * This trait determines whether T is an insert iterator bound with some container
  * @tparam T - type to examine
+ * @hideinitializer
  */
 template <typename T>
 constexpr auto InsertIterator = is_insert_iterator<T>::value;
@@ -147,6 +156,7 @@ constexpr auto InsertIterator = is_insert_iterator<T>::value;
  *
  * Indicates if T is a Boost.Fusion Sequence type
  * @tparam T - type to examine
+ * @hideinitializer
  */
 template <typename T>
 constexpr auto FusionSequence = boost::fusion::traits::is_sequence<std::decay_t<T>>::value;
@@ -156,6 +166,7 @@ constexpr auto FusionSequence = boost::fusion::traits::is_sequence<std::decay_t<
  *
  * Indicates if T is a Boost.Hana Sequence type
  * @tparam T - type to examine
+ * @hideinitializer
  */
 template <typename T>
 constexpr auto HanaSequence = boost::hana::Sequence<std::decay_t<T>>::value;
@@ -165,6 +176,7 @@ constexpr auto HanaSequence = boost::hana::Sequence<std::decay_t<T>>::value;
  *
  * Indicates if T is a Boost.Hana Structure type
  * @tparam T - type to examine
+ * @hideinitializer
  */
 template <typename T>
 constexpr auto HanaStruct = boost::hana::Struct<std::decay_t<T>>::value;
@@ -174,6 +186,7 @@ constexpr auto HanaStruct = boost::hana::Struct<std::decay_t<T>>::value;
  *
  * Indicates if T is a Boost.Hana String type
  * @tparam T - type to examine
+ * @hideinitializer
  */
 template <typename T>
 constexpr auto HanaString = decltype(boost::hana::is_a<boost::hana::string_tag>(std::declval<T>()))::value;
@@ -183,6 +196,7 @@ constexpr auto HanaString = decltype(boost::hana::is_a<boost::hana::string_tag>(
  *
  * Indicates if T is a Boost.Hana Tuple type
  * @tparam T - type to examine
+ * @hideinitializer
  */
 template <typename T>
 constexpr auto HanaTuple = decltype(boost::hana::is_a<boost::hana::tuple_tag>(std::declval<T>()))::value;
@@ -201,6 +215,7 @@ struct is_fusion_adapted_struct<T,
  *
  * Indicates it T is a Boost.Fusion adapted structure via BOOST_FUSION_ADAPT_STRUCT or similar.
  * @tparam T - type to examine
+ * @hideinitializer
  */
 template <typename T>
 constexpr auto FusionAdaptedStruct = is_fusion_adapted_struct<std::decay_t<T>>::value;
@@ -210,6 +225,7 @@ constexpr auto FusionAdaptedStruct = is_fusion_adapted_struct<std::decay_t<T>>::
  *
  * Indicates if T is an integral type
  * @tparam T - type to examine
+ * @hideinitializer
  */
 template <typename T>
 constexpr auto Integral = std::is_integral_v<std::decay_t<T>>;
@@ -219,6 +235,7 @@ constexpr auto Integral = std::is_integral_v<std::decay_t<T>>;
  *
  * Indicates if T is a floating point type
  * @tparam T - type to examine
+ * @hideinitializer
  */
 template <typename T>
 constexpr auto FloatingPoint = std::is_floating_point_v<std::decay_t<T>>;
@@ -234,6 +251,7 @@ struct is_raw_data_writable<T, std::void_t<decltype(std::declval<T&>().data())>>
  *
  * Indicates if T can be written as a sequence of bytes without endian conversion
  * @tparam T - type to examine
+ * @hideinitializer
  */
 template <typename T>
 constexpr auto RawDataWritable = is_raw_data_writable<std::decay_t<T>>::value;
@@ -249,6 +267,7 @@ struct is_emplaceable<T, std::void_t<decltype(std::declval<T&>().emplace())>> : 
  *
  * Indicates if container T can emplace it's element with default constructor
  * @tparam T - type to examine
+ * @hideinitializer
  */
 template <typename T>
 constexpr auto Emplaceable = is_emplaceable<std::decay_t<T>>::value;

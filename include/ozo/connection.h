@@ -124,9 +124,13 @@ struct get_connection_oid_map_impl {
  */
 template <typename T>
 constexpr auto get_connection_oid_map(T&& conn)
+#ifdef OZO_DOCUMENTATION
+;
+#else
         -> decltype (get_connection_oid_map_impl<std::decay_t<T>>::apply(std::forward<T>(conn))) {
     return get_connection_oid_map_impl<std::decay_t<T>>::apply(std::forward<T>(conn));
 }
+#endif
 
 template <typename T, typename = std::void_t<>>
 struct get_connection_socket_impl {
@@ -164,9 +168,13 @@ struct get_connection_socket_impl {
  */
 template <typename T>
 constexpr auto get_connection_socket(T&& conn)
+#ifdef OZO_DOCUMENTATION
+;
+#else
         -> decltype(get_connection_socket_impl<std::decay_t<T>>::apply(std::forward<T>(conn))) {
     return get_connection_socket_impl<std::decay_t<T>>::apply(std::forward<T>(conn));
 }
+#endif
 
 template <typename T, typename = std::void_t<>>
 struct get_connection_handle_impl {
@@ -204,9 +212,13 @@ struct get_connection_handle_impl {
  */
 template <typename T>
 constexpr auto get_connection_handle(T&& conn)
+#ifdef OZO_DOCUMENTATION
+;
+#else
         -> decltype(get_connection_handle_impl<std::decay_t<T>>::apply(std::forward<T>(conn))) {
     return get_connection_handle_impl<std::decay_t<T>>::apply(std::forward<T>(conn));
 }
+#endif
 
 template <typename T, typename = std::void_t<>>
 struct get_connection_error_context_impl {
@@ -246,9 +258,13 @@ struct get_connection_error_context_impl {
  */
 template <typename T>
 constexpr auto get_connection_error_context(T&& conn)
+#ifdef OZO_DOCUMENTATION
+;
+#else
         -> decltype(get_connection_error_context_impl<std::decay_t<T>>::apply(std::forward<T>(conn))) {
     return get_connection_error_context_impl<std::decay_t<T>>::apply(std::forward<T>(conn));
 }
+#endif
 
 template <typename T, typename = std::void_t<>>
 struct get_connection_timer_impl {
@@ -290,9 +306,13 @@ struct get_connection_timer_impl {
  */
 template <typename T>
 constexpr auto get_connection_timer(T&& conn)
+#ifdef OZO_DOCUMENTATION
+;
+#else
         -> decltype(get_connection_timer_impl<std::decay_t<T>>::apply(std::forward<T>(conn))) {
     return get_connection_timer_impl<std::decay_t<T>>::apply(std::forward<T>(conn));
 }
+#endif
 
 template <typename, typename = std::void_t<>>
 struct is_connection : std::false_type {};
@@ -341,6 +361,7 @@ struct is_connection<T, std::void_t<
 *
 *   * get_connection_error_context --- Must return reference or proxy
 *       for an additional error context.
+* @hideinitializer
 */
 template <typename T>
 constexpr auto Connection = is_connection<std::decay_t<T>>::value;
@@ -587,8 +608,7 @@ inline decltype(auto) get_timer(T&& conn) noexcept {
 /**
  * @defgroup Connection_Provider Provider
  * @ingroup Connection
- * @brief OZO connection provider related entities
- *
+ * @brief OZO connection provider related entities.
  * ConnectionProvider is a concept of entity which is provide connection for further usage.
  */
 ///@{
@@ -626,7 +646,11 @@ struct get_connection_type {
  * @tparam ConnectionProvider - ConnectionSource or ConnectionProvider type.
  */
 template <typename ConnectionProvider>
+#ifdef OZO_DOCUMENTATION
+using connection_type = of connection;
+#else
 using connection_type = typename get_connection_type<ConnectionProvider>::type;
+#endif
 
 template <typename T, typename = std::void_t<>>
 struct async_get_connection_impl {
@@ -698,6 +722,7 @@ struct is_connection_source<T, std::void_t<decltype(
  * the best solution you want.
  *
  * @tparam T - ConnectionSource to examine
+ * @hideinitializer
  */
 template <typename T>
 constexpr auto ConnectionSource = is_connection_source<std::decay_t<T>>::value;
@@ -755,6 +780,7 @@ struct is_connection_provider<T, std::void_t<decltype(
  *
  * See ozo::connector - the default implementation and ozo::get_connection() description for more details.
  * @tparam T - type to examine.
+ * @hideinitializer
  */
 template <typename T>
 constexpr auto ConnectionProvider = is_connection_provider<std::decay_t<T>>::value;
@@ -830,6 +856,19 @@ struct get_connection_type<T, Require<Connection<T>>> {
     using type = std::decay_t<T>;
 };
 
+/**
+ * @brief Close connection to the database immediately
+ *
+ * @ingroup Connection_Api
+ *
+ * This function closes connection to the database immediately.
+ * @note No query cancel operation will be made while closing connection.
+ * Use the function with attention - non cancelled query can still produce
+ * a work on server-side and consume resources. So it is better to use
+ * ozo::cancel() function.
+ *
+ * @param conn --- Connection to be closed
+ */
 template <typename T>
 inline void close_connection(T&& conn) {
     static_assert(Connection<T>, "T is not a Connection concept");
