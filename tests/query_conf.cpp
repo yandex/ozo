@@ -322,6 +322,16 @@ TEST(parse_query_conf, should_for_comment_in_query_statement_text_return_text_wi
     );
 }
 
+TEST(parse_query_conf, should_support_assignment_operator) {
+    EXPECT_THAT(
+        ozo::detail::parse_query_conf(
+            "-- name: query with one parameter\n"
+            "SELECT function(a := :a)"
+        ),
+        ElementsAre(parsed_query {"query with one parameter", {qtp {"SELECT function(a := "}, qpn {"a"}, qtp {")"}}})
+    );
+}
+
 TEST(check_for_duplicates, should_not_throw_for_empty_queries) {
     EXPECT_NO_THROW(ozo::detail::check_for_duplicates(hana::tuple<>()));
 }
