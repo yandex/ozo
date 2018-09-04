@@ -4,15 +4,22 @@
 #include <ozo/connection_info.h>
 #include <ozo/asio.h>
 
+/**
+ * @defgroup ConnectionPool Connection pool
+ * @brief Connection pool implementation.
+ * This section is dedicated to the connection pool implementation and it's description.
+ */
+
 namespace ozo {
 
 /**
- * @brief Connection pool config
+ * @brief Connection pool configuration
  *
  * @ingroup ConnectionPool
  *
- * Allows to setup how many connection keep open, how much simultanious requests could be,
- * and how log keep connection open
+ * Configuration of the ozo::connection_pool, e.g. how many connection are in the pool,
+ * how many queries can be in wait queue if all connections are used by another queries,
+ * and how long to keep connection open.
  */
 struct connection_pool_config {
     std::size_t capacity = 10; //!< maximum number of stored connections
@@ -21,11 +28,11 @@ struct connection_pool_config {
 };
 
 /**
- * @brief Connection pool timeouts
+ * @brief Timeouts for the ozo::get_connection() operation
  *
  * @ingroup ConnectionPool
  *
- * Request specific time restrictions to get open connection from connection pool
+ * Time restrictions to get connection from the ozo::connection_pool
  */
 struct connection_pool_timeouts {
     time_traits::duration connect = std::chrono::seconds(10); //!< maximum time interval to establish connection with DBMS
