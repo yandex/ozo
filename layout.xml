@@ -27,6 +27,9 @@
   <class>
     <briefdescription visible="yes"/>
     <includes visible="$SHOW_INCLUDE_FILES"/>
+    <detaileddescription title="Description"/>
+    <inheritancegraph visible="$CLASS_GRAPH"/>
+    <collaborationgraph visible="$COLLABORATION_GRAPH"/>
     <memberdecl>
       <nestedclasses visible="yes" title=""/>
       <publictypes title="Types"/>
@@ -61,9 +64,6 @@
       <related title="" subtitle=""/>
       <membergroups visible="yes"/>
     </memberdecl>
-    <detaileddescription title="Description"/>
-    <inheritancegraph visible="$CLASS_GRAPH"/>
-    <collaborationgraph visible="$COLLABORATION_GRAPH"/>
     <memberdef>
       <inlineclasses title=""/>
       <typedefs title="Types"/>

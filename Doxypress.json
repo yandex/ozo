@@ -48,7 +48,7 @@
         "hide-undoc-members": true,
         "idl-support": true,
         "inherit-docs": true,
-        "inline-grouped-classes": false,
+        "inline-grouped-classes": true,
         "inline-info": false,
         "inline-inherited-member": false,
         "inline-simple-struct": false,
@@ -304,12 +304,12 @@
     },
     "output-html": {
         "disable-index": false,
-        "enum-values-per-line": 4,
+        "enum-values-per-line": 0,
         "external-links-in-window": false,
         "formula-fontsize": 10,
         "formula-transparent": true,
         "generate-html": true,
-        "generate-treeview": false,
+        "generate-treeview": true,
         "ghostscript": "",
         "html-colorstyle-gamma": 80,
         "html-colorstyle-hue": 220,
@@ -327,7 +327,7 @@
         "html-stylesheets": [
             "customdoxygen.css"
         ],
-        "html-timestamp": true,
+        "html-timestamp": false,
         "mathjax-codefile": "",
         "mathjax-extensions": [
             ""
@@ -418,11 +418,11 @@
         "xml-program-listing": true
     },
     "preprocessor": {
-        "enable-preprocessing": false,
+        "enable-preprocessing": true,
         "expand-as-defined": [
             ""
         ],
-        "expand-only-predefined": false,
+        "expand-only-predefined": true,
         "include-path": [
             "include"
         ],
@@ -431,9 +431,9 @@
         ],
         "macro-expansion": true,
         "predefined-macros": [
-            "DOXYPRESS_DOCUMENTATION"
+            "OZO_DOCUMENTATION"
         ],
-        "search-includes": true,
+        "search-includes": false,
         "skip-function-macros": true
     },
     "project": {
