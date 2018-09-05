@@ -3,6 +3,10 @@
 #include <ozo/impl/query.h>
 #include <ozo/concept.h>
 
+/**
+ * @defgroup group-query Queries
+ * @brief Database queries related concepts, types and functions.
+ */
 namespace ozo {
 
 template <typename T>
