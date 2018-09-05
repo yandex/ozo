@@ -4,14 +4,14 @@
 #include <boost/system/system_error.hpp>
 
 /**
- * @defgroup Errors
+ * @defgroup error-codes Error codes
  * @brief Errors system and codes description
  *
- * This section is dedicated to the errors and it's description. We use
+ * In this library the
  * <a href="https://www.boost.org/doc/libs/1_66_0/libs/system/doc/index.html">Boost.System</a>'s
- * error_code since it is provided by the
+ * error_code is used. The reason is what it is provided by the
  * <a href="https://www.boost.org/doc/libs/1_66_0/doc/html/boost_asio/using.html">
- * Boost version of Asio</a>. So it looks like this:
+ * Boost.Asio</a> library. So it looks like this:
  *
  * @code
 using error_code = boost::system::error_code;
@@ -20,7 +20,7 @@ using error_category = boost::system::error_category;
 using error_condition = boost::system::error_condition;
  * @endcode
  *
- * This may be configurable in future and std::error_code support may be added.
+ * This may be configurable in the future and `std::error_code` support may be added.
  */
 namespace ozo {
 
@@ -29,16 +29,22 @@ using system_error = boost::system::system_error;
 using error_category = boost::system::error_category;
 using error_condition = boost::system::error_condition;
 
+/**
+ * @defgroup error-codes-errors error
+ * @brief OZO related errors
+ *
+ * @ingroup error-codes
+ */
 namespace error {
 
 /**
  * @brief OZO related error codes
  *
- * @ingroup Errors
+ * @ingroup error-codes-errors
  *
  * Enumeration of error codes provided by the OZO library. Mainly it contains errors related
  * to underlying libpq functions errors, data reflection and so on. In most cases the additional context
- * may be acquired with error_message and get_error_context functions.
+ * may be acquired with `error_message()` and `get_error_context()` functions.
  */
 enum code {
     ok, //!< a place holder to do not use error code 0
@@ -62,6 +68,7 @@ enum code {
 
 /**
  * @brief OZO related errors category
+ * @ingroup error-codes-errors
  *
  * OZO related errors category object is used to construct error_code.
  *
@@ -71,17 +78,25 @@ const error_category& category() noexcept;
 
 } // namespace error
 
-// SQL state related errors and conditions
+/**
+ * @defgroup error-codes-sqlstate sqlstate
+ * @brief SQL state related errors and conditions
+ *
+ * @ingroup error-codes
+ */
 namespace sqlstate {
 
 /**
 * @brief SQL state error conditions
 *
-* @ingroup Errors
+* @ingroup error-codes-sqlstate
 *
 * This is a set of error conditions. It may not be complete, since new versions
 * of PostgreSQL may add another sql state codes and users may create new ones inside
 * a DB logic. So this set may be used to match most of sql states but not all.
+* A full list of codes can be found in the
+* <a href="https://www.postgresql.org/docs/9.3/static/errcodes-appendix.html">
+* official documentation for PostgreSQL</a>.
 */
 enum code {
     successful_completion = 0, // 00000

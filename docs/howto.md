@@ -16,7 +16,7 @@ CREATE TABLE users_info(
 
 If you want execute just a single query with no custom types or something else then the simplest way for you is:
 
-```c++
+```cpp
 #include <ozo/request.h>
 #include <ozo/connection_info.h>
 #include <ozo/shortcuts.h>
@@ -71,7 +71,7 @@ int main() {
 
 Let's look a little bit closer on this pretty simple asynchronous code.
 
-```c++
+```cpp
 ozo::rows_of<std::int64_t, std::optional<std::string>> rows;
 ```
 
@@ -85,13 +85,13 @@ The first argument of the tuple can not be a _NULL_, so here we do not to bother
 
 There is no mistake to expect nullable type for non-nullable result, but the opposite leads to run-time error in case of _NULL_ value result from database.
 
-```c++
+```cpp
 ozo::connection_info<> conn_info("host=... port=...");
 ```
 
 Now we need to create a connection information for database to connect to. This is our connection provider which can create a connection for us as it will be needed (see more information about connection provider and how to get connection).
 
-```c++
+```cpp
 const auto query = "SELECT id, name FROM users_info WHERE amount>="_SQL + std::int64_t(25);
 ```
 
@@ -99,7 +99,7 @@ Here our query for database. There is a text with `_SQL` literal and single para
 
 Here is `request()` asynchronous function call.
 
-```c++
+```cpp
 ozo::request(ozo::make_provider(io, conn_info), query, ozo::into(res),
         [&](ozo::error_code ec, auto conn) {
 //...
@@ -119,7 +119,7 @@ ozo::request(ozo::make_provider(io, conn_info), query, ozo::into(res),
 ## How Start To Do Not Bother With Types Sequence In Row But Begin To Bother About Column Names
 
 In previous story we saw how to do a simple request. But there is a tricky thing with sequence of types in result:
-```c++
+```cpp
 ozo::rows_of<std::int64_t, std::optional<std::string>> rows;
 
 //...
@@ -129,7 +129,7 @@ const auto query = "SELECT id, name FROM users_info WHERE amount>="_SQL + std::i
 
 If we interchange `id` and `name` in the query text we will get a run-time error. To be more robust for such changes there is another way - adaptation. E.g. with Boost.Fusion.
 
-```c++
+```cpp
 BOOST_FUSION_DEFINE_STRUCT((), my_row,
     (std::int64_t, id)
     (std::optional<std::string>, name)
@@ -159,7 +159,7 @@ In this case you can change fields' places free. Fields and structure members ar
 
 It is a good question! Since we are using binary protocol and have serialization/deserialization system we also have a type system. It is easy and extandable. For build-in types you can look at [ozo/type_traits.h](../include/ozo/type_traits.h) for difinitions like:
 
-```c++
+```cpp
 OZO_PG_DEFINE_TYPE(std::vector<char>, "bytea", BYTEAOID, dynamic_size)
 
 OZO_PG_DEFINE_TYPE_AND_ARRAY(boost::uuids::uuid, "uuid", UUIDOID, 2951, bytes<16>)
@@ -178,13 +178,13 @@ Since the mapping is ***C++** to **PostgreSQL***, you can extend it with your ow
 
 E.g. we have a `text` type definition like:
 
-```c++
+```cpp
 OZO_PG_DEFINE_TYPE_AND_ARRAY(std::string, "text", TEXTOID, TEXTARRAYOID, dynamic_size)
 ```
 
 You have your own brilliant string representation `Stroka` compatible with `const char* data(const Stroka&)` and `const char* size(const Stroka&)` functions (it is needed to use default introspection mechanisms). It can be included in type system and used as `text` representation like this:
 
-```c++
+```cpp
 OZO_PG_DEFINE_TYPE_AND_ARRAY(Stroka, "text", TEXTOID, TEXTARRAYOID, dynamic_size)
 ```
 

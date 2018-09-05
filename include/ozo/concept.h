@@ -14,7 +14,8 @@
 namespace ozo {
 
 /**
- * @defgroup Concepts
+ * @defgroup group-core-concepts Concepts
+ * @ingroup group-core
  * @brief Library-wide concepts emulation mechanism
  *
  * We decide to use Concept-style meta programming to make easy to extend, adapt and test the

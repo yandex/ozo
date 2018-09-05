@@ -303,7 +303,7 @@
         "generate-eclipse": false
     },
     "output-html": {
-        "disable-index": false,
+        "disable-index": true,
         "enum-values-per-line": 0,
         "external-links-in-window": false,
         "formula-fontsize": 10,
@@ -447,7 +447,7 @@
         "ref-by-relation": false,
         "ref-link-source": true,
         "ref-relation": false,
-        "source-code": false,
+        "source-code": true,
         "source-tooltips": true,
         "strip-code-comments": true,
         "suffix-exclude-navtree": [

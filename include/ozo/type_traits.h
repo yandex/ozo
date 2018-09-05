@@ -30,6 +30,11 @@
 #include <set>
 #include <type_traits>
 
+/**
+ * @defgroup group-type_system Type system
+ * @ingroup group-core
+ * @brief Database related type system of the library.
+ */
 namespace ozo {
 
 namespace hana = boost::hana;
@@ -37,20 +42,18 @@ using namespace hana::literals;
 
 namespace fusion = boost::fusion;
 /**
-* PostgreSQL OID type - object identificator
-*/
+ * @brief PostgreSQL OID type - object identifier
+ * @ingroup group-type_system
+ */
 using oid_t = ::Oid;
 
 /**
-* Type for non initialized OID
-*/
+ * @brief Type for non initialized OID
+ * @ingroup group-type_system
+ */
 using null_oid_t = std::integral_constant<oid_t, 0>;
 constexpr null_oid_t null_oid;
 
-/**
-* Indicates if type is nullable. By default - type is not
-* nullable.
-*/
 template <typename T, typename Enable = void>
 struct is_nullable : std::false_type {};
 
@@ -78,9 +81,53 @@ struct is_nullable<boost::weak_ptr<T>> : std::true_type {};
 template <typename T>
 struct is_nullable<std::weak_ptr<T>> : std::true_type {};
 
+/**
+ * @brief Indicates if type meets nullable requirements.
+ *
+ * `Nullble` type has to:
+ * * have a null-state,
+ * * be `bool` convertable - `false` indicates null state,
+ * * be dereferenceable via `operator *`.
+ *
+ *  These next types are Nullable out of the box:
+ * * `boost::optional`,
+ * * `std::optional`,
+ * * `boost::scoped_ptr`,
+ * * `std::unique_ptr`,
+ * * `boost::shared_ptr`,
+ * * `std::shared_ptr`,
+ * * `boost::weak_ptr`,
+ * * `std::weak_ptr`
+ *
+ * @note Raw pointers are not supported as `Nullable` by default. But if it is really needed you can add them as described below
+ *
+ * If you want to extend this list - you have to specialize `ozo::is_nullable` struct like this:
+ *
+ * @code
+    template <typename T>
+    struct is_nullable<std::weak_ptr<T>> : std::true_type {};
+ * @endcode
+ * @sa ozo::unwrap_nullable(), is_null(), allocate_nullable(), init_nullable(), reset_nullable()
+ * @ingroup group-core-concepts
+ * @hideinitializer
+ */
 template <typename T>
 constexpr auto Nullable = is_nullable<std::decay_t<T>>::value;
 
+
+#ifdef OZO_DOCUMENTATION
+/**
+ * @brief Returns value for #Nullable
+ *
+ * This utility function gets value from #Nullable, and pass object as it is if it is not #Nullable
+ *
+ * @param value --- object to unwrap
+ * @return dereferenced argument in case of #Nullable, pass as is if it is not.
+ * @ingroup group-core-functions
+ */
+template <typename T>
+decltype(auto) unwrap_nullable(T&& value) noexcept;
+#else
 template <typename T>
 inline decltype(auto) unwrap_nullable(T&& t, Require<Nullable<T>>* = 0) noexcept {
     return *t;
@@ -90,7 +137,7 @@ template <typename T>
 inline decltype(auto) unwrap_nullable(T&& t, Require<!Nullable<T>>* = 0) noexcept {
     return std::forward<T>(t);
 }
-
+#endif
 template <typename T>
 using unwrap_nullable_type = typename std::decay_t<decltype(unwrap_nullable(
         std::declval<T>()))>;
@@ -109,6 +156,21 @@ template <typename T>
 inline auto is_null(const std::weak_ptr<T>& v) noexcept {
     return is_null(v.lock());
 }
+
+#ifdef OZO_DOCUMENTATION
+/**
+ * @brief Indicates if value is in null state
+ *
+ * This utility function indicates if given value is in null state.
+ * If argument is not #Nullable it always returns `false`
+ *
+ * @param value --- object to examine
+ * @return `true` if object is in null-state, overwise - `false`.
+ * @ingroup group-core-functions
+ */
+template <typename T>
+constexpr auto is_null(const T&) noexcept;
+#endif
 
 template <typename T>
 constexpr auto is_null(const T&) noexcept -> std::enable_if_t<!Nullable<T>, std::false_type> {
@@ -214,28 +276,49 @@ using is_hana_adapted = std::integral_constant<bool,
 >;
 
 /**
-* Indicates if type is a composite. In general we suppose that composite
-* is a type being adapted for introspection via Boost.Fusion or Boost.Hana,
-* including tuples and compile-time sequences.
-*/
+ * @brief Indicates if type is a composite.
+ * @ingroup group-type_system
+ * In general we suppose that composite
+ * is a type being adapted for introspection via Boost.Fusion or Boost.Hana,
+ * including tuples and compile-time sequences.
+ *
+ * @return std::true_type for composite type or std::false_type in other case
+ */
+#ifdef OZO_DOCUMENTATION
+template <typename T>
+struct is_composite;
+#else
 template <typename T>
 struct is_composite : std::integral_constant<bool,
     is_hana_adapted<T>::value ||
     is_fusion_adapted<T>::value
 > {};
-
+#endif
 
 /**
-* Type traits template forward declaration. Type traits contains information
-* related to it's representation in the database. There are two different
-* kind of traits - built-in types with constant OIDs and custom types with
-* database depent OIDs. The functions below describe neccesary traits.
-* For built-in types traits will be defined there. For custom types user
-* must define traits.
-*/
+ * @brief Type traits template forward declaration.
+ * @ingroup group-type_system
+ *
+ * Type traits contains information
+ * related to it's representation in the database. There are two different
+ * kind of traits - built-in types with constant OIDs and custom types with
+ * database depent OIDs. The functions below describe neccesary traits.
+ * For built-in types traits will be defined there. For custom types user
+ * must define traits.
+ *
+ * @tparam T --- type to examine
+ */
+#ifdef OZO_DOCUMENTATION
+template <typename T>
+struct type_traits {
+    using name = ; //!< `boost::hana::string` with name of the type in a database
+    using oid = ; //!< `std::integral_constant` with Oid of the built-in type or null_oid_t for non built-in type
+    using size = ; //!< `std::integral_constant` with size of the type object in bytes or `ozo::dynamic_size` in other case
+};
+#else
 template <typename T>
 struct type_traits;
-
+#endif
 /**
 * Helpers to make size trait constant
 *     bytes - makes fixed size trait
@@ -251,16 +334,18 @@ struct type_size_match : std::integral_constant<bool, sizeof(T) == Size::value> 
 template <typename T>
 struct type_size_match<T, dynamic_size> : std::true_type {};
 /**
-* Helper defines the way for the type traits definitions.
-* Type is undefined then Name type is not defined.
-*     Name - type which can be converted into a string representation
-*         which contain the fully qualified type name in DB
-*     Oid - oid type - provides type's oid in database, may be defined for
-*         built-in types only; custom types have only dynamic oid, depended
-*         from the current state of DB.
-*     Size - size type - provides information about type's object size, may
-*         be specified only if the type's object has fixed size.
-*/
+ * @brief Helper defines the way for the type traits definitions.
+ * @ingroup group-type_system
+ *
+ * Type is undefined then Name type is not defined.
+ * @tparam Name --- type which can be converted into a string representation
+ * which contain the fully qualified type name in DB
+ * @tparam Oid --- oid type - provides type's oid in database, may be defined for
+ * built-in types only; custom types have only dynamic oid, depended
+ * from the current state of DB.
+ * @tparam Size --- size type - provides information about type's object size, may
+ *         be specified only if the type's object has fixed size.
+ */
 template <typename T, typename Name, typename Oid = null_oid_t, typename Size = dynamic_size>
 struct type_traits_helper {
     using name = Name;
@@ -270,16 +355,14 @@ struct type_traits_helper {
         "type size does not match to declared size");
 };
 
-/**
-* By default all non specialized types have unspecified name, name
-* oid and size.
-*/
 template <typename T>
 struct type_traits : type_traits_helper<T, void> {};
 
 /**
-* Condition indicates if the specified type is built-in for PG
-*/
+ * @brief Condition indicates if the specified type is built-in for PG
+ * @ingroup group-type_system
+ * @tparam T -- type to check
+ */
 template <typename T>
 struct is_built_in : std::integral_constant<bool,
     !std::is_same_v<typename type_traits<T>::oid, null_oid_t>> {};
@@ -362,10 +445,37 @@ constexpr auto size_of(const T& v) noexcept -> typename std::enable_if<
     OZO_PG_DEFINE_TYPE_ARRAY(boost::shared_ptr<Type>, Name, Oid) \
     OZO_PG_DEFINE_TYPE_ARRAY(std::shared_ptr<Type>, Name, Oid)
 
+/**
+ * @brief Helper macro to define type mapping
+ * @ingroup group-type_system
+ * In general type mapping is provided via `ozo::type_traits` specialization.
+ * But for a single type you need to define a type, an array of the type, an
+ * optional of the type (to support null), shared_ptr... and many other boilerplate.
+ * To reduce such things this macro is made.
+ *
+ * @note This macro can be called in the global namespace only
+ *
+ * E.g. the definition of the `uuid` type looks like this:
+@code
+OZO_PG_DEFINE_TYPE_AND_ARRAY(boost::uuids::uuid, "uuid", UUIDOID, 2951, bytes<16>)
+@endcode
+ *
+ * @param Type --- C++ type to be mapped to database type
+ * @param Name --- string with name of database type
+ * @param Oid --- oid for built-in type and `ozo::null_oid_t` for custom type
+ * @param ArrayOid --- oid for an array of built-in type and `ozo::null_oid_t` for custom type
+ * @param Size --- `bytes<N>` for fixed-size type (like integer, bigint and so on),
+ * there N - size of the type in database, `dynamic_type` for dynamic size types (like `text`
+ * `bytea` and so on)
+ */
+#ifdef OZO_DOCUMENTATION
+#define OZO_PG_DEFINE_TYPE_AND_ARRAY(Type, Name, Oid, ArrayOid, Size)
+#else
 #define OZO_PG_DEFINE_TYPE_AND_ARRAY(Type, Name, Oid, ArrayOid, Size) \
     OZO_PG_DEFINE_TYPE(Type, Name, Oid, Size) \
     OZO_PG_DEFINE_TYPE_ARRAY(Type, Name, ArrayOid) \
     OZO_PG_DEFINE_TYPE_ARRAY_NULLABLES(Type, Name, ArrayOid)
+#endif
 
 
 #define OZO_PG_DEFINE_CUSTOM_TYPE(Type, Name, Size) \
