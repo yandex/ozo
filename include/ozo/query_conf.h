@@ -76,33 +76,33 @@ using x3::eol;
 using x3::lexeme;
 using x3::string;
 
-x3::rule<class end, std::string> end("end");
-x3::rule<class line, query_line> line("line");
-x3::rule<class conf, std::vector<query_line>> conf("conf");
+inline const x3::rule<class end, std::string> end("end");
+inline const x3::rule<class line, query_line> line("line");
+inline const x3::rule<class conf, std::vector<query_line>> conf("conf");
 
-const auto on_end = []  (const auto& ctx) {
+inline const auto on_end = [] (const auto& ctx) {
     boost::apply_visitor([&] (const auto& v) { x3::_val(ctx) = v; }, x3::_attr(ctx));
 };
 
-const auto on_comment = [] (const auto& ctx) {
+inline const auto on_comment = [] (const auto& ctx) {
     std::string value;
     to_string_visitor visitor {value};
     visitor(x3::_attr(ctx));
     x3::_val(ctx) = query_line_comment {std::move(value)};
 };
 
-const auto on_text = [] (const auto& ctx) {
+inline const auto on_text = [] (const auto& ctx) {
     std::string value;
     to_string_visitor visitor {value};
     visitor(x3::_attr(ctx));
     x3::_val(ctx) = query_line_text {std::move(value)};
 };
 
-const auto end_def = lexeme[string("\r\n") | string("\r") | string("\n")][on_end];
-const auto line_def = lexeme[string("--") >> *(char_ - eol) >> (end | eoi)][on_comment]
+inline const auto end_def = lexeme[string("\r\n") | string("\r") | string("\n")][on_end];
+inline const auto line_def = lexeme[string("--") >> *(char_ - eol) >> (end | eoi)][on_comment]
     | lexeme[*(char_ - eol) >> end][on_text]
     | (lexeme[+(char_ - eol)][on_text] >> eoi);
-const auto conf_def = *line >> eoi;
+inline const auto conf_def = *line >> eoi;
 
 BOOST_SPIRIT_DEFINE(end, line, conf)
 
@@ -120,13 +120,13 @@ struct query_header {
     std::string name;
 };
 
-x3::rule<class header, query_header> header("header");
+inline const x3::rule<class header, query_header> header("header");
 
-const auto on_name = [] (const auto& ctx) {
+inline const auto on_name = [] (const auto& ctx) {
     x3::_val(ctx).name = x3::_attr(ctx);
 };
 
-const auto header_def = "--" >> *space >> "name" >> *space >> ':' >> *space >> lexeme[+(char_ - eol)][on_name] >> -eol >> eoi;
+inline const auto header_def = "--" >> *space >> "name" >> *space >> ':' >> *space >> lexeme[+(char_ - eol)][on_name] >> -eol >> eoi;
 
 BOOST_SPIRIT_DEFINE(header)
 
@@ -154,26 +154,26 @@ struct text_value {
     std::vector<query_text_element> text;
 };
 
-x3::rule<class text_part, std::string> text_part("text_part");
-x3::rule<class parameter_name, std::string> parameter_name("parameter_name");
-x3::rule<class text, text_value> text("text");
+inline const x3::rule<class text_part, std::string> text_part("text_part");
+inline const x3::rule<class parameter_name, std::string> parameter_name("parameter_name");
+inline const x3::rule<class text, text_value> text("text");
 
-const auto on_text_part = [] (const auto& ctx) {
+inline const auto on_text_part = [] (const auto& ctx) {
     to_string_visitor visitor {x3::_val(ctx)};
     visitor(x3::_attr(ctx));
 };
 
-const auto on_text = [] (const auto& ctx) {
+inline const auto on_text = [] (const auto& ctx) {
     x3::_val(ctx).text.push_back(query_text_part {x3::_attr(ctx)});
 };
 
-const auto on_parameter_name = [] (const auto& ctx) {
+inline const auto on_parameter_name = [] (const auto& ctx) {
     x3::_val(ctx).text.push_back(query_parameter_name {x3::_attr(ctx)});
 };
 
-const auto text_part_def = +lexeme[string("::") | +(char_ - char_(':') - char_('\0'))][on_text_part];
-const auto parameter_name_def = lit(':') >> lexeme[+char_("_0-9A-Za-z")];
-const auto text_def = *(parameter_name[on_parameter_name] | text_part[on_text]) >> eoi;
+inline const auto text_part_def = +lexeme[string("::") | string(":=") | +(char_ - char_(':') - char_('\0'))][on_text_part];
+inline const auto parameter_name_def = lit(':') >> lexeme[+char_("_0-9A-Za-z")];
+inline const auto text_def = *(parameter_name[on_parameter_name] | text_part[on_text]) >> eoi;
 
 BOOST_SPIRIT_DEFINE(text_part, parameter_name, text)
 
