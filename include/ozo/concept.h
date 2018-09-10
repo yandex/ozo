@@ -202,13 +202,17 @@ constexpr auto HanaString = decltype(boost::hana::is_a<boost::hana::string_tag>(
 template <typename T>
 constexpr auto HanaTuple = decltype(boost::hana::is_a<boost::hana::tuple_tag>(std::declval<T>()))::value;
 
+
 template <typename T, typename = std::void_t<>>
 struct is_fusion_adapted_struct : std::false_type {};
 
 template <typename T>
-struct is_fusion_adapted_struct<T,
-    std::void_t<decltype(boost::fusion::extension::struct_member_name<T, 0>::call())>
-> : std::true_type {};
+struct is_fusion_adapted_struct<T, std::enable_if_t<
+    std::is_same_v<
+        typename boost::fusion::traits::tag_of<T>::type,
+        boost::fusion::struct_tag
+    >
+>> : std::true_type {};
 
 
 /**
