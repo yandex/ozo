@@ -1170,13 +1170,16 @@ dl.section dd {
 	font: 300% Tahoma, Arial,sans-serif;
 	margin: 0px;
 	padding: 2px 0px;
+	font-style: bold;
 }
 
 #projectbrief
 {
-	font: 120% Tahoma, Arial,sans-serif;
-	margin: 0px;
+	font: 100% Tahoma, Arial,sans-serif;
+	margin-left: 20px;
+	margin-bottom: 10px;
 	padding: 0px;
+	font-style: italic;
 }
 
 #projectnumber

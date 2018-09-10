@@ -4,6 +4,18 @@
 
 namespace ozo {
 
+/**
+ * @brief Executes query but does not return a result
+ * @ingroup group-requests
+ *
+ * This function is same as `ozo::request()` function except it does not return any result.
+ * It suitable to use with `UPDATE` `INSERT` statements, or invoking procedures without result.
+ *
+ * @param provider --- #ConnectionProvider object
+ * @param query --- #Query to execute
+ * @param token --- any valid of #CompletionToken.
+ * @return depends on #CompletionToken.
+ */
 template <typename P, typename Q, typename CompletionToken, typename = Require<ConnectionProvider<P>>>
 inline auto execute(P&& provider, Q&& query, const time_traits::duration& timeout, CompletionToken&& token) {
     using signature_t = void (error_code, connection_type<P>);

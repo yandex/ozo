@@ -725,7 +725,11 @@ struct is_connection_source<T, std::void_t<decltype(
  * `ConnectionSource` is a part of #ConnectionProvider mechanism and typically it is no needs to
  * use it directly.
  *
- * **Customization point**
+ * ###Built-in Connection Sources
+ *
+ * `ozo::connection_info`, `ozo::connection_pool`.
+ *
+ * ###Customization point
  *
  * This concept is a customization point for adding or modifying existing connection
  * sources to specify custom behaviour of connection establishing. Have fun and find
@@ -759,7 +763,7 @@ struct is_connection_provider<T, std::void_t<decltype(
  *
  * @ingroup group-connection-concepts
  *
- * `ConnectionProvider` is an entity which binds together ConnectionSource, io_context
+ * `ConnectionProvider` is an entity which binds together #ConnectionSource, `io_context`
  * and allow to get connection by means of get_connection call function.
  *
  * `ConnectionProvider` must provide Connection by means of underlying ConnectionSource.
@@ -841,7 +845,7 @@ constexpr auto ConnectionProvider = is_connection_provider<std::decay_t<T>>::val
  * it can be a callback, a `boost::asio::yield_context`, a `boost::use_future` and other
  * Boost.Asio compatible tokens.
  * @return completion token depent value like void for callback, connection for the
- * `yield_context`, `std::future<connection>` for `use_future`, and so on.
+ * `boost::asio::yield_context`, `std::future<Connection>` for `boost::asio::use_future`, and so on.
  */
 template <typename T, typename CompletionToken>
 inline auto get_connection(T&& provider, CompletionToken&& token) {
