@@ -23,7 +23,7 @@ public:
 
     void take_connection(T& out) {
         out = std::move(*impl->connection);
-        impl->connection.reset();
+        impl->connection = __OZO_STD_OPTIONAL<T>{};
         impl.reset();
     }
 
