@@ -8,6 +8,16 @@
 
 namespace ozo {
 
+/**
+ * @brief Connection information
+ *
+ * @ingroup group-connection-types
+ *
+ * This type is a basic #ConnectionSource implementation. This source allows to establish connection
+ * via connection string specified.
+ * @tparam OidMap --- oids map type which defines user types are used within this connection.
+ * @tparam Statistics --- statistics type which defines statistics is collected for this connection.
+ */
 template <
     typename OidMap = empty_oid_map,
     typename Statistics = no_statistics>

@@ -89,7 +89,7 @@ struct is_nullable<std::weak_ptr<T>> : std::true_type {};
  * * be `bool` convertable - `false` indicates null state,
  * * be dereferenceable via `operator *`.
  *
- *  These next types are Nullable out of the box:
+ * These next types are `Nullable` out of the box:
  * * `boost::optional`,
  * * `std::optional`,
  * * `boost::scoped_ptr`,
@@ -117,7 +117,7 @@ constexpr auto Nullable = is_nullable<std::decay_t<T>>::value;
 
 #ifdef OZO_DOCUMENTATION
 /**
- * @brief Returns value for #Nullable
+ * @brief Dereference #Nullable argument or forward it
  *
  * This utility function gets value from #Nullable, and pass object as it is if it is not #Nullable
  *

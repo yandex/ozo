@@ -277,6 +277,35 @@ struct is_emplaceable<T, std::void_t<decltype(std::declval<T&>().emplace())>> : 
 template <typename T>
 constexpr auto Emplaceable = is_emplaceable<std::decay_t<T>>::value;
 
+/**
+ * @brief Completion token concept
+ *
+ * CompletionToken is an entity which determines how to continue with asynchronous operation result when
+ * the operation is complete. According to <a href="https://www.boost.org/doc/libs/1_66_0/doc/html/boost_asio/reference/async_completion.html">
+ * `boost::asio::async_completion`</a> it defines the return value of an asynchronous function.
+ *
+ * CompletionToken - is any of these next entities:
+ * * callback with `void(ozo::error_code, Connection)` signature, which can handle an `ozo::error_code`
+ * object as first argument, and #Connection implementation object as second argument. It is better to
+ * have second argument as a template parameter, but if it needed - it can be specialized with
+ * `ozo::connection_type`. Asynchronous function in this case will return `void`.
+ * * <a href= "https://www.boost.org/doc/libs/1_66_0/doc/html/boost_asio/reference/use_future.html">
+ * `boost::asio::use_future`</a> - to get a future on the asynchronous operation result.
+ * Asynchronous function in this case will return `std::future<Connection>`.
+ * * <a href="https://www.boost.org/doc/libs/1_66_0/doc/html/boost_asio/reference/basic_yield_context.html">
+ * `boost::asio::yield_context`</a> - to use async operation with Boost.Coroutine.
+ * Asynchronous function in this case will return #Connection.
+ * * any other type supported with <a href="https://www.boost.org/doc/libs/1_66_0/doc/html/boost_asio/reference/async_completion.html">
+ * `boost::asio::async_completion`</a> mechanism.
+ * Asynchronous function in this case will return a type is depends on
+ * <a href="https://www.boost.org/doc/libs/1_66_0/doc/html/boost_asio/reference/async_completion/result.html">
+ * `boost::asio::async_completion::result`</a>.
+ * @hideinitializer
+ */
+#ifdef OZO_DOCUMENTATION
+template <typename T>
+constexpr auto CompletionToken = std::false_type;
+#endif
 ///@}
 
 } // namespace ozo

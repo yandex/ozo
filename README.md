@@ -13,7 +13,7 @@ The library leverages the power of template metaprogramming, providing convenien
 Since the project is on early state of development it lacks of documentation. We understand the importance of good docs and are working hard on this problem. Complete documentation is on the way, but now:
 
 * look at our brand new [HOW TO](docs/howto.md),
-* try our [generated from sources documentation](https://yandex.github.io/ozo/docs/html/index.html) made with [Doxypress](http://www.copperspice.com/documentation-doxypress.html) - it is under construction but readable,
+* try our [generated from sources documentation](https://yandex.github.io/ozo/docs/html/index.html) - it is under construction but readable,
 * learn more about main use-cases from [unit tests](tests/request_integration.cpp),
 * See our [C++Now'18 talk about OZO](https://youtu.be/-1zbaxuUsMA) with [presentation](https://github.com/boostcon/cppnow_presentations_2018/blob/master/05-09-2018_wednesday/design_and_implementation_of_dbms_asynchronous_client_library__roman_siromakha__cppnow_05092018.pdf).
 
