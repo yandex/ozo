@@ -203,7 +203,9 @@ struct async_get_result_op : boost::asio::coroutine {
     }
 
     void done(error_code ec) {
-        set_error_context(get_connection(ctx_), "error while get request result");
+        if (std::empty(get_error_context(get_connection(ctx_)))) {
+            set_error_context(get_connection(ctx_), "error while get request result");
+        }
         return impl::done(ctx_, ec);
     }
 

@@ -51,7 +51,7 @@ matrix:
 
   - os: osx
     osx_image: xcode10
-    install: brew install cmake boost postgresql ccache
+    install: brew install boost postgresql ccache
     env: BUILD_ARGS='clang debug'
 
 script: scripts/build.sh ${BUILD_ARGS}
