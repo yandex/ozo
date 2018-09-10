@@ -35,6 +35,22 @@ public:
     }
 };
 
+/**
+ * @brief Constructs `ozo::connection_info` #ConnectionSource.
+ * @ingroup group-connection-functions
+ * @relates ozo::connection_info
+ *
+ * @param conn_str --- standard libpq connection string.
+ * @param OidMap --- oid map for user defined types.
+ * @param statistics --- statistics to collect for a connection.
+ * @return `ozo::connection_info` specialization.
+ */
+template <typename OidMap = empty_oid_map, typename Statistics = no_statistics>
+inline auto make_connection_info(std::string conn_str, const OidMap& = OidMap{},
+        Statistics statistics = Statistics{}) {
+    return connection_info<OidMap, Statistics>{std::move(conn_str), statistics};
+}
+
 static_assert(ConnectionProvider<connector<connection_info<>>>, "is not a ConnectionProvider");
 
 } // namespace ozo
