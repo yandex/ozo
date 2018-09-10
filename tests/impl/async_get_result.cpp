@@ -126,6 +126,37 @@ TEST_P(async_get_result_op_call_with_error, should_set_query_state_in_error) {
     EXPECT_EQ(m.ctx->state, query_state::error);
 }
 
+TEST_P(async_get_result_op_call_with_error, should_replace_empty_connection_error_context_on_error) {
+    m.ctx->state = GetParam();
+
+    const InSequence s;
+
+    EXPECT_CALL(m.socket, cancel(_)).WillOnce(Return());
+    EXPECT_CALL(m.callback, get_executor()).WillOnce(Return(ozo::tests::executor {&m.callback_executor}));
+    EXPECT_CALL(m.strand, post(_)).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(m.callback_executor, dispatch(_)).WillOnce(Return());
+
+    ozo::impl::make_async_get_result_op(m.ctx, [](auto, auto){})(error::error);
+
+    EXPECT_EQ(m.conn->error_context_, "error while get request result");
+}
+
+TEST_P(async_get_result_op_call_with_error, should_preserve_not_empty_connection_error_context_on_error) {
+    m.conn->error_context_ = "my error";
+    m.ctx->state = GetParam();
+
+    const InSequence s;
+
+    EXPECT_CALL(m.socket, cancel(_)).WillOnce(Return());
+    EXPECT_CALL(m.callback, get_executor()).WillOnce(Return(ozo::tests::executor {&m.callback_executor}));
+    EXPECT_CALL(m.strand, post(_)).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(m.callback_executor, dispatch(_)).WillOnce(Return());
+
+    ozo::impl::make_async_get_result_op(m.ctx, [](auto, auto){})(error::error);
+
+    EXPECT_EQ(m.conn->error_context_, "my error");
+}
+
 INSTANTIATE_TEST_CASE_P(
     with_query_state_NOT_error,
     async_get_result_op_call_with_error,

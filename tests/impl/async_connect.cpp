@@ -316,6 +316,41 @@ TEST_F(async_connect_op, should_not_cancel_socket_for_aborted_timer_async_wait) 
     on_timeout(error_code {boost::asio::error::operation_aborted});
 }
 
+struct async_connect_op_call : Test {};
+
+TEST_F(async_connect_op_call, should_replace_empty_connection_error_context_on_error) {
+    fixture f;
+
+    const InSequence s;
+
+    EXPECT_CALL(f.callback, get_executor()).WillOnce(Return(ozo::tests::executor {&f.callback_executor}));
+    EXPECT_CALL(f.strand, post(_)).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(f.callback_executor, dispatch(_)).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(f.callback, call(error_code{error::error}, f.conn))
+        .WillOnce(Return());
+
+    ozo::impl::make_async_connect_op(f.context)(error_code{error::error});
+
+    EXPECT_EQ(f.conn->error_context_, "error while connection polling");
+}
+
+TEST_F(async_connect_op_call, should_preserve_not_empty_connection_error_context_on_error) {
+    fixture f;
+    f.conn->error_context_ = "my error";
+
+    const InSequence s;
+
+    EXPECT_CALL(f.callback, get_executor()).WillOnce(Return(ozo::tests::executor {&f.callback_executor}));
+    EXPECT_CALL(f.strand, post(_)).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(f.callback_executor, dispatch(_)).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(f.callback, call(error_code{error::error}, f.conn))
+        .WillOnce(Return());
+
+    ozo::impl::make_async_connect_op(f.context)(error_code{error::error});
+
+    EXPECT_EQ(f.conn->error_context_, "my error");
+}
+
 struct async_connect : Test {
     fixture f;
 };
