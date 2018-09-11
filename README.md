@@ -23,7 +23,7 @@ These things are needed:
 
 * **CMake** is used as build system
 * **GCC** or **Clang** C++ compiler with C++17 support (tested with GCC 7.0, Clang 5.0 and Apple LLVM version 9.0.0)
-* **Boost** >= 1.66
+* **Boost** >= 1.66 with `BOOST_HANA_CONFIG_ENABLE_STRING_UDL` defined.
 * **libpq** >= 9.3
 
 If you want to run integration tests and/or build inside Docker container:
