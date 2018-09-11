@@ -1,5 +1,9 @@
 #pragma once
 
+#ifndef BOOST_HANA_CONFIG_ENABLE_STRING_UDL
+#error "OZO needs BOOST_HANA_CONFIG_ENABLE_STRING_UDL to be defined"
+#endif
+
 #include <boost/fusion/adapted.hpp>
 #include <boost/fusion/sequence.hpp>
 #include <boost/fusion/support/is_sequence.hpp>
