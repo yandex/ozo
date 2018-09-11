@@ -8,7 +8,7 @@ namespace ozo {
 namespace impl {
 
 template <typename P, typename Q, typename Handler>
-void async_execute(P&& provider, Q&& query, const time_traits::duration& timeout, Handler&& handler) {
+inline void async_execute(P&& provider, Q&& query, const time_traits::duration& timeout, Handler&& handler) {
     static_assert(ConnectionProvider<P>, "is not a ConnectionProvider");
     static_assert(Query<Q> || QueryBuilder<Q>, "is neither Query nor QueryBuilder");
     async_get_connection(std::forward<P>(provider),
@@ -18,16 +18,6 @@ void async_execute(P&& provider, Q&& query, const time_traits::duration& timeout
             detail::do_nothing {},
             std::forward<Handler>(handler)
         )
-    );
-}
-
-template <typename P, typename Q, typename Handler>
-void async_execute(P&& provider, Q&& query, Handler&& handler) {
-    async_execute(
-        std::forward<P>(provider),
-        std::forward<Q>(query),
-        time_traits::duration::max(),
-        std::forward<Handler>(handler)
     );
 }
 
