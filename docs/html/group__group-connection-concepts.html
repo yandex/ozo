@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>OZO: Concepts</title>
+<title>OZO 「お象」: Concepts</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -35,8 +35,9 @@
  <tbody>
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
-   <div id="projectname">OZO
+   <div id="projectname">OZO 「お象」
    </div>
+   <div id="projectbrief">Boost.Asio and libpq based asynchronous PostgreSQL unofficial header-only C++17 client library.</div>
   </td>
    <td>        <div id="MSearchBox" class="MSearchBoxInactive">
         <span class="left">
@@ -162,7 +163,7 @@ template&lt;typename T &gt; </div>
 </div><div class="memdoc">
 
 <p>ConnectionProvider concept. </p>
-<p><code>ConnectionProvider</code> is an entity which binds together ConnectionSource, io_context and allow to get connection by means of get_connection call function.</p>
+<p><code>ConnectionProvider</code> is an entity which binds together <a class="el" href="group__group-connection-concepts.html#gaeb64411053912bede2d7d7ad7c8057b3" title="ConnectionSource concept. ">ConnectionSource</a>, <code>io_context</code> and allow to get connection by means of get_connection call function.</p>
 <p><code>ConnectionProvider</code> must provide Connection by means of underlying ConnectionSource. In case of connection has been provided successful <code>ConnectionProvider</code> must dispatch Handler with empty error_code as the first argument and provided Connection as the second one. In case of failure &mdash; <code>error_code</code> with appropriate value and allocated Connection with additional error context if it possible.</p>
 <p>Note, <a class="el" href="group__group-connection-concepts.html#ga9b549bf74e3c13c97f24493211722d9d" title="Database connection concept. ">Connection</a> is a <code>ConnectionProvider</code> itself and provides self as a <a class="el" href="group__group-connection-concepts.html#ga9b549bf74e3c13c97f24493211722d9d" title="Database connection concept. ">Connection</a>.</p>
 <p><b>Customization point</b></p>
@@ -197,7 +198,9 @@ template&lt;typename T &gt; </div>
 <p>ConnectionSource has provide information about <a class="el" href="group__group-connection-concepts.html#ga9b549bf74e3c13c97f24493211722d9d" title="Database connection concept. ">Connection</a> type it constructs. This can be done via <code><a class="el" href="group__group-connection-types.html#gac8378a7ff6a784dc9b354b343c204560" title="Gives exact type of connection which ConnectionProvider or ConnectionSource provide. ">ozo::connection_type</a></code> and it's customization.</p>
 <p><code>ConnectionSource</code> must be a function or a functor with such signature: </p><div class="fragment"><div class="line">void (io_context io, Handler h, SourceRelatedAdditionalArgs&amp;&amp;...);</div></div><!-- fragment --><p>where Handler must be a functor with such or compatible signature: </p><div class="fragment"><div class="line">void (error_code ec, connection_type&lt;ConnectionSource&gt; conn);</div></div><!-- fragment --><p><code>ConnectionSource</code> must establish <a class="el" href="group__group-connection-concepts.html#ga9b549bf74e3c13c97f24493211722d9d" title="Database connection concept. ">Connection</a> by means of <code>io_context</code> specified as first argument. In case of connection has been established successful must dispatch Handler with empty <code>error_code</code> as the first argument and established <a class="el" href="group__group-connection-concepts.html#ga9b549bf74e3c13c97f24493211722d9d" title="Database connection concept. ">Connection</a> as the second one. In case of failure &mdash; error_code with appropriate value and allocated Connection with additional error context if it possible.</p>
 <p>Basic usage may looks like this: </p><div class="fragment"><div class="line">io_context io;</div><div class="line"><span class="comment">//...</span></div><div class="line"><a class="code" href="group__group-connection-concepts.html#gaeb64411053912bede2d7d7ad7c8057b3">ConnectionSource</a> source;</div><div class="line"><span class="comment">//...</span></div><div class="line">source(io, [](error_code ec, connection_type&lt;ConnectionSource&gt; conn){</div><div class="line"><span class="comment">//...</span></div><div class="line">});</div></div><!-- fragment --><p><code>ConnectionSource</code> is a part of <a class="el" href="group__group-connection-concepts.html#ga81740a704092279e94bf9007ae3f722b" title="ConnectionProvider concept. ">ConnectionProvider</a> mechanism and typically it is no needs to use it directly.</p>
-<p><b>Customization point</b></p>
+<h3>Built-in Connection Sources</h3>
+<p><code><a class="el" href="classozo_1_1connection__info.html" title="Connection information. ">ozo::connection_info</a></code>, <code><a class="el" href="classozo_1_1connection__pool.html" title="Connection pool implementationThis is a simple connection pool implementation which can store up to m...">ozo::connection_pool</a></code>.</p>
+<h3>Customization point</h3>
 <p>This concept is a customization point for adding or modifying existing connection sources to specify custom behaviour of connection establishing. Have fun and find the best solution you want.</p>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">

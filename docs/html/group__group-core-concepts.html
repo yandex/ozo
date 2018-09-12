@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>OZO: Concepts</title>
+<title>OZO 「お象」: Concepts</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -35,8 +35,9 @@
  <tbody>
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
-   <div id="projectname">OZO
+   <div id="projectname">OZO 「お象」
    </div>
+   <div id="projectbrief">Boost.Asio and libpq based asynchronous PostgreSQL unofficial header-only C++17 client library.</div>
   </td>
    <td>        <div id="MSearchBox" class="MSearchBoxInactive">
         <span class="left">
@@ -176,6 +177,10 @@ Variables</h2></td></tr>
 <tr class="memitem:ga474575596a9253f3aad1f7ff5014425b"><td class="memTemplItemLeft" align="right" valign="top">constexpr auto&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group__group-core-concepts.html#ga474575596a9253f3aad1f7ff5014425b">ozo::Emplaceable</a></td></tr>
 <tr class="memdesc:ga474575596a9253f3aad1f7ff5014425b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Emplaceable concept.  <a href="group__group-core-concepts.html#ga474575596a9253f3aad1f7ff5014425b">More...</a><br /></td></tr>
 <tr class="separator:ga474575596a9253f3aad1f7ff5014425b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga6513d4477f12ddf822036eb03d7891fa"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
+<tr class="memitem:ga6513d4477f12ddf822036eb03d7891fa"><td class="memTemplItemLeft" align="right" valign="top">constexpr auto&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group__group-core-concepts.html#ga6513d4477f12ddf822036eb03d7891fa">ozo::CompletionToken</a></td></tr>
+<tr class="memdesc:ga6513d4477f12ddf822036eb03d7891fa"><td class="mdescLeft">&#160;</td><td class="mdescRight">Completion token concept.  <a href="group__group-core-concepts.html#ga6513d4477f12ddf822036eb03d7891fa">More...</a><br /></td></tr>
+<tr class="separator:ga6513d4477f12ddf822036eb03d7891fa"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga5cb469295c856e5df036e640a55322b1"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
 <tr class="memitem:ga5cb469295c856e5df036e640a55322b1"><td class="memTemplItemLeft" align="right" valign="top">constexpr auto&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group__group-core-concepts.html#ga5cb469295c856e5df036e640a55322b1">ozo::Nullable</a></td></tr>
 <tr class="memdesc:ga5cb469295c856e5df036e640a55322b1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Indicates if type meets nullable requirements.  <a href="group__group-core-concepts.html#ga5cb469295c856e5df036e640a55322b1">More...</a><br /></td></tr>
@@ -209,6 +214,31 @@ template&lt;bool Condition, typename Type  = void&gt; </div>
 </div>
 </div>
 <h2 class="groupheader">Variable Documentation</h2>
+<a id="ga6513d4477f12ddf822036eb03d7891fa"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga6513d4477f12ddf822036eb03d7891fa">&#9670;&nbsp;</a></span>CompletionToken</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename T &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">constexpr auto ozo::CompletionToken</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Completion token concept. </p>
+<p>CompletionToken is an entity which determines how to continue with asynchronous operation result when the operation is complete. According to <a href="https://www.boost.org/doc/libs/1_66_0/doc/html/boost_asio/reference/async_completion.html"><code>boost::asio::async_completion</code></a> it defines the return value of an asynchronous function.</p>
+<p>CompletionToken - is any of these next entities:</p><ul>
+<li>callback with <code>void(ozo::error_code, Connection)</code> signature, which can handle an <code>ozo::error_code</code> object as first argument, and <a class="el" href="group__group-connection-concepts.html#ga9b549bf74e3c13c97f24493211722d9d" title="Database connection concept. ">Connection</a> implementation object as second argument. It is better to have second argument as a template parameter, but if it needed - it can be specialized with <code><a class="el" href="group__group-connection-types.html#gac8378a7ff6a784dc9b354b343c204560" title="Gives exact type of connection which ConnectionProvider or ConnectionSource provide. ">ozo::connection_type</a></code>. Asynchronous function in this case will return <code>void</code>.</li>
+<li><a href="https://www.boost.org/doc/libs/1_66_0/doc/html/boost_asio/reference/use_future.html"><code>boost::asio::use_future</code></a> - to get a future on the asynchronous operation result. Asynchronous function in this case will return <code>std::future&lt;Connection&gt;</code>.</li>
+<li><a href="https://www.boost.org/doc/libs/1_66_0/doc/html/boost_asio/reference/basic_yield_context.html"><code>boost::asio::yield_context</code></a> - to use async operation with Boost.Coroutine. Asynchronous function in this case will return <a class="el" href="group__group-connection-concepts.html#ga9b549bf74e3c13c97f24493211722d9d" title="Database connection concept. ">Connection</a>.</li>
+<li>any other type supported with <a href="https://www.boost.org/doc/libs/1_66_0/doc/html/boost_asio/reference/async_completion.html"><code>boost::asio::async_completion</code></a> mechanism. Asynchronous function in this case will return a type is depends on <a href="https://www.boost.org/doc/libs/1_66_0/doc/html/boost_asio/reference/async_completion/result.html"><code>boost::asio::async_completion::result</code></a>. </li>
+</ul>
+
+</div>
+</div>
 <a id="ga474575596a9253f3aad1f7ff5014425b"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ga474575596a9253f3aad1f7ff5014425b">&#9670;&nbsp;</a></span>Emplaceable</h2>
 
@@ -515,9 +545,9 @@ template&lt;typename T &gt; </div>
 <p><code>Nullble</code> type has to:</p><ul>
 <li>have a null-state,</li>
 <li>be <code>bool</code> convertable - <code>false</code> indicates null state,</li>
-<li><p class="startli">be dereferenceable via <code>operator *</code>.</p>
-<p class="startli">These next types are Nullable out of the box:</p>
-</li>
+<li>be dereferenceable via <code>operator *</code>.</li>
+</ul>
+<p>These next types are <code>Nullable</code> out of the box:</p><ul>
 <li><code>boost::optional</code>,</li>
 <li><code>std::optional</code>,</li>
 <li><code>boost::scoped_ptr</code>,</li>
@@ -529,7 +559,7 @@ template&lt;typename T &gt; </div>
 </ul>
 <dl class="section note"><dt>Note</dt><dd>Raw pointers are not supported as <code>Nullable</code> by default. But if it is really needed you can add them as described below</dd></dl>
 <p>If you want to extend this list - you have to specialize <code>ozo::is_nullable</code> struct like this:</p>
-<div class="fragment"><div class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</div><div class="line"><span class="keyword">struct </span>is_nullable&lt;<a class="code" href="namespacestd.html">std</a>::weak_ptr&lt;T&gt;&gt; : std::true_type {};</div></div><!-- fragment --> <dl class="section see"><dt>See also</dt><dd><a class="el" href="group__group-core-functions.html#ga8af7201471e62fd8d338b13271d7ec06" title="Returns value for Nullable. ">ozo::unwrap_nullable()</a>, <a class="el" href="group__group-core-functions.html#ga0846e7fca9274b5d6de397590b10f778" title="Indicates if value is in null state. ">is_null()</a>, allocate_nullable(), init_nullable(), reset_nullable() </dd></dl>
+<div class="fragment"><div class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</div><div class="line"><span class="keyword">struct </span>is_nullable&lt;<a class="code" href="namespacestd.html">std</a>::weak_ptr&lt;T&gt;&gt; : std::true_type {};</div></div><!-- fragment --> <dl class="section see"><dt>See also</dt><dd><a class="el" href="group__group-core-functions.html#ga8af7201471e62fd8d338b13271d7ec06" title="Dereference Nullable argument or forward it. ">ozo::unwrap_nullable()</a>, <a class="el" href="group__group-core-functions.html#ga0846e7fca9274b5d6de397590b10f778" title="Indicates if value is in null state. ">is_null()</a>, allocate_nullable(), init_nullable(), reset_nullable() </dd></dl>
 
 </div>
 </div>

@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>OZO: include/ozo/type_traits.h Source File</title>
+<title>OZO 「お象」: include/ozo/type_traits.h Source File</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -35,8 +35,9 @@
  <tbody>
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
-   <div id="projectname">OZO
+   <div id="projectname">OZO 「お象」
    </div>
+   <div id="projectbrief">Boost.Asio and libpq based asynchronous PostgreSQL unofficial header-only C++17 client library.</div>
   </td>
    <td>        <div id="MSearchBox" class="MSearchBoxInactive">
         <span class="left">
@@ -107,8 +108,8 @@ $(document).ready(function(){initNavTree('type__traits_8h_source.html','');});
 <div class="ttc" id="namespaceozo_html_a1e8ece917416670644622e226e7e4ae6"><div class="ttname"><a href="namespaceozo.html#a1e8ece917416670644622e226e7e4ae6">ozo::is_hana_adapted</a></div><div class="ttdeci">std::integral_constant&lt; bool, hana::Sequence&lt; T &gt;::value||hana::Struct&lt; T &gt;::value &gt; is_hana_adapted</div><div class="ttdef"><b>Definition:</b> type_traits.h:276</div></div>
 <div class="ttc" id="group__group-type__system_html_ga6a1c0d23ef107382f509f84757125558"><div class="ttname"><a href="group__group-type__system.html#ga6a1c0d23ef107382f509f84757125558">ozo::null_oid_t</a></div><div class="ttdeci">std::integral_constant&lt; oid_t, 0 &gt; null_oid_t</div><div class="ttdoc">Type for non initialized OID. </div><div class="ttdef"><b>Definition:</b> type_traits.h:54</div></div>
 <div class="ttc" id="namespacestd_html"><div class="ttname"><a href="namespacestd.html">std</a></div><div class="ttdef"><b>Definition:</b> native_conn_handle.h:5</div></div>
-<div class="ttc" id="group__group-core-functions_html_ga8af7201471e62fd8d338b13271d7ec06"><div class="ttname"><a href="group__group-core-functions.html#ga8af7201471e62fd8d338b13271d7ec06">ozo::unwrap_nullable</a></div><div class="ttdeci">decltype(auto) unwrap_nullable(T &amp;&amp;value) noexcept</div><div class="ttdoc">Returns value for Nullable. </div></div>
-<div class="ttc" id="group__group-core-concepts_html_gaec336e235cdaabead728b12ecb63b38a"><div class="ttname"><a href="group__group-core-concepts.html#gaec336e235cdaabead728b12ecb63b38a">ozo::Require</a></div><div class="ttdeci">Type Require</div><div class="ttdoc">Concept requirement emulation. </div><div class="ttdef"><b>Definition:</b> concept.h:50</div></div>
+<div class="ttc" id="group__group-core-functions_html_ga8af7201471e62fd8d338b13271d7ec06"><div class="ttname"><a href="group__group-core-functions.html#ga8af7201471e62fd8d338b13271d7ec06">ozo::unwrap_nullable</a></div><div class="ttdeci">decltype(auto) unwrap_nullable(T &amp;&amp;value) noexcept</div><div class="ttdoc">Dereference Nullable argument or forward it. </div></div>
+<div class="ttc" id="group__group-core-concepts_html_gaec336e235cdaabead728b12ecb63b38a"><div class="ttname"><a href="group__group-core-concepts.html#gaec336e235cdaabead728b12ecb63b38a">ozo::Require</a></div><div class="ttdeci">Type Require</div><div class="ttdoc">Concept requirement emulation. </div><div class="ttdef"><b>Definition:</b> concept.h:54</div></div>
 <div class="ttc" id="namespacehana_1_1literals_html"><div class="ttname"><a href="namespacehana_1_1literals.html">literals</a></div></div>
 <div class="ttc" id="namespaceozo_html_af25063f8ee373256aacd69febdd31517"><div class="ttname"><a href="namespaceozo.html#af25063f8ee373256aacd69febdd31517">ozo::size_of</a></div><div class="ttdeci">constexpr auto size_of(T &amp;&amp;) noexcept -&gt; typename std::enable_if&lt; !is_dynamic_size&lt; std::decay_t&lt; T &gt;&gt;::value, typename type_traits&lt; std::decay_t&lt; T &gt;&gt;::size &gt;::type</div><div class="ttdef"><b>Definition:</b> type_traits.h:393</div></div>
 <div class="ttc" id="structozo_1_1type__traits_html_a188eddb23d740dd449530c45db7993b3"><div class="ttname"><a href="structozo_1_1type__traits.html#a188eddb23d740dd449530c45db7993b3">ozo::type_traits::oid</a></div><div class="ttdeci">typedef oid</div><div class="ttdoc">std::integral_constant with Oid of the built-in type or null_oid_t for non built-in type ...</div><div class="ttdef"><b>Definition:</b> type_traits.h:315</div></div>

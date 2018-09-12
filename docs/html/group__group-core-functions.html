@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>OZO: Utility functions</title>
+<title>OZO 「お象」: Utility functions</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -35,8 +35,9 @@
  <tbody>
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
-   <div id="projectname">OZO
+   <div id="projectname">OZO 「お象」
    </div>
+   <div id="projectbrief">Boost.Asio and libpq based asynchronous PostgreSQL unofficial header-only C++17 client library.</div>
   </td>
    <td>        <div id="MSearchBox" class="MSearchBoxInactive">
         <span class="left">
@@ -109,7 +110,7 @@ $(document).ready(function(){initNavTree('group__group-core-functions.html','');
 Functions</h2></td></tr>
 <tr class="memitem:ga8af7201471e62fd8d338b13271d7ec06"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
 <tr class="memitem:ga8af7201471e62fd8d338b13271d7ec06"><td class="memTemplItemLeft" align="right" valign="top">decltype(auto)&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group__group-core-functions.html#ga8af7201471e62fd8d338b13271d7ec06">ozo::unwrap_nullable</a> (T &amp;&amp;value) noexcept</td></tr>
-<tr class="memdesc:ga8af7201471e62fd8d338b13271d7ec06"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns value for <a class="el" href="group__group-core-concepts.html#ga5cb469295c856e5df036e640a55322b1" title="Indicates if type meets nullable requirements. ">Nullable</a>.  <a href="group__group-core-functions.html#ga8af7201471e62fd8d338b13271d7ec06">More...</a><br /></td></tr>
+<tr class="memdesc:ga8af7201471e62fd8d338b13271d7ec06"><td class="mdescLeft">&#160;</td><td class="mdescRight">Dereference <a class="el" href="group__group-core-concepts.html#ga5cb469295c856e5df036e640a55322b1" title="Indicates if type meets nullable requirements. ">Nullable</a> argument or forward it.  <a href="group__group-core-functions.html#ga8af7201471e62fd8d338b13271d7ec06">More...</a><br /></td></tr>
 <tr class="separator:ga8af7201471e62fd8d338b13271d7ec06"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga0846e7fca9274b5d6de397590b10f778"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
 <tr class="memitem:ga0846e7fca9274b5d6de397590b10f778"><td class="memTemplItemLeft" align="right" valign="top">constexpr auto&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group__group-core-functions.html#ga0846e7fca9274b5d6de397590b10f778">ozo::is_null</a> (const T &amp;) noexcept</td></tr>
@@ -181,7 +182,7 @@ template&lt;typename T &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Returns value for <a class="el" href="group__group-core-concepts.html#ga5cb469295c856e5df036e640a55322b1" title="Indicates if type meets nullable requirements. ">Nullable</a>. </p>
+<p>Dereference <a class="el" href="group__group-core-concepts.html#ga5cb469295c856e5df036e640a55322b1" title="Indicates if type meets nullable requirements. ">Nullable</a> argument or forward it. </p>
 <p>This utility function gets value from <a class="el" href="group__group-core-concepts.html#ga5cb469295c856e5df036e640a55322b1" title="Indicates if type meets nullable requirements. ">Nullable</a>, and pass object as it is if it is not <a class="el" href="group__group-core-concepts.html#ga5cb469295c856e5df036e640a55322b1" title="Indicates if type meets nullable requirements. ">Nullable</a></p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
