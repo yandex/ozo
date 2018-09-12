@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>OZO: ozo Namespace Reference</title>
+<title>OZO 「お象」: ozo Namespace Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -35,8 +35,9 @@
  <tbody>
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
-   <div id="projectname">OZO
+   <div id="projectname">OZO 「お象」
    </div>
+   <div id="projectbrief">Boost.Asio and libpq based asynchronous PostgreSQL unofficial header-only C++17 client library.</div>
   </td>
    <td>        <div id="MSearchBox" class="MSearchBoxInactive">
         <span class="left">
@@ -108,6 +109,9 @@ $(document).ready(function(){initNavTree('namespaceozo.html','');});
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Classes</h2></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classozo_1_1connection__info.html">connection_info</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Connection information.  <a href="classozo_1_1connection__info.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classozo_1_1connection__pool.html">connection_pool</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Connection pool implementationThis is a simple <a href="https://en.wikipedia.org/wiki/Connection_pool">connection pool</a> implementation which can store up to maximum allowed number of connection to the same database. If all connections are busy client request will be placed into the internal queue to wait for free connection. If where is no free connections but it does not hit the limit of connections the new connection will be created via underlying <a class="el" href="group__group-connection-concepts.html#gaeb64411053912bede2d7d7ad7c8057b3" title="ConnectionSource concept. ">ConnectionSource</a> being specified in constructor. All operations are timed out. Connection idle life time is timed out as well. Pool is configurable via constructor and operator().  <a href="classozo_1_1connection__pool.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -134,6 +138,9 @@ Classes</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structozo_1_1is__nullable_3_01boost_1_1optional_3_01_t_01_4_01_4.html">is_nullable&lt; boost::optional&lt; T &gt; &gt;</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structozo_1_1is__string.html">is_string</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structozo_1_1time__traits.html">time_traits</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Time traits of the library.  <a href="structozo_1_1time__traits.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structozo_1_1type__traits.html">type_traits</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Type traits template forward declaration.Type traits contains information related to it's representation in the database. There are two different kind of traits - built-in types with constant OIDs and custom types with database depent OIDs. The functions below describe neccesary traits. For built-in types traits will be defined there. For custom types user must define traits.  <a href="structozo_1_1type__traits.html#details">More...</a><br /></td></tr>
@@ -261,16 +268,29 @@ Functions</h2></td></tr>
 <tr class="memdesc:gabdd18e16aa68fa7a6a81cd533ce19fa4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Access to a timer for connection operations.  <a href="group__group-connection-functions.html#gabdd18e16aa68fa7a6a81cd533ce19fa4">More...</a><br /></td></tr>
 <tr class="separator:gabdd18e16aa68fa7a6a81cd533ce19fa4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga8bedf4875565775ac9b0b91c0ba9ece7"><td class="memTemplParams" colspan="2">template&lt;typename T , typename CompletionToken &gt; </td></tr>
-<tr class="memitem:ga8bedf4875565775ac9b0b91c0ba9ece7"><td class="memTemplItemLeft" align="right" valign="top">auto&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group__group-connection-functions.html#ga8bedf4875565775ac9b0b91c0ba9ece7">get_connection</a> (T &amp;&amp;provider, CompletionToken &amp;&amp;token)</td></tr>
+<tr class="memitem:ga8bedf4875565775ac9b0b91c0ba9ece7"><td class="memTemplItemLeft" align="right" valign="top">auto&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group__group-connection-functions.html#ga8bedf4875565775ac9b0b91c0ba9ece7">get_connection</a> (T &amp;&amp;provider, <a class="el" href="group__group-core-concepts.html#ga6513d4477f12ddf822036eb03d7891fa">CompletionToken</a> &amp;&amp;token)</td></tr>
 <tr class="memdesc:ga8bedf4875565775ac9b0b91c0ba9ece7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get a connection from provider.  <a href="group__group-connection-functions.html#ga8bedf4875565775ac9b0b91c0ba9ece7">More...</a><br /></td></tr>
 <tr class="separator:ga8bedf4875565775ac9b0b91c0ba9ece7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga333c7d2b1aaaf6eaee1678a4e7e50927"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
 <tr class="memitem:ga333c7d2b1aaaf6eaee1678a4e7e50927"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group__group-connection-functions.html#ga333c7d2b1aaaf6eaee1678a4e7e50927">close_connection</a> (T &amp;&amp;conn)</td></tr>
 <tr class="memdesc:ga333c7d2b1aaaf6eaee1678a4e7e50927"><td class="mdescLeft">&#160;</td><td class="mdescRight">Close connection to the database immediately.  <a href="group__group-connection-functions.html#ga333c7d2b1aaaf6eaee1678a4e7e50927">More...</a><br /></td></tr>
 <tr class="separator:ga333c7d2b1aaaf6eaee1678a4e7e50927"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga8883fdec7a4df0150147f8736af47340"><td class="memTemplParams" colspan="2">template&lt;typename P , typename Q , typename CompletionToken , typename  = Require&lt;ConnectionProvider&lt;P&gt;&gt;&gt; </td></tr>
+<tr class="memitem:ga8883fdec7a4df0150147f8736af47340"><td class="memTemplItemLeft" align="right" valign="top">auto&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group__group-requests.html#ga8883fdec7a4df0150147f8736af47340">execute</a> (P &amp;&amp;provider, Q &amp;&amp;query, <a class="el" href="group__group-core-concepts.html#ga6513d4477f12ddf822036eb03d7891fa">CompletionToken</a> &amp;&amp;token)</td></tr>
+<tr class="memdesc:ga8883fdec7a4df0150147f8736af47340"><td class="mdescLeft">&#160;</td><td class="mdescRight">Executes query but does not return a resultThis function is same as <code><a class="el" href="group__group-requests.html#ga3d2edd9e8d3aea4aee843a539d14eb0b" title="Send request to a database and provides query result (time-out version).  The function sends request ...">ozo::request()</a></code> function except it does not return any result. It suitable to use with <code>UPDATE</code> <code>INSERT</code> statements, or invoking procedures without result.  <a href="group__group-requests.html#ga8883fdec7a4df0150147f8736af47340">More...</a><br /></td></tr>
+<tr class="separator:ga8883fdec7a4df0150147f8736af47340"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga3d2edd9e8d3aea4aee843a539d14eb0b"><td class="memTemplParams" colspan="2">template&lt;typename P , typename Q , typename Out , typename CompletionToken , typename  = Require&lt;ConnectionProvider&lt;P&gt;&gt;&gt; </td></tr>
+<tr class="memitem:ga3d2edd9e8d3aea4aee843a539d14eb0b"><td class="memTemplItemLeft" align="right" valign="top">auto&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group__group-requests.html#ga3d2edd9e8d3aea4aee843a539d14eb0b">request</a> (P &amp;&amp;provider, Q &amp;&amp;query, const <a class="el" href="structozo_1_1time__traits.html#a7272c9a4857bf785826771866f18fe67">time_traits::duration</a> &amp;timeout, Out out, <a class="el" href="group__group-core-concepts.html#ga6513d4477f12ddf822036eb03d7891fa">CompletionToken</a> &amp;&amp;token)</td></tr>
+<tr class="memdesc:ga3d2edd9e8d3aea4aee843a539d14eb0b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Send request to a database and provides query result (time-out version).<br />
+ The function sends request to a database and provides result via out parameter. The function can be called as any of Boost.Asio asynchronous function with <a class="el" href="group__group-core-concepts.html#ga6513d4477f12ddf822036eb03d7891fa" title="Completion token concept. ">CompletionToken</a>.  <a href="group__group-requests.html#ga3d2edd9e8d3aea4aee843a539d14eb0b">More...</a><br /></td></tr>
+<tr class="separator:ga3d2edd9e8d3aea4aee843a539d14eb0b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga748ee23ab6367dcadeec514cd92b8b0e"><td class="memTemplParams" colspan="2">template&lt;typename P , typename Q , typename Out , typename CompletionToken , typename  = Require&lt;ConnectionProvider&lt;P&gt;&gt;&gt; </td></tr>
+<tr class="memitem:ga748ee23ab6367dcadeec514cd92b8b0e"><td class="memTemplItemLeft" align="right" valign="top">auto&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group__group-requests.html#ga748ee23ab6367dcadeec514cd92b8b0e">request</a> (P &amp;&amp;provider, Q &amp;&amp;query, Out out, <a class="el" href="group__group-core-concepts.html#ga6513d4477f12ddf822036eb03d7891fa">CompletionToken</a> &amp;&amp;token)</td></tr>
+<tr class="memdesc:ga748ee23ab6367dcadeec514cd92b8b0e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Send request to a database and provides query result.This is time-out free version of the <code><a class="el" href="group__group-requests.html#ga3d2edd9e8d3aea4aee843a539d14eb0b" title="Send request to a database and provides query result (time-out version).  The function sends request ...">ozo::request</a></code>.  <a href="group__group-requests.html#ga748ee23ab6367dcadeec514cd92b8b0e">More...</a><br /></td></tr>
+<tr class="separator:ga748ee23ab6367dcadeec514cd92b8b0e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga8af7201471e62fd8d338b13271d7ec06"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
 <tr class="memitem:ga8af7201471e62fd8d338b13271d7ec06"><td class="memTemplItemLeft" align="right" valign="top">decltype(auto)&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group__group-core-functions.html#ga8af7201471e62fd8d338b13271d7ec06">unwrap_nullable</a> (T &amp;&amp;value) noexcept</td></tr>
-<tr class="memdesc:ga8af7201471e62fd8d338b13271d7ec06"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns value for <a class="el" href="group__group-core-concepts.html#ga5cb469295c856e5df036e640a55322b1" title="Indicates if type meets nullable requirements. ">Nullable</a>.  <a href="group__group-core-functions.html#ga8af7201471e62fd8d338b13271d7ec06">More...</a><br /></td></tr>
+<tr class="memdesc:ga8af7201471e62fd8d338b13271d7ec06"><td class="mdescLeft">&#160;</td><td class="mdescRight">Dereference <a class="el" href="group__group-core-concepts.html#ga5cb469295c856e5df036e640a55322b1" title="Indicates if type meets nullable requirements. ">Nullable</a> argument or forward it.  <a href="group__group-core-functions.html#ga8af7201471e62fd8d338b13271d7ec06">More...</a><br /></td></tr>
 <tr class="separator:ga8af7201471e62fd8d338b13271d7ec06"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga0846e7fca9274b5d6de397590b10f778"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
 <tr class="memitem:ga0846e7fca9274b5d6de397590b10f778"><td class="memTemplItemLeft" align="right" valign="top">constexpr auto&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group__group-core-functions.html#ga0846e7fca9274b5d6de397590b10f778">is_null</a> (const T &amp;) noexcept</td></tr>
@@ -354,6 +374,10 @@ Variables</h2></td></tr>
 <tr class="memitem:ga474575596a9253f3aad1f7ff5014425b"><td class="memTemplItemLeft" align="right" valign="top">constexpr auto&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group__group-core-concepts.html#ga474575596a9253f3aad1f7ff5014425b">Emplaceable</a></td></tr>
 <tr class="memdesc:ga474575596a9253f3aad1f7ff5014425b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Emplaceable concept.  <a href="group__group-core-concepts.html#ga474575596a9253f3aad1f7ff5014425b">More...</a><br /></td></tr>
 <tr class="separator:ga474575596a9253f3aad1f7ff5014425b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga6513d4477f12ddf822036eb03d7891fa"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
+<tr class="memitem:ga6513d4477f12ddf822036eb03d7891fa"><td class="memTemplItemLeft" align="right" valign="top">constexpr auto&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group__group-core-concepts.html#ga6513d4477f12ddf822036eb03d7891fa">CompletionToken</a></td></tr>
+<tr class="memdesc:ga6513d4477f12ddf822036eb03d7891fa"><td class="mdescLeft">&#160;</td><td class="mdescRight">Completion token concept.  <a href="group__group-core-concepts.html#ga6513d4477f12ddf822036eb03d7891fa">More...</a><br /></td></tr>
+<tr class="separator:ga6513d4477f12ddf822036eb03d7891fa"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga9b549bf74e3c13c97f24493211722d9d"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
 <tr class="memitem:ga9b549bf74e3c13c97f24493211722d9d"><td class="memTemplItemLeft" align="right" valign="top">constexpr auto&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group__group-connection-concepts.html#ga9b549bf74e3c13c97f24493211722d9d">Connection</a></td></tr>
 <tr class="memdesc:ga9b549bf74e3c13c97f24493211722d9d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Database connection concept.  <a href="group__group-connection-concepts.html#ga9b549bf74e3c13c97f24493211722d9d">More...</a><br /></td></tr>

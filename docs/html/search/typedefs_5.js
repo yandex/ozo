@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['require',['Require',['../group__group-core-concepts.html#gaec336e235cdaabead728b12ecb63b38a',1,'ozo']]]
+  ['oid_5ft',['oid_t',['../group__group-type__system.html#ga442ba8c3d090543cf6278acb4fed5e66',1,'ozo']]]
 ];

@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>OZO: Related functions</title>
+<title>OZO 「お象」: Related functions</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -35,8 +35,9 @@
  <tbody>
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
-   <div id="projectname">OZO
+   <div id="projectname">OZO 「お象」
    </div>
+   <div id="projectbrief">Boost.Asio and libpq based asynchronous PostgreSQL unofficial header-only C++17 client library.</div>
   </td>
    <td>        <div id="MSearchBox" class="MSearchBoxInactive">
         <span class="left">
@@ -188,13 +189,17 @@ Functions</h2></td></tr>
 <tr class="memdesc:gabdd18e16aa68fa7a6a81cd533ce19fa4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Access to a timer for connection operations.  <a href="group__group-connection-functions.html#gabdd18e16aa68fa7a6a81cd533ce19fa4">More...</a><br /></td></tr>
 <tr class="separator:gabdd18e16aa68fa7a6a81cd533ce19fa4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga8bedf4875565775ac9b0b91c0ba9ece7"><td class="memTemplParams" colspan="2">template&lt;typename T , typename CompletionToken &gt; </td></tr>
-<tr class="memitem:ga8bedf4875565775ac9b0b91c0ba9ece7"><td class="memTemplItemLeft" align="right" valign="top">auto&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group__group-connection-functions.html#ga8bedf4875565775ac9b0b91c0ba9ece7">ozo::get_connection</a> (T &amp;&amp;provider, CompletionToken &amp;&amp;token)</td></tr>
+<tr class="memitem:ga8bedf4875565775ac9b0b91c0ba9ece7"><td class="memTemplItemLeft" align="right" valign="top">auto&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group__group-connection-functions.html#ga8bedf4875565775ac9b0b91c0ba9ece7">ozo::get_connection</a> (T &amp;&amp;provider, <a class="el" href="group__group-core-concepts.html#ga6513d4477f12ddf822036eb03d7891fa">CompletionToken</a> &amp;&amp;token)</td></tr>
 <tr class="memdesc:ga8bedf4875565775ac9b0b91c0ba9ece7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get a connection from provider.  <a href="group__group-connection-functions.html#ga8bedf4875565775ac9b0b91c0ba9ece7">More...</a><br /></td></tr>
 <tr class="separator:ga8bedf4875565775ac9b0b91c0ba9ece7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga333c7d2b1aaaf6eaee1678a4e7e50927"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
 <tr class="memitem:ga333c7d2b1aaaf6eaee1678a4e7e50927"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group__group-connection-functions.html#ga333c7d2b1aaaf6eaee1678a4e7e50927">ozo::close_connection</a> (T &amp;&amp;conn)</td></tr>
 <tr class="memdesc:ga333c7d2b1aaaf6eaee1678a4e7e50927"><td class="mdescLeft">&#160;</td><td class="mdescRight">Close connection to the database immediately.  <a href="group__group-connection-functions.html#ga333c7d2b1aaaf6eaee1678a4e7e50927">More...</a><br /></td></tr>
 <tr class="separator:ga333c7d2b1aaaf6eaee1678a4e7e50927"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga7edf7162c365d85de16c9b34659140af"><td class="memTemplParams" colspan="2">template&lt;typename OidMap  = empty_oid_map, typename Statistics  = no_statistics&gt; </td></tr>
+<tr class="memitem:ga7edf7162c365d85de16c9b34659140af"><td class="memTemplItemLeft" align="right" valign="top">auto&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group__group-connection-functions.html#ga7edf7162c365d85de16c9b34659140af">make_connection_info</a> (std::string conn_str, const OidMap &amp;=OidMap{}, Statistics statistics=Statistics{})</td></tr>
+<tr class="memdesc:ga7edf7162c365d85de16c9b34659140af"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs <code><a class="el" href="classozo_1_1connection__info.html" title="Connection information. ">ozo::connection_info</a></code> <a class="el" href="group__group-connection-concepts.html#gaeb64411053912bede2d7d7ad7c8057b3" title="ConnectionSource concept. ">ConnectionSource</a>.  <a href="#ga7edf7162c365d85de16c9b34659140af">More...</a><br /></td></tr>
+<tr class="separator:ga7edf7162c365d85de16c9b34659140af"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga7ee79e815277defd86c9268c002f9143"><td class="memTemplParams" colspan="2">template&lt;typename Source &gt; </td></tr>
 <tr class="memitem:ga7ee79e815277defd86c9268c002f9143"><td class="memTemplItemLeft" align="right" valign="top">auto&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group__group-connection-functions.html#ga7ee79e815277defd86c9268c002f9143">make_connection_pool</a> (Source &amp;&amp;source, const <a class="el" href="structozo_1_1connection__pool__config.html">connection_pool_config</a> &amp;config)</td></tr>
 <tr class="memdesc:ga7ee79e815277defd86c9268c002f9143"><td class="mdescLeft">&#160;</td><td class="mdescRight">Connection pool construct helper function.  <a href="#ga7ee79e815277defd86c9268c002f9143">More...</a><br /></td></tr>
@@ -362,7 +367,7 @@ template&lt;typename T , typename CompletionToken &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">CompletionToken &amp;&amp;&#160;</td>
+          <td class="paramtype"><a class="el" href="group__group-core-concepts.html#ga6513d4477f12ddf822036eb03d7891fa">CompletionToken</a> &amp;&amp;&#160;</td>
           <td class="paramname"><em>token</em>&#160;</td>
         </tr>
         <tr>
@@ -385,7 +390,7 @@ template&lt;typename T , typename CompletionToken &gt; </div>
   </table>
   </dd>
 </dl>
-<dl class="section return"><dt>Returns</dt><dd>completion token depent value like void for callback, connection for the <code>yield_context</code>, <code>std::future&lt;connection&gt;</code> for <code>use_future</code>, and so on. </dd></dl>
+<dl class="section return"><dt>Returns</dt><dd>completion token depent value like void for callback, connection for the <code>boost::asio::yield_context</code>, <code>std::future&lt;Connection&gt;</code> for <code>boost::asio::use_future</code>, and so on. </dd></dl>
 
 </div>
 </div>
@@ -873,6 +878,61 @@ template&lt;typename T &gt; </div>
 <dl class="section return"><dt>Returns</dt><dd>a reference or proxy for a timer </dd></dl>
 
 <p class="reference">References <a class="el" href="group__group-connection-functions.html#ga2343a2a833bef783666b903b3ab2ea7f">ozo::get_connection_timer()</a>, and <a class="el" href="group__group-connection-functions.html#ga4a8600f209dafca4db1f040bed66de6c">ozo::unwrap_connection()</a>.</p>
+
+</div>
+</div>
+<a id="ga7edf7162c365d85de16c9b34659140af"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga7edf7162c365d85de16c9b34659140af">&#9670;&nbsp;</a></span>make_connection_info()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename OidMap  = empty_oid_map, typename Statistics  = no_statistics&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">auto make_connection_info </td>
+          <td>(</td>
+          <td class="paramtype">std::string&#160;</td>
+          <td class="paramname"><em>conn_str</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const OidMap &amp;&#160;</td>
+          <td class="paramname"> = <code>OidMap{}</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">Statistics&#160;</td>
+          <td class="paramname"><em>statistics</em> = <code>Statistics{}</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">related</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Constructs <code><a class="el" href="classozo_1_1connection__info.html" title="Connection information. ">ozo::connection_info</a></code> <a class="el" href="group__group-connection-concepts.html#gaeb64411053912bede2d7d7ad7c8057b3" title="ConnectionSource concept. ">ConnectionSource</a>. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">conn_str</td><td>&mdash; standard libpq connection string. </td></tr>
+    <tr><td class="paramname">OidMap</td><td>&mdash; oid map for user defined types. </td></tr>
+    <tr><td class="paramname">statistics</td><td>&mdash; statistics to collect for a connection. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd><code><a class="el" href="classozo_1_1connection__info.html" title="Connection information. ">ozo::connection_info</a></code> specialization. </dd></dl>
 
 </div>
 </div>

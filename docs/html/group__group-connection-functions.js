@@ -18,6 +18,7 @@ var group__group_connection_functions =
     [ "get_socket", "group__group-connection-functions.html#gac73206550d24c0301498aab52dab59c6", null ],
     [ "get_statistics", "group__group-connection-functions.html#ga6485bbea04200bc9d6b335932b09d6b4", null ],
     [ "get_timer", "group__group-connection-functions.html#gabdd18e16aa68fa7a6a81cd533ce19fa4", null ],
+    [ "make_connection_info", "group__group-connection-functions.html#ga7edf7162c365d85de16c9b34659140af", null ],
     [ "make_connection_pool", "group__group-connection-functions.html#ga7ee79e815277defd86c9268c002f9143", null ],
     [ "rebind_io_context", "group__group-connection-functions.html#ga0814c7ac526064fb9d597ed59a0efe6c", null ],
     [ "reset_error_context", "group__group-connection-functions.html#gad4517ffae4244f57bc112d0d3b8f5602", null ],

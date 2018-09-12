@@ -23,7 +23,8 @@ for the JavaScript code in this file
 */
 var NAVTREE =
 [
-  [ "OZO", "index.html", [
+  [ "OZO 「お象」", "index.html", [
+    [ "ozo", "index.html", null ],
     [ "How to", "md_docs_howto.html", null ],
     [ "API Reference", "modules.html", "modules" ],
     [ "GitHub", "^https://github.com/yandex/ozo", null ]
@@ -32,7 +33,7 @@ var NAVTREE =
 
 var NAVTREEINDEX =
 [
-"classozo_1_1connection__pool.html"
+"classozo_1_1connection__info.html"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronisation';

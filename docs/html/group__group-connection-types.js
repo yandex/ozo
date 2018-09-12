@@ -1,6 +1,9 @@
 var group__group_connection_types =
 [
     [ "get_connection_type", "structozo_1_1get__connection__type.html", null ],
+    [ "connection_info", "classozo_1_1connection__info.html", [
+      [ "make_connection_info", "group__group-connection-functions.html#ga7edf7162c365d85de16c9b34659140af", null ]
+    ] ],
     [ "connection_pool_config", "structozo_1_1connection__pool__config.html", [
       [ "capacity", "structozo_1_1connection__pool__config.html#ab56b5ea7e327fb3394c2403768366c16", null ],
       [ "idle_timeout", "structozo_1_1connection__pool__config.html#a030e1fbe98cc5d71184d1a63332812b9", null ],

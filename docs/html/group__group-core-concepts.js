@@ -1,6 +1,7 @@
 var group__group_core_concepts =
 [
     [ "Require", "group__group-core-concepts.html#gaec336e235cdaabead728b12ecb63b38a", null ],
+    [ "CompletionToken", "group__group-core-concepts.html#ga6513d4477f12ddf822036eb03d7891fa", null ],
     [ "Emplaceable", "group__group-core-concepts.html#ga474575596a9253f3aad1f7ff5014425b", null ],
     [ "FloatingPoint", "group__group-core-concepts.html#ga351423cc3c81ca247a3c8ecea7beabb2", null ],
     [ "ForwardIterator", "group__group-core-concepts.html#ga762b9c7d7a45486c590d33ddb1330e9e", null ],
