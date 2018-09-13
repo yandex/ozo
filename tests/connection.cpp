@@ -57,6 +57,17 @@ struct socket_mock {
     }
 };
 
+struct timer_mock {
+    timer_mock(io_context&){}
+
+    std::size_t expires_after(const asio::steady_timer::duration&) { return 0;}
+
+    template <typename Handler>
+    void async_wait(Handler&&) {}
+
+    std::size_t cancel() { return 0;}
+};
+
 template <typename OidMap = empty_oid_map>
 struct connection {
     using handle_type = std::unique_ptr<native_handle>;
@@ -65,9 +76,9 @@ struct connection {
     socket_mock socket_;
     OidMap oid_map_;
     std::string error_context_;
-    steady_timer timer_;
+    timer_mock timer_;
 
-    explicit connection(io_context& io) : socket_(io) {}
+    explicit connection(io_context& io) : socket_(io), timer_(io) {}
 };
 
 template <typename ...Ts>

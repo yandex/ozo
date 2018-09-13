@@ -235,7 +235,7 @@ inline void init_nullable(T& n, const Alloc& a = Alloc{}) {
 template <typename T>
 inline void reset_nullable(T& n) {
     static_assert(Nullable<T>, "T must be nullable");
-    n.reset();
+    n = T{};
 }
 
 /**

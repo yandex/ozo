@@ -8,9 +8,7 @@ namespace ozo::impl {
 
 template <typename Source>
 struct get_connection_pool {
-    using type = yamail::resource_pool::async::pool<
-        std::decay_t<decltype(unwrap_connection(std::declval<connection_type<Source>&>()))>
-    >;
+    using type = yamail::resource_pool::async::pool<connection_type<Source>>;
 };
 
 template <typename Source>
@@ -71,7 +69,7 @@ struct pooled_connection_wrapper {
             static_assert(std::is_same_v<connection_type<Provider>, std::decay_t<Conn>>,
                 "Conn must connectiable type of Provider");
             if (!ec) {
-                conn_->reset(std::move(unwrap_connection(conn)));
+                conn_->reset(std::move(conn));
             }
             handler_(std::move(ec), std::move(conn_));
         }
