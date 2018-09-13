@@ -55,6 +55,7 @@ inline error_code rebind_connection_io_context(Connection& conn, IoContext& io) 
         }
         socket.release();
         socket = std::move(s);
+        get_timer(conn) = std::decay_t<decltype(get_timer(conn))>{io};
     }
     return {};
 }

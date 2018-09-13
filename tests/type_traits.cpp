@@ -87,6 +87,22 @@ struct nullable_mock {
     bool operator!() const { return negate(); }
 };
 
+struct nullable {
+    nullable_mock* mock_ = nullptr;
+    void emplace() { mock_->emplace();}
+    bool negate() const { return mock_->negate(); }
+    void reset() { mock_->reset(); }
+    bool operator!() const { return negate(); }
+
+    nullable& operator = (const nullable& other) {
+        if (!other.mock_ && mock_) {
+            reset();
+        }
+        mock_ = other.mock_;
+        return *this;
+    }
+};
+
 }// namespace tests
 
 template <>
@@ -94,6 +110,9 @@ struct is_nullable<StrictMock<tests::nullable_mock>> : std::true_type {};
 
 template <>
 struct is_nullable<tests::nullable_mock> : std::true_type {};
+
+template <>
+struct is_nullable<tests::nullable> : std::true_type {};
 
 } // namespace ozo
 
@@ -141,7 +160,8 @@ TEST(init_nullable, should_allocate_boost_shared_ptr) {
 TEST(reset_nullable, should_reset_nullable) {
     StrictMock<nullable_mock> mock{};
     EXPECT_CALL(mock, reset()).WillOnce(Return());
-    ozo::reset_nullable(mock);
+    auto v = nullable{&mock};
+    ozo::reset_nullable(v);
 }
 
 }// namespace
