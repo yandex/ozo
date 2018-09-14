@@ -261,43 +261,6 @@ template <typename C, typename T, typename A>
 struct is_string<std::basic_string<C, T, A>> : std::true_type {};
 
 /**
-* Indicates if type is adapted for introspection with Boost.Fusion
-*/
-template <typename T>
-using is_fusion_adapted = std::integral_constant<bool,
-    boost::fusion::traits::is_sequence<T>::value
->;
-
-/**
-* Indicates if type is adapted for introspection with Boost.Hana
-*/
-template <typename T>
-using is_hana_adapted = std::integral_constant<bool,
-    hana::Sequence<T>::value ||
-    hana::Struct<T>::value
->;
-
-/**
- * @brief Indicates if type is a composite.
- * @ingroup group-type_system
- * In general we suppose that composite
- * is a type being adapted for introspection via Boost.Fusion or Boost.Hana,
- * including tuples and compile-time sequences.
- *
- * @return std::true_type for composite type or std::false_type in other case
- */
-#ifdef OZO_DOCUMENTATION
-template <typename T>
-struct is_composite;
-#else
-template <typename T>
-struct is_composite : std::integral_constant<bool,
-    is_hana_adapted<T>::value ||
-    is_fusion_adapted<T>::value
-> {};
-#endif
-
-/**
  * @brief Type traits template forward declaration.
  * @ingroup group-type_system
  *
