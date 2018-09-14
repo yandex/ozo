@@ -100,6 +100,10 @@ public:
         );
     }
 
+    auto stats() const {
+        return impl_.stats();
+    }
+
 private:
     impl::connection_pool<Source> impl_;
     Source source_;
