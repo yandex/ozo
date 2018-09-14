@@ -241,15 +241,6 @@ inline void reset_nullable(T& n) {
 }
 
 /**
-* Helper indicates if type is string
-*/
-template <typename T>
-struct is_string : std::false_type {};
-
-template <typename C, typename T, typename A>
-struct is_string<std::basic_string<C, T, A>> : std::true_type {};
-
-/**
  * @brief Type traits template forward declaration.
  * @ingroup group-type_system
  *
