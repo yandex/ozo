@@ -462,9 +462,26 @@ BOOST_STRONG_TYPEDEF(std::string, name)
  *
  * @note This macro can be called in the global namespace only
  *
- * E.g. the definition of the `uuid` type looks like this:
+ * ### Example
+ *
+ * E.g. a definition of `uuid` type looks like this:
 @code
 OZO_PG_DEFINE_TYPE_AND_ARRAY(boost::uuids::uuid, "uuid", UUIDOID, 2951, bytes<16>)
+@endcode
+ *
+ * Definition of user defined composite type may look like this:
+@code
+BOOST_FUSION_DEFINE_STRUCT((smtp), message,
+    (std::int64_t, id)
+    (std::string, from)
+    (std::vector<std::string>, to)
+    (std::optional<std::string>, subject)
+    (std::optional<std::string>, text)
+);
+
+//...
+
+OZO_PG_DEFINE_TYPE_AND_ARRAY(smtp::message, "code.message", null_oid, null_oid, dynamic_size)
 @endcode
  *
  * @param Type --- C++ type to be mapped to database type
@@ -517,6 +534,12 @@ OZO_PG_DEFINE_TYPE_AND_ARRAY(ozo::pg::name, "name", NAMEOID, 1003, dynamic_size)
 
 namespace ozo {
 
+/**
+ * @brief OidMap implementation type.
+ * @ingroup group-type_system
+ *
+ * This type implements OidMap concept based on `boost::hana::map`.
+ */
 template <typename ImplT>
 struct oid_map_t {
     using impl_type = ImplT;
@@ -531,6 +554,39 @@ struct is_oid_map : std::false_type {};
 template <typename T>
 struct is_oid_map<oid_map_t<T>> : std::true_type {};
 
+/**
+ * @brief Map of C++ types to corresponding PostgreSQL types OIDs
+ *
+ * @ingroup group-type_system
+ * `OidMap` is needed to store information about C++ types and corresponding
+ * custom database types' OIDs. For PostgreSQL built-in types no mapping is needed since their
+ * `OID`s are defined in PostgreSQL sources. For custom types their `OID`s are defined
+ * in a database.
+ *
+ * ###OidMap Definition
+ *
+ * `OidMap` `map` is an object for which these next statements are valid:
+ *
+ @code
+ oid_t oid;
+ //...
+ set_type_oid<T>(map, oid);
+ @endcode
+ * Sets oid for type T in the map.
+ *
+ @code
+ oid_t oid = type_oid<T>(map);
+ @endcode
+ * Returns oid value for type T from the map.
+ *
+@code
+bool res = empty(map);
+@endcode
+ * Returns true if map has no types OIDs.
+ *
+ * @hideinitializer
+ * @sa oid_map_t, register_types(), set_type_oid(), type_oid(), accepts_oid()
+ */
 template <typename T>
 constexpr auto OidMap = is_oid_map<std::decay_t<T>>::value;
 
@@ -545,16 +601,49 @@ constexpr decltype(auto) register_types() noexcept {
 
 } // namespace detail
 
+/**
+ * @brief Provides #OidMap implementation for user-defined types.
+ *
+ * @ingroup group-type_system
+ * This function have to be used to provide information about custom types are being used
+ * within requests for a #ConnectionSource.
+ *
+ * ###Example
+ *
+ * @code
+// User defined type
+struct custom_type;
+
+//...
+
+// Providing type information and corresponding database type
+OZO_PG_DEFINE_TYPE_AND_ARRAY(custom_type, "code.custom_type", null_oid, null_oid, dynamic_size)
+
+//...
+// Creating ConnectionSource for futher requests to a database
+const auto conn_source = ozo::make_connection_info("...", regiter_types<custom_type>());
+ * @endcode
+ *
+ * @return `oid_map_t` object.
+ */
 template <typename ... T>
 constexpr decltype(auto) register_types() noexcept {
     using impl_type = decltype(detail::register_types<T ...>());
     return oid_map_t<impl_type> {detail::register_types<T ...>()};
 }
 
+/**
+ * @brief Type alias for empty #OidMap
+ * @ingroup group-type_system
+ */
 using empty_oid_map = std::decay_t<decltype(register_types<>())>;
 
 /**
-* Function sets oid for type in oid map.
+* Function sets oid for type in #OidMap.
+* @ingroup group-type_system
+* @tparam T --- type to set oid for.
+* @param map --- #OidMap to modify.
+* @param oid --- OID to set.
 */
 template <typename T, typename MapImplT>
 inline void set_type_oid(oid_map_t<MapImplT>& map, oid_t oid) noexcept {
@@ -563,7 +652,10 @@ inline void set_type_oid(oid_map_t<MapImplT>& map, oid_t oid) noexcept {
 }
 
 /**
-* Function returns oid for type from oid map.
+* Function returns oid for type from #OidMap.
+* @ingroup group-type_system
+* @tparam T --- type to get OID for.
+* &param map --- #OidMap to get OID from.
 */
 template <typename T, typename MapImplT>
 inline auto type_oid(const oid_map_t<MapImplT>& map) noexcept
@@ -584,18 +676,41 @@ inline auto type_oid(const oid_map_t<MapImplT>& map, const T&) noexcept{
 
 /**
 * Function returns true if type can be obtained from DB response with
-* specified oid.
+* specified OID.
+* @ingroup group-type_system
+* @tparam T --- type to examine
+* @param map --- #OidMap to get type OID from
+* @param oid --- OID to check for compatibility
 */
 template <typename T, typename MapImplT>
 inline bool accepts_oid(const oid_map_t<MapImplT>& map, oid_t oid) noexcept {
     return type_oid<T>(map) == oid;
 }
 
+/**
+* Function returns true if type can be obtained from DB response with
+* specified OID.
+* @ingroup group-type_system
+* @param map --- #OidMap to get type OID from
+* @param const T& --- type to examine
+* @param oid --- OID to check for compatibility
+*/
 template <typename T, typename MapImplT>
-inline bool accepts_oid(const oid_map_t<MapImplT>& map, const T&, oid_t oid) noexcept {
+inline bool accepts_oid(const oid_map_t<MapImplT>& map, const T& , oid_t oid) noexcept {
     return accepts_oid<std::decay_t<T>>(map, oid);
 }
 
+/**
+ * Checks if #OidMap contains no items.
+ * @ingroup group-type_system
+ *
+ * ### Example
+ * @code
+static_assert(empty(ozo::empty_oid_map{}));
+ * @endcode
+ * @param map --- OidMap to check
+ * @return `true` if map contains no items, `false` - if contains.
+ */
 template <typename MapImplT>
 inline constexpr bool empty(const oid_map_t<MapImplT>& map) noexcept {
     return hana::length(map.impl) == hana::size_c<0>;
