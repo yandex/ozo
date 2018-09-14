@@ -309,7 +309,7 @@ struct type_traits : type_traits_helper<T, void> {};
  * @tparam T -- type to check
  */
 template <typename T>
-struct is_built_in : std::integral_constant<bool,
+struct is_built_in : std::bool_constant<
     !std::is_same_v<typename type_traits<T>::oid, null_oid_t>> {};
 
 template <typename T>
