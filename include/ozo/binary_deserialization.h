@@ -126,6 +126,14 @@ struct recv_impl<std::vector<T, Alloc>, Require<!std::is_same_v<T, char>>> {
     }
 };
 
+template <>
+struct recv_impl<pg::name> {
+    template <typename M>
+    static istream& apply(istream& in, int32_t size, const oid_map_t<M>& oid_map, pg::name& out) {
+        return recv_impl<std::string>::apply(in, size, oid_map, out);
+    }
+};
+
 template <typename T, typename M, typename Out>
 void recv(const value<T>& in, const oid_map_t<M>& oids, Out& out) {
     if (recv_null(in.is_null(), out)) {
