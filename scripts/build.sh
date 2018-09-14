@@ -16,7 +16,7 @@ build_clang() {
             build
         ;;
         asan)
-            export ASAN_OPTIONS='halt_on_error=0:strict_string_checks=1:detect_stack_use_after_return=1:check_initialization_order=1:strict_init_order=1'
+            export ASAN_OPTIONS='halt_on_error=1:strict_string_checks=1:detect_stack_use_after_return=1:check_initialization_order=1:strict_init_order=1'
             ASAN_CXX_FLAGS='-fno-omit-frame-pointer -fsanitize=address -fsanitize-address-use-after-scope -fsanitize-recover=address'
             CMAKE_CXX_FLAGS_RELWITHDEBINFO="-g -O1 ${ASAN_CXX_FLAGS}"
             CMAKE_BUILD_TYPE=RelWithDebInfo
