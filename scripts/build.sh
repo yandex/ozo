@@ -112,7 +112,7 @@ build() {
         -DOZO_BUILD_PG_TESTS=$OZO_BUILD_PG_TESTS \
         -DOZO_PG_TEST_CONNINFO="host=${POSTGRES_HOST} port=5432 dbname=${POSTGRES_DB} user=${POSTGRES_USER} password=${POSTGRES_PASSWORD}" \
         ${SOURCE_DIR}
-    make -j$(nproc)
+    make -j $(nproc || sysctl -n hw.ncpu)
     if [[ $OZO_BUILD_PG_TESTS == "ON" ]]; then
         ${SOURCE_DIR}/scripts/wait_postgres.sh
     fi

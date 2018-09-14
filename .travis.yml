@@ -15,47 +15,43 @@ addons:
 services:
 - docker
 
+install:
+- pip3 install --user --upgrade pip
+- pip3 install --user docker-compose
+
 matrix:
   include:
-  - env:
-    - BUILD_SCRIPT='gcc debug'
-    - CMD_PREFIX=pg
+  - os: linux
+    env: BUILD_ARGS='pg docker gcc debug'
 
-  - env:
-    - BUILD_SCRIPT='gcc release'
-    - CMD_PREFIX=pg
+  - os: linux
+    env: BUILD_ARGS='pg docker gcc release'
 
-  - env:
-    - BUILD_SCRIPT='clang debug'
-    - CMD_PREFIX=pg
+  - os: linux
+    env: BUILD_ARGS='pg docker clang debug'
 
-  - env:
-    - BUILD_SCRIPT='clang release'
-    - CMD_PREFIX=pg
+  - os: linux
+    env: BUILD_ARGS='pg docker clang release'
 
-  - env:
-    - BUILD_SCRIPT='clang asan'
-    - CMD_PREFIX=pg
+  - os: linux
+    env: BUILD_ARGS='pg docker clang asan'
 
-  - env:
-    - BUILD_SCRIPT='clang ubsan'
-    - CMD_PREFIX=pg
+  - os: linux
+    env: BUILD_ARGS='pg docker clang ubsan'
 
-  - env:
-    - BUILD_SCRIPT='clang tsan'
-    - CMD_PREFIX=pg
+  - os: linux
+    env: BUILD_ARGS='pg docker clang tsan'
 
-  - env:
-    - BUILD_SCRIPT='gcc coverage'
-    - CMD_PREFIX=pg
+  - os: linux
+    env: BUILD_ARGS='pg docker gcc coverage'
     after_success:
     - >
       docker run -ti --rm -v ${PWD}:/code $(bash <(curl -s https://codecov.io/env)) \
         ozo_build /codecov.sh -f "!*tests*" -f "!*error.h*" -f "!*do_nothing.h*"
 
-install:
-- pip3 install --user --upgrade pip
-- pip3 install --user docker-compose
+  - os: osx
+    osx_image: xcode10
+    install: brew install cmake boost postgresql ccache
+    env: BUILD_ARGS='clang debug'
 
-script:
-- scripts/build.sh ${CMD_PREFIX} docker ${BUILD_SCRIPT}
+script: scripts/build.sh ${BUILD_ARGS}
