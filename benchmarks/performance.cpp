@@ -18,6 +18,9 @@ namespace asio = boost::asio;
 template <std::size_t coroutines>
 using benchmark_t = ozo::benchmark::time_limit_benchmark<coroutines>;
 
+using ozo::benchmark::benchmark_report;
+using ozo::benchmark::benchmark_named_value;
+
 constexpr const std::chrono::seconds connect_timeout(1);
 constexpr const std::chrono::seconds request_timeout(1);
 constexpr const ozo::connection_pool_timeouts pool_timeouts {std::chrono::seconds(1), std::chrono::seconds(1)};
@@ -36,7 +39,7 @@ void spawn(asio::io_context& io, std::size_t token, T&& coroutine) {
 }
 
 template <class Query>
-void reuse_connection_info(const std::string& conn_string, Query query) {
+benchmark_report reuse_connection_info(const std::string& conn_string, Query query) {
     std::cout << '\n' << __func__ << std::endl;
 
     benchmark_t<1> benchmark;
@@ -55,10 +58,14 @@ void reuse_connection_info(const std::string& conn_string, Query query) {
     });
 
     io.run();
+
+    return benchmark.report(__func__, {
+        benchmark_named_value {"query", ozo::to_const_char(ozo::get_text(query))},
+    });
 }
 
 template <class Result, class Query>
-void reuse_connection_info_and_parse_result(const std::string& conn_string, Query query) {
+benchmark_report reuse_connection_info_and_parse_result(const std::string& conn_string, Query query) {
     std::cout << '\n' << __func__ << std::endl;
 
     benchmark_t<1> benchmark;
@@ -77,10 +84,14 @@ void reuse_connection_info_and_parse_result(const std::string& conn_string, Quer
     });
 
     io.run();
+
+    return benchmark.report(__func__, {
+        benchmark_named_value {"query", ozo::to_const_char(ozo::get_text(query))},
+    });
 }
 
 template <class Query>
-void reuse_connection(const std::string& conn_string, Query query) {
+benchmark_report reuse_connection(const std::string& conn_string, Query query) {
     std::cout << '\n' << __func__ << std::endl;
 
     benchmark_t<1> benchmark;
@@ -100,10 +111,14 @@ void reuse_connection(const std::string& conn_string, Query query) {
     });
 
     io.run();
+
+    return benchmark.report(__func__, {
+        benchmark_named_value {"query", ozo::to_const_char(ozo::get_text(query))},
+    });
 }
 
 template <class Result, class Query>
-void reuse_connection_and_parse_result(const std::string& conn_string, Query query) {
+benchmark_report reuse_connection_and_parse_result(const std::string& conn_string, Query query) {
     std::cout << '\n' << __func__ << std::endl;
 
     benchmark_t<1> benchmark;
@@ -123,10 +138,14 @@ void reuse_connection_and_parse_result(const std::string& conn_string, Query que
     });
 
     io.run();
+
+    return benchmark.report(__func__, {
+        benchmark_named_value {"query", ozo::to_const_char(ozo::get_text(query))},
+    });
 }
 
 template <class Query>
-void use_connection_pool(const std::string& conn_string, Query query) {
+benchmark_report use_connection_pool(const std::string& conn_string, Query query) {
     std::cout << '\n' << __func__ << std::endl;
 
     benchmark_t<1> benchmark;
@@ -149,10 +168,16 @@ void use_connection_pool(const std::string& conn_string, Query query) {
     });
 
     io.run();
+
+    return benchmark.report(__func__, {
+        benchmark_named_value {"query", ozo::to_const_char(ozo::get_text(query))},
+        benchmark_named_value {"pool_capacity", config.capacity},
+        benchmark_named_value {"pool_queue_capacity", config.queue_capacity},
+    });
 }
 
 template <class Result, class Query>
-void use_connection_pool_and_parse_result(const std::string& conn_string, Query query) {
+benchmark_report use_connection_pool_and_parse_result(const std::string& conn_string, Query query) {
     std::cout << '\n' << __func__ << std::endl;
 
     benchmark_t<1> benchmark;
@@ -175,10 +200,16 @@ void use_connection_pool_and_parse_result(const std::string& conn_string, Query 
     });
 
     io.run();
+
+    return benchmark.report(__func__, {
+        benchmark_named_value {"query", ozo::to_const_char(ozo::get_text(query))},
+        benchmark_named_value {"pool_capacity", config.capacity},
+        benchmark_named_value {"pool_queue_capacity", config.queue_capacity},
+    });
 }
 
 template <std::size_t coroutines, class Query>
-void use_connection_pool_mult_connection(const std::string& conn_string, Query query) {
+benchmark_report use_connection_pool_mult_connection(const std::string& conn_string, Query query) {
     std::cout << '\n' << __func__ << " coroutines=" << coroutines << std::endl;
 
     benchmark_t<coroutines> benchmark;
@@ -203,10 +234,17 @@ void use_connection_pool_mult_connection(const std::string& conn_string, Query q
     }
 
     io.run();
+
+    return benchmark.report(__func__, {
+        benchmark_named_value {"query", ozo::to_const_char(ozo::get_text(query))},
+        benchmark_named_value {"coroutines", coroutines},
+        benchmark_named_value {"pool_capacity", config.capacity},
+        benchmark_named_value {"pool_queue_capacity", config.queue_capacity},
+    });
 }
 
 template <std::size_t coroutines, class Result, class Query>
-void use_connection_pool_and_parse_result_mult_connection(const std::string& conn_string, Query query) {
+benchmark_report use_connection_pool_and_parse_result_mult_connection(const std::string& conn_string, Query query) {
     std::cout << '\n' << __func__ << " coroutines=" << coroutines << std::endl;
 
     benchmark_t<coroutines> benchmark;
@@ -231,6 +269,13 @@ void use_connection_pool_and_parse_result_mult_connection(const std::string& con
     }
 
     io.run();
+
+    return benchmark.report(__func__, {
+        benchmark_named_value {"query", ozo::to_const_char(ozo::get_text(query))},
+        benchmark_named_value {"coroutines", coroutines},
+        benchmark_named_value {"pool_capacity", config.capacity},
+        benchmark_named_value {"pool_queue_capacity", config.queue_capacity},
+    });
 }
 
 struct context {
@@ -242,7 +287,7 @@ struct context {
 };
 
 template <std::size_t threads_number, std::size_t coroutines, class Query>
-void use_connection_pool_mult_threads(const std::string& conn_string, Query query,
+benchmark_report use_connection_pool_mult_threads(const std::string& conn_string, Query query,
         std::size_t connections, std::size_t queue_capacity) {
     std::cout << '\n' << __func__
         << " threads_number=" << threads_number
@@ -292,6 +337,14 @@ void use_connection_pool_mult_threads(const std::string& conn_string, Query quer
 
     std::for_each(contexts.begin(), contexts.end(), [] (const auto& v) { v->guard.reset(); });
     std::for_each(contexts.begin(), contexts.end(), [] (const auto& v) { v->thread.join(); });
+
+    return benchmark.report(__func__, {
+        benchmark_named_value {"query", ozo::to_const_char(ozo::get_text(query))},
+        benchmark_named_value {"threads_number", threads_number},
+        benchmark_named_value {"coroutines_per_thread", threads_number},
+        benchmark_named_value {"pool_capacity", config.capacity},
+        benchmark_named_value {"pool_queue_capacity", config.queue_capacity},
+    });
 }
 
 } // namespace
@@ -306,18 +359,20 @@ int main(int argc, char **argv) {
         return 1;
     }
 
+    std::vector<benchmark_report> reports;
+
     const std::string conn_string(argv[1]);
 
     const auto simple_query = "SELECT 1"_SQL.build();
 
     std::cout << "\nquery: " << ozo::to_const_char(ozo::get_text(simple_query)) << std::endl;
-    reuse_connection_info(conn_string, simple_query);
-    reuse_connection(conn_string, simple_query);
-    use_connection_pool(conn_string, simple_query);
-    use_connection_pool_mult_connection<2>(conn_string, simple_query);
-    use_connection_pool_mult_threads<2, 2>(conn_string, simple_query, 4, 0);
-    use_connection_pool_mult_threads<2, 2>(conn_string, simple_query, 2, 4);
-    use_connection_pool_and_parse_result<std::tuple<std::int32_t>>(conn_string, simple_query);
+    reports.push_back(reuse_connection_info(conn_string, simple_query));
+    reports.push_back(reuse_connection(conn_string, simple_query));
+    reports.push_back(use_connection_pool(conn_string, simple_query));
+    reports.push_back(use_connection_pool_mult_connection<2>(conn_string, simple_query));
+    reports.push_back(use_connection_pool_mult_threads<2, 2>(conn_string, simple_query, 4, 0));
+    reports.push_back(use_connection_pool_mult_threads<2, 2>(conn_string, simple_query, 2, 4));
+    reports.push_back(use_connection_pool_and_parse_result<std::tuple<std::int32_t>>(conn_string, simple_query));
 
     const auto complex_query = (
         "SELECT typname, typnamespace, typowner, typlen, typbyval, typcategory, "_SQL +
@@ -326,23 +381,25 @@ int main(int argc, char **argv) {
     ).build();
 
     std::cout << "\nquery: " << ozo::to_const_char(ozo::get_text(complex_query)) << std::endl;
-    use_connection_pool(conn_string, complex_query);
-    use_connection_pool_and_parse_result<pg_type>(conn_string, complex_query);
-    use_connection_pool_mult_connection<2>(conn_string, complex_query);
-    use_connection_pool_mult_connection<4>(conn_string, complex_query);
-    use_connection_pool_mult_connection<8>(conn_string, complex_query);
-    use_connection_pool_mult_connection<16>(conn_string, complex_query);
-    use_connection_pool_mult_connection<32>(conn_string, complex_query);
-    use_connection_pool_mult_connection<64>(conn_string, complex_query);
-    use_connection_pool_and_parse_result_mult_connection<2, pg_type>(conn_string, complex_query);
-    use_connection_pool_and_parse_result_mult_connection<4, pg_type>(conn_string, complex_query);
-    use_connection_pool_and_parse_result_mult_connection<8, pg_type>(conn_string, complex_query);
-    use_connection_pool_mult_threads<2, 8>(conn_string, complex_query, 16, 0);
-    use_connection_pool_mult_threads<2, 8>(conn_string, complex_query, 8, 16);
-    use_connection_pool_mult_threads<4, 8>(conn_string, complex_query, 32, 0);
-    use_connection_pool_mult_threads<4, 8>(conn_string, complex_query, 16, 32);
-    use_connection_pool_mult_threads<8, 8>(conn_string, complex_query, 64, 0);
-    use_connection_pool_mult_threads<8, 8>(conn_string, complex_query, 32, 64);
+    reports.push_back(use_connection_pool(conn_string, complex_query));
+    reports.push_back(use_connection_pool_and_parse_result<pg_type>(conn_string, complex_query));
+    reports.push_back(use_connection_pool_mult_connection<2>(conn_string, complex_query));
+    reports.push_back(use_connection_pool_mult_connection<4>(conn_string, complex_query));
+    reports.push_back(use_connection_pool_mult_connection<8>(conn_string, complex_query));
+    reports.push_back(use_connection_pool_mult_connection<16>(conn_string, complex_query));
+    reports.push_back(use_connection_pool_mult_connection<32>(conn_string, complex_query));
+    reports.push_back(use_connection_pool_mult_connection<64>(conn_string, complex_query));
+    reports.push_back(use_connection_pool_and_parse_result_mult_connection<2, pg_type>(conn_string, complex_query));
+    reports.push_back(use_connection_pool_and_parse_result_mult_connection<4, pg_type>(conn_string, complex_query));
+    reports.push_back(use_connection_pool_and_parse_result_mult_connection<8, pg_type>(conn_string, complex_query));
+    reports.push_back(use_connection_pool_mult_threads<2, 8>(conn_string, complex_query, 16, 0));
+    reports.push_back(use_connection_pool_mult_threads<2, 8>(conn_string, complex_query, 8, 16));
+    reports.push_back(use_connection_pool_mult_threads<4, 8>(conn_string, complex_query, 32, 0));
+    reports.push_back(use_connection_pool_mult_threads<4, 8>(conn_string, complex_query, 16, 32));
+    reports.push_back(use_connection_pool_mult_threads<8, 8>(conn_string, complex_query, 64, 0));
+    reports.push_back(use_connection_pool_mult_threads<8, 8>(conn_string, complex_query, 32, 64));
+
+    write_to_yaml_file(reports, "benchmarks.yaml");
 
     return 0;
 }

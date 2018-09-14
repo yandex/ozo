@@ -15,62 +15,55 @@
 #include <mutex>
 #include <thread>
 #include <vector>
+#include <variant>
+#include <fstream>
+#include <sstream>
 
 namespace ozo::benchmark {
 
 namespace hana = boost::hana;
 
-template <class Ratio>
-struct duration_name {};
-
-template <>
-struct duration_name<std::ratio<1>> {
-    friend std::ostream& operator <<(std::ostream& stream, duration_name) {
-        return stream << "s";
-    }
+struct benchmark_named_value {
+    std::string name;
+    std::variant<std::size_t, std::int64_t, double, std::string> value;
 };
 
-template <>
-struct duration_name<std::milli> {
-    friend std::ostream& operator <<(std::ostream& stream, duration_name) {
-        return stream << "ms";
-    }
+struct benchmark_report {
+    std::string name;
+    std::vector<benchmark_named_value> parameters;
+    std::vector<benchmark_named_value> metrics;
 };
 
-template <>
-struct duration_name<std::micro> {
-    friend std::ostream& operator <<(std::ostream& stream, duration_name) {
-        return stream << "us";
-    }
-};
+void write_to_yaml(std::ostream& stream, const benchmark_named_value& value) {
+    stream << "  - name: " << value.name << "\n";
+    stream << "    value: ";
+    std::visit([&] (const auto& v) { stream << v; }, value.value);
+    stream << "\n";
+}
 
-template <>
-struct duration_name<std::nano> {
-    friend std::ostream& operator <<(std::ostream& stream, duration_name) {
-        return stream << "ns";
+void write_to_yaml_file(const std::vector<benchmark_report>& reports, const std::string& filename) {
+    std::ofstream file(filename);
+    if (!file.is_open()) {
+        std::cout << "can't open benchmark report file \"" << filename << "\"" << std::endl;
+        return;
     }
-};
-
-std::ostream& operator <<(std::ostream& stream, std::chrono::steady_clock::duration value) {
-    bool printed = false;
-    hana::for_each(hana::make_tuple(std::nano(), std::micro(), std::milli()),
-        [&] (auto ratio) {
-            if (printed) {
-                return;
-            }
-            using ratio_t = decltype(ratio);
-            const auto converted = std::chrono::duration_cast<std::chrono::duration<double, ratio_t>>(value).count();
-            if (converted < 1000) {
-                stream << converted << ' ' << duration_name<ratio_t> {};
-                printed = true;
-            }
-        });
-    if (!printed) {
-        using ratio_t = std::ratio<1>;
-        const auto converted = std::chrono::duration_cast<std::chrono::duration<double, ratio_t>>(value).count();
-        stream << converted << ' ' << duration_name<ratio_t> {};
+    std::ostringstream buffer;
+    buffer << "---\n";
+    for (const auto& report : reports) {
+        buffer << "- name: " << report.name << "\n";
+        buffer << "  parameters:\n";
+        for (const auto& parameter : report.parameters) {
+            write_to_yaml(buffer, parameter);
+        }
+        buffer << "  metrics:\n";
+        for (const auto& metric : report.metrics) {
+            write_to_yaml(buffer, metric);
+        }
     }
-    return stream;
+    if (!(file << buffer.str())) {
+        std::cout << "can't write to benchmark report file \"" << filename << "\"" << std::endl;
+        return;
+    }
 }
 
 class rows_count_limit_benchmark {
@@ -117,45 +110,11 @@ private:
 template <std::size_t coroutines>
 class time_limit_benchmark {
 public:
-    time_limit_benchmark(std::chrono::steady_clock::duration max_duration = std::chrono::seconds(31))
+    time_limit_benchmark(std::chrono::steady_clock::duration max_duration = std::chrono::seconds(1))
             : max_duration(max_duration) {
         steps.reserve(100);
         requests.reserve(1000000);
         std::fill(request_start.begin(), request_start.end(), start);
-    }
-
-    ~time_limit_benchmark() {
-        using double_s = std::chrono::duration<double, std::ratio<1>>;
-        if (!requests.empty()) {
-            boost::sort(requests);
-            std::cout << "mean request time: " << boost::accumulate(requests, std::chrono::steady_clock::duration()) / requests.size() << std::endl;
-            std::cout << "median request time: " << requests[requests.size() / 2 + 1] << std::endl;
-            std::cout << "q90 request time: " << requests[requests.size() * 9 / 10] << std::endl;
-            std::cout << "min request time: " << requests.front() << std::endl;
-            std::cout << "max request time: " << requests.back() << std::endl;
-        }
-        std::cout << "mean requests speed: " << total_requests_count / std::chrono::duration_cast<double_s>(finish - start).count()
-                  << " req/sec" << std::endl;
-        std::vector<double> requests_speeds;
-        if (!steps.empty()) {
-            boost::transform(steps, std::back_inserter(requests_speeds),
-                [] (const auto& v) { return v.requests_count / std::chrono::duration_cast<double_s>(v.duration).count(); });
-            boost::sort(requests_speeds);
-            std::cout << "median requests speed: " << requests_speeds[requests_speeds.size() / 2 + 1] << " req/sec" << std::endl;
-            std::cout << "min requests speed: " << requests_speeds.front() << " req/sec" << std::endl;
-            std::cout << "max requests speed: " << requests_speeds.back() << " req/sec" << std::endl;
-        }
-        std::cout << "mean read rows speed: " << total_rows_count / std::chrono::duration_cast<double_s>(finish - start).count()
-                  << " row/sec" << std::endl;
-        std::vector<double> rows_speeds;
-        if (!steps.empty()) {
-            boost::transform(steps, std::back_inserter(rows_speeds),
-                [] (const auto& v) { return v.rows_count / std::chrono::duration_cast<double_s>(v.duration).count(); });
-            boost::sort(rows_speeds);
-            std::cout << "median read rows speed: " << rows_speeds[rows_speeds.size() / 2 + 1] << " row/sec" << std::endl;
-            std::cout << "min read rows speed: " << rows_speeds.front() << " row/sec" << std::endl;
-            std::cout << "max read rows speed: " << rows_speeds.back() << " row/sec" << std::endl;
-        }
     }
 
     bool step(std::size_t rows_count, std::size_t token = 0) {
@@ -190,6 +149,54 @@ public:
         }
         request_start[token] = std::chrono::steady_clock::now();
         return true;
+    }
+
+    benchmark_report report(const std::string& name, const std::vector<benchmark_named_value>& parameters) {
+        benchmark_report result;
+        result.name = name;
+        result.parameters = parameters;
+        using double_s = std::chrono::duration<double, std::ratio<1>>;
+        if (!requests.empty()) {
+            boost::sort(requests);
+            result.metrics.push_back(benchmark_named_value {
+                "mean request time, ns",
+                (boost::accumulate(requests, std::chrono::steady_clock::duration()) / requests.size()).count()
+            });
+            result.metrics.push_back(benchmark_named_value {"median request time, ns", requests[requests.size() / 2 + 1].count()});
+            result.metrics.push_back(benchmark_named_value {"q90 request time, ns", requests[requests.size() * 9 / 10].count()});
+            result.metrics.push_back(benchmark_named_value {"min request time, ns", requests.front().count()});
+            result.metrics.push_back(benchmark_named_value {"max request time, ns", requests.back().count()});
+        }
+        result.metrics.push_back(benchmark_named_value {
+            "mean requests speed, req/sec",
+            total_requests_count / std::chrono::duration_cast<double_s>(finish - start).count()
+        });
+        std::vector<double> requests_speeds;
+        if (!steps.empty()) {
+            boost::transform(steps, std::back_inserter(requests_speeds),
+                [] (const auto& v) { return v.requests_count / std::chrono::duration_cast<double_s>(v.duration).count(); });
+            boost::sort(requests_speeds);
+            result.metrics.push_back(benchmark_named_value {
+                "median requests speed, req/sec",
+                requests_speeds[requests_speeds.size() / 2 + 1]
+            });
+            result.metrics.push_back(benchmark_named_value {"min requests speed, req/sec", requests_speeds.front()});
+            result.metrics.push_back(benchmark_named_value {"max requests speed, req/sec", requests_speeds.back()});
+        }
+        result.metrics.push_back(benchmark_named_value {
+            "mean read rows speed, row/sec",
+            total_rows_count / std::chrono::duration_cast<double_s>(finish - start).count()
+        });
+        std::vector<double> rows_speeds;
+        if (!steps.empty()) {
+            boost::transform(steps, std::back_inserter(rows_speeds),
+                [] (const auto& v) { return v.rows_count / std::chrono::duration_cast<double_s>(v.duration).count(); });
+            boost::sort(rows_speeds);
+            result.metrics.push_back(benchmark_named_value {"median read rows speed, row/sec", rows_speeds[rows_speeds.size() / 2 + 1]});
+            result.metrics.push_back(benchmark_named_value {"min read rows speed, row/sec", rows_speeds.front()});
+            result.metrics.push_back(benchmark_named_value {"max read rows speed, row/sec", rows_speeds.back()});
+        }
+        return result;
     }
 
 private:
