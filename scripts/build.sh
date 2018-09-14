@@ -23,11 +23,13 @@ build_clang() {
             build
         ;;
         ubsan)
+            export UBSAN_OPTIONS='print_stacktrace=1'
             CMAKE_BUILD_TYPE=Debug
             CMAKE_CXX_FLAGS='-fno-omit-frame-pointer -fsanitize=undefined'
             build
         ;;
         tsan)
+            export TSAN_OPTIONS='second_deadlock_stack=1'
             CMAKE_BUILD_TYPE=RelWithDebInfo
             CMAKE_CXX_FLAGS_RELWITHDEBINFO='-g -O2 -fno-omit-frame-pointer -fsanitize=thread'
             build
