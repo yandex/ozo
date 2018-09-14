@@ -345,7 +345,7 @@ struct is_connection<T, std::void_t<
 * @code
 decltype(auto) oid_map = get_connection_oid_map(unwrap_connection(conn));
 * @endcode
-* There the `oid_map` must be a reference or proxy for connection's oid map object, which allows to read and modify it.
+* There the `oid_map` must be a reference or proxy for connection's #OidMap object, which allows to read and modify it.
 * Object must be created via `ozo::register_types()` template function or be empty_oid_map in case if no custom
 * types are used with the connection.
 *
