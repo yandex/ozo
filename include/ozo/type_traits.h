@@ -145,7 +145,7 @@ using unwrap_nullable_type = typename std::decay_t<decltype(unwrap_nullable(
         std::declval<T>()))>;
 
 template <typename T>
-inline auto is_null(const T& v) noexcept -> std::enable_if_t<Nullable<T>, bool> {
+inline auto is_null(const T& v) noexcept -> Require<Nullable<T>, bool> {
     return !v;
 }
 
@@ -175,7 +175,7 @@ constexpr auto is_null(const T&) noexcept;
 #endif
 
 template <typename T>
-constexpr auto is_null(const T&) noexcept -> std::enable_if_t<!Nullable<T>, std::false_type> {
+constexpr auto is_null(const T&) noexcept -> Require<!Nullable<T>, std::false_type> {
     return {};
 }
 
@@ -229,7 +229,7 @@ inline void allocate_nullable(T& out, const Alloc& a) {
 template <typename T, typename Alloc = std::allocator<char>>
 inline void init_nullable(T& n, const Alloc& a = Alloc{}) {
     static_assert(Nullable<T>, "T must be nullable");
-    if (!n) {
+    if (is_null(n)) {
         allocate_nullable(n, a);
     }
 }
@@ -252,6 +252,7 @@ inline void reset_nullable(T& n) {
  * must define traits.
  *
  * @tparam T --- type to examine
+ * @sa `ozo::type_traits_helper`
  */
 #ifdef OZO_DOCUMENTATION
 template <typename T>
@@ -279,10 +280,9 @@ struct type_size_match : std::integral_constant<bool, sizeof(T) == Size::value> 
 template <typename T>
 struct type_size_match<T, dynamic_size> : std::true_type {};
 /**
- * @brief Helper defines the way for the type traits definitions.
+ * @brief Helper for the type traits definitions.
  * @ingroup group-type_system
  *
- * Type is undefined then Name type is not defined.
  * @tparam Name --- type which can be converted into a string representation
  * which contain the fully qualified type name in DB
  * @tparam Oid --- oid type - provides type's oid in database, may be defined for
