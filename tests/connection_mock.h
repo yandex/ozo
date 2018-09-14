@@ -72,9 +72,8 @@ struct fake_query {
     hana::tuple<> params;
 
     template <typename T>
-    friend decltype(auto) make_binary_query(fake_query query,
-            const ozo::oid_map_t<T>&) {
-        return std::move(query);
+    friend auto make_binary_query(fake_query query, const ozo::oid_map_t<T>&) {
+        return query;
     }
 
     template <class ... Ts>
