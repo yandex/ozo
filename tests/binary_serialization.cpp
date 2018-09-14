@@ -75,4 +75,9 @@ TEST_F(send, with_std_vector_of_float_should_store_with_one_dimension_array_head
     }));
 }
 
+TEST_F(send, should_convert_pg_name_as_string) {
+    ozo::send(os, oid_map, ozo::pg::name {"name"});
+    EXPECT_THAT(buffer, ElementsAre('n', 'a', 'm', 'e'));
+}
+
 } // namespace

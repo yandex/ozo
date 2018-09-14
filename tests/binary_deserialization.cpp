@@ -361,6 +361,18 @@ TEST_F(recv, should_reset_nullable_on_null_element) {
         Pointee(std::string("bar"))));
 }
 
+TEST_F(recv, should_convert_NAMEOID_to_pg_name) {
+    const char* bytes = "test";
+    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(NAMEOID));
+    EXPECT_CALL(mock, get_value(_, _)).WillRepeatedly(Return(bytes));
+    EXPECT_CALL(mock, get_length(_, _)).WillRepeatedly(Return(4));
+    EXPECT_CALL(mock, get_isnull(_, _)).WillRepeatedly(Return(false));
+
+    ozo::pg::name got;
+    ozo::recv(value, oid_map, got);
+    EXPECT_EQ("test", static_cast<const std::string&>(got));
+}
+
 struct recv_row : Test {
     ozo::empty_oid_map oid_map{};
     StrictMock<pg_result_mock> mock{};
