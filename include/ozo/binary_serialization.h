@@ -40,4 +40,12 @@ struct send_impl<std::vector<T, Alloc>, Require<!std::is_same_v<T, char>>> {
     }
 };
 
+template <>
+struct send_impl<pg::name> {
+    template <typename M>
+    static ostream& apply(ostream& out, const oid_map_t<M>& map, const pg::name& in) {
+        return send_impl<std::string>::apply(out, map, in);
+    }
+};
+
 } // namespace ozo
