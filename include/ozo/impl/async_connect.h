@@ -42,22 +42,22 @@ auto make_connect_operation_context(Connection&& connection, Handler&& handler) 
 }
 
 template <typename ... Ts>
-auto& get_connection(const connect_operation_context_ptr<Ts ...>& context) {
+auto& get_connection(const connect_operation_context_ptr<Ts ...>& context) noexcept {
     return context->connection;
 }
 
 template <typename ... Ts>
-auto& get_handler(const connect_operation_context_ptr<Ts ...>& context) {
+auto& get_handler(const connect_operation_context_ptr<Ts ...>& context) noexcept {
     return context->handler;
 }
 
 template <typename ... Ts>
-decltype(auto) get_handler_context(const connect_operation_context_ptr<Ts ...>& context) {
+decltype(auto) get_handler_context(const connect_operation_context_ptr<Ts ...>& context) noexcept {
     return std::addressof(context->handler);
 }
 
 template <typename ... Ts>
-auto& get_executor(const connect_operation_context_ptr<Ts ...>& context) {
+auto& get_executor(const connect_operation_context_ptr<Ts ...>& context) noexcept {
     return context->strand;
 }
 
