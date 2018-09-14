@@ -241,17 +241,6 @@ inline void reset_nullable(T& n) {
 }
 
 /**
-* Indicates if type is an array
-*/
-template <typename T>
-struct is_array : std::false_type {};
-
-template <typename T, typename Alloc>
-struct is_array<std::vector<T, Alloc>> : std::true_type {};
-template <typename T, typename Alloc>
-struct is_array<std::list<T, Alloc>> : std::true_type {};
-
-/**
 * Helper indicates if type is string
 */
 template <typename T>
