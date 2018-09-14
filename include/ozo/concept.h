@@ -249,19 +249,55 @@ constexpr auto Integral = std::is_integral_v<std::decay_t<T>>;
 template <typename T>
 constexpr auto FloatingPoint = std::is_floating_point_v<std::decay_t<T>>;
 
+template <typename T, std::size_t, typename = std::void_t<>>
+struct has_data : std::false_type {};
+
+template <typename T, std::size_t Size>
+struct has_data<T, Size, std::void_t<decltype(std::declval<T&>().data())>> :
+    std::bool_constant<sizeof(decltype(*std::declval<T&>().data())) == 1> {};
+
+template <typename T, std::size_t, typename = std::void_t<>>
+struct has_friend_data : std::false_type {};
+
+template <typename T, std::size_t Size>
+struct has_friend_data<T, Size, std::void_t<decltype(data(std::declval<T&>()))>> :
+    std::bool_constant<sizeof(decltype(*data(std::declval<T&>()))) == 1> {};
+
 template <typename T, typename = std::void_t<>>
-struct is_raw_data_writable : std::false_type {};
+struct has_size : std::false_type {};
 
 template <typename T>
-struct is_raw_data_writable<T, std::void_t<
-    decltype(std::declval<T&>().data()),
-    decltype(std::declval<T&>().size())
->> : std::integral_constant<bool, std::is_same_v<decltype(std::declval<T&>().data()), char*>> {};
+struct has_size<T, std::void_t<decltype(std::declval<T&>().size())>> : std::true_type {};
+
+template <typename T, typename = std::void_t<>>
+struct has_friend_size : std::false_type {};
+
+template <typename T>
+struct has_friend_size<T, std::void_t<decltype(size(std::declval<T&>()))>> : std::true_type {};
+
+template <typename T>
+struct is_raw_data_writable : std::bool_constant<
+    (has_data<T, 1>::value && has_size<T>::value) ||
+    (has_friend_data<T, 1>::value && has_friend_size<T>::value)
+> {};
+
 
 /**
- * @brief Raw Data Writable concept
+ * @brief RawDataWritable concept
  *
- * Indicates if T can be written as a sequence of bytes without endian conversion
+ * Indicates if T can be written as a sequence of bytes without endian conversion.
+ * `RawDataWritable<T>` is true if for object `v` of type `T` applicable one of this code:
+ * @code
+    auto raw = v.data();              // has_data<T,
+    static_assert(sizeof(*raw) == 1); //            1>
+    auto n = v.size();                // has_size<T>
+ * @endcode
+ * or
+ * @code
+    auto raw = data(v);               // has_friend_data<T,
+    static_assert(sizeof(*raw) == 1); //                   1>
+    auto n = size(v);                 // has_friend_size<T>
+ * @endcode
  * @tparam T - type to examine
  * @hideinitializer
  */

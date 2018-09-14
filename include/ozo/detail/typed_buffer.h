@@ -22,8 +22,5 @@ template <typename T>
 constexpr auto size(const typed_buffer<T>& buf) { return buf.size;}
 } // namespace detail
 
-template <typename T>
-struct is_raw_data_writable<detail::typed_buffer<T>> : std::true_type {};
-
 } // namespace ozo
 
