@@ -145,7 +145,7 @@ using unwrap_nullable_type = typename std::decay_t<decltype(unwrap_nullable(
         std::declval<T>()))>;
 
 template <typename T>
-inline auto is_null(const T& v) noexcept -> std::enable_if_t<Nullable<T>, bool> {
+inline auto is_null(const T& v) noexcept -> Require<Nullable<T>, bool> {
     return !v;
 }
 
@@ -175,7 +175,7 @@ constexpr auto is_null(const T&) noexcept;
 #endif
 
 template <typename T>
-constexpr auto is_null(const T&) noexcept -> std::enable_if_t<!Nullable<T>, std::false_type> {
+constexpr auto is_null(const T&) noexcept -> Require<!Nullable<T>, std::false_type> {
     return {};
 }
 
@@ -229,7 +229,7 @@ inline void allocate_nullable(T& out, const Alloc& a) {
 template <typename T, typename Alloc = std::allocator<char>>
 inline void init_nullable(T& n, const Alloc& a = Alloc{}) {
     static_assert(Nullable<T>, "T must be nullable");
-    if (!n) {
+    if (is_null(n)) {
         allocate_nullable(n, a);
     }
 }
@@ -239,63 +239,6 @@ inline void reset_nullable(T& n) {
     static_assert(Nullable<T>, "T must be nullable");
     n = T{};
 }
-
-/**
-* Indicates if type is an array
-*/
-template <typename T>
-struct is_array : std::false_type {};
-
-template <typename T, typename Alloc>
-struct is_array<std::vector<T, Alloc>> : std::true_type {};
-template <typename T, typename Alloc>
-struct is_array<std::list<T, Alloc>> : std::true_type {};
-
-/**
-* Helper indicates if type is string
-*/
-template <typename T>
-struct is_string : std::false_type {};
-
-template <typename C, typename T, typename A>
-struct is_string<std::basic_string<C, T, A>> : std::true_type {};
-
-/**
-* Indicates if type is adapted for introspection with Boost.Fusion
-*/
-template <typename T>
-using is_fusion_adapted = std::integral_constant<bool,
-    boost::fusion::traits::is_sequence<T>::value
->;
-
-/**
-* Indicates if type is adapted for introspection with Boost.Hana
-*/
-template <typename T>
-using is_hana_adapted = std::integral_constant<bool,
-    hana::Sequence<T>::value ||
-    hana::Struct<T>::value
->;
-
-/**
- * @brief Indicates if type is a composite.
- * @ingroup group-type_system
- * In general we suppose that composite
- * is a type being adapted for introspection via Boost.Fusion or Boost.Hana,
- * including tuples and compile-time sequences.
- *
- * @return std::true_type for composite type or std::false_type in other case
- */
-#ifdef OZO_DOCUMENTATION
-template <typename T>
-struct is_composite;
-#else
-template <typename T>
-struct is_composite : std::integral_constant<bool,
-    is_hana_adapted<T>::value ||
-    is_fusion_adapted<T>::value
-> {};
-#endif
 
 /**
  * @brief Type traits template forward declaration.
@@ -309,6 +252,7 @@ struct is_composite : std::integral_constant<bool,
  * must define traits.
  *
  * @tparam T --- type to examine
+ * @sa `ozo::type_traits_helper`
  */
 #ifdef OZO_DOCUMENTATION
 template <typename T>
@@ -336,10 +280,9 @@ struct type_size_match : std::integral_constant<bool, sizeof(T) == Size::value> 
 template <typename T>
 struct type_size_match<T, dynamic_size> : std::true_type {};
 /**
- * @brief Helper defines the way for the type traits definitions.
+ * @brief Helper for the type traits definitions.
  * @ingroup group-type_system
  *
- * Type is undefined then Name type is not defined.
  * @tparam Name --- type which can be converted into a string representation
  * which contain the fully qualified type name in DB
  * @tparam Oid --- oid type - provides type's oid in database, may be defined for
@@ -366,7 +309,7 @@ struct type_traits : type_traits_helper<T, void> {};
  * @tparam T -- type to check
  */
 template <typename T>
-struct is_built_in : std::integral_constant<bool,
+struct is_built_in : std::bool_constant<
     !std::is_same_v<typename type_traits<T>::oid, null_oid_t>> {};
 
 template <typename T>
@@ -462,9 +405,26 @@ BOOST_STRONG_TYPEDEF(std::string, name)
  *
  * @note This macro can be called in the global namespace only
  *
- * E.g. the definition of the `uuid` type looks like this:
+ * ### Example
+ *
+ * E.g. a definition of `uuid` type looks like this:
 @code
 OZO_PG_DEFINE_TYPE_AND_ARRAY(boost::uuids::uuid, "uuid", UUIDOID, 2951, bytes<16>)
+@endcode
+ *
+ * Definition of user defined composite type may look like this:
+@code
+BOOST_FUSION_DEFINE_STRUCT((smtp), message,
+    (std::int64_t, id)
+    (std::string, from)
+    (std::vector<std::string>, to)
+    (std::optional<std::string>, subject)
+    (std::optional<std::string>, text)
+);
+
+//...
+
+OZO_PG_DEFINE_TYPE_AND_ARRAY(smtp::message, "code.message", null_oid, null_oid, dynamic_size)
 @endcode
  *
  * @param Type --- C++ type to be mapped to database type
@@ -517,6 +477,12 @@ OZO_PG_DEFINE_TYPE_AND_ARRAY(ozo::pg::name, "name", NAMEOID, 1003, dynamic_size)
 
 namespace ozo {
 
+/**
+ * @brief OidMap implementation type.
+ * @ingroup group-type_system
+ *
+ * This type implements OidMap concept based on `boost::hana::map`.
+ */
 template <typename ImplT>
 struct oid_map_t {
     using impl_type = ImplT;
@@ -531,6 +497,39 @@ struct is_oid_map : std::false_type {};
 template <typename T>
 struct is_oid_map<oid_map_t<T>> : std::true_type {};
 
+/**
+ * @brief Map of C++ types to corresponding PostgreSQL types OIDs
+ *
+ * @ingroup group-type_system
+ * `OidMap` is needed to store information about C++ types and corresponding
+ * custom database types' OIDs. For PostgreSQL built-in types no mapping is needed since their
+ * `OID`s are defined in PostgreSQL sources. For custom types their `OID`s are defined
+ * in a database.
+ *
+ * ###OidMap Definition
+ *
+ * `OidMap` `map` is an object for which these next statements are valid:
+ *
+ @code
+ oid_t oid;
+ //...
+ set_type_oid<T>(map, oid);
+ @endcode
+ * Sets oid for type T in the map.
+ *
+ @code
+ oid_t oid = type_oid<T>(map);
+ @endcode
+ * Returns oid value for type T from the map.
+ *
+@code
+bool res = empty(map);
+@endcode
+ * Returns true if map has no types OIDs.
+ *
+ * @hideinitializer
+ * @sa oid_map_t, register_types(), set_type_oid(), type_oid(), accepts_oid()
+ */
 template <typename T>
 constexpr auto OidMap = is_oid_map<std::decay_t<T>>::value;
 
@@ -545,16 +544,49 @@ constexpr decltype(auto) register_types() noexcept {
 
 } // namespace detail
 
+/**
+ * @brief Provides #OidMap implementation for user-defined types.
+ *
+ * @ingroup group-type_system
+ * This function have to be used to provide information about custom types are being used
+ * within requests for a #ConnectionSource.
+ *
+ * ###Example
+ *
+ * @code
+// User defined type
+struct custom_type;
+
+//...
+
+// Providing type information and corresponding database type
+OZO_PG_DEFINE_TYPE_AND_ARRAY(custom_type, "code.custom_type", null_oid, null_oid, dynamic_size)
+
+//...
+// Creating ConnectionSource for futher requests to a database
+const auto conn_source = ozo::make_connection_info("...", regiter_types<custom_type>());
+ * @endcode
+ *
+ * @return `oid_map_t` object.
+ */
 template <typename ... T>
 constexpr decltype(auto) register_types() noexcept {
     using impl_type = decltype(detail::register_types<T ...>());
     return oid_map_t<impl_type> {detail::register_types<T ...>()};
 }
 
+/**
+ * @brief Type alias for empty #OidMap
+ * @ingroup group-type_system
+ */
 using empty_oid_map = std::decay_t<decltype(register_types<>())>;
 
 /**
-* Function sets oid for type in oid map.
+* Function sets oid for type in #OidMap.
+* @ingroup group-type_system
+* @tparam T --- type to set oid for.
+* @param map --- #OidMap to modify.
+* @param oid --- OID to set.
 */
 template <typename T, typename MapImplT>
 inline void set_type_oid(oid_map_t<MapImplT>& map, oid_t oid) noexcept {
@@ -563,7 +595,10 @@ inline void set_type_oid(oid_map_t<MapImplT>& map, oid_t oid) noexcept {
 }
 
 /**
-* Function returns oid for type from oid map.
+* Function returns oid for type from #OidMap.
+* @ingroup group-type_system
+* @tparam T --- type to get OID for.
+* &param map --- #OidMap to get OID from.
 */
 template <typename T, typename MapImplT>
 inline auto type_oid(const oid_map_t<MapImplT>& map) noexcept
@@ -584,18 +619,41 @@ inline auto type_oid(const oid_map_t<MapImplT>& map, const T&) noexcept{
 
 /**
 * Function returns true if type can be obtained from DB response with
-* specified oid.
+* specified OID.
+* @ingroup group-type_system
+* @tparam T --- type to examine
+* @param map --- #OidMap to get type OID from
+* @param oid --- OID to check for compatibility
 */
 template <typename T, typename MapImplT>
 inline bool accepts_oid(const oid_map_t<MapImplT>& map, oid_t oid) noexcept {
     return type_oid<T>(map) == oid;
 }
 
+/**
+* Function returns true if type can be obtained from DB response with
+* specified OID.
+* @ingroup group-type_system
+* @param map --- #OidMap to get type OID from
+* @param const T& --- type to examine
+* @param oid --- OID to check for compatibility
+*/
 template <typename T, typename MapImplT>
-inline bool accepts_oid(const oid_map_t<MapImplT>& map, const T&, oid_t oid) noexcept {
+inline bool accepts_oid(const oid_map_t<MapImplT>& map, const T& , oid_t oid) noexcept {
     return accepts_oid<std::decay_t<T>>(map, oid);
 }
 
+/**
+ * Checks if #OidMap contains no items.
+ * @ingroup group-type_system
+ *
+ * ### Example
+ * @code
+static_assert(empty(ozo::empty_oid_map{}));
+ * @endcode
+ * @param map --- OidMap to check
+ * @return `true` if map contains no items, `false` - if contains.
+ */
 template <typename MapImplT>
 inline constexpr bool empty(const oid_map_t<MapImplT>& map) noexcept {
     return hana::length(map.impl) == hana::size_c<0>;

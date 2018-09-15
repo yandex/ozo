@@ -233,36 +233,4 @@ TEST_F(accepts_oid, should_return_false_for_type_with_oid_in_map_and_different_o
     EXPECT_TRUE(!ozo::accepts_oid(oid_map, val, 0));
 }
 
-TEST(is_composite, should_return_false_for_std_string) {
-    EXPECT_TRUE(!ozo::is_composite<std::string>::value);
-}
-
-TEST(is_composite, should_return_true_for_std_tuple) {
-    using tuple = std::tuple<int,std::string,double>;
-    EXPECT_TRUE(ozo::is_composite<tuple>::value);
-}
-
-TEST(is_composite, should_return_true_for_boost_fusion_adapted_struct) {
-    EXPECT_TRUE(ozo::is_composite<fusion_adapted>::value);
-}
-
 } // namespace
-
-namespace ozo::tests {
-
-struct hana_adapted {
-    BOOST_HANA_DEFINE_STRUCT(hana_adapted,
-        (std::string, brand),
-        (std::string, model)
-    );
-};
-
-} // namespace ozo::tests
-
-namespace {
-
-TEST(is_composite, should_return_true_for_boost_hana_adapted_struct) {
-    EXPECT_TRUE(ozo::is_composite<hana_adapted>::value);
-}
-
-} //namespace
