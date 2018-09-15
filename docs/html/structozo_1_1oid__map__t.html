@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.14"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>OZO 「お象」: ozo::type_traits&lt; T &gt; Struct Template Reference</title>
+<title>OZO 「お象」: ozo::oid_map_t&lt; ImplT &gt; Struct Template Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -78,7 +78,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div>
 <script type="text/javascript">
 /* @license magnet:?xt=urn:btih:cf05388f2679ee054f2beb29a391d25f4e673ac3&amp;dn=gpl-2.0.txt GPL-v2 */
-$(document).ready(function(){initNavTree('structozo_1_1type__traits.html','');});
+$(document).ready(function(){initNavTree('structozo_1_1oid__map__t.html','');});
 /* @license-end */
 </script>
 <div id="doc-content">
@@ -98,46 +98,20 @@ $(document).ready(function(){initNavTree('structozo_1_1type__traits.html','');})
 
 <div class="header">
   <div class="summary">
-<a href="#pub-attribs">Public Attributes</a> &#124;
-<a href="structozo_1_1type__traits-members.html">List of all members</a>  </div>
+<a href="structozo_1_1oid__map__t-members.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">ozo::type_traits&lt; T &gt; Struct Template Reference<div class="ingroups"><a class="el" href="group__group-core.html">Core</a> &raquo; <a class="el" href="group__group-type__system.html">Type system</a></div></div>  </div>
+<div class="title">ozo::oid_map_t&lt; ImplT &gt; Struct Template Reference<div class="ingroups"><a class="el" href="group__group-core.html">Core</a> &raquo; <a class="el" href="group__group-type__system.html">Type system</a></div></div>  </div>
 </div><!--header-->
 <div class="contents">
 
 <p><code>#include &lt;<a class="el" href="type__traits_8h_source.html">type_traits.h</a>&gt;</code></p>
 <a name="details" id="details"></a><h2 class="groupheader">Description</h2>
-<div class="textblock"><h3>template&lt;typename T&gt;<br />
-struct ozo::type_traits&lt; T &gt;</h3>
+<div class="textblock"><h3>template&lt;typename ImplT&gt;<br />
+struct ozo::oid_map_t&lt; ImplT &gt;</h3>
 
-<p>Type traits template forward declaration.</p>
-<p>Type traits contains information related to it's representation in the database. There are two different kind of traits - built-in types with constant OIDs and custom types with database depent OIDs. The functions below describe neccesary traits. For built-in types traits will be defined there. For custom types user must define traits. </p>
-<dl class="tparams"><dt>Template Parameters</dt><dd>
-  <table class="tparams">
-    <tr><td class="paramname">T</td><td>&mdash; type to examine </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="section see"><dt>See also</dt><dd><code><a class="el" href="structozo_1_1type__traits__helper.html" title="Helper for the type traits definitions. ">ozo::type_traits_helper</a></code> </dd></dl>
-</div>
-<p>Inherits <a class="el" href="structozo_1_1type__traits__helper.html">ozo::type_traits_helper&lt; T, void &gt;</a>.</p>
-<table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
-Public Attributes</h2></td></tr>
-<tr class="memitem:a1d5dbc5e1f0b324f50836a47a80486eb"><td class="memItemLeft" align="right" valign="top"><a id="a1d5dbc5e1f0b324f50836a47a80486eb"></a>
-using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structozo_1_1type__traits.html#a1d5dbc5e1f0b324f50836a47a80486eb">name</a> = typedef</td></tr>
-<tr class="memdesc:a1d5dbc5e1f0b324f50836a47a80486eb"><td class="mdescLeft">&#160;</td><td class="mdescRight"><code>boost::hana::string</code> with name of the type in a database <br /></td></tr>
-<tr class="separator:a1d5dbc5e1f0b324f50836a47a80486eb"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a188eddb23d740dd449530c45db7993b3"><td class="memItemLeft" align="right" valign="top"><a id="a188eddb23d740dd449530c45db7993b3"></a>
-using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structozo_1_1type__traits.html#a188eddb23d740dd449530c45db7993b3">oid</a> = typedef</td></tr>
-<tr class="memdesc:a188eddb23d740dd449530c45db7993b3"><td class="mdescLeft">&#160;</td><td class="mdescRight"><code>std::integral_constant</code> with Oid of the built-in type or null_oid_t for non built-in type <br /></td></tr>
-<tr class="separator:a188eddb23d740dd449530c45db7993b3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad1a21be06fcb34bf612a7c516159fccd"><td class="memItemLeft" align="right" valign="top"><a id="ad1a21be06fcb34bf612a7c516159fccd"></a>
-using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structozo_1_1type__traits.html#ad1a21be06fcb34bf612a7c516159fccd">size</a> = typedef</td></tr>
-<tr class="memdesc:ad1a21be06fcb34bf612a7c516159fccd"><td class="mdescLeft">&#160;</td><td class="mdescRight"><code>std::integral_constant</code> with size of the type object in bytes or <code>ozo::dynamic_size</code> in other case <br /></td></tr>
-<tr class="separator:ad1a21be06fcb34bf612a7c516159fccd"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table>
-<hr/>The documentation for this struct was generated from the following file:<ul>
+<p>OidMap implementation type.</p>
+<p>This type implements OidMap concept based on <code>boost::hana::map</code>. </p>
+</div><hr/>The documentation for this struct was generated from the following file:<ul>
 <li>include/ozo/<a class="el" href="type__traits_8h_source.html">type_traits.h</a></li>
 </ul>
 </div><!-- contents -->
@@ -145,7 +119,7 @@ using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="str
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="namespaceozo.html">ozo</a></li><li class="navelem"><a class="el" href="structozo_1_1type__traits.html">type_traits</a></li>
+    <li class="navelem"><a class="el" href="namespaceozo.html">ozo</a></li><li class="navelem"><a class="el" href="structozo_1_1oid__map__t.html">oid_map_t</a></li>
     <li class="footer">Generated by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.14 </li>

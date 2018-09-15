@@ -197,7 +197,7 @@ Functions</h2></td></tr>
 <tr class="memdesc:ga333c7d2b1aaaf6eaee1678a4e7e50927"><td class="mdescLeft">&#160;</td><td class="mdescRight">Close connection to the database immediately.  <a href="group__group-connection-functions.html#ga333c7d2b1aaaf6eaee1678a4e7e50927">More...</a><br /></td></tr>
 <tr class="separator:ga333c7d2b1aaaf6eaee1678a4e7e50927"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga7edf7162c365d85de16c9b34659140af"><td class="memTemplParams" colspan="2">template&lt;typename OidMap  = empty_oid_map, typename Statistics  = no_statistics&gt; </td></tr>
-<tr class="memitem:ga7edf7162c365d85de16c9b34659140af"><td class="memTemplItemLeft" align="right" valign="top">auto&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group__group-connection-functions.html#ga7edf7162c365d85de16c9b34659140af">make_connection_info</a> (std::string conn_str, const OidMap &amp;=OidMap{}, Statistics statistics=Statistics{})</td></tr>
+<tr class="memitem:ga7edf7162c365d85de16c9b34659140af"><td class="memTemplItemLeft" align="right" valign="top">auto&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group__group-connection-functions.html#ga7edf7162c365d85de16c9b34659140af">make_connection_info</a> (std::string conn_str, const <a class="el" href="group__group-type__system.html#ga41fff92f9d5a046bcd0654312352e153">OidMap</a> &amp;=<a class="el" href="group__group-type__system.html#ga41fff92f9d5a046bcd0654312352e153">OidMap</a>{}, Statistics statistics=Statistics{})</td></tr>
 <tr class="memdesc:ga7edf7162c365d85de16c9b34659140af"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs <code><a class="el" href="classozo_1_1connection__info.html" title="Connection information. ">ozo::connection_info</a></code> <a class="el" href="group__group-connection-concepts.html#gaeb64411053912bede2d7d7ad7c8057b3" title="ConnectionSource concept. ">ConnectionSource</a>.  <a href="#ga7edf7162c365d85de16c9b34659140af">More...</a><br /></td></tr>
 <tr class="separator:ga7edf7162c365d85de16c9b34659140af"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga7ee79e815277defd86c9268c002f9143"><td class="memTemplParams" colspan="2">template&lt;typename Source &gt; </td></tr>
@@ -481,7 +481,7 @@ template&lt;typename T &gt; </div>
 </div><div class="memdoc">
 
 <p>Get the connection oid map object. </p>
-<p><a class="el" href="group__group-connection-concepts.html#ga9b549bf74e3c13c97f24493211722d9d" title="Database connection concept. ">Connection</a> types' OID map getter. This function must be specified for a <a class="el" href="group__group-connection-concepts.html#ga9b549bf74e3c13c97f24493211722d9d" title="Database connection concept. ">Connection</a> concept implementation to be conform to. Function must return reference to ozo::oid_map_t template specialization or proxy class object to access connection's types' OID map.</p>
+<p><a class="el" href="group__group-connection-concepts.html#ga9b549bf74e3c13c97f24493211722d9d" title="Database connection concept. ">Connection</a> types' OID map getter. This function must be specified for a <a class="el" href="group__group-connection-concepts.html#ga9b549bf74e3c13c97f24493211722d9d" title="Database connection concept. ">Connection</a> concept implementation to be conform to. Function must return reference to <a class="el" href="structozo_1_1oid__map__t.html" title="OidMap implementation type.This type implements OidMap concept based on boost::hana::map. ">ozo::oid_map_t</a> template specialization or proxy class object to access connection's types' OID map.</p>
 <p><b>Customization Point</b></p>
 <p>This is customization point for <a class="el" href="group__group-connection-concepts.html#ga9b549bf74e3c13c97f24493211722d9d" title="Database connection concept. ">Connection</a> concept implementation. To customize it please specialize <code>ozo::get_connection_oid_map_impl</code> template. Default specialization may look like this (<code>for exposition only</code>): </p><div class="fragment"><div class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T, <span class="keyword">typename</span> = std::<span class="keywordtype">void</span>_t&lt;&gt;&gt;</div><div class="line"><span class="keyword">struct </span>get_connection_oid_map_impl {</div><div class="line">    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Conn&gt;</div><div class="line">    constexpr <span class="keyword">static</span> <span class="keyword">auto</span> apply(Conn&amp;&amp; c) -&gt; decltype((c.oid_map_)) {</div><div class="line">        <span class="keywordflow">return</span> c.oid_map_;</div><div class="line">    }</div><div class="line">};</div></div><!-- fragment --><p> Function overload works as well, but it is safer to specialize the template. </p><dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
@@ -901,8 +901,8 @@ template&lt;typename OidMap  = empty_oid_map, typename Statistics  = no_statisti
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const OidMap &amp;&#160;</td>
-          <td class="paramname"> = <code>OidMap{}</code>, </td>
+          <td class="paramtype">const <a class="el" href="group__group-type__system.html#ga41fff92f9d5a046bcd0654312352e153">OidMap</a> &amp;&#160;</td>
+          <td class="paramname"> = <code><a class="el" href="group__group-type__system.html#ga41fff92f9d5a046bcd0654312352e153">OidMap</a>{}</code>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>

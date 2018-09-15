@@ -108,10 +108,10 @@ $(document).ready(function(){initNavTree('group__group-requests.html','');});
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:ga8883fdec7a4df0150147f8736af47340"><td class="memTemplParams" colspan="2">template&lt;typename P , typename Q , typename CompletionToken , typename  = Require&lt;ConnectionProvider&lt;P&gt;&gt;&gt; </td></tr>
-<tr class="memitem:ga8883fdec7a4df0150147f8736af47340"><td class="memTemplItemLeft" align="right" valign="top">auto&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group__group-requests.html#ga8883fdec7a4df0150147f8736af47340">ozo::execute</a> (P &amp;&amp;provider, Q &amp;&amp;query, <a class="el" href="group__group-core-concepts.html#ga6513d4477f12ddf822036eb03d7891fa">CompletionToken</a> &amp;&amp;token)</td></tr>
-<tr class="memdesc:ga8883fdec7a4df0150147f8736af47340"><td class="mdescLeft">&#160;</td><td class="mdescRight">Executes query but does not return a resultThis function is same as <code><a class="el" href="group__group-requests.html#ga3d2edd9e8d3aea4aee843a539d14eb0b" title="Send request to a database and provides query result (time-out version).  The function sends request ...">ozo::request()</a></code> function except it does not return any result. It suitable to use with <code>UPDATE</code> <code>INSERT</code> statements, or invoking procedures without result.  <a href="group__group-requests.html#ga8883fdec7a4df0150147f8736af47340">More...</a><br /></td></tr>
-<tr class="separator:ga8883fdec7a4df0150147f8736af47340"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga438ed9c31739b1ce13f5f8eae1bbf655"><td class="memTemplParams" colspan="2">template&lt;typename P , typename Q , typename CompletionToken , typename  = Require&lt;ConnectionProvider&lt;P&gt;&gt;&gt; </td></tr>
+<tr class="memitem:ga438ed9c31739b1ce13f5f8eae1bbf655"><td class="memTemplItemLeft" align="right" valign="top">auto&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group__group-requests.html#ga438ed9c31739b1ce13f5f8eae1bbf655">ozo::execute</a> (P &amp;&amp;provider, Q &amp;&amp;query, const <a class="el" href="structozo_1_1time__traits.html#a7272c9a4857bf785826771866f18fe67">time_traits::duration</a> &amp;timeout, <a class="el" href="group__group-core-concepts.html#ga6513d4477f12ddf822036eb03d7891fa">CompletionToken</a> &amp;&amp;token)</td></tr>
+<tr class="memdesc:ga438ed9c31739b1ce13f5f8eae1bbf655"><td class="mdescLeft">&#160;</td><td class="mdescRight">Executes query but does not return a resultThis function is same as <code><a class="el" href="group__group-requests.html#ga3d2edd9e8d3aea4aee843a539d14eb0b" title="Send request to a database and provides query result (time-out version).  The function sends request ...">ozo::request()</a></code> function except it does not return any result. It suitable to use with <code>UPDATE</code> <code>INSERT</code> statements, or invoking procedures without result.  <a href="group__group-requests.html#ga438ed9c31739b1ce13f5f8eae1bbf655">More...</a><br /></td></tr>
+<tr class="separator:ga438ed9c31739b1ce13f5f8eae1bbf655"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga3d2edd9e8d3aea4aee843a539d14eb0b"><td class="memTemplParams" colspan="2">template&lt;typename P , typename Q , typename Out , typename CompletionToken , typename  = Require&lt;ConnectionProvider&lt;P&gt;&gt;&gt; </td></tr>
 <tr class="memitem:ga3d2edd9e8d3aea4aee843a539d14eb0b"><td class="memTemplItemLeft" align="right" valign="top">auto&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group__group-requests.html#ga3d2edd9e8d3aea4aee843a539d14eb0b">ozo::request</a> (P &amp;&amp;provider, Q &amp;&amp;query, const <a class="el" href="structozo_1_1time__traits.html#a7272c9a4857bf785826771866f18fe67">time_traits::duration</a> &amp;timeout, Out out, <a class="el" href="group__group-core-concepts.html#ga6513d4477f12ddf822036eb03d7891fa">CompletionToken</a> &amp;&amp;token)</td></tr>
 <tr class="memdesc:ga3d2edd9e8d3aea4aee843a539d14eb0b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Send request to a database and provides query result (time-out version).<br />
@@ -123,8 +123,8 @@ Functions</h2></td></tr>
 <tr class="separator:ga748ee23ab6367dcadeec514cd92b8b0e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Function Documentation</h2>
-<a id="ga8883fdec7a4df0150147f8736af47340"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ga8883fdec7a4df0150147f8736af47340">&#9670;&nbsp;</a></span>execute()</h2>
+<a id="ga438ed9c31739b1ce13f5f8eae1bbf655"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga438ed9c31739b1ce13f5f8eae1bbf655">&#9670;&nbsp;</a></span>execute()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -142,6 +142,12 @@ template&lt;typename P , typename Q , typename CompletionToken , typename  = Req
           <td></td>
           <td class="paramtype">Q &amp;&amp;&#160;</td>
           <td class="paramname"><em>query</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="structozo_1_1time__traits.html#a7272c9a4857bf785826771866f18fe67">time_traits::duration</a> &amp;&#160;</td>
+          <td class="paramname"><em>timeout</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>

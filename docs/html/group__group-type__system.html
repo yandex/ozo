@@ -100,7 +100,9 @@ $(document).ready(function(){initNavTree('group__group-type__system.html','');})
   <div class="summary">
 <a href="#nested-classes">Classes</a> &#124;
 <a href="#define-members">Macros</a> &#124;
-<a href="#typedef-members">Types</a>  </div>
+<a href="#typedef-members">Types</a> &#124;
+<a href="#func-members">Functions</a> &#124;
+<a href="#var-members">Variables</a>  </div>
   <div class="headertitle">
 <div class="title">Type system<div class="ingroups"><a class="el" href="group__group-core.html">Core</a></div></div>  </div>
 </div><!--header-->
@@ -110,17 +112,17 @@ $(document).ready(function(){initNavTree('group__group-type__system.html','');})
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Classes</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structozo_1_1is__composite.html">ozo::is_composite&lt; T &gt;</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Indicates if type is a composite.In general we suppose that composite is a type being adapted for introspection via Boost.Fusion or Boost.Hana, including tuples and compile-time sequences.  <a href="structozo_1_1is__composite.html#details">More...</a><br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structozo_1_1type__traits.html">ozo::type_traits&lt; T &gt;</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Type traits template forward declaration.Type traits contains information related to it's representation in the database. There are two different kind of traits - built-in types with constant OIDs and custom types with database depent OIDs. The functions below describe neccesary traits. For built-in types traits will be defined there. For custom types user must define traits.  <a href="structozo_1_1type__traits.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structozo_1_1type__traits__helper.html">ozo::type_traits_helper&lt; T, Name, Oid, Size &gt;</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Helper defines the way for the type traits definitions.Type is undefined then Name type is not defined.  <a href="structozo_1_1type__traits__helper.html#details">More...</a><br /></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Helper for the type traits definitions.  <a href="structozo_1_1type__traits__helper.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structozo_1_1is__built__in.html">ozo::is_built_in&lt; T &gt;</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Condition indicates if the specified type is built-in for PG.  <a href="structozo_1_1is__built__in.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structozo_1_1oid__map__t.html">ozo::oid_map_t&lt; ImplT &gt;</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">OidMap implementation type.This type implements OidMap concept based on <code>boost::hana::map</code>.  <a href="structozo_1_1oid__map__t.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
@@ -139,6 +141,39 @@ using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="gro
 using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__group-type__system.html#ga6a1c0d23ef107382f509f84757125558">ozo::null_oid_t</a> = std::integral_constant&lt; <a class="el" href="group__group-type__system.html#ga442ba8c3d090543cf6278acb4fed5e66">oid_t</a>, 0 &gt;</td></tr>
 <tr class="memdesc:ga6a1c0d23ef107382f509f84757125558"><td class="mdescLeft">&#160;</td><td class="mdescRight">Type for non initialized OID. <br /></td></tr>
 <tr class="separator:ga6a1c0d23ef107382f509f84757125558"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gac3359e5eddcb6e0b661a97e33bfcd215"><td class="memItemLeft" align="right" valign="top"><a id="gac3359e5eddcb6e0b661a97e33bfcd215"></a>
+using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__group-type__system.html#gac3359e5eddcb6e0b661a97e33bfcd215">ozo::empty_oid_map</a> = std::decay_t&lt; decltype(<a class="el" href="group__group-type__system.html#gac97d30cda822b83aa3d54f60c658f8f7">register_types</a>&lt;&gt;())&gt;</td></tr>
+<tr class="memdesc:gac3359e5eddcb6e0b661a97e33bfcd215"><td class="mdescLeft">&#160;</td><td class="mdescRight">Type alias for empty <a class="el" href="group__group-type__system.html#ga41fff92f9d5a046bcd0654312352e153" title="Map of C++ types to corresponding PostgreSQL types OIDs. ">OidMap</a>. <br /></td></tr>
+<tr class="separator:gac3359e5eddcb6e0b661a97e33bfcd215"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
+Functions</h2></td></tr>
+<tr class="memitem:gac97d30cda822b83aa3d54f60c658f8f7"><td class="memTemplParams" colspan="2">template&lt;typename ... T&gt; </td></tr>
+<tr class="memitem:gac97d30cda822b83aa3d54f60c658f8f7"><td class="memTemplItemLeft" align="right" valign="top">decltype(auto) constexpr&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group__group-type__system.html#gac97d30cda822b83aa3d54f60c658f8f7">ozo::register_types</a> () noexcept</td></tr>
+<tr class="memdesc:gac97d30cda822b83aa3d54f60c658f8f7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Provides <a class="el" href="group__group-type__system.html#ga41fff92f9d5a046bcd0654312352e153" title="Map of C++ types to corresponding PostgreSQL types OIDs. ">OidMap</a> implementation for user-defined types.  <a href="group__group-type__system.html#gac97d30cda822b83aa3d54f60c658f8f7">More...</a><br /></td></tr>
+<tr class="separator:gac97d30cda822b83aa3d54f60c658f8f7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga078aef0d58433783f8d0cba352732993"><td class="memTemplParams" colspan="2">template&lt;typename T , typename MapImplT &gt; </td></tr>
+<tr class="memitem:ga078aef0d58433783f8d0cba352732993"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group__group-type__system.html#ga078aef0d58433783f8d0cba352732993">ozo::set_type_oid</a> (<a class="el" href="structozo_1_1oid__map__t.html">oid_map_t</a>&lt; MapImplT &gt; &amp;map, <a class="el" href="group__group-type__system.html#ga442ba8c3d090543cf6278acb4fed5e66">oid_t</a> oid) noexcept</td></tr>
+<tr class="separator:ga078aef0d58433783f8d0cba352732993"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gabd81e4419a6e16ea9cb416cf8348e35f"><td class="memTemplParams" colspan="2">template&lt;typename T , typename MapImplT &gt; </td></tr>
+<tr class="memitem:gabd81e4419a6e16ea9cb416cf8348e35f"><td class="memTemplItemLeft" align="right" valign="top">auto&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group__group-type__system.html#gabd81e4419a6e16ea9cb416cf8348e35f">ozo::type_oid</a> (const <a class="el" href="structozo_1_1oid__map__t.html">oid_map_t</a>&lt; MapImplT &gt; &amp;map) noexcept -&gt; std::enable_if_t&lt;!<a class="el" href="structozo_1_1is__built__in.html">is_built_in</a>&lt; T &gt;::value, <a class="el" href="group__group-type__system.html#ga442ba8c3d090543cf6278acb4fed5e66">oid_t</a> &gt;</td></tr>
+<tr class="separator:gabd81e4419a6e16ea9cb416cf8348e35f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga0082981c9a4ca4163a43b5ac432ae2e6"><td class="memTemplParams" colspan="2">template&lt;typename T , typename MapImplT &gt; </td></tr>
+<tr class="memitem:ga0082981c9a4ca4163a43b5ac432ae2e6"><td class="memTemplItemLeft" align="right" valign="top">bool&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group__group-type__system.html#ga0082981c9a4ca4163a43b5ac432ae2e6">ozo::accepts_oid</a> (const <a class="el" href="structozo_1_1oid__map__t.html">oid_map_t</a>&lt; MapImplT &gt; &amp;map, <a class="el" href="group__group-type__system.html#ga442ba8c3d090543cf6278acb4fed5e66">oid_t</a> oid) noexcept</td></tr>
+<tr class="separator:ga0082981c9a4ca4163a43b5ac432ae2e6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gaa3c51f0d200a57fb848dadeb39c79864"><td class="memTemplParams" colspan="2">template&lt;typename T , typename MapImplT &gt; </td></tr>
+<tr class="memitem:gaa3c51f0d200a57fb848dadeb39c79864"><td class="memTemplItemLeft" align="right" valign="top">bool&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group__group-type__system.html#gaa3c51f0d200a57fb848dadeb39c79864">ozo::accepts_oid</a> (const <a class="el" href="structozo_1_1oid__map__t.html">oid_map_t</a>&lt; MapImplT &gt; &amp;map, const T &amp;, <a class="el" href="group__group-type__system.html#ga442ba8c3d090543cf6278acb4fed5e66">oid_t</a> oid) noexcept</td></tr>
+<tr class="separator:gaa3c51f0d200a57fb848dadeb39c79864"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga4ae9202e722b11d284c9d66a1b945838"><td class="memTemplParams" colspan="2">template&lt;typename MapImplT &gt; </td></tr>
+<tr class="memitem:ga4ae9202e722b11d284c9d66a1b945838"><td class="memTemplItemLeft" align="right" valign="top">constexpr bool&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group__group-type__system.html#ga4ae9202e722b11d284c9d66a1b945838">ozo::empty</a> (const <a class="el" href="structozo_1_1oid__map__t.html">oid_map_t</a>&lt; MapImplT &gt; &amp;map) noexcept</td></tr>
+<tr class="separator:ga4ae9202e722b11d284c9d66a1b945838"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="var-members"></a>
+Variables</h2></td></tr>
+<tr class="memitem:ga41fff92f9d5a046bcd0654312352e153"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
+<tr class="memitem:ga41fff92f9d5a046bcd0654312352e153"><td class="memTemplItemLeft" align="right" valign="top">constexpr auto&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group__group-type__system.html#ga41fff92f9d5a046bcd0654312352e153">ozo::OidMap</a></td></tr>
+<tr class="memdesc:ga41fff92f9d5a046bcd0654312352e153"><td class="mdescLeft">&#160;</td><td class="mdescRight">Map of C++ types to corresponding PostgreSQL types OIDs.  <a href="group__group-type__system.html#ga41fff92f9d5a046bcd0654312352e153">More...</a><br /></td></tr>
+<tr class="separator:ga41fff92f9d5a046bcd0654312352e153"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Macro Definition Documentation</h2>
 <a id="ga37e74e6593b00ce3dfda1213bf4b5724"></a>
@@ -187,7 +222,8 @@ using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="gro
 
 <p>Helper macro to define type mappingIn general type mapping is provided via <code><a class="el" href="structozo_1_1type__traits.html" title="Type traits template forward declaration.Type traits contains information related to it&#39;s representat...">ozo::type_traits</a></code> specialization. But for a single type you need to define a type, an array of the type, an optional of the type (to support null), shared_ptr... and many other boilerplate. To reduce such things this macro is made. </p>
 <dl class="section note"><dt>Note</dt><dd>This macro can be called in the global namespace only</dd></dl>
-<p>E.g. the definition of the <code>uuid</code> type looks like this: </p><div class="fragment"><div class="line"><a class="code" href="group__group-type__system.html#ga37e74e6593b00ce3dfda1213bf4b5724">OZO_PG_DEFINE_TYPE_AND_ARRAY</a>(boost::uuids::uuid, <span class="stringliteral">&quot;uuid&quot;</span>, UUIDOID, 2951, bytes&lt;16&gt;)</div></div><!-- fragment --><dl class="params"><dt>Parameters</dt><dd>
+<h3>Example</h3>
+<p>E.g. a definition of <code>uuid</code> type looks like this: </p><div class="fragment"><div class="line"><a class="code" href="group__group-type__system.html#ga37e74e6593b00ce3dfda1213bf4b5724">OZO_PG_DEFINE_TYPE_AND_ARRAY</a>(boost::uuids::uuid, <span class="stringliteral">&quot;uuid&quot;</span>, UUIDOID, 2951, bytes&lt;16&gt;)</div></div><!-- fragment --><p>Definition of user defined composite type may look like this: </p><div class="fragment"><div class="line">BOOST_FUSION_DEFINE_STRUCT((smtp), message,</div><div class="line">    (std::int64_t, <span class="keywordtype">id</span>)</div><div class="line">    (std::string, from)</div><div class="line">    (std::vector&lt;std::string&gt;, to)</div><div class="line">    (std::optional&lt;std::string&gt;, subject)</div><div class="line">    (std::optional&lt;std::string&gt;, text)</div><div class="line">);</div><div class="line"></div><div class="line"><span class="comment">//...</span></div><div class="line"></div><div class="line"><a class="code" href="group__group-type__system.html#ga37e74e6593b00ce3dfda1213bf4b5724">OZO_PG_DEFINE_TYPE_AND_ARRAY</a>(smtp::message, <span class="stringliteral">&quot;code.message&quot;</span>, null_oid, null_oid, dynamic_size)</div></div><!-- fragment --><dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">Type</td><td>&mdash; C++ type to be mapped to database type </td></tr>
     <tr><td class="paramname">Name</td><td>&mdash; string with name of database type </td></tr>
@@ -197,6 +233,294 @@ using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="gro
   </table>
   </dd>
 </dl>
+
+</div>
+</div>
+<h2 class="groupheader">Function Documentation</h2>
+<a id="ga0082981c9a4ca4163a43b5ac432ae2e6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga0082981c9a4ca4163a43b5ac432ae2e6">&#9670;&nbsp;</a></span>accepts_oid() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename T , typename MapImplT &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool ozo::accepts_oid </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="structozo_1_1oid__map__t.html">oid_map_t</a>&lt; MapImplT &gt; &amp;&#160;</td>
+          <td class="paramname"><em>map</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="group__group-type__system.html#ga442ba8c3d090543cf6278acb4fed5e66">oid_t</a>&#160;</td>
+          <td class="paramname"><em>oid</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Function returns true if type can be obtained from DB response with specified OID.</p>
+<dl class="tparams"><dt>Template Parameters</dt><dd>
+  <table class="tparams">
+    <tr><td class="paramname">T</td><td>&mdash; type to examine </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">map</td><td>&mdash; <a class="el" href="group__group-type__system.html#ga41fff92f9d5a046bcd0654312352e153" title="Map of C++ types to corresponding PostgreSQL types OIDs. ">OidMap</a> to get type OID from </td></tr>
+    <tr><td class="paramname">oid</td><td>&mdash; OID to check for compatibility </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="gaa3c51f0d200a57fb848dadeb39c79864"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#gaa3c51f0d200a57fb848dadeb39c79864">&#9670;&nbsp;</a></span>accepts_oid() <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename T , typename MapImplT &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool ozo::accepts_oid </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="structozo_1_1oid__map__t.html">oid_map_t</a>&lt; MapImplT &gt; &amp;&#160;</td>
+          <td class="paramname"><em>map</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const T &amp;&#160;</td>
+          <td class="paramname">, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="group__group-type__system.html#ga442ba8c3d090543cf6278acb4fed5e66">oid_t</a>&#160;</td>
+          <td class="paramname"><em>oid</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Function returns true if type can be obtained from DB response with specified OID.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">map</td><td>&mdash; <a class="el" href="group__group-type__system.html#ga41fff92f9d5a046bcd0654312352e153" title="Map of C++ types to corresponding PostgreSQL types OIDs. ">OidMap</a> to get type OID from </td></tr>
+    <tr><td class="paramname">const</td><td>T&amp; &mdash; type to examine </td></tr>
+    <tr><td class="paramname">oid</td><td>&mdash; OID to check for compatibility </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="ga4ae9202e722b11d284c9d66a1b945838"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga4ae9202e722b11d284c9d66a1b945838">&#9670;&nbsp;</a></span>empty()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename MapImplT &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">constexpr bool ozo::empty </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="structozo_1_1oid__map__t.html">oid_map_t</a>&lt; MapImplT &gt; &amp;&#160;</td>
+          <td class="paramname"><em>map</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Checks if <a class="el" href="group__group-type__system.html#ga41fff92f9d5a046bcd0654312352e153" title="Map of C++ types to corresponding PostgreSQL types OIDs. ">OidMap</a> contains no items.</p>
+<p><br />
+ ### Example </p><div class="fragment"><div class="line">static_assert(<a class="code" href="group__group-type__system.html#ga4ae9202e722b11d284c9d66a1b945838">empty</a>(<a class="code" href="group__group-type__system.html#gac3359e5eddcb6e0b661a97e33bfcd215">ozo::empty_oid_map</a>{}));</div></div><!-- fragment --> <dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">map</td><td>&mdash; OidMap to check </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd><code>true</code> if map contains no items, <code>false</code> - if contains. </dd></dl>
+
+</div>
+</div>
+<a id="gac97d30cda822b83aa3d54f60c658f8f7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#gac97d30cda822b83aa3d54f60c658f8f7">&#9670;&nbsp;</a></span>register_types()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename ... T&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">decltype(auto) constexpr ozo::register_types </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Provides <a class="el" href="group__group-type__system.html#ga41fff92f9d5a046bcd0654312352e153" title="Map of C++ types to corresponding PostgreSQL types OIDs. ">OidMap</a> implementation for user-defined types. </p>
+<p>This function have to be used to provide information about custom types are being used within requests for a <a class="el" href="group__group-connection-concepts.html#gaeb64411053912bede2d7d7ad7c8057b3" title="ConnectionSource concept. ">ConnectionSource</a>.</p>
+<h3>Example</h3>
+<div class="fragment"><div class="line"><span class="comment">// User defined type</span></div><div class="line"><span class="keyword">struct </span>custom_type;</div><div class="line"></div><div class="line"><span class="comment">//...</span></div><div class="line"></div><div class="line"><span class="comment">// Providing type information and corresponding database type</span></div><div class="line"><a class="code" href="group__group-type__system.html#ga37e74e6593b00ce3dfda1213bf4b5724">OZO_PG_DEFINE_TYPE_AND_ARRAY</a>(custom_type, <span class="stringliteral">&quot;code.custom_type&quot;</span>, null_oid, null_oid, dynamic_size)</div><div class="line"></div><div class="line"><span class="comment">//...</span></div><div class="line"><span class="comment">// Creating ConnectionSource for futher requests to a database</span></div><div class="line"><span class="keyword">const</span> <span class="keyword">auto</span> conn_source = ozo::make_connection_info(<span class="stringliteral">&quot;...&quot;</span>, regiter_types&lt;custom_type&gt;());</div></div><!-- fragment --><dl class="section return"><dt>Returns</dt><dd><code><a class="el" href="structozo_1_1oid__map__t.html" title="OidMap implementation type.This type implements OidMap concept based on boost::hana::map. ">oid_map_t</a></code> object. </dd></dl>
+
+</div>
+</div>
+<a id="ga078aef0d58433783f8d0cba352732993"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga078aef0d58433783f8d0cba352732993">&#9670;&nbsp;</a></span>set_type_oid()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename T , typename MapImplT &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void ozo::set_type_oid </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="structozo_1_1oid__map__t.html">oid_map_t</a>&lt; MapImplT &gt; &amp;&#160;</td>
+          <td class="paramname"><em>map</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="group__group-type__system.html#ga442ba8c3d090543cf6278acb4fed5e66">oid_t</a>&#160;</td>
+          <td class="paramname"><em>oid</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Function sets oid for type in <a class="el" href="group__group-type__system.html#ga41fff92f9d5a046bcd0654312352e153" title="Map of C++ types to corresponding PostgreSQL types OIDs. ">OidMap</a>.</p>
+<dl class="tparams"><dt>Template Parameters</dt><dd>
+  <table class="tparams">
+    <tr><td class="paramname">T</td><td>&mdash; type to set oid for. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">map</td><td>&mdash; <a class="el" href="group__group-type__system.html#ga41fff92f9d5a046bcd0654312352e153" title="Map of C++ types to corresponding PostgreSQL types OIDs. ">OidMap</a> to modify. </td></tr>
+    <tr><td class="paramname">oid</td><td>&mdash; OID to set. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="gabd81e4419a6e16ea9cb416cf8348e35f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#gabd81e4419a6e16ea9cb416cf8348e35f">&#9670;&nbsp;</a></span>type_oid()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename T , typename MapImplT &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">auto ozo::type_oid </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="structozo_1_1oid__map__t.html">oid_map_t</a>&lt; MapImplT &gt; &amp;&#160;</td>
+          <td class="paramname"><em>map</em></td><td>)</td>
+          <td> -&gt; std::enable_if_t&lt;!<a class="el" href="structozo_1_1is__built__in.html">is_built_in</a>&lt;T&gt;::value, <a class="el" href="group__group-type__system.html#ga442ba8c3d090543cf6278acb4fed5e66">oid_t</a>&gt; </td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Function returns oid for type from <a class="el" href="group__group-type__system.html#ga41fff92f9d5a046bcd0654312352e153" title="Map of C++ types to corresponding PostgreSQL types OIDs. ">OidMap</a>.</p>
+<dl class="tparams"><dt>Template Parameters</dt><dd>
+  <table class="tparams">
+    <tr><td class="paramname">T</td><td>&mdash; type to get OID for. &amp;param map &mdash; <a class="el" href="group__group-type__system.html#ga41fff92f9d5a046bcd0654312352e153" title="Map of C++ types to corresponding PostgreSQL types OIDs. ">OidMap</a> to get OID from. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<h2 class="groupheader">Variable Documentation</h2>
+<a id="ga41fff92f9d5a046bcd0654312352e153"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga41fff92f9d5a046bcd0654312352e153">&#9670;&nbsp;</a></span>OidMap</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename T &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">constexpr auto ozo::OidMap</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Map of C++ types to corresponding PostgreSQL types OIDs. </p>
+<p><code>OidMap</code> is needed to store information about C++ types and corresponding custom database types' OIDs. For PostgreSQL built-in types no mapping is needed since their <code>OID</code>s are defined in PostgreSQL sources. For custom types their <code>OID</code>s are defined in a database.</p>
+<h3>OidMap Definition</h3>
+<p><code>OidMap</code> <code>map</code> is an object for which these next statements are valid:</p>
+<div class="fragment"><div class="line"><a class="code" href="group__group-type__system.html#ga442ba8c3d090543cf6278acb4fed5e66">oid_t</a> oid;</div><div class="line"><span class="comment">//...</span></div><div class="line">set_type_oid&lt;T&gt;(map, oid);</div></div><!-- fragment --><p> Sets oid for type T in the map.</p>
+<div class="fragment"><div class="line"><a class="code" href="group__group-type__system.html#ga442ba8c3d090543cf6278acb4fed5e66">oid_t</a> oid = type_oid&lt;T&gt;(map);</div></div><!-- fragment --><p> Returns oid value for type T from the map.</p>
+<div class="fragment"><div class="line"><span class="keywordtype">bool</span> res = <a class="code" href="group__group-type__system.html#ga4ae9202e722b11d284c9d66a1b945838">empty</a>(map);</div></div><!-- fragment --><p> Returns true if map has no types OIDs.</p>
+<dl class="section see"><dt>See also</dt><dd><a class="el" href="structozo_1_1oid__map__t.html" title="OidMap implementation type.This type implements OidMap concept based on boost::hana::map. ">oid_map_t</a>, <a class="el" href="group__group-type__system.html#gac97d30cda822b83aa3d54f60c658f8f7" title="Provides OidMap implementation for user-defined types. ">register_types()</a>, <a class="el" href="group__group-type__system.html#ga078aef0d58433783f8d0cba352732993">set_type_oid()</a>, <a class="el" href="group__group-type__system.html#gabd81e4419a6e16ea9cb416cf8348e35f">type_oid()</a>, <a class="el" href="group__group-type__system.html#ga0082981c9a4ca4163a43b5ac432ae2e6">accepts_oid()</a> </dd></dl>
 
 </div>
 </div>

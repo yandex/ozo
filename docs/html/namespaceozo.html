@@ -127,17 +127,13 @@ Classes</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structozo_1_1get__connection__type.html">get_connection_type</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Connection type getter.  <a href="structozo_1_1get__connection__type.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structozo_1_1is__array.html">is_array</a></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structozo_1_1is__built__in.html">is_built_in</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Condition indicates if the specified type is built-in for PG.  <a href="structozo_1_1is__built__in.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structozo_1_1is__composite.html">is_composite</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Indicates if type is a composite.In general we suppose that composite is a type being adapted for introspection via Boost.Fusion or Boost.Hana, including tuples and compile-time sequences.  <a href="structozo_1_1is__composite.html#details">More...</a><br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structozo_1_1is__nullable_3_01boost_1_1optional_3_01_t_01_4_01_4.html">is_nullable&lt; boost::optional&lt; T &gt; &gt;</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structozo_1_1is__string.html">is_string</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structozo_1_1oid__map__t.html">oid_map_t</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">OidMap implementation type.This type implements OidMap concept based on <code>boost::hana::map</code>.  <a href="structozo_1_1oid__map__t.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structozo_1_1time__traits.html">time_traits</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Time traits of the library.  <a href="structozo_1_1time__traits.html#details">More...</a><br /></td></tr>
@@ -146,7 +142,7 @@ Classes</h2></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Type traits template forward declaration.Type traits contains information related to it's representation in the database. There are two different kind of traits - built-in types with constant OIDs and custom types with database depent OIDs. The functions below describe neccesary traits. For built-in types traits will be defined there. For custom types user must define traits.  <a href="structozo_1_1type__traits.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structozo_1_1type__traits__helper.html">type_traits_helper</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Helper defines the way for the type traits definitions.Type is undefined then Name type is not defined.  <a href="structozo_1_1type__traits__helper.html#details">More...</a><br /></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Helper for the type traits definitions.  <a href="structozo_1_1type__traits__helper.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="typedef-members"></a>
@@ -175,15 +171,13 @@ using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="gro
 using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__group-type__system.html#ga6a1c0d23ef107382f509f84757125558">null_oid_t</a> = std::integral_constant&lt; <a class="el" href="group__group-type__system.html#ga442ba8c3d090543cf6278acb4fed5e66">oid_t</a>, 0 &gt;</td></tr>
 <tr class="memdesc:ga6a1c0d23ef107382f509f84757125558"><td class="mdescLeft">&#160;</td><td class="mdescRight">Type for non initialized OID. <br /></td></tr>
 <tr class="separator:ga6a1c0d23ef107382f509f84757125558"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a32551233c932c46a24f162fcf710e7ab"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
-<tr class="memitem:a32551233c932c46a24f162fcf710e7ab"><td class="memTemplItemLeft" align="right" valign="top">using&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespaceozo.html#a32551233c932c46a24f162fcf710e7ab">is_fusion_adapted</a> = std::integral_constant&lt; bool, boost::fusion::traits::is_sequence&lt; T &gt;::value &gt;</td></tr>
-<tr class="separator:a32551233c932c46a24f162fcf710e7ab"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1e8ece917416670644622e226e7e4ae6"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
-<tr class="memitem:a1e8ece917416670644622e226e7e4ae6"><td class="memTemplItemLeft" align="right" valign="top">using&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespaceozo.html#a1e8ece917416670644622e226e7e4ae6">is_hana_adapted</a> = std::integral_constant&lt; bool, hana::Sequence&lt; T &gt;::value||hana::Struct&lt; T &gt;::value &gt;</td></tr>
-<tr class="separator:a1e8ece917416670644622e226e7e4ae6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae84976a5236f3a5c189a8c54ef51b230"><td class="memTemplParams" colspan="2">template&lt;std::size_t n&gt; </td></tr>
 <tr class="memitem:ae84976a5236f3a5c189a8c54ef51b230"><td class="memTemplItemLeft" align="right" valign="top">using&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespaceozo.html#ae84976a5236f3a5c189a8c54ef51b230">bytes</a> = std::integral_constant&lt; std::size_t, n &gt;</td></tr>
 <tr class="separator:ae84976a5236f3a5c189a8c54ef51b230"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gac3359e5eddcb6e0b661a97e33bfcd215"><td class="memItemLeft" align="right" valign="top">
+using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__group-type__system.html#gac3359e5eddcb6e0b661a97e33bfcd215">empty_oid_map</a> = std::decay_t&lt; decltype(<a class="el" href="group__group-type__system.html#gac97d30cda822b83aa3d54f60c658f8f7">register_types</a>&lt;&gt;())&gt;</td></tr>
+<tr class="memdesc:gac3359e5eddcb6e0b661a97e33bfcd215"><td class="mdescLeft">&#160;</td><td class="mdescRight">Type alias for empty <a class="el" href="group__group-type__system.html#ga41fff92f9d5a046bcd0654312352e153" title="Map of C++ types to corresponding PostgreSQL types OIDs. ">OidMap</a>. <br /></td></tr>
+<tr class="separator:gac3359e5eddcb6e0b661a97e33bfcd215"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
@@ -275,10 +269,10 @@ Functions</h2></td></tr>
 <tr class="memitem:ga333c7d2b1aaaf6eaee1678a4e7e50927"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group__group-connection-functions.html#ga333c7d2b1aaaf6eaee1678a4e7e50927">close_connection</a> (T &amp;&amp;conn)</td></tr>
 <tr class="memdesc:ga333c7d2b1aaaf6eaee1678a4e7e50927"><td class="mdescLeft">&#160;</td><td class="mdescRight">Close connection to the database immediately.  <a href="group__group-connection-functions.html#ga333c7d2b1aaaf6eaee1678a4e7e50927">More...</a><br /></td></tr>
 <tr class="separator:ga333c7d2b1aaaf6eaee1678a4e7e50927"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga8883fdec7a4df0150147f8736af47340"><td class="memTemplParams" colspan="2">template&lt;typename P , typename Q , typename CompletionToken , typename  = Require&lt;ConnectionProvider&lt;P&gt;&gt;&gt; </td></tr>
-<tr class="memitem:ga8883fdec7a4df0150147f8736af47340"><td class="memTemplItemLeft" align="right" valign="top">auto&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group__group-requests.html#ga8883fdec7a4df0150147f8736af47340">execute</a> (P &amp;&amp;provider, Q &amp;&amp;query, <a class="el" href="group__group-core-concepts.html#ga6513d4477f12ddf822036eb03d7891fa">CompletionToken</a> &amp;&amp;token)</td></tr>
-<tr class="memdesc:ga8883fdec7a4df0150147f8736af47340"><td class="mdescLeft">&#160;</td><td class="mdescRight">Executes query but does not return a resultThis function is same as <code><a class="el" href="group__group-requests.html#ga3d2edd9e8d3aea4aee843a539d14eb0b" title="Send request to a database and provides query result (time-out version).  The function sends request ...">ozo::request()</a></code> function except it does not return any result. It suitable to use with <code>UPDATE</code> <code>INSERT</code> statements, or invoking procedures without result.  <a href="group__group-requests.html#ga8883fdec7a4df0150147f8736af47340">More...</a><br /></td></tr>
-<tr class="separator:ga8883fdec7a4df0150147f8736af47340"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga438ed9c31739b1ce13f5f8eae1bbf655"><td class="memTemplParams" colspan="2">template&lt;typename P , typename Q , typename CompletionToken , typename  = Require&lt;ConnectionProvider&lt;P&gt;&gt;&gt; </td></tr>
+<tr class="memitem:ga438ed9c31739b1ce13f5f8eae1bbf655"><td class="memTemplItemLeft" align="right" valign="top">auto&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group__group-requests.html#ga438ed9c31739b1ce13f5f8eae1bbf655">execute</a> (P &amp;&amp;provider, Q &amp;&amp;query, const <a class="el" href="structozo_1_1time__traits.html#a7272c9a4857bf785826771866f18fe67">time_traits::duration</a> &amp;timeout, <a class="el" href="group__group-core-concepts.html#ga6513d4477f12ddf822036eb03d7891fa">CompletionToken</a> &amp;&amp;token)</td></tr>
+<tr class="memdesc:ga438ed9c31739b1ce13f5f8eae1bbf655"><td class="mdescLeft">&#160;</td><td class="mdescRight">Executes query but does not return a resultThis function is same as <code><a class="el" href="group__group-requests.html#ga3d2edd9e8d3aea4aee843a539d14eb0b" title="Send request to a database and provides query result (time-out version).  The function sends request ...">ozo::request()</a></code> function except it does not return any result. It suitable to use with <code>UPDATE</code> <code>INSERT</code> statements, or invoking procedures without result.  <a href="group__group-requests.html#ga438ed9c31739b1ce13f5f8eae1bbf655">More...</a><br /></td></tr>
+<tr class="separator:ga438ed9c31739b1ce13f5f8eae1bbf655"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga3d2edd9e8d3aea4aee843a539d14eb0b"><td class="memTemplParams" colspan="2">template&lt;typename P , typename Q , typename Out , typename CompletionToken , typename  = Require&lt;ConnectionProvider&lt;P&gt;&gt;&gt; </td></tr>
 <tr class="memitem:ga3d2edd9e8d3aea4aee843a539d14eb0b"><td class="memTemplItemLeft" align="right" valign="top">auto&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group__group-requests.html#ga3d2edd9e8d3aea4aee843a539d14eb0b">request</a> (P &amp;&amp;provider, Q &amp;&amp;query, const <a class="el" href="structozo_1_1time__traits.html#a7272c9a4857bf785826771866f18fe67">time_traits::duration</a> &amp;timeout, Out out, <a class="el" href="group__group-core-concepts.html#ga6513d4477f12ddf822036eb03d7891fa">CompletionToken</a> &amp;&amp;token)</td></tr>
 <tr class="memdesc:ga3d2edd9e8d3aea4aee843a539d14eb0b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Send request to a database and provides query result (time-out version).<br />
@@ -302,15 +296,25 @@ Functions</h2></td></tr>
 <tr class="memitem:af25063f8ee373256aacd69febdd31517"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
 <tr class="memitem:af25063f8ee373256aacd69febdd31517"><td class="memTemplItemLeft" align="right" valign="top">constexpr auto&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespaceozo.html#af25063f8ee373256aacd69febdd31517">size_of</a> (T &amp;&amp;) noexcept -&gt; typename std::enable_if&lt; !is_dynamic_size&lt; std::decay_t&lt; T &gt;&gt;::value, typename <a class="el" href="structozo_1_1type__traits.html">type_traits</a>&lt; std::decay_t&lt; T &gt;&gt;::size &gt;::type</td></tr>
 <tr class="separator:af25063f8ee373256aacd69febdd31517"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a078aef0d58433783f8d0cba352732993"><td class="memTemplParams" colspan="2">template&lt;typename T , typename MapImplT &gt; </td></tr>
-<tr class="memitem:a078aef0d58433783f8d0cba352732993"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespaceozo.html#a078aef0d58433783f8d0cba352732993">set_type_oid</a> (oid_map_t&lt; MapImplT &gt; &amp;map, <a class="el" href="group__group-type__system.html#ga442ba8c3d090543cf6278acb4fed5e66">oid_t</a> oid) noexcept</td></tr>
-<tr class="separator:a078aef0d58433783f8d0cba352732993"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abd81e4419a6e16ea9cb416cf8348e35f"><td class="memTemplParams" colspan="2">template&lt;typename T , typename MapImplT &gt; </td></tr>
-<tr class="memitem:abd81e4419a6e16ea9cb416cf8348e35f"><td class="memTemplItemLeft" align="right" valign="top">auto&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespaceozo.html#abd81e4419a6e16ea9cb416cf8348e35f">type_oid</a> (const oid_map_t&lt; MapImplT &gt; &amp;map) noexcept -&gt; std::enable_if_t&lt;!<a class="el" href="structozo_1_1is__built__in.html">is_built_in</a>&lt; T &gt;::value, <a class="el" href="group__group-type__system.html#ga442ba8c3d090543cf6278acb4fed5e66">oid_t</a> &gt;</td></tr>
-<tr class="separator:abd81e4419a6e16ea9cb416cf8348e35f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0082981c9a4ca4163a43b5ac432ae2e6"><td class="memTemplParams" colspan="2">template&lt;typename T , typename MapImplT &gt; </td></tr>
-<tr class="memitem:a0082981c9a4ca4163a43b5ac432ae2e6"><td class="memTemplItemLeft" align="right" valign="top">bool&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespaceozo.html#a0082981c9a4ca4163a43b5ac432ae2e6">accepts_oid</a> (const oid_map_t&lt; MapImplT &gt; &amp;map, <a class="el" href="group__group-type__system.html#ga442ba8c3d090543cf6278acb4fed5e66">oid_t</a> oid) noexcept</td></tr>
-<tr class="separator:a0082981c9a4ca4163a43b5ac432ae2e6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gac97d30cda822b83aa3d54f60c658f8f7"><td class="memTemplParams" colspan="2">template&lt;typename ... T&gt; </td></tr>
+<tr class="memitem:gac97d30cda822b83aa3d54f60c658f8f7"><td class="memTemplItemLeft" align="right" valign="top">decltype(auto) constexpr&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group__group-type__system.html#gac97d30cda822b83aa3d54f60c658f8f7">register_types</a> () noexcept</td></tr>
+<tr class="memdesc:gac97d30cda822b83aa3d54f60c658f8f7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Provides <a class="el" href="group__group-type__system.html#ga41fff92f9d5a046bcd0654312352e153" title="Map of C++ types to corresponding PostgreSQL types OIDs. ">OidMap</a> implementation for user-defined types.  <a href="group__group-type__system.html#gac97d30cda822b83aa3d54f60c658f8f7">More...</a><br /></td></tr>
+<tr class="separator:gac97d30cda822b83aa3d54f60c658f8f7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga078aef0d58433783f8d0cba352732993"><td class="memTemplParams" colspan="2">template&lt;typename T , typename MapImplT &gt; </td></tr>
+<tr class="memitem:ga078aef0d58433783f8d0cba352732993"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group__group-type__system.html#ga078aef0d58433783f8d0cba352732993">set_type_oid</a> (<a class="el" href="structozo_1_1oid__map__t.html">oid_map_t</a>&lt; MapImplT &gt; &amp;map, <a class="el" href="group__group-type__system.html#ga442ba8c3d090543cf6278acb4fed5e66">oid_t</a> oid) noexcept</td></tr>
+<tr class="separator:ga078aef0d58433783f8d0cba352732993"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gabd81e4419a6e16ea9cb416cf8348e35f"><td class="memTemplParams" colspan="2">template&lt;typename T , typename MapImplT &gt; </td></tr>
+<tr class="memitem:gabd81e4419a6e16ea9cb416cf8348e35f"><td class="memTemplItemLeft" align="right" valign="top">auto&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group__group-type__system.html#gabd81e4419a6e16ea9cb416cf8348e35f">type_oid</a> (const <a class="el" href="structozo_1_1oid__map__t.html">oid_map_t</a>&lt; MapImplT &gt; &amp;map) noexcept -&gt; std::enable_if_t&lt;!<a class="el" href="structozo_1_1is__built__in.html">is_built_in</a>&lt; T &gt;::value, <a class="el" href="group__group-type__system.html#ga442ba8c3d090543cf6278acb4fed5e66">oid_t</a> &gt;</td></tr>
+<tr class="separator:gabd81e4419a6e16ea9cb416cf8348e35f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga0082981c9a4ca4163a43b5ac432ae2e6"><td class="memTemplParams" colspan="2">template&lt;typename T , typename MapImplT &gt; </td></tr>
+<tr class="memitem:ga0082981c9a4ca4163a43b5ac432ae2e6"><td class="memTemplItemLeft" align="right" valign="top">bool&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group__group-type__system.html#ga0082981c9a4ca4163a43b5ac432ae2e6">accepts_oid</a> (const <a class="el" href="structozo_1_1oid__map__t.html">oid_map_t</a>&lt; MapImplT &gt; &amp;map, <a class="el" href="group__group-type__system.html#ga442ba8c3d090543cf6278acb4fed5e66">oid_t</a> oid) noexcept</td></tr>
+<tr class="separator:ga0082981c9a4ca4163a43b5ac432ae2e6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gaa3c51f0d200a57fb848dadeb39c79864"><td class="memTemplParams" colspan="2">template&lt;typename T , typename MapImplT &gt; </td></tr>
+<tr class="memitem:gaa3c51f0d200a57fb848dadeb39c79864"><td class="memTemplItemLeft" align="right" valign="top">bool&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group__group-type__system.html#gaa3c51f0d200a57fb848dadeb39c79864">accepts_oid</a> (const <a class="el" href="structozo_1_1oid__map__t.html">oid_map_t</a>&lt; MapImplT &gt; &amp;map, const T &amp;, <a class="el" href="group__group-type__system.html#ga442ba8c3d090543cf6278acb4fed5e66">oid_t</a> oid) noexcept</td></tr>
+<tr class="separator:gaa3c51f0d200a57fb848dadeb39c79864"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga4ae9202e722b11d284c9d66a1b945838"><td class="memTemplParams" colspan="2">template&lt;typename MapImplT &gt; </td></tr>
+<tr class="memitem:ga4ae9202e722b11d284c9d66a1b945838"><td class="memTemplItemLeft" align="right" valign="top">constexpr bool&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group__group-type__system.html#ga4ae9202e722b11d284c9d66a1b945838">empty</a> (const <a class="el" href="structozo_1_1oid__map__t.html">oid_map_t</a>&lt; MapImplT &gt; &amp;map) noexcept</td></tr>
+<tr class="separator:ga4ae9202e722b11d284c9d66a1b945838"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="var-members"></a>
 Variables</h2></td></tr>
@@ -368,7 +372,7 @@ Variables</h2></td></tr>
 <tr class="separator:ga351423cc3c81ca247a3c8ecea7beabb2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga21d1faddb4ee1e9ff5d132885fc03713"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
 <tr class="memitem:ga21d1faddb4ee1e9ff5d132885fc03713"><td class="memTemplItemLeft" align="right" valign="top">constexpr auto&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group__group-core-concepts.html#ga21d1faddb4ee1e9ff5d132885fc03713">RawDataWritable</a></td></tr>
-<tr class="memdesc:ga21d1faddb4ee1e9ff5d132885fc03713"><td class="mdescLeft">&#160;</td><td class="mdescRight">Raw Data Writable concept.  <a href="group__group-core-concepts.html#ga21d1faddb4ee1e9ff5d132885fc03713">More...</a><br /></td></tr>
+<tr class="memdesc:ga21d1faddb4ee1e9ff5d132885fc03713"><td class="mdescLeft">&#160;</td><td class="mdescRight">RawDataWritable concept.  <a href="group__group-core-concepts.html#ga21d1faddb4ee1e9ff5d132885fc03713">More...</a><br /></td></tr>
 <tr class="separator:ga21d1faddb4ee1e9ff5d132885fc03713"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga474575596a9253f3aad1f7ff5014425b"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
 <tr class="memitem:ga474575596a9253f3aad1f7ff5014425b"><td class="memTemplItemLeft" align="right" valign="top">constexpr auto&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group__group-core-concepts.html#ga474575596a9253f3aad1f7ff5014425b">Emplaceable</a></td></tr>
@@ -394,6 +398,10 @@ Variables</h2></td></tr>
 <tr class="memitem:ga5cb469295c856e5df036e640a55322b1"><td class="memTemplItemLeft" align="right" valign="top">constexpr auto&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group__group-core-concepts.html#ga5cb469295c856e5df036e640a55322b1">Nullable</a></td></tr>
 <tr class="memdesc:ga5cb469295c856e5df036e640a55322b1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Indicates if type meets nullable requirements.  <a href="group__group-core-concepts.html#ga5cb469295c856e5df036e640a55322b1">More...</a><br /></td></tr>
 <tr class="separator:ga5cb469295c856e5df036e640a55322b1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga41fff92f9d5a046bcd0654312352e153"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
+<tr class="memitem:ga41fff92f9d5a046bcd0654312352e153"><td class="memTemplItemLeft" align="right" valign="top">constexpr auto&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group__group-type__system.html#ga41fff92f9d5a046bcd0654312352e153">OidMap</a></td></tr>
+<tr class="memdesc:ga41fff92f9d5a046bcd0654312352e153"><td class="mdescLeft">&#160;</td><td class="mdescRight">Map of C++ types to corresponding PostgreSQL types OIDs.  <a href="group__group-type__system.html#ga41fff92f9d5a046bcd0654312352e153">More...</a><br /></td></tr>
+<tr class="separator:ga41fff92f9d5a046bcd0654312352e153"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Description</h2>
 <div class="textblock"><p>Useful shortcuts for typed unnamed results containers </p>
@@ -415,119 +423,7 @@ template&lt;std::size_t n&gt; </div>
 
 </div>
 </div>
-<a id="a32551233c932c46a24f162fcf710e7ab"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a32551233c932c46a24f162fcf710e7ab">&#9670;&nbsp;</a></span>is_fusion_adapted</h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;typename T &gt; </div>
-      <table class="memname">
-        <tr>
-          <td class="memname">using <a class="el" href="namespaceozo.html#a32551233c932c46a24f162fcf710e7ab">ozo::is_fusion_adapted</a> = typedef std::integral_constant&lt;bool, boost::fusion::traits::is_sequence&lt;T&gt;::value &gt;</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<p>Indicates if type is adapted for introspection with Boost.Fusion </p>
-
-</div>
-</div>
-<a id="a1e8ece917416670644622e226e7e4ae6"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a1e8ece917416670644622e226e7e4ae6">&#9670;&nbsp;</a></span>is_hana_adapted</h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;typename T &gt; </div>
-      <table class="memname">
-        <tr>
-          <td class="memname">using <a class="el" href="namespaceozo.html#a1e8ece917416670644622e226e7e4ae6">ozo::is_hana_adapted</a> = typedef std::integral_constant&lt;bool, hana::Sequence&lt;T&gt;::value || hana::Struct&lt;T&gt;::value &gt;</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<p>Indicates if type is adapted for introspection with Boost.Hana </p>
-
-</div>
-</div>
 <h2 class="groupheader">Function Documentation</h2>
-<a id="a0082981c9a4ca4163a43b5ac432ae2e6"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0082981c9a4ca4163a43b5ac432ae2e6">&#9670;&nbsp;</a></span>accepts_oid()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;typename T , typename MapImplT &gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">bool ozo::accepts_oid </td>
-          <td>(</td>
-          <td class="paramtype">const oid_map_t&lt; MapImplT &gt; &amp;&#160;</td>
-          <td class="paramname"><em>map</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="group__group-type__system.html#ga442ba8c3d090543cf6278acb4fed5e66">oid_t</a>&#160;</td>
-          <td class="paramname"><em>oid</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">noexcept</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-<p>Function returns true if type can be obtained from DB response with specified oid. </p>
-
-</div>
-</div>
-<a id="a078aef0d58433783f8d0cba352732993"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a078aef0d58433783f8d0cba352732993">&#9670;&nbsp;</a></span>set_type_oid()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;typename T , typename MapImplT &gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">void ozo::set_type_oid </td>
-          <td>(</td>
-          <td class="paramtype">oid_map_t&lt; MapImplT &gt; &amp;&#160;</td>
-          <td class="paramname"><em>map</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="group__group-type__system.html#ga442ba8c3d090543cf6278acb4fed5e66">oid_t</a>&#160;</td>
-          <td class="paramname"><em>oid</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">noexcept</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-<p>Function sets oid for type in oid map. </p>
-
-</div>
-</div>
 <a id="af25063f8ee373256aacd69febdd31517"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#af25063f8ee373256aacd69febdd31517">&#9670;&nbsp;</a></span>size_of()</h2>
 
@@ -584,35 +480,6 @@ template&lt;typename T &gt; </div>
 </table>
 </div><div class="memdoc">
 <p>Function returns type name in Postgre SQL. For custom types user must define this name. </p>
-
-</div>
-</div>
-<a id="abd81e4419a6e16ea9cb416cf8348e35f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#abd81e4419a6e16ea9cb416cf8348e35f">&#9670;&nbsp;</a></span>type_oid()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;typename T , typename MapImplT &gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">auto ozo::type_oid </td>
-          <td>(</td>
-          <td class="paramtype">const oid_map_t&lt; MapImplT &gt; &amp;&#160;</td>
-          <td class="paramname"><em>map</em></td><td>)</td>
-          <td> -&gt; std::enable_if_t&lt;!<a class="el" href="structozo_1_1is__built__in.html">is_built_in</a>&lt;T&gt;::value, <a class="el" href="group__group-type__system.html#ga442ba8c3d090543cf6278acb4fed5e66">oid_t</a>&gt; </td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">noexcept</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-<p>Function returns oid for type from oid map. </p>
 
 </div>
 </div>

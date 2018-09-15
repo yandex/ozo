@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['fetch_5fcontext',['fetch_context',['../structozo_1_1impl_1_1fetch__context.html',1,'ozo::impl']]]
+  ['get_5fconnection_5ftype',['get_connection_type',['../structozo_1_1get__connection__type.html',1,'ozo']]]
 ];
