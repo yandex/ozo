@@ -171,7 +171,7 @@ Variables</h2></td></tr>
 <tr class="separator:ga351423cc3c81ca247a3c8ecea7beabb2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga21d1faddb4ee1e9ff5d132885fc03713"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
 <tr class="memitem:ga21d1faddb4ee1e9ff5d132885fc03713"><td class="memTemplItemLeft" align="right" valign="top">constexpr auto&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group__group-core-concepts.html#ga21d1faddb4ee1e9ff5d132885fc03713">ozo::RawDataWritable</a></td></tr>
-<tr class="memdesc:ga21d1faddb4ee1e9ff5d132885fc03713"><td class="mdescLeft">&#160;</td><td class="mdescRight">Raw Data Writable concept.  <a href="group__group-core-concepts.html#ga21d1faddb4ee1e9ff5d132885fc03713">More...</a><br /></td></tr>
+<tr class="memdesc:ga21d1faddb4ee1e9ff5d132885fc03713"><td class="mdescLeft">&#160;</td><td class="mdescRight">RawDataWritable concept.  <a href="group__group-core-concepts.html#ga21d1faddb4ee1e9ff5d132885fc03713">More...</a><br /></td></tr>
 <tr class="separator:ga21d1faddb4ee1e9ff5d132885fc03713"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga474575596a9253f3aad1f7ff5014425b"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
 <tr class="memitem:ga474575596a9253f3aad1f7ff5014425b"><td class="memTemplItemLeft" align="right" valign="top">constexpr auto&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group__group-core-concepts.html#ga474575596a9253f3aad1f7ff5014425b">ozo::Emplaceable</a></td></tr>
@@ -625,8 +625,8 @@ template&lt;typename T &gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p>Raw Data Writable concept. </p>
-<p>Indicates if T can be written as a sequence of bytes without endian conversion </p><dl class="tparams"><dt>Template Parameters</dt><dd>
+<p>RawDataWritable concept. </p>
+<p>Indicates if T can be written as a sequence of bytes without endian conversion. <code>RawDataWritable&lt;T&gt;</code> is true if for object <code>v</code> of type <code>T</code> applicable one of this code: </p><div class="fragment"><div class="line"><span class="keyword">auto</span> raw = v.data();              <span class="comment">// has_data&lt;T,</span></div><div class="line">static_assert(<span class="keyword">sizeof</span>(*raw) == 1); <span class="comment">//            1&gt;</span></div><div class="line"><span class="keyword">auto</span> n = v.size();                <span class="comment">// has_size&lt;T&gt;</span></div></div><!-- fragment --><p> or </p><div class="fragment"><div class="line"><span class="keyword">auto</span> raw = data(v);               <span class="comment">// has_friend_data&lt;T,</span></div><div class="line">static_assert(<span class="keyword">sizeof</span>(*raw) == 1); <span class="comment">//                   1&gt;</span></div><div class="line"><span class="keyword">auto</span> n = size(v);                 <span class="comment">// has_friend_size&lt;T&gt;</span></div></div><!-- fragment --> <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">T</td><td>- type to examine </td></tr>
   </table>

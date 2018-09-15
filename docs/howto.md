@@ -40,7 +40,7 @@ int main() {
 
     // Request with connection provider, query and callback.
     // Provider binds how to get connection with io_context.
-    ozo::request(ozo::make_provider(io, conn_info), query, ozo::into(rows),
+    ozo::request(ozo::make_connector(io, conn_info), query, ozo::into(rows),
             [&](ozo::error_code ec, auto conn) {
         if (ec) {
             // Here we got an error, so we can get:
