@@ -2,6 +2,7 @@
 
 #include <ozo/detail/pg_type.h>
 #include <ozo/detail/float.h>
+#include <ozo/detail/strong_typedef.h>
 
 #include <libpq-fe.h>
 
@@ -17,7 +18,6 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/weak_ptr.hpp>
-#include <boost/serialization/strong_typedef.hpp>
 
 // Fusion adaptors support
 #include <boost/fusion/support/is_sequence.hpp>
@@ -387,8 +387,8 @@ constexpr auto size_of(const T& v) noexcept -> typename std::enable_if<
  */
 namespace pg {
 
-BOOST_STRONG_TYPEDEF(std::string, name)
-BOOST_STRONG_TYPEDEF(std::vector<char>, bytea)
+OZO_STRONG_TYPEDEF(std::string, name)
+OZO_STRONG_TYPEDEF(std::vector<char>, bytea)
 
 } // namespace pg
 } // namespace ozo

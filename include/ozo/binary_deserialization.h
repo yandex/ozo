@@ -126,19 +126,12 @@ struct recv_impl<std::vector<T, Alloc>, Require<!std::is_same_v<T, char>>> {
     }
 };
 
-template <>
-struct recv_impl<pg::name> {
+template <typename T, typename Tag>
+struct recv_impl<detail::strong_typedef_wrapper<T, Tag>> {
+    using out_type = detail::strong_typedef_wrapper<T, Tag>;
     template <typename M>
-    static istream& apply(istream& in, int32_t size, const oid_map_t<M>& oid_map, pg::name& out) {
-        return recv_impl<std::string>::apply(in, size, oid_map, out);
-    }
-};
-
-template <>
-struct recv_impl<pg::bytea> {
-    template <typename M>
-    static istream& apply(istream& in, int32_t size, const oid_map_t<M>& oid_map, pg::bytea& out) {
-        return recv_impl<std::vector<char>>::apply(in, size, oid_map, out);
+    static istream& apply(istream& in, int32_t size, const oid_map_t<M>& oid_map, out_type& out) {
+        return recv_impl<typename out_type::base_type>::apply(in, size, oid_map, out);
     }
 };
 
