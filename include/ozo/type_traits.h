@@ -50,10 +50,23 @@ namespace fusion = boost::fusion;
 using oid_t = ::Oid;
 
 /**
+ * @brief Type for OID constant type definition.
+ * @ingroup group-type_system
+ * @tparam `Oid` --- OID value
+ */
+template <oid_t Oid>
+struct oid_constant : std::integral_constant<oid_t, Oid> {};
+
+/**
  * @brief Type for non initialized OID
  * @ingroup group-type_system
  */
-using null_oid_t = std::integral_constant<oid_t, 0>;
+using null_oid_t = oid_constant<0>;
+
+/**
+ * @brief Constant for empty OID
+ * @ingroup group-type_system
+ */
 constexpr null_oid_t null_oid;
 
 template <typename T, typename Enable = void>
@@ -257,9 +270,9 @@ inline void reset_nullable(T& n) {
 #ifdef OZO_DOCUMENTATION
 template <typename T>
 struct type_traits {
-    using name = ; //!< `boost::hana::string` with name of the type in a database
-    using oid = ; //!< `std::integral_constant` with Oid of the built-in type or null_oid_t for non built-in type
-    using size = ; //!< `std::integral_constant` with size of the type object in bytes or `ozo::dynamic_size` in other case
+    using name = <implementation defined>; //!< `boost::hana::string` with name of the type in a database
+    using oid = <implementation defined>; //!< `ozo::oid_constant` with Oid of the built-in type or null_oid_t for non built-in type
+    using size = <implementation defined>; //!< `std::integral_constant` with size of the type object in bytes or `ozo::dynamic_size` in other case
 };
 #else
 template <typename T>
@@ -285,7 +298,7 @@ struct type_size_match<T, dynamic_size> : std::true_type {};
  *
  * @tparam Name --- type which can be converted into a string representation
  * which contain the fully qualified type name in DB
- * @tparam Oid --- oid type - provides type's oid in database, may be defined for
+ * @tparam Oid --- `ozo::oid_constant`-based oid type - provides type's oid in database, may be defined for
  * built-in types only; custom types have only dynamic oid, depended
  * from the current state of DB.
  * @tparam Size --- size type - provides information about type's object size, may
@@ -365,7 +378,7 @@ BOOST_STRONG_TYPEDEF(std::vector<char>, bytea)
         struct type_traits<Type> : type_traits_helper<\
             Type, \
             OZO__TYPE_NAME_TYPE(Name), \
-            std::integral_constant<oid_t, Oid>, \
+            oid_constant<Oid>, \
             Size\
         >{};\
     }
@@ -376,7 +389,7 @@ BOOST_STRONG_TYPEDEF(std::vector<char>, bytea)
         struct type_traits<std::vector<Type>> : type_traits_helper<\
             std::vector<Type>, \
             OZO__TYPE_ARRAY_NAME_TYPE(Name), \
-            std::integral_constant<oid_t, Oid>, \
+            oid_constant<Oid>, \
             dynamic_size\
         >{};\
     }
