@@ -31,7 +31,7 @@ int main() {
     ozo::rows_of<std::int64_t, std::optional<std::string>> rows;
 
     // Connection info with host and port to coonect to
-    ozo::connection_info<> conn_info("host=... port=...");
+    auto conn_info = ozo::make_connection_info("host=... port=...");
 
     // For _SQL literal
     using namespace ozo::literals;
@@ -86,7 +86,7 @@ The first argument of the tuple can not be a _NULL_, so here we do not to bother
 There is no mistake to expect nullable type for non-nullable result, but the opposite leads to run-time error in case of _NULL_ value result from database.
 
 ```cpp
-ozo::connection_info<> conn_info("host=... port=...");
+auto conn_info = ozo::make_connection_info("host=... port=...");
 ```
 
 Now we need to create a connection information for database to connect to. This is our connection provider which can create a connection for us as it will be needed (see more information about connection provider and how to get connection).
@@ -100,7 +100,7 @@ Here our query for database. There is a text with `_SQL` literal and single para
 Here is `request()` asynchronous function call.
 
 ```cpp
-ozo::request(ozo::make_provider(io, conn_info), query, ozo::into(res),
+ozo::request(ozo::make_connector(io, conn_info), query, ozo::into(res),
         [&](ozo::error_code ec, auto conn) {
 //...
 });
@@ -112,7 +112,7 @@ ozo::request(ozo::make_provider(io, conn_info), query, ozo::into(res),
 
 `ozo::into(res)` - the output perameter. In this case out parameter is back inserter iterator to the result vector. Note, what the life time of the output parameter managed by the user. In this case it correctly placed on stack since its lifetime overlaps `io.run()` call. But in more sophisticated code with callbacks it needs to be stored e.g. in shared pointer or something like this. The query output parameter can be iterator on container with appropriated data items, or it can be `ozo::result` which provides access to raw binary data. The second variant is not recommended since user must implement binary protocol parsing by self, but if it needed it can be used.
 
-`[&](ozo::error_code ec, auto conn)` - completion token parameter, in this case is callback lambda. In other cases it can be [boost::asio::use_future](https://www.boost.org/doc/libs/1_67_0/doc/html/boost_asio/reference/use_future.html), [boost::asio::yield_context](https://www.boost.org/doc/libs/1_67_0/doc/html/boost_asio/reference/yield_context.html) or any other [boost::asio::async_result](https://www.boost.org/doc/libs/1_67_0/doc/html/boost_asio/reference/async_result.html) comatible [Completion Token](https://www.boost.org/doc/libs/1_67_0/doc/html/boost_asio/reference/async_completion.html). The arguments of the call back are error code `ec` (which is namely `boost::system::error_code` for now) and the connection `conn` with which the query was made. Even if you got an error it is possible what there is an additional error context in the `conn`. Since there is no rooms to place context depended information about connection error into error code the context depended information provided via `error_message()` and `get_error_context()` functions. The first one returns error message from `libpq`, the second - additional context from `OZO`.
+`[&](ozo::error_code ec, auto conn)` - completion token parameter, in this case is callback lambda. In other cases it can be [boost::asio::use_future](https://www.boost.org/doc/libs/1_67_0/doc/html/boost_asio/reference/use_future.html), [boost::asio::yield_context](https://www.boost.org/doc/libs/1_67_0/doc/html/boost_asio/reference/yield_context.html) or any other [boost::asio::async_result](https://www.boost.org/doc/libs/1_67_0/doc/html/boost_asio/reference/async_result.html) compatible [Completion Token](https://www.boost.org/doc/libs/1_67_0/doc/html/boost_asio/reference/async_completion.html). The arguments of the call back are error code `ec` (which is namely `boost::system::error_code` for now) and the connection `conn` with which the query was made. Even if you got an error it is possible what there is an additional error context in the `conn`. Since there is no rooms to place context depended information about connection error into error code the context depended information provided via `error_message()` and `get_error_context()` functions. The first one returns error message from `libpq`, the second - additional context from `OZO`.
 
 `for(auto& row: res)` - so if there is no error we can handle result from the output container.
 
@@ -145,7 +145,7 @@ int main() {
 
     const auto query = "SELECT id, name FROM users_info WHERE amount>="_SQL + std::int64_t(25);
 
-    ozo::request(ozo::make_provider(io, conn_info), query, ozo::into(res),
+    ozo::request(ozo::make_connector(io, conn_info), query, ozo::into(res),
             [&](ozo::error_code ec, auto conn) {
     //...
     });

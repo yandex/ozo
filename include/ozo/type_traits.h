@@ -35,7 +35,7 @@
 /**
  * @defgroup group-type_system Type system
  * @ingroup group-core
- * @brief Database related type system of the library.
+ * @brief Database-related type system of the library.
  */
 namespace ozo {
 
@@ -72,9 +72,6 @@ constexpr null_oid_t null_oid;
 template <typename T, typename Enable = void>
 struct is_nullable : std::false_type {};
 
-/**
-* These next types are nullable
-*/
 template <typename T>
 struct is_nullable<boost::optional<T>> : std::true_type {};
 
@@ -102,7 +99,8 @@ struct is_nullable<std::weak_ptr<T>> : std::true_type {};
  * `Nullble` type has to:
  * * have a null-state,
  * * be `bool` convertable - `false` indicates null state,
- * * be dereferenceable via `operator *`.
+ * * be dereferenceable via `operator *`,
+ * * have `allocate_nullable()` specialization (see the function documentation for how to).
  *
  * These next types are `Nullable` out of the box:
  * * `boost::optional`,
@@ -112,16 +110,38 @@ struct is_nullable<std::weak_ptr<T>> : std::true_type {};
  * * `boost::shared_ptr`,
  * * `std::shared_ptr`,
  * * `boost::weak_ptr`,
- * * `std::weak_ptr`
+ * * `std::weak_ptr`.
  *
- * @note Raw pointers are not supported as `Nullable` by default. But if it is really needed you can add them as described below
+ * @note Raw pointers are not supported as `Nullable` by default, because this library uses RAII model for objects and
+ * no special deallocation functions are used. But if it is really needed and you want to deallocate the allocated
+ * objects manually you can add them as described below.
  *
- * If you want to extend this list - you have to specialize `ozo::is_nullable` struct like this:
+ * ### Example
+ *
+ * If you want to add nullable type to the library --- you have to specialize `ozo::is_nullable` struct and specify allocation function like this:
  *
  * @code
-    template <typename T>
-    struct is_nullable<std::weak_ptr<T>> : std::true_type {};
+//Add raw pointer to nullables
+
+namespace ozo {
+
+// Mark raw pointer as nullable
+template <typename T>
+struct is_nullable<T*> : std::true_type {};
+
+// Specify allocation function
+template <typename T>
+struct allocate_nullable_impl<T*> {
+    template <typename Alloc>
+    static void apply(T*& out, const Alloc&) {
+        out = new T();
+    }
+};
+
+}
+
  * @endcode
+ *
  * @sa ozo::unwrap_nullable(), is_null(), allocate_nullable(), init_nullable(), reset_nullable()
  * @ingroup group-core-concepts
  * @hideinitializer
@@ -180,7 +200,8 @@ inline auto is_null(const std::weak_ptr<T>& v) noexcept {
  * If argument is not #Nullable it always returns `false`
  *
  * @param value --- object to examine
- * @return `true` if object is in null-state, overwise - `false`.
+ * @return `true` --- object is in null-state,
+ * @return `false` --- overwise.
  * @ingroup group-core-functions
  */
 template <typename T>
@@ -281,7 +302,7 @@ struct type_traits;
 /**
 * Helpers to make size trait constant
 *     bytes - makes fixed size trait
-*     dynamic_size - makes dynamis size trait
+*     dynamic_size - makes dynamic size trait
 */
 template <std::size_t n>
 using bytes = std::integral_constant<std::size_t, n>;
@@ -361,6 +382,9 @@ constexpr auto size_of(const T& v) noexcept -> typename std::enable_if<
     return std::size(v) ? std::size(v) * size_of(*std::begin(v)) : 0;
 }
 
+/**
+ * @brief Namespace for PostgreSQL specific types
+ */
 namespace pg {
 
 BOOST_STRONG_TYPEDEF(std::string, name)
@@ -419,6 +443,14 @@ BOOST_STRONG_TYPEDEF(std::vector<char>, bytea)
  *
  * @note This macro can be called in the global namespace only
  *
+ * @param Type --- C++ type to be mapped to database type
+ * @param Name --- string with name of database type
+ * @param Oid --- oid for built-in type and `ozo::null_oid_t` for custom type
+ * @param ArrayOid --- oid for an array of built-in type and `ozo::null_oid_t` for custom type
+ * @param Size --- `bytes<N>` for fixed-size type (like integer, bigint and so on),
+ * there N - size of the type in database, `dynamic_type` for dynamic size types (like `text`
+ * `bytea` and so on)
+ *
  * ### Example
  *
  * E.g. a definition of `uuid` type looks like this:
@@ -440,14 +472,6 @@ BOOST_FUSION_DEFINE_STRUCT((smtp), message,
 
 OZO_PG_DEFINE_TYPE_AND_ARRAY(smtp::message, "code.message", null_oid, null_oid, dynamic_size)
 @endcode
- *
- * @param Type --- C++ type to be mapped to database type
- * @param Name --- string with name of database type
- * @param Oid --- oid for built-in type and `ozo::null_oid_t` for custom type
- * @param ArrayOid --- oid for an array of built-in type and `ozo::null_oid_t` for custom type
- * @param Size --- `bytes<N>` for fixed-size type (like integer, bigint and so on),
- * there N - size of the type in database, `dynamic_type` for dynamic size types (like `text`
- * `bytea` and so on)
  */
 #ifdef OZO_DOCUMENTATION
 #define OZO_PG_DEFINE_TYPE_AND_ARRAY(Type, Name, Oid, ArrayOid, Size)
@@ -612,7 +636,7 @@ inline void set_type_oid(oid_map_t<MapImplT>& map, oid_t oid) noexcept {
 * Function returns oid for type from #OidMap.
 * @ingroup group-type_system
 * @tparam T --- type to get OID for.
-* &param map --- #OidMap to get OID from.
+* @param map --- #OidMap to get OID from.
 */
 template <typename T, typename MapImplT>
 inline auto type_oid(const oid_map_t<MapImplT>& map) noexcept
@@ -662,11 +686,13 @@ inline bool accepts_oid(const oid_map_t<MapImplT>& map, const T& , oid_t oid) no
  * @ingroup group-type_system
  *
  * ### Example
+ *
  * @code
 static_assert(empty(ozo::empty_oid_map{}));
  * @endcode
- * @param map --- OidMap to check
- * @return `true` if map contains no items, `false` - if contains.
+ * @param map --- #OidMap to check
+ * @return `true` --- if map contains no items
+ * @return `false` --- if contains items.
  */
 template <typename MapImplT>
 inline constexpr bool empty(const oid_map_t<MapImplT>& map) noexcept {

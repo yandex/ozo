@@ -18,35 +18,41 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    // Ozo perform all IO using Boost.Asio, so first thing we need to do is setup asio::io_context
+    // Ozo perform all IO using Boost.Asio, so the first thing we need to do is to setup asio::io_context
     asio::io_context io;
 
-    // To make a request we need to make a ConnectionSource. It knows how to connect to database using
-    // connection string. See https://www.postgresql.org/docs/9.4/static/libpq-connect.html#LIBPQ-CONNSTRING
-    // how to make a connection string.
-    ozo::connection_info<> connection_info(argv[1]);
+    //! [Creating Connection Pool]
 
-    // Conneciton pool allows to store open connection and reuse them to avoid connect operation for each
-    // request. It supports asynchronous request for connections using callbacks queue with optional capacity
-    // limit and wait timeout. Also connection closes when there is no usage for more than idle timeout.
+    // To make a connection to a database we need to make a ConnectionSource.
+    auto connection_info = ozo::make_connection_info(argv[1]);
+
     ozo::connection_pool_config connection_pool_config;
+
     // Maximum limit for number of stored connections
     connection_pool_config.capacity = 1;
     // Maximum limit for number of waiting requests for connection
     connection_pool_config.queue_capacity = 10;
     // Maximum time duration to store unused open connection
     connection_pool_config.idle_timeout = std::chrono::seconds(60);
+
+    // Creating connection pool from connection_info as the underlying ConnectionSource
     auto connection_pool = ozo::make_connection_pool(connection_info, connection_pool_config);
+    //! [Creating Connection Pool]
 
     const auto coroutine = [&] (asio::yield_context yield) {
+
+        //! [Creating Connection Provider]
+
         // The next step is bind asio::io_context with ConnectionSource to setup executor for all
         // callbacks. Default connection is a ConnectionProvider. If there is some problem with network
-        // or database we don't want to wait indefinetely, so we establish connect timeout. If there is
+        // or database we don't want to wait indefinitely, so we establish connect timeout. If there is
         // no available connection in the connection pool we also want to wait within finite time duration.
         ozo::connection_pool_timeouts timeouts;
         timeouts.connect = std::chrono::seconds(1);
         timeouts.queue = std::chrono::seconds(1);
+
         const auto connector = ozo::make_connector(connection_pool, io, timeouts);
+        //! [Creating Connection Provider]
 
         // Request result is always set of rows. Client should take care of output object lifetime.
         ozo::rows_of<int> result;

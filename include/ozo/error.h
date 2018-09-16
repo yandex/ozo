@@ -6,12 +6,18 @@
 /**
  * @defgroup error-codes Error codes
  * @brief Errors system and codes description
+ */
+namespace ozo {
+
+/**
+ * @ingroup error-codes
+ * @brief Error code representation of the library.
  *
  * In this library the
  * <a href="https://www.boost.org/doc/libs/1_66_0/libs/system/doc/index.html">Boost.System</a>'s
  * error_code is used. The reason is what it is provided by the
  * <a href="https://www.boost.org/doc/libs/1_66_0/doc/html/boost_asio/using.html">
- * Boost.Asio</a> library. So it looks like this:
+ * Boost.Asio</a> library. So the related definitions look like this:
  *
  * @code
 using error_code = boost::system::error_code;
@@ -20,13 +26,28 @@ using error_category = boost::system::error_category;
 using error_condition = boost::system::error_condition;
  * @endcode
  *
- * This may be configurable in the future and `std::error_code` support may be added.
+ * @note This may be configurable in the future and `std::error_code` support may be added.
+ * @sa system_error, error_category, error_condition
  */
-namespace ozo {
-
 using error_code = boost::system::error_code;
+
+/**
+ * @ingroup error-codes
+ * @brief Error code contaning exception of the library.
+ * @sa error_code , error_category, error_condition
+ */
 using system_error = boost::system::system_error;
+/**
+ * @ingroup error-codes
+ * @brief Error category representation of the library.
+ * @sa error_code, system_error, error_condition
+ */
 using error_category = boost::system::error_category;
+/**
+ * @ingroup error-codes
+ * @brief Error condition representation of the library.
+ * @sa error_code, system_error, error_category
+ */
 using error_condition = boost::system::error_condition;
 
 /**

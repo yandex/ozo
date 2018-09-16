@@ -6,7 +6,7 @@ namespace ozo {
 
 /**
  * @brief Send request to a database and provides query result (time-out version).
- * @ingroup group-requests
+ * @ingroup group-requests-functions
  *
  * The function sends request to a database and provides result via out parameter. The function can
  * be called as any of Boost.Asio asynchronous function with #CompletionToken.
@@ -64,7 +64,7 @@ inline auto request(P&& provider, Q&& query, const time_traits::duration& timeou
 
 /**
  * @brief Send request to a database and provides query result.
- * @ingroup group-requests
+ * @ingroup group-requests-functions
  *
  * This is time-out free version of the `ozo::request`.
  * @param provider --- #ConnectionProvider to get connection from.
