@@ -8,7 +8,6 @@
 #include <boost/asio/spawn.hpp>
 
 #include <iostream>
-#include <optional>
 
 int main(int argc, char *argv[]) {
     using namespace ozo::literals;

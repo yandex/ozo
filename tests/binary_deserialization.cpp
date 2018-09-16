@@ -125,8 +125,7 @@ TEST_F(recv, should_convert_BYTEAOID_to_pg_bytea) {
 
     ozo::pg::bytea got;
     ozo::recv(value, oid_map, got);
-    std::vector<char>& underlying = got;
-    EXPECT_EQ("test", std::string_view(std::data(underlying), std::size(underlying)));
+    EXPECT_EQ("test", std::string_view(std::data(got.get()), std::size(got.get())));
 }
 
 TEST_F(recv, should_convert_TEXTOID_to_std_string) {
