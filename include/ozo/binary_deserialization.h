@@ -134,6 +134,14 @@ struct recv_impl<pg::name> {
     }
 };
 
+template <>
+struct recv_impl<pg::bytea> {
+    template <typename M>
+    static istream& apply(istream& in, int32_t size, const oid_map_t<M>& oid_map, pg::bytea& out) {
+        return recv_impl<std::vector<char>>::apply(in, size, oid_map, out);
+    }
+};
+
 template <typename T, typename M, typename Out>
 void recv(const value<T>& in, const oid_map_t<M>& oids, Out& out) {
     if (recv_null(in.is_null(), out)) {

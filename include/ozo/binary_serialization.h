@@ -48,4 +48,13 @@ struct send_impl<pg::name> {
     }
 };
 
+
+template <>
+struct send_impl<pg::bytea> {
+    template <typename M>
+    static ostream& apply(ostream& out, const oid_map_t<M>& map, const pg::name& in) {
+        return send_impl<std::vector<char>>::apply(out, map, in);
+    }
+};
+
 } // namespace ozo

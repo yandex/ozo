@@ -116,16 +116,17 @@ TEST_F(recv, should_convert_INT8OID_to_int64_t) {
     EXPECT_EQ(7, got);
 }
 
-TEST_F(recv, should_convert_BYTEAOID_to_std_vector_of_char) {
+TEST_F(recv, should_convert_BYTEAOID_to_pg_bytea) {
     const char* bytes = "test";
     EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(BYTEAOID));
     EXPECT_CALL(mock, get_value(_, _)).WillRepeatedly(Return(bytes));
     EXPECT_CALL(mock, get_length(_, _)).WillRepeatedly(Return(4));
     EXPECT_CALL(mock, get_isnull(_, _)).WillRepeatedly(Return(false));
 
-    std::vector<char> got;
+    ozo::pg::bytea got;
     ozo::recv(value, oid_map, got);
-    EXPECT_EQ("test", std::string_view(std::data(got), std::size(got)));
+    std::vector<char>& underlying = got;
+    EXPECT_EQ("test", std::string_view(std::data(underlying), std::size(underlying)));
 }
 
 TEST_F(recv, should_convert_TEXTOID_to_std_string) {
