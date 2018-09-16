@@ -351,6 +351,7 @@ constexpr auto size_of(const T& v) noexcept -> typename std::enable_if<
 namespace pg {
 
 BOOST_STRONG_TYPEDEF(std::string, name)
+BOOST_STRONG_TYPEDEF(std::vector<char>, bytea)
 
 } // namespace pg
 } // namespace ozo
@@ -456,9 +457,9 @@ OZO_PG_DEFINE_TYPE_AND_ARRAY(smtp::message, "code.message", null_oid, null_oid, 
         >{};\
     }
 
-OZO_PG_DEFINE_TYPE(bool, "bool", BOOLOID, bytes<1>)
-OZO_PG_DEFINE_TYPE(char, "char", CHAROID, bytes<1>)
-OZO_PG_DEFINE_TYPE(std::vector<char>, "bytea", BYTEAOID, dynamic_size)
+OZO_PG_DEFINE_TYPE_AND_ARRAY(bool, "bool", BOOLOID, 1000, bytes<1>)
+OZO_PG_DEFINE_TYPE_AND_ARRAY(char, "char", CHAROID, 1002, bytes<1>)
+OZO_PG_DEFINE_TYPE_AND_ARRAY(ozo::pg::bytea, "bytea", BYTEAOID, 1001, dynamic_size)
 
 OZO_PG_DEFINE_TYPE_AND_ARRAY(boost::uuids::uuid, "uuid", UUIDOID, 2951, bytes<16>)
 
