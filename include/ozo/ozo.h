@@ -12,8 +12,26 @@
  */
 
 /**
+ * @defgroup group-core-types Utility types
+ * @ingroup group-core
+ * @brief Core utility types of the library.
+ */
+
+/**
  * @defgroup group-requests Requests
  * @brief Database requests related concepts, types and functions.
+ */
+
+/**
+ * @defgroup group-requests-functions Functions
+ * @ingroup group-requests
+ * @brief Database requests related functions.
+ */
+
+/**
+ * @defgroup group-requests-types Types
+ * @ingroup group-requests
+ * @brief Database requests related types.
  */
 
 /**

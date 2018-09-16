@@ -342,7 +342,7 @@ struct is_connection<T, std::void_t<
 *
 * Connection `conn` is an object for which these next statements are valid:
 *
-* @code
+* @code{cpp}
 decltype(auto) oid_map = get_connection_oid_map(unwrap_connection(conn));
 * @endcode
 * There the `oid_map` must be a reference or proxy for connection's #OidMap object, which allows to read and modify it.
@@ -644,21 +644,18 @@ struct get_connection_type {
 };
 
 /**
- * @brief Gives exact type of connection which #ConnectionProvider or #ConnectionSource provide
+ * @brief Gives exact type of a connection object which #ConnectionProvider or #ConnectionSource provide
  *
  * @ingroup group-connection-types
  *
- * This type alias can be used to determine exact type of Connection which can be obtained from a
- * ConnectionSource or ConnectionProvider type. It uses get_connection_type to get Connection type.
+ * This type alias can be used to determine exact type of a #Connection object which can be obtained from a
+ * #ConnectionSource or #ConnectionProvider. It uses `ozo::get_connection_type` metafunction
+ * to get a #Connection type.
  *
  * @tparam ConnectionProvider - #ConnectionSource or #ConnectionProvider type.
  */
 template <typename ConnectionProvider>
-#ifdef OZO_DOCUMENTATION
-using connection_type = of connection;
-#else
 using connection_type = typename get_connection_type<ConnectionProvider>::type;
-#endif
 
 template <typename T, typename = std::void_t<>>
 struct async_get_connection_impl {
@@ -698,11 +695,6 @@ struct is_connection_source<T, std::void_t<decltype(
  * `ConnectionSource` must be a function or a functor with such signature:
  * @code
     void (io_context io, Handler h, SourceRelatedAdditionalArgs&&...);
- * @endcode
- *
- * where Handler must be a functor with such or compatible signature:
- * @code
-    void (error_code ec, connection_type<ConnectionSource> conn);
  * @endcode
  *
  * `ConnectionSource` must establish #Connection by means of `io_context` specified as first
@@ -783,15 +775,9 @@ struct is_connection_provider<T, std::void_t<decltype(
  * By the second `ozo::get_connection()` needs be supported. It can be done in two ways: by implementing
  * `ozo::async_get_connection` member function, or specializing `ozo::async_get_connection_impl` template.
  *
- * The `ozo::async_get_connection()` member function has to have this signature:
+ * The `ConnectionProvider::async_get_connection()` member function has to have this signature:
  * @code
     void async_get_connection(Handler&& h);
- * @endcode
- *
- * where Handler must be a functor with such or compatible signature:
- *
- * @code
-    void (error_code ec, connection_type<ConnectionProvider> conn);
  * @endcode
  *
  * See `ozo::connector` class - the default implementation and `ozo::get_connection()` description for more details.

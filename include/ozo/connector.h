@@ -8,11 +8,16 @@ namespace ozo {
 /**
  * @brief Default implementation of ConnectionProvider
  *
- * @ingroup Connection_Provider
+ * @ingroup group-connection-types
  *
- * This is default implementation of the ConnectionProvider concept. It binds
- * `io_context`, additional parameters and ConnectionSource implementation object to
- * bea able provide a Connection via get_connection functionality.
+ * This is the default implementation of the #ConnectionProvider concept. It binds
+ * `io_context` and additional #ConnectionSource-specific parameters to the
+ * #ConnectionSource implementation object.
+ *
+ * Thus `connector` can create connection via #ConnectionSource object running its
+ * asynchronous connect operation on the `io_context` with additional parameters.
+ * As a result, `connector` provides a #Connection object bound to `io_context` via
+ * `ozo::get_connection()` function.
  *
  * @tparam Base --- ConnectionSource implementation
  * @tparam Args --- ConnectionSource additional parameters types.
@@ -23,23 +28,22 @@ public:
     static_assert(ConnectionSource<Base>, "is not a ConnectionSource");
 
     /**
-     * Source type according to ConnectionProvider requirements
+     * Source type according to #ConnectionProvider requirements
      */
     using source_type = Base;
     /**
-     * Connection implementation type according to ConnectionProvider requirements.
-     * Specifies the Connection implementation type which can be obtained from this provider.
+     * #Connection implementation type according to #ConnectionProvider requirements.
+     * Specifies the #Connection implementation type which can be obtained from this provider.
      */
     using connection_type = typename source_type::connection_type;
 
     /**
-     * @brief Construct a new connector object
+     * @brief Construct a new `connector` object
      *
-     * Constructor as it is.
-     *
-     * @param base --- ConnectionSource implementation object
-     * @param io --- `io_context` for connect IO
-     * @param args --- additional arguments to be passed to ConnectionSource to create Connection
+     * @param base --- #ConnectionSource implementation
+     * @param io --- `io_context` for asynchronous IO
+     * @param args --- additional #ConnectionSource-specific arguments to be passed
+     *                 to make a #Connection
      */
     connector(Base& base, io_context& io, std::tuple<Args ...>&& args)
             : base(base), io(io), args(std::move(args)) {

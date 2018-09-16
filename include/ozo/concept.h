@@ -283,19 +283,19 @@ struct is_raw_data_writable : std::bool_constant<
 
 
 /**
- * @brief RawDataWritable concept
+ * @brief `RawDataWritable` concept
  *
- * Indicates if T can be written as a sequence of bytes without endian conversion.
- * `RawDataWritable<T>` is true if for object `v` of type `T` applicable one of this code:
+ * Indicates if `T` can be written as a sequence of bytes without endian conversion.
+ * `RawDataWritable<T>` is `true` if for object `v` of type `T` applicable one of this code:
  * @code
     auto raw = v.data();              // has_data<T,
-    static_assert(sizeof(*raw) == 1); //            1>
+    static_assert(sizeof(*raw) == 1); //             1>
     auto n = v.size();                // has_size<T>
  * @endcode
  * or
  * @code
     auto raw = data(v);               // has_friend_data<T,
-    static_assert(sizeof(*raw) == 1); //                   1>
+    static_assert(sizeof(*raw) == 1); //                    1>
     auto n = size(v);                 // has_friend_size<T>
  * @endcode
  * @tparam T - type to examine
@@ -323,21 +323,44 @@ constexpr auto Emplaceable = is_emplaceable<std::decay_t<T>>::value;
 /**
  * @brief Completion token concept
  *
- * CompletionToken is an entity which determines how to continue with asynchronous operation result when
+ * `CompletionToken` is an entity which determines how to continue with asynchronous operation result when
  * the operation is complete. According to <a href="https://www.boost.org/doc/libs/1_66_0/doc/html/boost_asio/reference/async_completion.html">
  * `boost::asio::async_completion`</a> it defines the return value of an asynchronous function.
  *
- * CompletionToken - is any of these next entities:
- * * callback with `void(ozo::error_code, Connection)` signature, which can handle an `ozo::error_code`
- * object as first argument, and #Connection implementation object as second argument. It is better to
- * have second argument as a template parameter, but if it needed - it can be specialized with
- * `ozo::connection_type`. Asynchronous function in this case will return `void`.
+ * Assume we have an asynchronous IO function:
+ * @code
+template <typename ConnectionProvider, typename CompletionToken>
+auto async_io(ConnectionProvider&&, Param1 p1, ..., CompletionToken&&);
+ * @endcode
+ *
+ * Then the result type of the function depends on `CompletionToken`, and `CompletionToken` - is any of these next entities:
+ * * #Handler concept implementation. Asynchronous function in this case will return `void`.
+ * In this case the equivalent function signature will be:
+ * @code
+template <typename ConnectionProvider>
+void async_io(ConnectionProvider, Param1 p1, ..., Handler);
+ * @endcode
+ *
  * * <a href= "https://www.boost.org/doc/libs/1_66_0/doc/html/boost_asio/reference/use_future.html">
  * `boost::asio::use_future`</a> - to get a future on the asynchronous operation result.
  * Asynchronous function in this case will return `std::future<Connection>`.
+ * In this case the equivalent function signature will be:
+ * @code
+template <typename ConnectionProvider>
+std::future<ozo::connection_type<ConnectionProvider>> async_io(
+    ConnectionProvider&&, Param1 p1, ..., boost::asio::use_future_t);
+ * @endcode
+ *
  * * <a href="https://www.boost.org/doc/libs/1_66_0/doc/html/boost_asio/reference/basic_yield_context.html">
  * `boost::asio::yield_context`</a> - to use async operation with Boost.Coroutine.
  * Asynchronous function in this case will return #Connection.
+ * In this case the equivalent function signature will be:
+ * @code
+template <typename ConnectionProvider>
+ozo::connection_type<ConnectionProvider> async_io(
+    ConnectionProvider&&, Param1 p1, ..., boost::asio::yield_context);
+ * @endcode
+ *
  * * any other type supported with <a href="https://www.boost.org/doc/libs/1_66_0/doc/html/boost_asio/reference/async_completion.html">
  * `boost::asio::async_completion`</a> mechanism.
  * Asynchronous function in this case will return a type is depends on
@@ -348,6 +371,54 @@ constexpr auto Emplaceable = is_emplaceable<std::decay_t<T>>::value;
 #ifdef OZO_DOCUMENTATION
 template <typename T>
 constexpr auto CompletionToken = std::false_type;
+#endif
+
+/**
+ * @brief Handler concept
+ *
+ * `Handler` is a function or a functor which is used as a callback for handling result of asynchronous IO operations in the library.
+ *
+ * In case of function it has to have this signature:
+ *@code
+template <typename Connection>
+void Handler(ozo::error_code ec, Connection connection) {
+    //...
+}
+ *@endcode
+ *
+ * In case of functor it has to have such `operator()`:
+ *@code
+struct Handler {
+    template <typename Connection>
+    void operator() (ozo::error_code ec, Connection connection) {
+        //...
+    }
+};
+ *@endcode
+ *
+ * In case of lambda:
+ *@code
+auto Handler = [&] (ozo::error_code ec, auto connection) {
+    //...
+};
+ *@endcode
+ *
+ * `Handler` has to handle an `ozo::error_code` object as first argument, and #Connection implementation
+ * object as a second one. It is better to define second argument as a template parameter because the
+ * implementation depends on a numerous of compile-time options but if it is really needed - real type
+ * can be obtained with `ozo::connection_type`.
+ *
+ * `Handler` has to be invoked according to this rules:
+ * * **Operation succeeded** --- `ozo::error_code` is empty, #Connection is in good state and can be used for next IO.
+ * * **Operation failed** --- `ozo::error_code` contains error, #Connection can be in these states:
+ *   * #Connection in null-state --- `ozo::is_null()` returns `true`, object is useless;
+ *   * #Connection in bad state --- `ozo::is_null()` returns `false`, object may provide additional error context via
+ *                   `ozo::error_message()` and `ozo::get_error_context()` functions.
+ * @hideinitializer
+ */
+#ifdef OZO_DOCUMENTATION
+template <typename T>
+constexpr auto Handler = std::false_type;
 #endif
 ///@}
 

@@ -10,7 +10,7 @@ namespace ozo {
  * @brief Connection pool configuration
  * @ingroup group-connection-types
  *
- * Configuration of the ozo::connection_pool, e.g. how many connection are in the pool,
+ * Configuration of the `ozo::connection_pool`, e.g. how many connection are in the pool,
  * how many queries can be in wait queue if all connections are used by another queries,
  * and how long to keep connection open.
  */
@@ -24,28 +24,44 @@ struct connection_pool_config {
  * @brief Timeouts for the ozo::get_connection() operation
  * @ingroup group-connection-types
  *
- * Time restrictions to get connection from the ozo::connection_pool
+ * Time restrictions to get connection from the `ozo::connection_pool`
  */
 struct connection_pool_timeouts {
     time_traits::duration connect = std::chrono::seconds(10); //!< maximum time interval to establish connection with DBMS
-    time_traits::duration queue = std::chrono::seconds(10); //!< maximum time interval to wait for available connection handle in conneciton pool
+    time_traits::duration queue = std::chrono::seconds(10); //!< maximum time interval to wait for available connection handle in `conneciton_pool`
 };
 
 /**
  * @brief Connection pool implementation
  * @ingroup group-connection-types
  *
- * This is a simple <a href="https://en.wikipedia.org/wiki/Connection_pool">connection pool</a>
- * implementation which can store up to maximum allowed number of connection to the same database.
- * If all connections are busy client request will be placed into the internal queue to wait for
- * free connection. If where is no free connections but it does not hit the limit of connections
- * the new connection will be created via underlying #ConnectionSource being specified in constructor.
- * All operations are timed out. Connection idle life time is timed out as well. Pool is configurable
- * via constructor and operator().
+ * This is a simple implementation connection pool (<a href="https://en.wikipedia.org/wiki/Connection_pool">wikipedia</a>).
+ * Connection pool allows to store established connections and reuse it to avoid a connect operation for each request.
+ * It supports asynchronous request for connections using a queue with optional limits of capacity and wait time.
+ * Also connection in the pool may be closed when it is not used for some time - idle timeout.
+ *
+ * This is how `connection_pool` handles user request to get a #Connection object:
+ *
+ * * If there is a free connection --- it will be provided for a user immediately.
+ * * If all connections are busy but its number less than the limit --- a new connection will be created via the #ConnectionSource and provided for a user.
+ * * If all connections are busy and there is no room to create a new one --- the request will be placed into the internal queue to wait for the free connection.
+ *
+ * The request may be limited by time via optional `connection_pool_timeouts` argument of the `connection_pool::operator()`.
  *
  * `connection_pool` models #ConnectionSource concept itself using underlying #ConnectionSource.
  *
  * @tparam Source --- underlying #ConnectionSource which is being used to create connection to a database.
+ *
+ * ###Example
+ *
+ * See [examples/connection_pool.cpp](examples/connection_pool.cpp).
+ *
+ * Creating the connection_pool instance:
+@snippet examples/connection_pool.cpp Creating Connection Pool
+ *
+ * Creating a ConnectionProvider from the connection_pool instance:
+@snippet examples/connection_pool.cpp Creating Connection Provider
+ *
  */
 template <typename Source>
 class connection_pool {
@@ -68,22 +84,13 @@ public:
     using connection_type = impl::pooled_connection_ptr<Source>;
 
     /**
-     * @brief Provides connection is binded to the given io_context
+     * @brief Provides connection is binded to the given `io_context`
      *
-     * In case of success the handler will be called with no `error_code` and
-     * established connection object. If no connection available and number of
-     * connections of the pool does not hit the limit - a new connection will be made.
-     * If pool is out of limits - the handler will be placed into the internal queue to
-     * wait for free connection.
-     *
-     * In case of time-out of connection establishing or being in queue - the handler
-     * will be called with error_code.
-     *
-     * In case of hitting the limit of the internal queue - the handler will be called
-     * with error_code.
+     * In case of success --- the handler will be invoked as operation succeeded.
+     * In case of connection fail, queue timeout or queue full --- the handler will be invoked as operation failed.
      *
      * @param io --- `io_context` for the connection IO.
-     * @param handler --- a callback with signature `void(error_code, connection_type)`.
+     * @param handler --- #Handler.
      * @param timeouts --- connection acquisition related time-outs
      */
     template <typename Handler>
@@ -125,9 +132,11 @@ constexpr auto ConnectionPool = is_connection_pool<std::decay_t<T>>::value;
  * @ingroup group-connection-functions
  * @relates ozo::connection_pool
  *
+ * Helper function which creates connection pool based on #ConnectionSource and configuration parameters.
+ *
  * @param source --- #ConnectionSource object which is being used to create connection to a database.
  * @param config --- pool configuration.
- * @return connection_pool constructed object
+ * @return `ozo::connection_pool` object
  */
 template <typename Source>
 auto make_connection_pool(Source&& source, const connection_pool_config& config) {

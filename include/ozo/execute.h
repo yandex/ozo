@@ -6,7 +6,7 @@ namespace ozo {
 
 /**
  * @brief Executes query but does not return a result
- * @ingroup group-requests
+ * @ingroup group-requests-functions
  *
  * This function is same as `ozo::request()` function except it does not return any result.
  * It suitable to use with `UPDATE` `INSERT` statements, or invoking procedures without result.
