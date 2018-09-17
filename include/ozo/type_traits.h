@@ -34,8 +34,37 @@
 
 /**
  * @defgroup group-type_system Type system
- * @ingroup group-core
  * @brief Database-related type system of the library.
+ */
+
+/**
+ * @defgroup group-type_system-types Types
+ * @ingroup group-type_system
+ * @brief Database-related type system types.
+ */
+
+/**
+ * @defgroup group-type_system-concepts Concepts
+ * @ingroup group-type_system
+ * @brief Database-related type system concepts.
+ */
+
+/**
+ * @defgroup group-type_system-constants Constants
+ * @ingroup group-type_system
+ * @brief Database-related type system constants.
+ */
+
+/**
+ * @defgroup group-type_system-functions Functions
+ * @ingroup group-type_system
+ * @brief Database-related type system functions.
+ */
+
+/**
+ * @defgroup group-type_system-mapping Mapping
+ * @ingroup group-type_system
+ * @brief Types mapping C++ to PostgreSQL
  */
 namespace ozo {
 
@@ -45,27 +74,27 @@ using namespace hana::literals;
 namespace fusion = boost::fusion;
 /**
  * @brief PostgreSQL OID type - object identifier
- * @ingroup group-type_system
+ * @ingroup group-type_system-types
  */
 using oid_t = ::Oid;
 
 /**
  * @brief Type for OID constant type definition.
- * @ingroup group-type_system
- * @tparam `Oid` --- OID value
+ * @ingroup group-type_system-types
+ * @tparam Oid --- OID value
  */
 template <oid_t Oid>
 struct oid_constant : std::integral_constant<oid_t, Oid> {};
 
 /**
  * @brief Type for non initialized OID
- * @ingroup group-type_system
+ * @ingroup group-type_system-types
  */
 using null_oid_t = oid_constant<0>;
 
 /**
  * @brief Constant for empty OID
- * @ingroup group-type_system
+ * @ingroup group-type_system-constants
  */
 constexpr null_oid_t null_oid;
 
@@ -276,7 +305,7 @@ inline void reset_nullable(T& n) {
 
 /**
  * @brief Type traits template forward declaration.
- * @ingroup group-type_system
+ * @ingroup group-type_system-types
  *
  * Type traits contains information
  * related to it's representation in the database. There are two different
@@ -315,7 +344,7 @@ template <typename T>
 struct type_size_match<T, dynamic_size> : std::true_type {};
 /**
  * @brief Helper for the type traits definitions.
- * @ingroup group-type_system
+ * @ingroup group-type_system-types
  *
  * @tparam Name --- type which can be converted into a string representation
  * which contain the fully qualified type name in DB
@@ -339,8 +368,8 @@ struct type_traits : type_traits_helper<T, void> {};
 
 /**
  * @brief Condition indicates if the specified type is built-in for PG
- * @ingroup group-type_system
- * @tparam T -- type to check
+ * @ingroup group-type_system-types
+ * @tparam T --- type to check
  */
 template <typename T>
 struct is_built_in : std::bool_constant<
@@ -350,8 +379,10 @@ template <typename T>
 using is_dynamic_size = std::is_same<typename type_traits<T>::size, dynamic_size>;
 
 /**
-* Function returns type name in Postgre SQL. For custom types user must
-* define this name.
+* @brief Function returns type name in Postgre SQL.
+* @tparam T --- type
+* @return `boost::hana::string` --- name of the type
+* @ingroup group-type_system-functions
 */
 template <typename T>
 constexpr auto type_name() noexcept {
@@ -362,6 +393,12 @@ constexpr auto type_name() noexcept {
     return retval;
 }
 
+/**
+* @brief Function returns type name in Postgre SQL.
+* @param T --- type
+* @return `boost::hana::string` --- name of the type
+* @ingroup group-type_system-functions
+*/
 template <typename T>
 constexpr auto type_name(const T&) noexcept {return type_name<T>();}
 
@@ -435,7 +472,7 @@ OZO_STRONG_TYPEDEF(std::vector<char>, bytea)
 
 /**
  * @brief Helper macro to define type mapping
- * @ingroup group-type_system
+ * @ingroup group-type_system-mapping
  * In general type mapping is provided via `ozo::type_traits` specialization.
  * But for a single type you need to define a type, an array of the type, an
  * optional of the type (to support null), shared_ptr... and many other boilerplate.
@@ -494,6 +531,10 @@ OZO_PG_DEFINE_TYPE_AND_ARRAY(smtp::message, "code.message", null_oid, null_oid, 
         >{};\
     }
 
+/**
+ * @brief Bool type mapping
+ * @ingroup group-type_system-mapping
+ */
 OZO_PG_DEFINE_TYPE_AND_ARRAY(bool, "bool", BOOLOID, 1000, bytes<1>)
 OZO_PG_DEFINE_TYPE_AND_ARRAY(char, "char", CHAROID, 1002, bytes<1>)
 OZO_PG_DEFINE_TYPE_AND_ARRAY(ozo::pg::bytea, "bytea", BYTEAOID, 1001, dynamic_size)
@@ -517,7 +558,7 @@ namespace ozo {
 
 /**
  * @brief OidMap implementation type.
- * @ingroup group-type_system
+ * @ingroup group-type_system-types
  *
  * This type implements OidMap concept based on `boost::hana::map`.
  */
@@ -538,7 +579,7 @@ struct is_oid_map<oid_map_t<T>> : std::true_type {};
 /**
  * @brief Map of C++ types to corresponding PostgreSQL types OIDs
  *
- * @ingroup group-type_system
+ * @ingroup group-type_system-concepts
  * `OidMap` is needed to store information about C++ types and corresponding
  * custom database types' OIDs. For PostgreSQL built-in types no mapping is needed since their
  * `OID`s are defined in PostgreSQL sources. For custom types their `OID`s are defined
@@ -585,7 +626,7 @@ constexpr decltype(auto) register_types() noexcept {
 /**
  * @brief Provides #OidMap implementation for user-defined types.
  *
- * @ingroup group-type_system
+ * @ingroup group-type_system-functions
  * This function have to be used to provide information about custom types are being used
  * within requests for a #ConnectionSource.
  *
@@ -615,13 +656,13 @@ constexpr decltype(auto) register_types() noexcept {
 
 /**
  * @brief Type alias for empty #OidMap
- * @ingroup group-type_system
+ * @ingroup group-type_system-types
  */
 using empty_oid_map = std::decay_t<decltype(register_types<>())>;
 
 /**
 * Function sets oid for type in #OidMap.
-* @ingroup group-type_system
+* @ingroup group-type_system-functions
 * @tparam T --- type to set oid for.
 * @param map --- #OidMap to modify.
 * @param oid --- OID to set.
@@ -633,11 +674,16 @@ inline void set_type_oid(oid_map_t<MapImplT>& map, oid_t oid) noexcept {
 }
 
 /**
-* Function returns oid for type from #OidMap.
-* @ingroup group-type_system
+* @brief Function returns oid for type from #OidMap.
+* @ingroup group-type_system-functions
 * @tparam T --- type to get OID for.
 * @param map --- #OidMap to get OID from.
+* @return oid_t --- OID of the type
 */
+#ifdef OZO_DOCUMENTATION
+template <typename T, typename OidMap>
+oid_t type_oid(const OidMap& map) noexcept;
+#else
 template <typename T, typename MapImplT>
 inline auto type_oid(const oid_map_t<MapImplT>& map) noexcept
         -> std::enable_if_t<!is_built_in<T>::value, oid_t> {
@@ -649,16 +695,29 @@ constexpr auto type_oid(const oid_map_t<MapImplT>&) noexcept
         -> std::enable_if_t<is_built_in<T>::value, oid_t> {
     return typename type_traits<T>::oid();
 }
+#endif
 
+/**
+* @brief Function returns oid for type from #OidMap.
+* @ingroup group-type_system-functions
+* @param map --- #OidMap to get OID from.
+* @param v --- object for which type's OID will return.
+* @return oid_t --- OID of the type
+*/
+#ifdef OZO_DOCUMENTATION
+template <typename T, typename OidMap>
+oid_t type_oid(const OidMap& map, const T& v) noexcept
+#else
 template <typename T, typename MapImplT>
 inline auto type_oid(const oid_map_t<MapImplT>& map, const T&) noexcept{
     return type_oid<std::decay_t<T>>(map);
 }
+#endif
 
 /**
 * Function returns true if type can be obtained from DB response with
 * specified OID.
-* @ingroup group-type_system
+* @ingroup group-type_system-functions
 * @tparam T --- type to examine
 * @param map --- #OidMap to get type OID from
 * @param oid --- OID to check for compatibility
@@ -671,7 +730,7 @@ inline bool accepts_oid(const oid_map_t<MapImplT>& map, oid_t oid) noexcept {
 /**
 * Function returns true if type can be obtained from DB response with
 * specified OID.
-* @ingroup group-type_system
+* @ingroup group-type_system-functions
 * @param map --- #OidMap to get type OID from
 * @param const T& --- type to examine
 * @param oid --- OID to check for compatibility
@@ -683,7 +742,7 @@ inline bool accepts_oid(const oid_map_t<MapImplT>& map, const T& , oid_t oid) no
 
 /**
  * Checks if #OidMap contains no items.
- * @ingroup group-type_system
+ * @ingroup group-type_system-functions
  *
  * ### Example
  *
