@@ -58,7 +58,11 @@ h2 {
 	font-weight: normal;
 	margin: 42px 0px 20px 0px;
 }
-
+/*
+h3 {
+	font-family: "Courier New", courier, monospace;
+}
+*/
 h1.glow, h2.glow, h3.glow, h4.glow, h5.glow, h6.glow {
 	text-shadow: 0 0 15px cyan;
 }
@@ -195,7 +199,9 @@ pre.fragment {
 
 div.fragment {
 	padding: 6px 10px;
-	margin: 15px 0px 15px 30px;
+	/*margin: 15px 0px 15px 30px;*/
+	margin-top: 15px;
+	margin-bottom: 15px;
 	border: solid 1px rgb(221, 221, 221);
 	border-radius: 3px;
 	width: fit-content;
@@ -554,6 +560,17 @@ table.memberdecls {
 	padding: 2px;
 }
 
+.memtitle {
+	font-size: 0%;
+	padding: 0;
+	/*padding-top: 5px;
+	padding-bottom: 5px;
+	margin-right: 5px;*/
+	width: 100%;
+	background-image: none;
+	display: none;
+}
+
 .mempage {
 	width: 100%;
 }
@@ -561,7 +578,7 @@ table.memberdecls {
 .memitem {
 	padding: 0;
 	margin-bottom: 10px;
-	margin-right: 5px;
+	/*margin-right: 5px;*/
         -webkit-transition: box-shadow 0.5s linear;
         -moz-transition: box-shadow 0.5s linear;
         -ms-transition: box-shadow 0.5s linear;
@@ -569,8 +586,9 @@ table.memberdecls {
         transition: box-shadow 0.5s linear;
         display: table !important;
         width: 100%;
-	box-shadow: 0 0 15px silver;
-	border: 1px solid silver
+/*	box-shadow: 0 0 15px silver;
+	border: 1px solid silver; */
+	border-bottom: 1px solid silver;
 }
 
 .memitem.glow {
@@ -593,41 +611,27 @@ table.memberdecls {
 
 .memproto, dl.reflist dt {
 	margin-top: 1.5em;
-	border-top: none;
+/*	border-top: none;
 	border-left: none;
 	border-right: none;
-	border-bottom: 1px solid rgb(172, 172, 172);
+	border-bottom: 1px solid rgb(172, 172, 172);*/
+	border: solid 1px rgb(221, 221, 221);
+	background-color: rgb(250, 250, 250);
 	padding: 2px;
 	color: black;
-	//font-family: Courier, Consolas, monospace;
 	font-weight: bold;
-	//text-shadow: 0px 1px 1px rgba(255, 255, 255, 0.9);
-	//text-shadow: 0px 1px 1px rgba(0, 0, 0, 0.3);
 	text-shadow: none;
-	//background-image:url('nav_f.png');
 	background-image: none;
-	//background-repeat:repeat-x;
-	//background-color: #E2E8F2;
-	//background-color: rgb(235, 238, 241);
-	//background-color: #ccc;
-	background-color: white;
+	/*background-color: white;*/
 	/* opera specific markup */
 	box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.15);
-	//border-top-right-radius: 4px;
-	//border-top-left-radius: 4px;
 	border-top-right-radius: 0px;
 	border-top-left-radius: 0px;
 	/* firefox specific markup */
-	//-moz-box-shadow: rgba(0, 0, 0, 0.15) 5px 5px 5px;
-	//-moz-border-radius-topright: 4px;
-	//-moz-border-radius-topleft: 4px;
 	-moz-box-shadow: none;
 	-moz-border-radius-topright: 0px;
 	-moz-border-radius-topleft: 0px;
 	/* webkit specific markup */
-	//-webkit-box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.15);
-	//-webkit-border-top-right-radius: 4px;
-	//-webkit-border-top-left-radius: 4px;
 	-webkit-box-shadow: none;
 	-webkit-border-top-right-radius: 0px;
 	-webkit-border-top-left-radius: 0px;
@@ -636,35 +640,17 @@ table.memberdecls {
 
 .memdoc, dl.reflist dd {
 	border: none;
-        //border-bottom: 1px solid #A8B8D9;
-        //border-left: 1px solid #A8B8D9;
-        //border-right: 1px solid #A8B8D9;
 	font-weight: normal;
-        padding: 6px;
-        background-color: #FBFCFD;
-        border-top-width: 0;
-        //background-image:url('nav_g.png');
-	   background-image: none;
-        //background-repeat:repeat-x;
+	padding: 6px;
+	padding-left: 24px;
+	background-image: none;
         background-color: #FFFFFF;
-        /* opera specific markup */
-        //border-bottom-left-radius: 4px;
-        //border-bottom-right-radius: 4px;
-        //box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.15);
-        border-bottom-left-radius: 0px;
-	   border-bottom-right-radius: 0px;
         box-shadow: none;
         /* firefox specific markup */
-        //-moz-border-radius-bottomleft: 4px;
-        //-moz-border-radius-bottomright: 4px;
-        //-moz-box-shadow: rgba(0, 0, 0, 0.15) 5px 5px 5px;
         -moz-border-radius-bottomleft: 0px;
         -moz-border-radius-bottomright: 0px;
         -moz-box-shadow: none;
         /* webkit specific markup */
-        //-webkit-border-bottom-left-radius: 4px;
-        //-webkit-border-bottom-right-radius: 4px;
-        //-webkit-box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.15);
         -webkit-border-bottom-left-radius: 0px;
         -webkit-border-bottom-right-radius: 0px;
         -webkit-box-shadow: none;

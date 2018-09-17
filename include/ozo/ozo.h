@@ -6,19 +6,19 @@
  */
 
 /**
- * @defgroup group-core-functions Utility functions
+ * @defgroup group-core-functions Functions
  * @ingroup group-core
  * @brief Core utility functions of the library.
  */
 
 /**
- * @defgroup group-core-types Utility types
+ * @defgroup group-core-types Types
  * @ingroup group-core
  * @brief Core utility types of the library.
  */
 
 /**
- * @defgroup group-requests Requests
+ * @defgroup group-requests Database requests
  * @brief Database requests related concepts, types and functions.
  */
 

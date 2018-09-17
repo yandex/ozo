@@ -4,13 +4,13 @@
 #include <boost/system/system_error.hpp>
 
 /**
- * @defgroup error-codes Error codes
+ * @defgroup group-errors Errors system
  * @brief Errors system and codes description
  */
 namespace ozo {
 
 /**
- * @ingroup error-codes
+ * @ingroup group-errors
  * @brief Error code representation of the library.
  *
  * In this library the
@@ -32,36 +32,36 @@ using error_condition = boost::system::error_condition;
 using error_code = boost::system::error_code;
 
 /**
- * @ingroup error-codes
+ * @ingroup group-errors
  * @brief Error code contaning exception of the library.
  * @sa error_code , error_category, error_condition
  */
 using system_error = boost::system::system_error;
 /**
- * @ingroup error-codes
+ * @ingroup group-errors
  * @brief Error category representation of the library.
  * @sa error_code, system_error, error_condition
  */
 using error_category = boost::system::error_category;
 /**
- * @ingroup error-codes
+ * @ingroup group-errors
  * @brief Error condition representation of the library.
  * @sa error_code, system_error, error_category
  */
 using error_condition = boost::system::error_condition;
 
 /**
- * @defgroup error-codes-errors error
+ * @defgroup group-errors-errors error
  * @brief OZO related errors
  *
- * @ingroup error-codes
+ * @ingroup group-errors
  */
 namespace error {
 
 /**
  * @brief OZO related error codes
  *
- * @ingroup error-codes-errors
+ * @ingroup group-errors-errors
  *
  * Enumeration of error codes provided by the OZO library. Mainly it contains errors related
  * to underlying libpq functions errors, data reflection and so on. In most cases the additional context
@@ -89,7 +89,7 @@ enum code {
 
 /**
  * @brief OZO related errors category
- * @ingroup error-codes-errors
+ * @ingroup group-errors-errors
  *
  * OZO related errors category object is used to construct error_code.
  *
@@ -100,17 +100,17 @@ const error_category& category() noexcept;
 } // namespace error
 
 /**
- * @defgroup error-codes-sqlstate sqlstate
+ * @defgroup group-errors-sqlstate sqlstate
  * @brief SQL state related errors and conditions
  *
- * @ingroup error-codes
+ * @ingroup group-errors
  */
 namespace sqlstate {
 
 /**
 * @brief SQL state error conditions
 *
-* @ingroup error-codes-sqlstate
+* @ingroup group-errors-sqlstate
 *
 * This is a set of error conditions. It may not be complete, since new versions
 * of PostgreSQL may add another sql state codes and users may create new ones inside

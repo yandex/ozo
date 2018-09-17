@@ -59,7 +59,7 @@ constexpr auto StrongTypedef = is_strong_typedef<std::decay_t<T>>::value;
 
 /**
  * @brief Strong typedef
- * @ingroup group-type_system
+ * @ingroup group-core-types
  *
  * C++ `typedef` creates only an alias to a base type, so the both types are the same.
  * To get a really new type it is necessary to make some boilerplate code.
