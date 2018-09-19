@@ -33,7 +33,7 @@ var NAVTREE =
 
 var NAVTREEINDEX =
 [
-"classozo_1_1connection__info.html"
+"classozo_1_1basic__result.html"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronisation';

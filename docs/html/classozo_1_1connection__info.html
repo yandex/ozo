@@ -98,6 +98,8 @@ $(document).ready(function(){initNavTree('classozo_1_1connection__info.html','')
 
 <div class="header">
   <div class="summary">
+<a href="#pub-types">Types</a> &#124;
+<a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#related">Related Functions</a> &#124;
 <a href="classozo_1_1connection__info-members.html">List of all members</a>  </div>
   <div class="headertitle">
@@ -105,13 +107,13 @@ $(document).ready(function(){initNavTree('classozo_1_1connection__info.html','')
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;<a class="el" href="connection__info_8h_source.html">connection_info.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="connection__info_8h_source.html">ozo/connection_info.h</a>&gt;</code></p>
 <a name="details" id="details"></a><h2 class="groupheader">Description</h2>
 <div class="textblock"><h3>template&lt;typename OidMap = empty_oid_map, typename Statistics = no_statistics&gt;<br />
 class ozo::connection_info&lt; OidMap, Statistics &gt;</h3>
 
 <p>Connection information. </p>
-<p>This type is a basic <a class="el" href="group__group-connection-concepts.html#gaeb64411053912bede2d7d7ad7c8057b3" title="ConnectionSource concept. ">ConnectionSource</a> implementation. This source allows to establish connection via connection string specified. </p><dl class="tparams"><dt>Template Parameters</dt><dd>
+<p>This type is a basic <a class="el" href="group__group-connection-concepts.html#gaeb64411053912bede2d7d7ad7c8057b3" title="ConnectionSource concept. ">ConnectionSource</a> implementation. This source allows to establish connection via <a href="https://www.postgresql.org/docs/9.4/static/libpq-connect.html#LIBPQ-CONNSTRING">connection string</a> specified. </p><dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">OidMap</td><td>&mdash; oids map type which defines user types are used within this connection. </td></tr>
     <tr><td class="paramname">Statistics</td><td>&mdash; statistics type which defines statistics is collected for this connection. </td></tr>
@@ -119,18 +121,141 @@ class ozo::connection_info&lt; OidMap, Statistics &gt;</h3>
   </dd>
 </dl>
 </div><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
+Types</h2></td></tr>
+<tr class="memitem:a3228e5867ad155dcb23b014ac345678b"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classozo_1_1connection__info.html#a3228e5867ad155dcb23b014ac345678b">connection_type</a> = std::shared_ptr&lt; connection &gt;</td></tr>
+<tr class="memdesc:a3228e5867ad155dcb23b014ac345678b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Type of connection depends on built-in implementation.  <a href="#a3228e5867ad155dcb23b014ac345678b">More...</a><br /></td></tr>
+<tr class="separator:a3228e5867ad155dcb23b014ac345678b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
+Public Member Functions</h2></td></tr>
+<tr class="memitem:aa1d6a773d7a65583f7fd94715b20a1ef"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classozo_1_1connection__info.html#aa1d6a773d7a65583f7fd94715b20a1ef">connection_info</a> (std::string conn_str, Statistics statistics=Statistics{})</td></tr>
+<tr class="memdesc:aa1d6a773d7a65583f7fd94715b20a1ef"><td class="mdescLeft">&#160;</td><td class="mdescRight">Construct a new connection information object.  <a href="#aa1d6a773d7a65583f7fd94715b20a1ef">More...</a><br /></td></tr>
+<tr class="separator:aa1d6a773d7a65583f7fd94715b20a1ef"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac2e29be0dd67bcf08112f5e5a0a802b8"><td class="memTemplParams" colspan="2">template&lt;typename Handler &gt; </td></tr>
+<tr class="memitem:ac2e29be0dd67bcf08112f5e5a0a802b8"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classozo_1_1connection__info.html#ac2e29be0dd67bcf08112f5e5a0a802b8">operator()</a> (io_context &amp;io, <a class="el" href="group__group-core-concepts.html#gaaf7889950bd13896cf94a61580635e8c">Handler</a> &amp;&amp;handler, <a class="el" href="structozo_1_1time__traits.html#a7272c9a4857bf785826771866f18fe67">time_traits::duration</a> timeout=time_traits::duration::max()) const</td></tr>
+<tr class="memdesc:ac2e29be0dd67bcf08112f5e5a0a802b8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Provides connection is binded to the given <code>io_context</code>  <a href="#ac2e29be0dd67bcf08112f5e5a0a802b8">More...</a><br /></td></tr>
+<tr class="separator:ac2e29be0dd67bcf08112f5e5a0a802b8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="related"></a>
 Related Functions</h2></td></tr>
 <tr><td class="ititle" colspan="2"><p>(Note that these are not member functions.) </p>
 </td></tr>
 <tr class="memitem:ga7edf7162c365d85de16c9b34659140af"><td class="memTemplParams" colspan="2">template&lt;typename OidMap  = empty_oid_map, typename Statistics  = no_statistics&gt; </td></tr>
-<tr class="memitem:ga7edf7162c365d85de16c9b34659140af"><td class="memTemplItemLeft" align="right" valign="top">auto&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group__group-connection-functions.html#ga7edf7162c365d85de16c9b34659140af">make_connection_info</a> (std::string conn_str, const <a class="el" href="group__group-type__system.html#ga41fff92f9d5a046bcd0654312352e153">OidMap</a> &amp;=<a class="el" href="group__group-type__system.html#ga41fff92f9d5a046bcd0654312352e153">OidMap</a>{}, Statistics statistics=Statistics{})</td></tr>
+<tr class="memitem:ga7edf7162c365d85de16c9b34659140af"><td class="memTemplItemLeft" align="right" valign="top">auto&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group__group-connection-functions.html#ga7edf7162c365d85de16c9b34659140af">make_connection_info</a> (std::string conn_str, const <a class="el" href="group__group-type__system-concepts.html#ga41fff92f9d5a046bcd0654312352e153">OidMap</a> &amp;=<a class="el" href="group__group-type__system-concepts.html#ga41fff92f9d5a046bcd0654312352e153">OidMap</a>{}, Statistics statistics=Statistics{})</td></tr>
 <tr class="memdesc:ga7edf7162c365d85de16c9b34659140af"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs <code><a class="el" href="classozo_1_1connection__info.html" title="Connection information. ">ozo::connection_info</a></code> <a class="el" href="group__group-connection-concepts.html#gaeb64411053912bede2d7d7ad7c8057b3" title="ConnectionSource concept. ">ConnectionSource</a>.  <a href="group__group-connection-functions.html#ga7edf7162c365d85de16c9b34659140af">More...</a><br /></td></tr>
 <tr class="separator:ga7edf7162c365d85de16c9b34659140af"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<hr/>The documentation for this class was generated from the following file:<ul>
-<li>include/ozo/<a class="el" href="connection__info_8h_source.html">connection_info.h</a></li>
-</ul>
+<h2 class="groupheader">Types</h2>
+<a id="a3228e5867ad155dcb23b014ac345678b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3228e5867ad155dcb23b014ac345678b">&#9670;&nbsp;</a></span>connection_type</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename OidMap = empty_oid_map, typename Statistics = no_statistics&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="classozo_1_1connection__info.html">ozo::connection_info</a>&lt; <a class="el" href="group__group-type__system-concepts.html#ga41fff92f9d5a046bcd0654312352e153">OidMap</a>, Statistics &gt;::<a class="el" href="classozo_1_1connection__info.html#a3228e5867ad155dcb23b014ac345678b">connection_type</a> =  std::shared_ptr&lt;connection&gt;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Type of connection depends on built-in implementation. </p>
+<p>Type is used to model <a class="el" href="group__group-connection-concepts.html#gaeb64411053912bede2d7d7ad7c8057b3" title="ConnectionSource concept. ">ConnectionSource</a> </p>
+
+</div>
+</div>
+<h2 class="groupheader">Constructors</h2>
+<a id="aa1d6a773d7a65583f7fd94715b20a1ef"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa1d6a773d7a65583f7fd94715b20a1ef">&#9670;&nbsp;</a></span>connection_info()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename OidMap = empty_oid_map, typename Statistics = no_statistics&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classozo_1_1connection__info.html">ozo::connection_info</a>&lt; <a class="el" href="group__group-type__system-concepts.html#ga41fff92f9d5a046bcd0654312352e153">OidMap</a>, Statistics &gt;::<a class="el" href="classozo_1_1connection__info.html">connection_info</a> </td>
+          <td>(</td>
+          <td class="paramtype">std::string&#160;</td>
+          <td class="paramname"><em>conn_str</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">Statistics&#160;</td>
+          <td class="paramname"><em>statistics</em> = <code>Statistics{}</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Construct a new connection information object. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">conn_str</td><td>&mdash; connection string which is being used to create connection to a database. For details of how to make string see <a href="https://www.postgresql.org/docs/9.4/static/libpq-connect.html#LIBPQ-CONNSTRING">official libpq documentation</a> </td></tr>
+    <tr><td class="paramname">statistics</td><td>&mdash; statistics are being used for connections. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a id="ac2e29be0dd67bcf08112f5e5a0a802b8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac2e29be0dd67bcf08112f5e5a0a802b8">&#9670;&nbsp;</a></span>operator()()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename OidMap = empty_oid_map, typename Statistics = no_statistics&gt; </div>
+<div class="memtemplate">
+template&lt;typename Handler &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classozo_1_1connection__info.html">ozo::connection_info</a>&lt; <a class="el" href="group__group-type__system-concepts.html#ga41fff92f9d5a046bcd0654312352e153">OidMap</a>, Statistics &gt;::operator() </td>
+          <td>(</td>
+          <td class="paramtype">io_context &amp;&#160;</td>
+          <td class="paramname"><em>io</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="group__group-core-concepts.html#gaaf7889950bd13896cf94a61580635e8c">Handler</a> &amp;&amp;&#160;</td>
+          <td class="paramname"><em>handler</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structozo_1_1time__traits.html#a7272c9a4857bf785826771866f18fe67">time_traits::duration</a>&#160;</td>
+          <td class="paramname"><em>timeout</em> = <code>time_traits::duration::max()</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td> const</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Provides connection is binded to the given <code>io_context</code> </p>
+<p>In case of success &mdash; the handler will be invoked as operation succeeded. In case of connection fail &mdash; the handler will be invoked as operation failed.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">io</td><td>&mdash; <code>io_context</code> for the connection IO. </td></tr>
+    <tr><td class="paramname">handler</td><td>&mdash; <a class="el" href="group__group-core-concepts.html#gaaf7889950bd13896cf94a61580635e8c" title="Handler concept. ">Handler</a>. </td></tr>
+    <tr><td class="paramname">timeouts</td><td>&mdash; connection time-out. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->

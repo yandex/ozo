@@ -2,6 +2,9 @@ var group__group_connection_types =
 [
     [ "get_connection_type", "structozo_1_1get__connection__type.html", null ],
     [ "connection_info", "classozo_1_1connection__info.html", [
+      [ "connection_type", "classozo_1_1connection__info.html#a3228e5867ad155dcb23b014ac345678b", null ],
+      [ "connection_info", "classozo_1_1connection__info.html#aa1d6a773d7a65583f7fd94715b20a1ef", null ],
+      [ "operator()", "classozo_1_1connection__info.html#ac2e29be0dd67bcf08112f5e5a0a802b8", null ],
       [ "make_connection_info", "group__group-connection-functions.html#ga7edf7162c365d85de16c9b34659140af", null ]
     ] ],
     [ "connection_pool_config", "structozo_1_1connection__pool__config.html", [
@@ -19,5 +22,10 @@ var group__group_connection_types =
       [ "operator()", "classozo_1_1connection__pool.html#a4eab0de36606f6de94260f2613dec953", null ],
       [ "make_connection_pool", "group__group-connection-functions.html#ga7ee79e815277defd86c9268c002f9143", null ]
     ] ],
-    [ "connection_type", "group__group-connection-types.html#gac8378a7ff6a784dc9b354b343c204560", null ]
+    [ "connector", "classozo_1_1connector.html", [
+      [ "connection_type", "classozo_1_1connector.html#ac3337377b5ab845d27c2c3954a906d5f", null ],
+      [ "source_type", "classozo_1_1connector.html#a581bd7577c1fbdc2db5ad9d157ee817a", null ],
+      [ "connector", "classozo_1_1connector.html#a7d5b97a2fa0de9c49e5354a1816b7a24", null ]
+    ] ],
+    [ "connection_type", "group__group-connection-types.html#ga775ed707cd999db2b68f89999d40e52c", null ]
 ];

@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['utility_20functions',['Utility functions',['../group__group-core-functions.html',1,'']]]
+  ['sqlstate',['sqlstate',['../group__group-errors-sqlstate.html',1,'']]]
 ];

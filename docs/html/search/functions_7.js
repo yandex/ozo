@@ -1,7 +1,7 @@
 var searchData=
 [
-  ['rebind_5fio_5fcontext',['rebind_io_context',['../group__group-connection-functions.html#ga0814c7ac526064fb9d597ed59a0efe6c',1,'ozo']]],
-  ['register_5ftypes',['register_types',['../group__group-type__system.html#gac97d30cda822b83aa3d54f60c658f8f7',1,'ozo']]],
-  ['request',['request',['../group__group-requests.html#ga3d2edd9e8d3aea4aee843a539d14eb0b',1,'ozo::request(P &amp;&amp;provider, Q &amp;&amp;query, const time_traits::duration &amp;timeout, Out out, CompletionToken &amp;&amp;token)'],['../group__group-requests.html#ga748ee23ab6367dcadeec514cd92b8b0e',1,'ozo::request(P &amp;&amp;provider, Q &amp;&amp;query, Out out, CompletionToken &amp;&amp;token)']]],
-  ['reset_5ferror_5fcontext',['reset_error_context',['../group__group-connection-functions.html#gad4517ffae4244f57bc112d0d3b8f5602',1,'ozo']]]
+  ['into',['into',['../group__group-requests-functions.html#ga3e8f5ef58a370e79b7e554cd09fbc705',1,'ozo::into(T &amp;v)'],['../group__group-requests-functions.html#ga28638987088b1955e238f8174a3a406e',1,'ozo::into(basic_result&lt; T &gt; &amp;v)']]],
+  ['is_5fbinary',['is_binary',['../classozo_1_1value.html#a9207821d739457b5720c58c814d7614e',1,'ozo::value']]],
+  ['is_5fnull',['is_null',['../classozo_1_1value.html#a0381f1e973e8ba71cfed4177fc87a6d9',1,'ozo::value::is_null()'],['../group__group-core-functions.html#ga0846e7fca9274b5d6de397590b10f778',1,'ozo::is_null()']]],
+  ['is_5ftext',['is_text',['../classozo_1_1value.html#a5b9d6303b2fa895e2fe88ce4764eed26',1,'ozo::value']]]
 ];

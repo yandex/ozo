@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['oid_5ft',['oid_t',['../group__group-type__system.html#ga442ba8c3d090543cf6278acb4fed5e66',1,'ozo']]]
+  ['lrows_5fof',['lrows_of',['../group__group-requests-types.html#gac0629f9ed63ea129ee5e02e80c2088aa',1,'ozo']]]
 ];

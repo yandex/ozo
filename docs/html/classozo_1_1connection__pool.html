@@ -107,21 +107,31 @@ $(document).ready(function(){initNavTree('classozo_1_1connection__pool.html','')
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;<a class="el" href="connection__pool_8h_source.html">connection_pool.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="connection__pool_8h_source.html">ozo/connection_pool.h</a>&gt;</code></p>
 <a name="details" id="details"></a><h2 class="groupheader">Description</h2>
 <div class="textblock"><h3>template&lt;typename Source&gt;<br />
 class ozo::connection_pool&lt; Source &gt;</h3>
 
 <p>Connection pool implementation</p>
-<p>This is a simple <a href="https://en.wikipedia.org/wiki/Connection_pool">connection pool</a> implementation which can store up to maximum allowed number of connection to the same database. If all connections are busy client request will be placed into the internal queue to wait for free connection. If where is no free connections but it does not hit the limit of connections the new connection will be created via underlying <a class="el" href="group__group-connection-concepts.html#gaeb64411053912bede2d7d7ad7c8057b3" title="ConnectionSource concept. ">ConnectionSource</a> being specified in constructor. All operations are timed out. Connection idle life time is timed out as well. Pool is configurable via constructor and operator(). </p>
-<p><code><a class="el" href="classozo_1_1connection__pool.html" title="Connection pool implementationThis is a simple connection pool implementation which can store up to m...">connection_pool</a></code> models <a class="el" href="group__group-connection-concepts.html#gaeb64411053912bede2d7d7ad7c8057b3" title="ConnectionSource concept. ">ConnectionSource</a> concept itself using underlying <a class="el" href="group__group-connection-concepts.html#gaeb64411053912bede2d7d7ad7c8057b3" title="ConnectionSource concept. ">ConnectionSource</a>.</p>
+<p><br />
+ This is a simple implementation connection pool (<a href="https://en.wikipedia.org/wiki/Connection_pool">wikipedia</a>). Connection pool allows to store established connections and reuse it to avoid a connect operation for each request. It supports asynchronous request for connections using a queue with optional limits of capacity and wait time. Also connection in the pool may be closed when it is not used for some time - idle timeout. </p>
+<p>This is how <code><a class="el" href="classozo_1_1connection__pool.html" title="Connection pool implementation  This is a simple implementation connection pool (wikipedia). Connection pool allows to store established connections and reuse it to avoid a connect operation for each request. It supports asynchronous request for connections using a queue with optional limits of capacity and wait time. Also connection in the pool may be closed when it is not used for some time - idle timeout. ">connection_pool</a></code> handles user request to get a <a class="el" href="group__group-connection-concepts.html#ga9b549bf74e3c13c97f24493211722d9d" title="Database connection concept. ">Connection</a> object:</p>
+<ul>
+<li>If there is a free connection &mdash; it will be provided for a user immediately.</li>
+<li>If all connections are busy but its number less than the limit &mdash; a new connection will be created via the <a class="el" href="group__group-connection-concepts.html#gaeb64411053912bede2d7d7ad7c8057b3" title="ConnectionSource concept. ">ConnectionSource</a> and provided for a user.</li>
+<li>If all connections are busy and there is no room to create a new one &mdash; the request will be placed into the internal queue to wait for the free connection.</li>
+</ul>
+<p>The request may be limited by time via optional <code><a class="el" href="structozo_1_1connection__pool__timeouts.html" title="Timeouts for the ozo::get_connection() operationTime restrictions to get connection from the ozo::con...">connection_pool_timeouts</a></code> argument of the <code>connection_pool::operator()</code>.</p>
+<p><code><a class="el" href="classozo_1_1connection__pool.html" title="Connection pool implementation  This is a simple implementation connection pool (wikipedia). Connection pool allows to store established connections and reuse it to avoid a connect operation for each request. It supports asynchronous request for connections using a queue with optional limits of capacity and wait time. Also connection in the pool may be closed when it is not used for some time - idle timeout. ">connection_pool</a></code> models <a class="el" href="group__group-connection-concepts.html#gaeb64411053912bede2d7d7ad7c8057b3" title="ConnectionSource concept. ">ConnectionSource</a> concept itself using underlying <a class="el" href="group__group-connection-concepts.html#gaeb64411053912bede2d7d7ad7c8057b3" title="ConnectionSource concept. ">ConnectionSource</a>.</p>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
-    <tr><td class="paramname">Source</td><td>&mdash; underlying <a class="el" href="group__group-connection-concepts.html#gaeb64411053912bede2d7d7ad7c8057b3" title="ConnectionSource concept. ">ConnectionSource</a> which is being used to create connection to a database. </td></tr>
+    <tr><td class="paramname">Source</td><td>&mdash; underlying <a class="el" href="group__group-connection-concepts.html#gaeb64411053912bede2d7d7ad7c8057b3" title="ConnectionSource concept. ">ConnectionSource</a> which is being used to create connection to a database.</td></tr>
   </table>
   </dd>
 </dl>
-</div><table class="memberdecls">
+<h3>Example</h3>
+<p>See <a href="examples/connection_pool.cpp">examples/connection_pool.cpp</a>.</p>
+<p>Creating the <a class="el" href="classozo_1_1connection__pool.html" title="Connection pool implementation  This is a simple implementation connection pool (wikipedia). Connection pool allows to store established connections and reuse it to avoid a connect operation for each request. It supports asynchronous request for connections using a queue with optional limits of capacity and wait time. Also connection in the pool may be closed when it is not used for some time - idle timeout. ">connection_pool</a> instance: </p><div class="fragment"><div class="line"></div><div class="line">    <span class="comment">// To make a connection to a database we need to make a ConnectionSource.</span></div><div class="line">    <span class="keyword">auto</span> connection_info = ozo::make_connection_info(argv[1]);</div><div class="line"></div><div class="line">    <a class="code" href="structozo_1_1connection__pool__config.html">ozo::connection_pool_config</a> connection_pool_config;</div><div class="line"></div><div class="line">    <span class="comment">// Maximum limit for number of stored connections</span></div><div class="line">    connection_pool_config.<a class="code" href="structozo_1_1connection__pool__config.html#ab56b5ea7e327fb3394c2403768366c16">capacity</a> = 1;</div><div class="line">    <span class="comment">// Maximum limit for number of waiting requests for connection</span></div><div class="line">    connection_pool_config.<a class="code" href="structozo_1_1connection__pool__config.html#afe6849d580f855d8ee74ba048cb7050d">queue_capacity</a> = 10;</div><div class="line">    <span class="comment">// Maximum time duration to store unused open connection</span></div><div class="line">    connection_pool_config.<a class="code" href="structozo_1_1connection__pool__config.html#a030e1fbe98cc5d71184d1a63332812b9">idle_timeout</a> = std::chrono::seconds(60);</div><div class="line"></div><div class="line">    <span class="comment">// Creating connection pool from connection_info as the underlying ConnectionSource</span></div><div class="line">    <span class="keyword">auto</span> <a class="code" href="classozo_1_1connection__pool.html#acc753075bef06f8faf28b1db68c3617c">connection_pool</a> = ozo::make_connection_pool(connection_info, connection_pool_config);</div></div><!-- fragment --><p> Creating a ConnectionProvider from the <a class="el" href="classozo_1_1connection__pool.html" title="Connection pool implementation  This is a simple implementation connection pool (wikipedia). Connection pool allows to store established connections and reuse it to avoid a connect operation for each request. It supports asynchronous request for connections using a queue with optional limits of capacity and wait time. Also connection in the pool may be closed when it is not used for some time - idle timeout. ">connection_pool</a> instance: </p><div class="fragment"><div class="line"></div><div class="line">        <span class="comment">// The next step is bind asio::io_context with ConnectionSource to setup executor for all</span></div><div class="line">        <span class="comment">// callbacks. Default connection is a ConnectionProvider. If there is some problem with network</span></div><div class="line">        <span class="comment">// or database we don&#39;t want to wait indefinitely, so we establish connect timeout. If there is</span></div><div class="line">        <span class="comment">// no available connection in the connection pool we also want to wait within finite time duration.</span></div><div class="line">        <a class="code" href="structozo_1_1connection__pool__timeouts.html">ozo::connection_pool_timeouts</a> timeouts;</div><div class="line">        timeouts.<a class="code" href="structozo_1_1connection__pool__timeouts.html#a064ac09df4241f3bd581269a9f27c38e">connect</a> = std::chrono::seconds(1);</div><div class="line">        timeouts.<a class="code" href="structozo_1_1connection__pool__timeouts.html#a8dd364f2a64bd2be5271eb4a3d4ac807">queue</a> = std::chrono::seconds(1);</div><div class="line"></div><div class="line">        <span class="keyword">const</span> <span class="keyword">auto</span> connector = ozo::make_connector(<a class="code" href="classozo_1_1connection__pool.html#acc753075bef06f8faf28b1db68c3617c">connection_pool</a>, io, timeouts);</div></div><!-- fragment --></div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
 Types</h2></td></tr>
 <tr class="memitem:a840a2be131854035662ddd91ba166148"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classozo_1_1connection__pool.html#a840a2be131854035662ddd91ba166148">connection_type</a> = impl::pooled_connection_ptr&lt; Source &gt;</td></tr>
@@ -134,8 +144,8 @@ Public Member Functions</h2></td></tr>
 <tr class="memdesc:acc753075bef06f8faf28b1db68c3617c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Construct a new connection pool object.  <a href="#acc753075bef06f8faf28b1db68c3617c">More...</a><br /></td></tr>
 <tr class="separator:acc753075bef06f8faf28b1db68c3617c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4eab0de36606f6de94260f2613dec953"><td class="memTemplParams" colspan="2">template&lt;typename Handler &gt; </td></tr>
-<tr class="memitem:a4eab0de36606f6de94260f2613dec953"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classozo_1_1connection__pool.html#a4eab0de36606f6de94260f2613dec953">operator()</a> (io_context &amp;io, Handler &amp;&amp;handler, const <a class="el" href="structozo_1_1connection__pool__timeouts.html">connection_pool_timeouts</a> &amp;timeouts=<a class="el" href="structozo_1_1connection__pool__timeouts.html">connection_pool_timeouts</a> {})</td></tr>
-<tr class="memdesc:a4eab0de36606f6de94260f2613dec953"><td class="mdescLeft">&#160;</td><td class="mdescRight">Provides connection is binded to the given io_context.  <a href="#a4eab0de36606f6de94260f2613dec953">More...</a><br /></td></tr>
+<tr class="memitem:a4eab0de36606f6de94260f2613dec953"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classozo_1_1connection__pool.html#a4eab0de36606f6de94260f2613dec953">operator()</a> (io_context &amp;io, <a class="el" href="group__group-core-concepts.html#gaaf7889950bd13896cf94a61580635e8c">Handler</a> &amp;&amp;handler, const <a class="el" href="structozo_1_1connection__pool__timeouts.html">connection_pool_timeouts</a> &amp;timeouts=<a class="el" href="structozo_1_1connection__pool__timeouts.html">connection_pool_timeouts</a> {})</td></tr>
+<tr class="memdesc:a4eab0de36606f6de94260f2613dec953"><td class="mdescLeft">&#160;</td><td class="mdescRight">Provides connection is binded to the given <code>io_context</code>  <a href="#a4eab0de36606f6de94260f2613dec953">More...</a><br /></td></tr>
 <tr class="separator:a4eab0de36606f6de94260f2613dec953"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="related"></a>
@@ -227,7 +237,7 @@ template&lt;typename Handler &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">Handler &amp;&amp;&#160;</td>
+          <td class="paramtype"><a class="el" href="group__group-core-concepts.html#gaaf7889950bd13896cf94a61580635e8c">Handler</a> &amp;&amp;&#160;</td>
           <td class="paramname"><em>handler</em>, </td>
         </tr>
         <tr>
@@ -244,14 +254,12 @@ template&lt;typename Handler &gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p>Provides connection is binded to the given io_context. </p>
-<p>In case of success the handler will be called with no <code>error_code</code> and established connection object. If no connection available and number of connections of the pool does not hit the limit - a new connection will be made. If pool is out of limits - the handler will be placed into the internal queue to wait for free connection.</p>
-<p>In case of time-out of connection establishing or being in queue - the handler will be called with error_code.</p>
-<p>In case of hitting the limit of the internal queue - the handler will be called with error_code.</p>
+<p>Provides connection is binded to the given <code>io_context</code> </p>
+<p>In case of success &mdash; the handler will be invoked as operation succeeded. In case of connection fail, queue timeout or queue full &mdash; the handler will be invoked as operation failed.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">io</td><td>&mdash; <code>io_context</code> for the connection IO. </td></tr>
-    <tr><td class="paramname">handler</td><td>&mdash; a callback with signature <code>void(error_code, connection_type)</code>. </td></tr>
+    <tr><td class="paramname">handler</td><td>&mdash; <a class="el" href="group__group-core-concepts.html#gaaf7889950bd13896cf94a61580635e8c" title="Handler concept. ">Handler</a>. </td></tr>
     <tr><td class="paramname">timeouts</td><td>&mdash; connection acquisition related time-outs </td></tr>
   </table>
   </dd>
@@ -259,9 +267,6 @@ template&lt;typename Handler &gt; </div>
 
 </div>
 </div>
-<hr/>The documentation for this class was generated from the following file:<ul>
-<li>include/ozo/<a class="el" href="connection__pool_8h_source.html">connection_pool.h</a></li>
-</ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->

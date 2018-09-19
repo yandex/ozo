@@ -102,17 +102,18 @@ $(document).ready(function(){initNavTree('classozo_1_1connector.html','');});
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="classozo_1_1connector-members.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">ozo::connector&lt; Base, Args &gt; Class Template Reference</div>  </div>
+<div class="title">ozo::connector&lt; Base, Args &gt; Class Template Reference<div class="ingroups"><a class="el" href="group__group-connection.html">Database connection</a> &raquo; <a class="el" href="group__group-connection-types.html">Types</a></div></div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;<a class="el" href="connector_8h_source.html">connector.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="connector_8h_source.html">ozo/connector.h</a>&gt;</code></p>
 <a name="details" id="details"></a><h2 class="groupheader">Description</h2>
 <div class="textblock"><h3>template&lt;typename Base, typename ... Args&gt;<br />
 class ozo::connector&lt; Base, Args &gt;</h3>
 
 <p>Default implementation of ConnectionProvider. </p>
-<p>This is default implementation of the ConnectionProvider concept. It binds <code>io_context</code>, additional parameters and ConnectionSource implementation object to bea able provide a Connection via get_connection functionality.</p>
+<p>This is the default implementation of the <a class="el" href="group__group-connection-concepts.html#ga81740a704092279e94bf9007ae3f722b" title="ConnectionProvider concept. ">ConnectionProvider</a> concept. It binds <code>io_context</code> and additional <a class="el" href="group__group-connection-concepts.html#gaeb64411053912bede2d7d7ad7c8057b3" title="ConnectionSource concept. ">ConnectionSource</a>-specific parameters to the <a class="el" href="group__group-connection-concepts.html#gaeb64411053912bede2d7d7ad7c8057b3" title="ConnectionSource concept. ">ConnectionSource</a> implementation object.</p>
+<p>Thus <code>connector</code> can create connection via <a class="el" href="group__group-connection-concepts.html#gaeb64411053912bede2d7d7ad7c8057b3" title="ConnectionSource concept. ">ConnectionSource</a> object running its asynchronous connect operation on the <code>io_context</code> with additional parameters. As a result, <code>connector</code> provides a <a class="el" href="group__group-connection-concepts.html#ga9b549bf74e3c13c97f24493211722d9d" title="Database connection concept. ">Connection</a> object bound to <code>io_context</code> via <code><a class="el" href="group__group-connection-functions.html#ga8bedf4875565775ac9b0b91c0ba9ece7" title="Get a connection from provider. ">ozo::get_connection()</a></code> function.</p>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">Base</td><td>&mdash; ConnectionSource implementation </td></tr>
@@ -131,7 +132,7 @@ Types</h2></td></tr>
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a7d5b97a2fa0de9c49e5354a1816b7a24"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classozo_1_1connector.html#a7d5b97a2fa0de9c49e5354a1816b7a24">connector</a> (Base &amp;base, io_context &amp;io, std::tuple&lt; Args ... &gt; &amp;&amp;args)</td></tr>
-<tr class="memdesc:a7d5b97a2fa0de9c49e5354a1816b7a24"><td class="mdescLeft">&#160;</td><td class="mdescRight">Construct a new connector object.  <a href="#a7d5b97a2fa0de9c49e5354a1816b7a24">More...</a><br /></td></tr>
+<tr class="memdesc:a7d5b97a2fa0de9c49e5354a1816b7a24"><td class="mdescLeft">&#160;</td><td class="mdescRight">Construct a new <code>connector</code> object.  <a href="#a7d5b97a2fa0de9c49e5354a1816b7a24">More...</a><br /></td></tr>
 <tr class="separator:a7d5b97a2fa0de9c49e5354a1816b7a24"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Types</h2>
@@ -148,7 +149,7 @@ template&lt;typename Base , typename ... Args&gt; </div>
         </tr>
       </table>
 </div><div class="memdoc">
-<p>Connection implementation type according to ConnectionProvider requirements. Specifies the Connection implementation type which can be obtained from this provider. </p>
+<p><a class="el" href="group__group-connection-concepts.html#ga9b549bf74e3c13c97f24493211722d9d" title="Database connection concept. ">Connection</a> implementation type according to <a class="el" href="group__group-connection-concepts.html#ga81740a704092279e94bf9007ae3f722b" title="ConnectionProvider concept. ">ConnectionProvider</a> requirements. Specifies the <a class="el" href="group__group-connection-concepts.html#ga9b549bf74e3c13c97f24493211722d9d" title="Database connection concept. ">Connection</a> implementation type which can be obtained from this provider. </p>
 
 </div>
 </div>
@@ -165,7 +166,7 @@ template&lt;typename Base , typename ... Args&gt; </div>
         </tr>
       </table>
 </div><div class="memdoc">
-<p>Source type according to ConnectionProvider requirements </p>
+<p>Source type according to <a class="el" href="group__group-connection-concepts.html#ga81740a704092279e94bf9007ae3f722b" title="ConnectionProvider concept. ">ConnectionProvider</a> requirements </p>
 
 </div>
 </div>
@@ -204,22 +205,18 @@ template&lt;typename Base , typename ... Args&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p>Construct a new connector object. </p>
-<p>Constructor as it is.</p>
+<p>Construct a new <code>connector</code> object. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">base</td><td>&mdash; ConnectionSource implementation object </td></tr>
-    <tr><td class="paramname">io</td><td>&mdash; <code>io_context</code> for connect IO </td></tr>
-    <tr><td class="paramname">args</td><td>&mdash; additional arguments to be passed to ConnectionSource to create Connection </td></tr>
+    <tr><td class="paramname">base</td><td>&mdash; <a class="el" href="group__group-connection-concepts.html#gaeb64411053912bede2d7d7ad7c8057b3" title="ConnectionSource concept. ">ConnectionSource</a> implementation </td></tr>
+    <tr><td class="paramname">io</td><td>&mdash; <code>io_context</code> for asynchronous IO </td></tr>
+    <tr><td class="paramname">args</td><td>&mdash; additional <a class="el" href="group__group-connection-concepts.html#gaeb64411053912bede2d7d7ad7c8057b3" title="ConnectionSource concept. ">ConnectionSource</a>-specific arguments to be passed to make a <a class="el" href="group__group-connection-concepts.html#ga9b549bf74e3c13c97f24493211722d9d" title="Database connection concept. ">Connection</a> </td></tr>
   </table>
   </dd>
 </dl>
 
 </div>
 </div>
-<hr/>The documentation for this class was generated from the following file:<ul>
-<li>include/ozo/<a class="el" href="connector_8h_source.html">connector.h</a></li>
-</ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
