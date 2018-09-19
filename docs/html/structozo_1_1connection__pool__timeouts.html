@@ -105,10 +105,10 @@ $(document).ready(function(){initNavTree('structozo_1_1connection__pool__timeout
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;<a class="el" href="connection__pool_8h_source.html">connection_pool.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="connection__pool_8h_source.html">ozo/connection_pool.h</a>&gt;</code></p>
 <a name="details" id="details"></a><h2 class="groupheader">Description</h2>
 <div class="textblock"><p>Timeouts for the <a class="el" href="group__group-connection-functions.html#ga8bedf4875565775ac9b0b91c0ba9ece7" title="Get a connection from provider. ">ozo::get_connection()</a> operation</p>
-<p>Time restrictions to get connection from the <a class="el" href="classozo_1_1connection__pool.html" title="Connection pool implementationThis is a simple connection pool implementation which can store up to m...">ozo::connection_pool</a>. </p>
+<p>Time restrictions to get connection from the <code><a class="el" href="classozo_1_1connection__pool.html" title="Connection pool implementation  This is a simple implementation connection pool (wikipedia). Connection pool allows to store established connections and reuse it to avoid a connect operation for each request. It supports asynchronous request for connections using a queue with optional limits of capacity and wait time. Also connection in the pool may be closed when it is not used for some time - idle timeout. ">ozo::connection_pool</a></code> </p>
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
@@ -118,12 +118,9 @@ Public Attributes</h2></td></tr>
 <tr class="separator:a064ac09df4241f3bd581269a9f27c38e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8dd364f2a64bd2be5271eb4a3d4ac807"><td class="memItemLeft" align="right" valign="top"><a id="a8dd364f2a64bd2be5271eb4a3d4ac807"></a>
 <a class="el" href="structozo_1_1time__traits.html#a7272c9a4857bf785826771866f18fe67">time_traits::duration</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structozo_1_1connection__pool__timeouts.html#a8dd364f2a64bd2be5271eb4a3d4ac807">queue</a> = std::chrono::seconds(10)</td></tr>
-<tr class="memdesc:a8dd364f2a64bd2be5271eb4a3d4ac807"><td class="mdescLeft">&#160;</td><td class="mdescRight">maximum time interval to wait for available connection handle in conneciton pool <br /></td></tr>
+<tr class="memdesc:a8dd364f2a64bd2be5271eb4a3d4ac807"><td class="mdescLeft">&#160;</td><td class="mdescRight">maximum time interval to wait for available connection handle in <code>conneciton_pool</code> <br /></td></tr>
 <tr class="separator:a8dd364f2a64bd2be5271eb4a3d4ac807"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<hr/>The documentation for this struct was generated from the following file:<ul>
-<li>include/ozo/<a class="el" href="connection__pool_8h_source.html">connection_pool.h</a></li>
-</ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->

@@ -11,6 +11,7 @@ var group__group_core_concepts =
     [ "HanaString", "group__group-core-concepts.html#gae7bc85faa1a6f71cf327510ca1b64d62", null ],
     [ "HanaStruct", "group__group-core-concepts.html#ga64ad173048912aca9e3a2be2d89ca328", null ],
     [ "HanaTuple", "group__group-core-concepts.html#gafb3476064c95a489c8c42d06d8434443", null ],
+    [ "Handler", "group__group-core-concepts.html#gaaf7889950bd13896cf94a61580635e8c", null ],
     [ "InsertIterator", "group__group-core-concepts.html#ga4bca84123276a5399ea63f2e249bd04d", null ],
     [ "Integral", "group__group-core-concepts.html#gad66641f2bf2a66458e7a79d5d71806b7", null ],
     [ "Iterable", "group__group-core-concepts.html#gaf513c2ac32e89e730a1019c94ec8fb19", null ],

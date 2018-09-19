@@ -1,9 +1,15 @@
 var searchData=
 [
-  ['sqlstate',['sqlstate',['../group__error-codes-sqlstate.html',1,'']]],
-  ['set_5ferror_5fcontext',['set_error_context',['../group__group-connection-functions.html#gad57058f0aa7e00df34f027b015b80a1a',1,'ozo']]],
-  ['set_5ftype_5foid',['set_type_oid',['../group__group-type__system.html#ga078aef0d58433783f8d0cba352732993',1,'ozo']]],
-  ['size',['size',['../structozo_1_1type__traits.html#ad1a21be06fcb34bf612a7c516159fccd',1,'ozo::type_traits']]],
-  ['size_5fof',['size_of',['../namespaceozo.html#af25063f8ee373256aacd69febdd31517',1,'ozo']]],
-  ['source_5ftype',['source_type',['../classozo_1_1connector.html#a581bd7577c1fbdc2db5ad9d157ee817a',1,'ozo::connector']]]
+  ['related_20functions',['Related functions',['../group__group-connection-functions.html',1,'']]],
+  ['rawdatawritable',['RawDataWritable',['../group__group-core-concepts.html#ga21d1faddb4ee1e9ff5d132885fc03713',1,'ozo']]],
+  ['rebind_5fio_5fcontext',['rebind_io_context',['../group__group-connection-functions.html#ga0814c7ac526064fb9d597ed59a0efe6c',1,'ozo']]],
+  ['register_5ftypes',['register_types',['../group__group-type__system-functions.html#gac97d30cda822b83aa3d54f60c658f8f7',1,'ozo']]],
+  ['request',['request',['../group__group-requests-functions.html#ga3d2edd9e8d3aea4aee843a539d14eb0b',1,'ozo::request(P &amp;&amp;provider, Q &amp;&amp;query, const time_traits::duration &amp;timeout, Out out, CompletionToken &amp;&amp;token)'],['../group__group-requests-functions.html#ga748ee23ab6367dcadeec514cd92b8b0e',1,'ozo::request(P &amp;&amp;provider, Q &amp;&amp;query, Out out, CompletionToken &amp;&amp;token)']]],
+  ['require',['Require',['../group__group-core-concepts.html#gaec336e235cdaabead728b12ecb63b38a',1,'ozo']]],
+  ['reset_5ferror_5fcontext',['reset_error_context',['../group__group-connection-functions.html#gad4517ffae4244f57bc112d0d3b8f5602',1,'ozo']]],
+  ['result_5fstatus_5fbad_5fresponse',['result_status_bad_response',['../group__group-errors-errors.html#ggac6082be94aa8b21e440cab09413a91acab4432f9c05f68078c507ce3c8a142712',1,'ozo::error']]],
+  ['result_5fstatus_5fempty_5fquery',['result_status_empty_query',['../group__group-errors-errors.html#ggac6082be94aa8b21e440cab09413a91aca224996141ab1e62ec5f5bed938d7400b',1,'ozo::error']]],
+  ['result_5fstatus_5funexpected',['result_status_unexpected',['../group__group-errors-errors.html#ggac6082be94aa8b21e440cab09413a91aca494dba3ee465e71a64f8946c368200cd',1,'ozo::error']]],
+  ['row',['row',['../classozo_1_1row.html',1,'ozo']]],
+  ['rows_5fof',['rows_of',['../group__group-requests-types.html#gade9a42efa5064524382c2673de242f39',1,'ozo']]]
 ];

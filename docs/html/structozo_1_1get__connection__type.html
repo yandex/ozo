@@ -104,14 +104,14 @@ $(document).ready(function(){initNavTree('structozo_1_1get__connection__type.htm
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;<a class="el" href="connection_8h_source.html">connection.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="connection_8h_source.html">ozo/connection.h</a>&gt;</code></p>
 <a name="details" id="details"></a><h2 class="groupheader">Description</h2>
 <div class="textblock"><h3>template&lt;typename ConnectionProvider, typename = std::void_t&lt;&gt;&gt;<br />
 struct ozo::get_connection_type&lt; ConnectionProvider, typename &gt;</h3>
 
 <p>Connection type getter. </p>
 <p>This type describes connection type from a <a class="el" href="group__group-connection-concepts.html#ga81740a704092279e94bf9007ae3f722b" title="ConnectionProvider concept. ">ConnectionProvider</a>. By default it assumes on ConnectionProvider::connection_type type, like this (<code>exposition only</code>):</p>
-<div class="fragment"><div class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> ConnectionProv<span class="keywordtype">id</span>er, <span class="keyword">typename</span> = std::<span class="keywordtype">void</span>_t&lt;&gt;&gt;</div><div class="line"><span class="keyword">struct </span>get_connection_type {</div><div class="line">    <span class="keyword">using</span> type = <span class="keyword">typename</span> <a class="code" href="group__group-connection-types.html#gac8378a7ff6a784dc9b354b343c204560">std::decay_t&lt;ConnectionProvider&gt;::connection_type</a>;</div><div class="line">};</div></div><!-- fragment --><p><b>Customization point</b></p>
+<div class="fragment"><div class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> ConnectionProv<span class="keywordtype">id</span>er, <span class="keyword">typename</span> = std::<span class="keywordtype">void</span>_t&lt;&gt;&gt;</div><div class="line"><span class="keyword">struct </span>get_connection_type {</div><div class="line">    <span class="keyword">using</span> type = <span class="keyword">typename</span> <a class="code" href="group__group-connection-types.html#ga775ed707cd999db2b68f89999d40e52c">std::decay_t&lt;ConnectionProvider&gt;::connection_type</a>;</div><div class="line">};</div></div><!-- fragment --><p><b>Customization point</b></p>
 <p>Here you can specify how to obtain connection type from your own <a class="el" href="group__group-connection-concepts.html#ga81740a704092279e94bf9007ae3f722b" title="ConnectionProvider concept. ">ConnectionProvider</a>.</p>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
@@ -119,10 +119,7 @@ struct ozo::get_connection_type&lt; ConnectionProvider, typename &gt;</h3>
   </table>
   </dd>
 </dl>
-</div><hr/>The documentation for this struct was generated from the following file:<ul>
-<li>include/ozo/<a class="el" href="connection_8h_source.html">connection.h</a></li>
-</ul>
-</div><!-- contents -->
+</div></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->

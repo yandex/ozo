@@ -1,5 +1,4 @@
 var searchData=
 [
-  ['make_5fconnection_5finfo',['make_connection_info',['../group__group-connection-functions.html#ga7edf7162c365d85de16c9b34659140af',1,'ozo::connection_info']]],
-  ['make_5fconnection_5fpool',['make_connection_pool',['../group__group-connection-functions.html#ga7ee79e815277defd86c9268c002f9143',1,'ozo::connection_pool']]]
+  ['lrows_5fof',['lrows_of',['../group__group-requests-types.html#gac0629f9ed63ea129ee5e02e80c2088aa',1,'ozo']]]
 ];

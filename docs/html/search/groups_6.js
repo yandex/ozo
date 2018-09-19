@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['sqlstate',['sqlstate',['../group__error-codes-sqlstate.html',1,'']]]
+  ['queries',['Queries',['../group__group-query.html',1,'']]]
 ];

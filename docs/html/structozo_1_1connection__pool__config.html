@@ -105,10 +105,10 @@ $(document).ready(function(){initNavTree('structozo_1_1connection__pool__config.
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;<a class="el" href="connection__pool_8h_source.html">connection_pool.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="connection__pool_8h_source.html">ozo/connection_pool.h</a>&gt;</code></p>
 <a name="details" id="details"></a><h2 class="groupheader">Description</h2>
 <div class="textblock"><p>Connection pool configuration</p>
-<p>Configuration of the <a class="el" href="classozo_1_1connection__pool.html" title="Connection pool implementationThis is a simple connection pool implementation which can store up to m...">ozo::connection_pool</a>, e.g. how many connection are in the pool, how many queries can be in wait queue if all connections are used by another queries, and how long to keep connection open. </p>
+<p>Configuration of the <code><a class="el" href="classozo_1_1connection__pool.html" title="Connection pool implementation  This is a simple implementation connection pool (wikipedia). Connection pool allows to store established connections and reuse it to avoid a connect operation for each request. It supports asynchronous request for connections using a queue with optional limits of capacity and wait time. Also connection in the pool may be closed when it is not used for some time - idle timeout. ">ozo::connection_pool</a></code>, e.g. how many connection are in the pool, how many queries can be in wait queue if all connections are used by another queries, and how long to keep connection open. </p>
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
@@ -125,9 +125,6 @@ std::size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" hre
 <tr class="memdesc:a030e1fbe98cc5d71184d1a63332812b9"><td class="mdescLeft">&#160;</td><td class="mdescRight">time interval to close connection after last usage <br /></td></tr>
 <tr class="separator:a030e1fbe98cc5d71184d1a63332812b9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<hr/>The documentation for this struct was generated from the following file:<ul>
-<li>include/ozo/<a class="el" href="connection__pool_8h_source.html">connection_pool.h</a></li>
-</ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->

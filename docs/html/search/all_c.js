@@ -1,11 +1,20 @@
 var searchData=
 [
-  ['pg_5fconsume_5finput_5ffailed',['pg_consume_input_failed',['../group__error-codes-errors.html#ggac6082be94aa8b21e440cab09413a91acac33fddb92ebcaca4914ec354ae5d058d',1,'ozo::error']]],
-  ['pg_5fflush_5ffailed',['pg_flush_failed',['../group__error-codes-errors.html#ggac6082be94aa8b21e440cab09413a91aca0d8727f346b97bd6598f0e509f2fb32a',1,'ozo::error']]],
-  ['pg_5fsend_5fquery_5fparams_5ffailed',['pg_send_query_params_failed',['../group__error-codes-errors.html#ggac6082be94aa8b21e440cab09413a91aca53276204e5fbd0e8a5f1b33c5df0cb98',1,'ozo::error']]],
-  ['pg_5fset_5fnonblocking_5ffailed',['pg_set_nonblocking_failed',['../group__error-codes-errors.html#ggac6082be94aa8b21e440cab09413a91acac0b684ae17576c942bd9a4674eb17b4c',1,'ozo::error']]],
-  ['pq_5fconnect_5fpoll_5ffailed',['pq_connect_poll_failed',['../group__error-codes-errors.html#ggac6082be94aa8b21e440cab09413a91acab04916bcdba0abe474e839589bd1d051',1,'ozo::error']]],
-  ['pq_5fconnection_5fstart_5ffailed',['pq_connection_start_failed',['../group__error-codes-errors.html#ggac6082be94aa8b21e440cab09413a91acae73e8536b92176a741b710b9fd8d645c',1,'ozo::error']]],
-  ['pq_5fconnection_5fstatus_5fbad',['pq_connection_status_bad',['../group__error-codes-errors.html#ggac6082be94aa8b21e440cab09413a91aca20a4bc341493b9b119db70f7799ed7e9',1,'ozo::error']]],
-  ['pq_5fsocket_5ffailed',['pq_socket_failed',['../group__error-codes-errors.html#ggac6082be94aa8b21e440cab09413a91acad09a4fd4b22be76d041339f0426651ec',1,'ozo::error']]]
+  ['ozo',['ozo',['../index.html',1,'']]],
+  ['oid',['oid',['../structozo_1_1type__traits.html#a0bf7e2cade20c740e019be303dcf5ea4',1,'ozo::type_traits::oid()'],['../classozo_1_1value.html#ae253527bdec0347fcdf86930f0d13be1',1,'ozo::value::oid()']]],
+  ['oid_5fconstant',['oid_constant',['../structozo_1_1oid__constant.html',1,'ozo']]],
+  ['oid_5fmap_5ft',['oid_map_t',['../structozo_1_1oid__map__t.html',1,'ozo']]],
+  ['oid_5frequest_5ffailed',['oid_request_failed',['../group__group-errors-errors.html#ggac6082be94aa8b21e440cab09413a91aca20c118ca7a6401c93d4952603383da0e',1,'ozo::error']]],
+  ['oid_5ft',['oid_t',['../group__group-type__system-types.html#ga442ba8c3d090543cf6278acb4fed5e66',1,'ozo']]],
+  ['oid_5ftype_5fmismatch',['oid_type_mismatch',['../group__group-errors-errors.html#ggac6082be94aa8b21e440cab09413a91aca5124caadcf0dc20d106092650129a71d',1,'ozo::error']]],
+  ['oidmap',['OidMap',['../group__group-type__system-concepts.html#ga41fff92f9d5a046bcd0654312352e153',1,'ozo']]],
+  ['ok',['ok',['../group__group-errors-errors.html#ggac6082be94aa8b21e440cab09413a91aca6a357773fe2116a5b09686ba8fb9e53a',1,'ozo::error']]],
+  ['operator_28_29',['operator()',['../classozo_1_1connection__info.html#ac2e29be0dd67bcf08112f5e5a0a802b8',1,'ozo::connection_info::operator()()'],['../classozo_1_1connection__pool.html#a4eab0de36606f6de94260f2613dec953',1,'ozo::connection_pool::operator()()']]],
+  ['operator_5b_5d',['operator[]',['../classozo_1_1row.html#ab3fe191690bd16ddc0c16813681760d4',1,'ozo::row::operator[]()'],['../classozo_1_1basic__result.html#acfc93c350383520c78f064e3956fd703',1,'ozo::basic_result::operator[]()']]],
+  ['operatornot',['OperatorNot',['../group__group-core-concepts.html#gae0a9bc14ebe454c9d0b8f3055839d675',1,'ozo']]],
+  ['outputiterator',['OutputIterator',['../group__group-core-concepts.html#ga3750f4893911580a5546d11bd5a9ca32',1,'ozo']]],
+  ['ozo',['ozo',['../namespaceozo.html',1,'']]],
+  ['ozo_5fpg_5fdefine_5ftype_5fand_5farray',['OZO_PG_DEFINE_TYPE_AND_ARRAY',['../group__group-type__system-mapping.html#ga37e74e6593b00ce3dfda1213bf4b5724',1,'type_traits.h']]],
+  ['ozo_5fstrong_5ftypedef',['OZO_STRONG_TYPEDEF',['../group__group-core-types.html#ga61078d1ef7bd8132469c8f5b627376b2',1,'strong_typedef.h']]],
+  ['pg',['pg',['../namespaceozo_1_1pg.html',1,'ozo']]]
 ];
