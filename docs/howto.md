@@ -40,7 +40,7 @@ int main() {
 
     // Request with connection provider, query and callback.
     // Provider binds how to get connection with io_context.
-    ozo::request(ozo::make_connector(io, conn_info), query, ozo::into(rows),
+    ozo::request(ozo::make_connector(conn_info, io), query, ozo::into(rows),
             [&](ozo::error_code ec, auto conn) {
         if (ec) {
             // Here we got an error, so we can get:
@@ -100,7 +100,7 @@ Here our query for database. There is a text with `_SQL` literal and single para
 Here is `request()` asynchronous function call.
 
 ```cpp
-ozo::request(ozo::make_connector(io, conn_info), query, ozo::into(res),
+ozo::request(ozo::make_connector(conn_info, io), query, ozo::into(res),
         [&](ozo::error_code ec, auto conn) {
 //...
 });
