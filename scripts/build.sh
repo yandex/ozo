@@ -60,19 +60,25 @@ build_gcc() {
     esac
 }
 
+build_docs() {
+    doxygen
+}
+
 usage() {
     local NAME=`basename $0`
     echo $NAME: ERROR: $* 1>&2
     echo 'usage:
         '$NAME' all
             build all targets for all compilers
+        '$NAME' docs
+            build documentation
         '$NAME' <compiler> <target>
         Build with specified compiler or target
         compiler : gcc | clang
         target   :
             - for gcc   : debug | release | coverage
             - for clang : debug | release | asan | ubsan
-        '$NAME' docker [all | <compiler> <target>]
+        '$NAME' docker [all | docs | <compiler> <target>]
         Build inside Docker
         '$NAME' pg [docker] [all | <compiler> <target>]
         Build with PostgreSQL integration tests' 1>&2
@@ -152,7 +158,7 @@ launch_with_pg() {
 }
 
 case "$1" in
-    gcc|clang|all)
+    gcc|clang|all|docs)
         set -x
         build_${1}
         exit 0

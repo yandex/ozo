@@ -17,6 +17,7 @@ RUN apt-get update && \
         python-pip \
         python-yaml \
         wget \
+        doxygen \
         && \
     rm -rf /var/lib/apt/lists/*
 
