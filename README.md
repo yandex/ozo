@@ -84,6 +84,12 @@ scripts/build.sh all
 
 build all possible configuration.
 
+```bash
+scripts/build.sh docs
+```
+
+generates documentation.
+
 ### Build and run tests on MacOS 10.X
 
 For MacOS the best way to satisfy minimum requirements is [brew](https://brew.sh/)
@@ -98,6 +104,12 @@ To build code and run tests inside docker container:
 
 ```bash
 scripts/build.sh docker <compiler> <target>
+```
+
+To generate documentation using docker container:
+
+```bash
+scripts/build.sh docker docs
 ```
 
 ### Test against a local postgres
