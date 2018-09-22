@@ -1,0 +1,5 @@
+var searchData=
+[
+  ['connection_5ftype_637',['connection_type',['../classozo_1_1connection__info.html#a24a1532d82b3e6f75ff54e073d63f892',1,'ozo::connection_info::connection_type()'],['../classozo_1_1connection__pool.html#a23c493471e58122d4dde9bb1dc486c7e',1,'ozo::connection_pool::connection_type()'],['../classozo_1_1connection__provider.html#a2113176cfcd5199e1a16441f22ad8a19',1,'ozo::connection_provider::connection_type()'],['../classozo_1_1failover_1_1role__based__connection__provider.html#a62f52d920e4dde8cf79ba664d973803e',1,'ozo::failover::role_based_connection_provider::connection_type()'],['../structozo_1_1failover_1_1role__based__connection__source.html#a68d6e3a7ecf4df587c27e1b9f3d0db2a',1,'ozo::failover::role_based_connection_source::connection_type()'],['../group__group-connection-types.html#ga508362dd2502f115bcfd39b48a95e6ad',1,'ozo::connection_type()']]],
+  ['const_5fiterator_638',['const_iterator',['../classozo_1_1row.html#a74a9ab480995d629b87bd0e8f51e24a9',1,'ozo::row::const_iterator()'],['../classozo_1_1basic__result.html#a978f6aa04bbf24c68a610bba177cd78c',1,'ozo::basic_result::const_iterator()']]]
+];

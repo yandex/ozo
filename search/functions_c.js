@@ -1,0 +1,12 @@
+var searchData=
+[
+  ['oid_556',['oid',['../classozo_1_1value.html#ae253527bdec0347fcdf86930f0d13be1',1,'ozo::value']]],
+  ['oid_5fmap_557',['oid_map',['../classozo_1_1connection.html#a628fd741dc84614c918244be7b703fbe',1,'ozo::connection::oid_map() noexcept'],['../classozo_1_1connection.html#a8876de40fc7116518f9be52782fcc47c',1,'ozo::connection::oid_map() const noexcept'],['../classozo_1_1pooled__connection.html#ad821c80e75aa6a466a56e4e952c8bd24',1,'ozo::pooled_connection::oid_map()'],['../classozo_1_1transaction.html#a6015df24c221b2edcd0241e9724623a1',1,'ozo::transaction::oid_map()']]],
+  ['operator_20bool_558',['operator bool',['../classozo_1_1connection.html#a89acfba2a6ccd3e9edc69cfba554604f',1,'ozo::connection::operator bool()'],['../classozo_1_1pooled__connection.html#a04b6ae3a9fe1949dd2c65f551886106e',1,'ozo::pooled_connection::operator bool()'],['../classozo_1_1transaction.html#a0f1641d2c361ef0f02b1f5e9a8fa895a',1,'ozo::transaction::operator bool()']]],
+  ['operator_28_29_559',['operator()',['../classozo_1_1connection__info.html#a7b40356d3a0eac550604d9c0e25ab090',1,'ozo::connection_info::operator()()'],['../classozo_1_1connection__pool.html#a5b290fca75153fa9f896a02255bb280f',1,'ozo::connection_pool::operator()()']]],
+  ['operator_2a_560',['operator*',['../classozo_1_1failover_1_1retry__strategy.html#a9f2952b0bd2780f9e5e971a8fd2d3942',1,'ozo::failover::retry_strategy']]],
+  ['operator_5b_5d_561',['operator[]',['../classozo_1_1row.html#ab3fe191690bd16ddc0c16813681760d4',1,'ozo::row::operator[]()'],['../classozo_1_1basic__result.html#acfc93c350383520c78f064e3956fd703',1,'ozo::basic_result::operator[]()']]],
+  ['options_562',['options',['../classozo_1_1options__factory__base.html#acc9b259812d50afc814bb558031bb957',1,'ozo::options_factory_base::options() const &amp;'],['../classozo_1_1options__factory__base.html#a02c98b69baee0259c0ff33115da3ba21',1,'ozo::options_factory_base::options() &amp;'],['../classozo_1_1options__factory__base.html#abbc74a441ba1c30950a6803a7851ae84',1,'ozo::options_factory_base::options() &amp;&amp;'],['../classozo_1_1transaction.html#a391bd45f52f3d5b3f15b01d21376313f',1,'ozo::transaction::options()']]],
+  ['options_5ffactory_563',['options_factory',['../classozo_1_1options__factory.html#aba7d91ab489cd9f1811d56d74ee6aad3',1,'ozo::options_factory']]],
+  ['options_5ffactory_5fbase_564',['options_factory_base',['../classozo_1_1options__factory__base.html#ad46c17a46069e3815822e28665e98474',1,'ozo::options_factory_base']]]
+];
