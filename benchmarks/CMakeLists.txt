@@ -46,5 +46,8 @@ set(LIBRARIES
 add_executable(ozo_benchmark ozo_benchmark.cpp)
 target_link_libraries(ozo_benchmark ${LIBRARIES})
 
+add_executable(libpq_benchmark libpq_benchmark.cpp)
+target_link_libraries(libpq_benchmark ${LIBRARIES})
+
 add_executable(ozo_benchmark_performance performance.cpp)
 target_link_libraries(ozo_benchmark_performance ${LIBRARIES})

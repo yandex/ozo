@@ -32,7 +32,7 @@ QUERY = '''
 SELECT typname, typnamespace, typowner, typlen, typbyval, typcategory,
        typispreferred, typisdefined, typdelim, typrelid, typelem, typarray
   FROM pg_type
- WHERE typtypmod = $1 AND typisdefined = $2
+ WHERE typtypmod = $1::int AND typisdefined = $2::boolean
 '''
 
 if __name__ == '__main__':

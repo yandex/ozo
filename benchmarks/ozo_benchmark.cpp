@@ -23,16 +23,18 @@ int main(int argc, char *argv[]) {
     rows_count_limit_benchmark benchmark(10000000);
     asio::io_context io(1);
     ozo::connection_info<> connection_info(argv[1]);
+
     const auto query = ("SELECT typname, typnamespace, typowner, typlen, typbyval, typcategory, "_SQL +
                         "typispreferred, typisdefined, typdelim, typrelid, typelem, typarray "_SQL +
                         "FROM pg_type WHERE typtypmod = "_SQL +
-                        -1 + " AND typisdefined = "_SQL + true).build();
+                        -1 + "::int AND typisdefined = "_SQL + true + "::boolean"_SQL).build();
+
+    benchmark.start();
 
     for (int i = 0; i < 8; ++i) {
-        asio::spawn(io, [&] (auto yield) {
+        asio::spawn(io, [&, i] (auto yield) {
             try {
                 auto connection = ozo::get_connection(ozo::make_connector(connection_info, io), yield);
-                benchmark.start();
                 while (true) {
                     ozo::result result;
                     ozo::request(connection, query, std::ref(result), yield);
@@ -41,12 +43,10 @@ int main(int argc, char *argv[]) {
                     }
                 }
             } catch (const std::exception& e) {
-                std::cout << e.what() << '\n';
+                std::cout << "Coroutine " << i << " failed: " << e.what() << '\n';
             }
         });
     }
 
     io.run();
-
-    return 0;
 }

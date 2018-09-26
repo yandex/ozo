@@ -24,10 +24,7 @@ async def reuse_connection(total_rows):
     async with conn.cursor() as cur:
         while total_rows[0] < 10000000:
             await cur.execute(QUERY, parameters=(-1, True))
-            values = []
-            async for row in cur:
-                values.append(row)
-            total_rows[0] += len(values)
+            total_rows[0] += cur.rowcount
     await conn.close()
 
 
@@ -36,7 +33,7 @@ QUERY = '''
 SELECT typname, typnamespace, typowner, typlen, typbyval, typcategory,
        typispreferred, typisdefined, typdelim, typrelid, typelem, typarray
   FROM pg_type
- WHERE typtypmod = %s AND typisdefined = %s
+ WHERE typtypmod = %s::int AND typisdefined = %s::boolean
 '''
 
 if __name__ == '__main__':

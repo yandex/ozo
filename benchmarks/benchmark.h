@@ -73,6 +73,12 @@ std::ostream& operator <<(std::ostream& stream, std::chrono::steady_clock::durat
     return stream;
 }
 
+struct fake_mutex {
+    constexpr void lock() const {}
+    constexpr void unlock() const {}
+};
+
+template <class Mutex = fake_mutex>
 class rows_count_limit_benchmark {
 public:
     rows_count_limit_benchmark(const std::size_t max_rows_count)
@@ -86,6 +92,7 @@ public:
     }
 
     bool step(std::size_t rows_count) {
+        const std::lock_guard<Mutex> lock(mutex);
         if (finish) {
             return false;
         }
@@ -108,6 +115,7 @@ public:
     }
 
 private:
+    Mutex mutex;
     std::size_t max_rows_count;
     __OZO_STD_OPTIONAL<std::chrono::steady_clock::time_point> start_time;
     __OZO_STD_OPTIONAL<std::chrono::steady_clock::time_point> finish;

@@ -1,4 +1,4 @@
-version: '3'
+version: '2.2'
 
 services:
   ozo_build:
@@ -18,6 +18,7 @@ services:
        POSTGRES_PASSWORD: &POSTGRES_PASSWORD 'v4Xpkocl~5l6h219Ynk1lJbM61jIr!ca'
     networks:
     - ozo
+    cpu_count: 8
   ozo_build_with_pg_tests:
     build: docker/build
     image: ozo_build
@@ -36,6 +37,24 @@ services:
     - .:/code
     networks:
     - ozo
+  ozo_benchmark:
+    build: docker/build
+    image: ozo_build
+    environment:
+      BASE_BUILD_DIR: build/docker_with_pg_tests
+      OZO_BUILD_PG_TESTS: 'ON'
+      POSTGRES_HOST: ozo_postgres
+      POSTGRES_DB: *POSTGRES_DB
+      POSTGRES_USER: *POSTGRES_USER
+      POSTGRES_PASSWORD: *POSTGRES_PASSWORD
+    depends_on:
+    - ozo_postgres
+    volumes:
+    - ~/.ccache:/ccache
+    - .:/code
+    networks:
+    - ozo
+    cpu_count: 1
   asyncpg:
     build: docker/asyncpg
     image: asyncpg
@@ -50,6 +69,7 @@ services:
     - .:/code
     networks:
     - ozo
+    cpu_count: 1
   aiopg:
     build: docker/aiopg
     image: aiopg
@@ -64,5 +84,6 @@ services:
     - .:/code
     networks:
     - ozo
+    cpu_count: 1
 networks:
   ozo: {}
