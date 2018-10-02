@@ -183,8 +183,14 @@ struct allocate_nullable_impl<T*> {
 template <typename T>
 constexpr auto Nullable = is_nullable<std::decay_t<T>>::value;
 
+template <typename T, typename = std::void_t<>>
+struct unwrap_nullable_impl {
+    template <typename T1>
+    constexpr static decltype(auto) apply(T1&& v) noexcept(noexcept(*v)) {
+        return *v;
+    }
+};
 
-#ifdef OZO_DOCUMENTATION
 /**
  * @brief Dereference #Nullable argument or forward it
  *
@@ -195,21 +201,34 @@ constexpr auto Nullable = is_nullable<std::decay_t<T>>::value;
  * @ingroup group-core-functions
  */
 template <typename T>
-decltype(auto) unwrap_nullable(T&& value) noexcept;
-#else
-template <typename T>
-inline decltype(auto) unwrap_nullable(T&& t, Require<Nullable<T>>* = 0) noexcept {
-    return *t;
+constexpr decltype(auto) unwrap_nullable(T&& v) noexcept(
+        noexcept(unwrap_nullable_impl<std::decay_t<T>>::apply(std::forward<T>(v)))) {
+    return unwrap_nullable_impl<std::decay_t<T>>::apply(std::forward<T>(v));
 }
 
 template <typename T>
-inline decltype(auto) unwrap_nullable(T&& t, Require<!Nullable<T>>* = 0) noexcept {
-    return std::forward<T>(t);
-}
-#endif
+struct unwrap_nullable_impl<T, Require<!Nullable<T>>> {
+    template <typename T1>
+    constexpr static decltype(auto) apply(T1&& v) noexcept {
+        return std::forward<T1>(v);
+    }
+};
+
 template <typename T>
-using unwrap_nullable_type = typename std::decay_t<decltype(unwrap_nullable(
-        std::declval<T>()))>;
+struct unwrap_nullable_impl<std::weak_ptr<T>> {
+    template <typename T1>
+    constexpr static decltype(auto) apply(T1&& v) noexcept(noexcept(*v.lock())) {
+        return *v.lock();
+    }
+};
+
+template <typename T>
+struct unwrap_nullable_impl<boost::weak_ptr<T>> {
+    template <typename T1>
+    constexpr static decltype(auto) apply(T1&& v) noexcept(noexcept(*v.lock())) {
+        return *v.lock();
+    }
+};
 
 template <typename T>
 inline auto is_null(const T& v) noexcept -> Require<Nullable<T>, bool> {
