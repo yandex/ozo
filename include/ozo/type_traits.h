@@ -349,8 +349,16 @@ struct type_traits {
     using size = <implementation defined>; //!< `std::integral_constant` with size of the type object in bytes or `ozo::dynamic_size` in other case
 };
 #else
+
+template <typename T, typename = std::void_t<>>
+struct type_traits_default {};
+
 template <typename T>
-struct type_traits;
+struct type_traits : type_traits_default<T> {};
+
+template <typename T>
+struct type_traits_default<T, Require<Nullable<T>>>
+    : type_traits<unwrap_nullable_type<T>> {};
 #endif
 /**
 * Helpers to make size trait constant
