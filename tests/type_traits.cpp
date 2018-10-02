@@ -172,6 +172,7 @@ struct some_type {
     std::size_t size() const {
         return 1000;
     }
+    bool empty() const { return size() == 0; }
     decltype(auto) begin() const { return std::addressof(v_);}
     char v_;
 };

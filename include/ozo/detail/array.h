@@ -16,7 +16,7 @@ struct pg_array {
 
 struct pg_array_dimension {
     BOOST_HANA_DEFINE_STRUCT(pg_array_dimension,
-        (std::int32_t, size),
+        (size_type, size),
         (std::int32_t, index)
     );
 };

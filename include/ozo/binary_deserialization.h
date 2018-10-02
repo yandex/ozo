@@ -56,7 +56,7 @@ bool recv_null(bool is_null, Out& out) {
 template <typename Out, typename = std::void_t<>>
 struct recv_impl{
     template <typename M>
-    static istream& apply(istream& in, int32_t size, const oid_map_t<M>&, Out& out) {
+    static istream& apply(istream& in, size_type size, const oid_map_t<M>&, Out& out) {
         if constexpr (is_dynamic_size<Out>::value) {
             out.resize(size);
         } else {
@@ -67,9 +67,9 @@ struct recv_impl{
 };
 
 template <typename M, typename Out>
-inline istream& recv(istream& in, int32_t size, const oid_map_t<M>& oids, Out& out) {
+inline istream& recv(istream& in, size_type size, const oid_map_t<M>& oids, Out& out) {
     if constexpr (!is_dynamic_size<Out>::value) {
-        if (size != static_cast<int32_t>(size_of(out))) {
+        if (size != size_of(out)) {
             throw std::range_error("data size " + std::to_string(size)
                 + " does not match type size " + std::to_string(size_of(out)));
         }
@@ -82,7 +82,7 @@ struct recv_impl<std::vector<T, Alloc>, Require<!std::is_same_v<T, char>>> {
     using value_type = std::vector<T, Alloc>;
 
     template <typename M>
-    static istream& apply(istream& in, int32_t, const oid_map_t<M>& oids, value_type& out) {
+    static istream& apply(istream& in, size_type, const oid_map_t<M>& oids, value_type& out) {
         detail::pg_array array_header;
         detail::pg_array_dimension dim_header;
 
@@ -115,9 +115,9 @@ struct recv_impl<std::vector<T, Alloc>, Require<!std::is_same_v<T, char>>> {
         out.resize(dim_header.size);
 
         for (auto& item : out) {
-            int32_t size = 0;
+            size_type size = 0;
             read(in, size);
-            const bool is_null = size == -1;
+            const bool is_null = size == null_state_size;
             if (!recv_null(is_null, item)) {
                 recv(in, size, oids, unwrap_nullable(item));
             }
@@ -130,7 +130,7 @@ template <typename T, typename Tag>
 struct recv_impl<detail::strong_typedef_wrapper<T, Tag>> {
     using out_type = detail::strong_typedef_wrapper<T, Tag>;
     template <typename M>
-    static istream& apply(istream& in, int32_t size, const oid_map_t<M>& oid_map, out_type& out) {
+    static istream& apply(istream& in, size_type size, const oid_map_t<M>& oid_map, out_type& out) {
         return recv_impl<typename out_type::base_type>::apply(in, size, oid_map, out);
     }
 };
