@@ -79,7 +79,12 @@ namespace fusion = boost::fusion;
 using oid_t = ::Oid;
 
 /**
- * @brief Type for OID constant type definition.
+ * @brief OID constant type.
+ *
+ * This type is like `std::bool_constant` - used to enable type level
+ * resolving of constants. All `BuiltIn` types uses this template
+ * specialization for their OID constants.
+ *
  * @ingroup group-type_system-types
  * @tparam Oid --- OID value
  */
@@ -125,7 +130,7 @@ struct is_nullable<std::weak_ptr<T>> : std::true_type {};
 /**
  * @brief Indicates if type meets nullable requirements.
  *
- * `Nullble` type has to:
+ * `Nullable` type has to:
  * * have a null-state,
  * * be `bool` convertable - `false` indicates null state,
  * * be dereferenceable via `operator *`,
@@ -363,20 +368,51 @@ struct type_traits_helper {
         "type size does not match to declared size");
 };
 
+template <typename T, typename = std::void_t<>>
+struct has_type_traits : std::false_type {};
+
 template <typename T>
-struct type_traits : type_traits_helper<T, void> {};
+struct has_type_traits<T, std::void_t<
+    typename type_traits<T>::name,
+    typename type_traits<T>::oid,
+    typename type_traits<T>::size
+>> : std::true_type {};
+
+/**
+ * @brief Condition indicates if type has corresponding type traits for PostrgreSQL
+ *
+ * @tparam T --- type to examine
+ * @ingroup group-core-concepts
+ * @hideinitializer
+ */
+template <typename T>
+constexpr auto HasTypeTraits = has_type_traits<std::decay_t<T>>::value;
+
+template <typename T, typename = std::void_t<>>
+struct is_built_in : std::false_type {};
+
+template <typename T>
+struct is_built_in<T, std::enable_if_t<
+    !std::is_same_v<typename type_traits<T>::oid, null_oid_t>>
+> : std::true_type {};
 
 /**
  * @brief Condition indicates if the specified type is built-in for PG
- * @ingroup group-type_system-types
+ * @ingroup group-type_system-concepts
  * @tparam T --- type to check
+ * @hideinitializer
  */
 template <typename T>
-struct is_built_in : std::bool_constant<
-    !std::is_same_v<typename type_traits<T>::oid, null_oid_t>> {};
+constexpr auto BuiltIn = is_built_in<std::decay_t<T>>::value;
 
 template <typename T>
-using is_dynamic_size = std::is_same<typename type_traits<T>::size, dynamic_size>;
+struct is_dynamic_size : std::is_same<typename type_traits<T>::size, dynamic_size> {};
+
+template <typename T>
+constexpr auto DynamicSize = is_dynamic_size<std::decay_t<T>>::value;
+
+template <typename T>
+constexpr auto StaticSize = !DynamicSize<T>;
 
 /**
 * @brief Function returns type name in Postgre SQL.
@@ -686,13 +722,13 @@ oid_t type_oid(const OidMap& map) noexcept;
 #else
 template <typename T, typename MapImplT>
 inline auto type_oid(const oid_map_t<MapImplT>& map) noexcept
-        -> std::enable_if_t<!is_built_in<T>::value, oid_t> {
+        -> Require<!BuiltIn<T>, oid_t> {
     return map.impl[hana::type_c<T>];
 }
 
 template <typename T, typename MapImplT>
 constexpr auto type_oid(const oid_map_t<MapImplT>&) noexcept
-        -> std::enable_if_t<is_built_in<T>::value, oid_t> {
+        -> Require<BuiltIn<T>, oid_t> {
     return typename type_traits<T>::oid();
 }
 #endif
