@@ -370,7 +370,7 @@ using bytes = std::integral_constant<std::size_t, n>;
 using dynamic_size = void;
 
 template <typename T, typename Size>
-struct type_size_match : std::integral_constant<bool, sizeof(T) == Size::value> {};
+struct type_size_match : std::bool_constant<static_cast<size_type>(sizeof(T)) == Size::value> {};
 
 template <typename T>
 struct type_size_match<T, dynamic_size> : std::true_type {};
