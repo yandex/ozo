@@ -360,14 +360,59 @@ template <typename T>
 struct type_traits_default<T, Require<Nullable<T>>>
     : type_traits<unwrap_nullable_type<T>> {};
 #endif
+
+template <typename T>
+struct is_array : std::false_type {};
+
+/**
+ * @brief Indicates if type is an array of PostgreSQL mapped type objects.
+ * @ingroup group-type_system-concepts
+ * @tparam T --- type to examine.
+ * @hideinitializer
+ */
+template <typename T>
+constexpr auto Array = is_array<std::decay_t<T>>::value;
+
+template <typename T>
+struct is_composite : std::bool_constant<
+    HanaStruct<T> || FusionAdaptedStruct<T>
+> {};
+
+template <typename ...Ts>
+struct is_composite<std::tuple<Ts...>> : std::true_type {};
+
+template <typename T>
+constexpr auto Composite = is_composite<std::decay_t<T>>::value;
+
+/**
+ * @brief PostgreSQL size type
+ * @ingroup group-type_system-types
+ */
+using size_type = std::int32_t;
+
+/**
+ * @brief Object size constant type
+ *
+ * This type is like `std::bool_constant` - used to enable type level
+ * resolving of constants. All `BuiltIn` types uses this template
+ * specialization for their size constants.
+ *
+ * @tparam n --- size in bytes
+ * @ingroup group-type_system-types
+ */
+template <size_type n>
+struct size_constant : std::integral_constant<size_type, n> {};
+
+constexpr size_constant<-1> null_state_size;
+
 /**
 * Helpers to make size trait constant
 *     bytes - makes fixed size trait
 *     dynamic_size - makes dynamic size trait
 */
-template <std::size_t n>
-using bytes = std::integral_constant<std::size_t, n>;
-using dynamic_size = void;
+template <size_type n>
+using bytes = size_constant<n>;
+struct dynamic_size {};
 
 template <typename T, typename Size>
 struct type_size_match : std::bool_constant<static_cast<size_type>(sizeof(T)) == Size::value> {};
@@ -466,21 +511,88 @@ template <typename T>
 constexpr auto type_name(const T&) noexcept {return type_name<T>();}
 
 /**
-* Function returns object size.
-*/
+ * @brief `ozo::size_of` implementation functor
+ * @ingroup group-type_system-types
+ *
+ * This template is used to implement object binary representation size calculation
+ * including all the meta-information is used for the PostgreSQL binary protocol.
+ * By default it provides `static_assert` failure - which means that there is no
+ * know algorithm to calculate size. There are default specializations for different
+ * common types and concepts, incluiding `BuiltIn`, `Array`, `Composite`, `Nullable`.
+ *
+ * @tparam T --- type to examine.
+ * @tparam <anonymous> --- SFINAE overloading rule.
+ *
+ * @note This template has to be defined in case of defining custom IO via `ozo::send_impl`
+ * and `ozo::recv_impl`.
+ *
+ * ### Example
+ *
+ * This is how it can be implemented for the static size type (*exposition only*):
+ *
+ * @code
 template <typename T>
-constexpr auto size_of(T&&) noexcept  -> typename std::enable_if<
-        !is_dynamic_size<std::decay_t<T>>::value,
-        typename type_traits<std::decay_t<T>>::size>::type {
-    return {};
+struct size_of_impl<T, Require<StaticSize<T>>> {
+    static constexpr auto apply(const T&) {
+        return typename type_traits<T>::size{};
+    }
+};
+ * @endcode
+ */
+template <typename T, typename = std::void_t<>>
+struct size_of_impl {
+    static constexpr void apply(const T&) noexcept {
+        static_assert(std::is_void_v<T>, "no size_of() specified for this type");
+    }
+};
+
+/**
+ * @brief Returns size of object binary representation in bytes.
+ * @ingroup group-type_system-functions
+ *
+ * This function returns binary representation size of the object including all the
+ * meta-information is used for the PostgreSQL binary protocol.
+ *
+ * @param v --- object to examine
+ * @return `ozo::size_type` --- size of object in bytes if object is not #Nullable or not in null state.
+ * @return `ozo::null_state_size` --- for #Nullable in null state.
+ *
+ * @note T has to have `ozo::type_traits` specialization.
+ *
+ * ### Customization point
+ *
+ * This function can be customized for the type or concept via `ozo::size_of_impl` structure
+ * template specialization.
+ *
+ * @sa ozo::size_of_impl
+ */
+template <typename T>
+constexpr size_type size_of(const T& v) noexcept(noexcept(size_of_impl<T>::apply(v))) {
+    static_assert(HasTypeTraits<T>, "type has no type_traits specialization");
+    return size_of_impl<T>::apply(v);
 }
 
 template <typename T>
-constexpr auto size_of(const T& v) noexcept -> typename std::enable_if<
-        is_dynamic_size<std::decay_t<T>>::value,
-        decltype(std::size(std::declval<T>()))>::type {
-    return std::size(v) ? std::size(v) * size_of(*std::begin(v)) : 0;
-}
+struct size_of_impl<T, Require<Nullable<T>>> {
+    static constexpr auto apply(const T& v) noexcept(
+            noexcept(size_of(unwrap_nullable(v)))) {
+        return is_null(v) ? null_state_size : size_of(unwrap_nullable(v));
+    }
+};
+
+template <typename T>
+struct size_of_impl<T, Require<StaticSize<T>>> {
+    static constexpr auto apply(const T&) noexcept {
+        return typename type_traits<T>::size{};
+    }
+};
+
+template <typename T>
+struct size_of_impl<T, Require<!(Array<T> || Composite<T>) && DynamicSize<T>>> {
+    static constexpr auto apply(const T& v) {
+        return std::empty(v) ? 0 : std::size(v) * size_of(*std::begin(v));
+    }
+};
 
 /**
  * @brief Namespace for PostgreSQL specific types
@@ -516,6 +628,8 @@ OZO_STRONG_TYPEDEF(std::vector<char>, bytea)
             oid_constant<Oid>, \
             dynamic_size\
         >{};\
+        template <>\
+        struct is_array<std::vector<Type>> : std::true_type {};\
     }
 
 #ifdef __OZO_STD_OPTIONAL

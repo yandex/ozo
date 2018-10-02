@@ -33,7 +33,7 @@ struct send_impl<std::vector<T, Alloc>, Require<!std::is_same_v<T, char>>> {
         write(out, detail::pg_array_dimension {std::int32_t(std::size(in)), 0});
         boost::for_each(in,
             [&] (const auto& v) {
-                write(out, std::int32_t(size_of(v)));
+                write(out, size_of(v));
                 send(out, oid_map, v);
             });
         return out;
