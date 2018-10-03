@@ -44,8 +44,11 @@ struct recv : Test {
 };
 
 TEST_F(recv, should_throw_system_error_if_oid_does_not_match_the_type) {
+    const char bytes[] = "text";
     EXPECT_CALL(mock, get_isnull(_, _)).WillRepeatedly(Return(false));
     EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(TEXTOID));
+    EXPECT_CALL(mock, get_value(_, _)).WillRepeatedly(Return(bytes));
+    EXPECT_CALL(mock, get_length(_, _)).WillRepeatedly(Return(sizeof(bytes)));
 
     int x;
     EXPECT_THROW(ozo::recv(value, oid_map, x), ozo::system_error);
@@ -154,7 +157,10 @@ TEST_F(recv, should_convert_TEXTOID_to_a_nullable_wrapped_std_string_unwrapping_
 }
 
 TEST_F(recv, should_set_nullable_to_null_for_a_null_value_of_any_type) {
+    EXPECT_CALL(mock, get_length(_, _)).WillRepeatedly(Return(0));
+    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(INT4OID));
     EXPECT_CALL(mock, get_isnull(_, _)).WillRepeatedly(Return(true));
+    EXPECT_CALL(mock, get_value(_, _)).WillRepeatedly(Return(nullptr));
 
     auto got = std::make_unique<int>(7);
     ozo::recv(value, oid_map, got);
@@ -162,8 +168,10 @@ TEST_F(recv, should_set_nullable_to_null_for_a_null_value_of_any_type) {
 }
 
 TEST_F(recv, should_throw_for_a_null_value_if_receiving_type_is_not_nullable) {
+    EXPECT_CALL(mock, get_length(_, _)).WillRepeatedly(Return(0));
     EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(TEXTOID));
     EXPECT_CALL(mock, get_isnull(_, _)).WillRepeatedly(Return(true));
+    EXPECT_CALL(mock, get_value(_, _)).WillRepeatedly(Return(nullptr));
 
     std::string got;
     EXPECT_THROW(ozo::recv(value, oid_map, got), std::invalid_argument);

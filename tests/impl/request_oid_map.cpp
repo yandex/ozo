@@ -13,8 +13,8 @@ struct custom_type2 {};
 
 } // namespace ozo::tests
 
-OZO_PG_DEFINE_CUSTOM_TYPE(ozo::tests::custom_type1, "custom_type1", dynamic_size)
-OZO_PG_DEFINE_CUSTOM_TYPE(ozo::tests::custom_type2, "custom_type2", dynamic_size)
+OZO_PG_DEFINE_CUSTOM_TYPE(ozo::tests::custom_type1, "custom_type1")
+OZO_PG_DEFINE_CUSTOM_TYPE(ozo::tests::custom_type2, "custom_type2")
 
 namespace {
 

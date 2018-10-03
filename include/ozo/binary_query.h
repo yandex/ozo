@@ -40,7 +40,7 @@ public:
         return to_const_char(impl->text);
     }
 
-    constexpr const ::Oid* types() const noexcept {
+    constexpr const oid_t* types() const noexcept {
         return std::data(impl->types);
     }
 
@@ -64,7 +64,7 @@ private:
     struct impl_type {
         text_type text;
         buffer_type buffer;
-        std::array<::Oid, params_count> types;
+        std::array<oid_t, params_count> types;
         std::array<int, params_count> formats;
         std::array<int, params_count> lengths;
         std::array<const char*, params_count> values;
@@ -135,49 +135,13 @@ private:
     }
 
     template <class T, std::size_t field>
-    static constexpr Require<Nullable<T>> write_meta(const oid_map_type& oid_map, const T& value, field_proxy<field>& result) {
-        if (is_null(value)) {
-            write_null_meta(type_oid<std::decay_t<decltype(*value)>>(oid_map), result);
-        } else {
-            write_meta(oid_map, *value, result);
-        }
-    }
-
-    template <class T, std::size_t field>
-    static Require<!Nullable<T>> write_meta(const oid_map_type& oid_map, const T& value, field_proxy<field>& result) {
+    static void write_meta(const oid_map_type& oid_map, const T& value, field_proxy<field>& result) {
         using ozo::send;
         result.set_type(type_oid(oid_map, value));
         result.set_format(binary_format);
         const auto start_pos = result.stream_pos();
         send(result.stream(), oid_map, value);
         result.set_length(result.stream_pos() - start_pos);
-    }
-
-    template <class T, std::size_t field>
-    static constexpr Require<!Nullable<T>> write_meta(const oid_map_type& oid_map, const std::reference_wrapper<T>& value, field_proxy<field>& result) {
-        write_meta(oid_map, value.get(), result);
-    }
-
-    template <class T, std::size_t field>
-    static constexpr void write_meta(const oid_map_type& oid_map, const std::weak_ptr<T>& value, field_proxy<field>& result) {
-        write_meta(oid_map, value.lock(), result);
-    }
-
-    template <std::size_t field>
-    static constexpr void write_meta(const oid_map_type&, std::nullptr_t, field_proxy<field>& result) noexcept {
-        write_null_meta(null_oid_t::value, result);
-    }
-
-    template <std::size_t field>
-    static constexpr void write_meta(const oid_map_type&, __OZO_NULLOPT_T, field_proxy<field>& result) noexcept {
-        write_null_meta(null_oid_t::value, result);
-    }
-
-    template <std::size_t field>
-    static constexpr void write_null_meta(::Oid oid, field_proxy<field>& result) noexcept {
-        result.set_type(oid);
-        result.set_format(binary_format);
-        result.set_length(0);
     }
 };
 
