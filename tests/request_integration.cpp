@@ -12,7 +12,7 @@ namespace ozo::tests {
 struct custom_type {};
 } // namespace ozo::tests
 
-OZO_PG_DEFINE_CUSTOM_TYPE(ozo::tests::custom_type, "custom_type", dynamic_size)
+OZO_PG_DEFINE_CUSTOM_TYPE(ozo::tests::custom_type, "custom_type")
 
 namespace {
 

@@ -36,53 +36,90 @@ constexpr decltype(auto) member_value(Adt&& v, const Index&) {
     return fusion::at<Index>(std::forward<Adt>(v));
 }
 
-template <typename Out>
-bool recv_null(bool is_null, Out& out) {
-    if constexpr (Nullable<Out>) {
-        if (is_null) {
-            reset_nullable(out);
-            return true;
-        }
-        init_nullable(out);
-    } else {
-        if (is_null) {
-            throw std::invalid_argument("unexpected null for type "
-                + boost::core::demangle(typeid(out).name()));
-        }
-    }
-    return false;
-}
-
 template <typename Out, typename = std::void_t<>>
-struct recv_impl{
+struct recv_impl {
     template <typename M>
     static istream& apply(istream& in, size_type size, const oid_map_t<M>&, Out& out) {
-        if constexpr (is_dynamic_size<Out>::value) {
+        if constexpr (DynamicSize<Out>) {
             out.resize(size);
-        } else {
-            (void)size;
+        } else if (size != size_of(out)) {
+            throw std::range_error("data size " + std::to_string(size)
+                + " does not match type size " + std::to_string(size_of(out)));
         }
         return read(in, out);
     }
 };
 
-template <typename M, typename Out>
-inline istream& recv(istream& in, size_type size, const oid_map_t<M>& oids, Out& out) {
-    if constexpr (!is_dynamic_size<Out>::value) {
-        if (size != size_of(out)) {
-            throw std::range_error("data size " + std::to_string(size)
-                + " does not match type size " + std::to_string(size_of(out)));
+template <typename T, typename = std::void_t<>>
+struct recv_array_impl;
+
+namespace detail {
+
+template <typename T, typename = std::void_t<>>
+struct recv_impl_dispatcher { using type = recv_impl<std::decay_t<T>>; };
+template <typename T>
+struct recv_impl_dispatcher<T, Require<Array<T>>> { using type = recv_array_impl<std::decay_t<T>>; };
+
+template <typename T>
+using get_recv_impl = typename recv_impl_dispatcher<unwrap_nullable_type<T>>::type;
+
+template <typename M, typename Oid, typename Out>
+inline istream& recv(istream& in, Oid oid, size_type size, const oid_map_t<M>& oids, Out& out) {
+    static_assert(std::is_same_v<Oid, oid_t>||std::is_same_v<Oid, null_oid_t>,
+        "oid must be oid_t or null_oid_t type");
+
+    if constexpr (Nullable<Out>) {
+        if (size == null_state_size) {
+            reset_nullable(out);
+            return in;
         }
     }
-    return recv_impl<std::decay_t<Out>>::apply(in, size, oids, out);
+
+    if constexpr (!std::is_same_v<Oid, null_oid_t>) {
+        if (!accepts_oid(oids, out, oid)) {
+            throw system_error(error::oid_type_mismatch, "unexpected oid "
+                + std::to_string(oid) + " for type "
+                + boost::core::demangle(typeid(unwrap_nullable_type<Out>).name()));
+        }
+    }
+
+    (void)oid; // Dummy GCC
+
+    if constexpr (Nullable<Out>) {
+        init_nullable(out);
+    } else if (size == null_state_size) {
+        throw std::invalid_argument("unexpected null for type "
+            + boost::core::demangle(typeid(out).name()));
+    }
+
+    return detail::get_recv_impl<Out>::apply(in, size, oids, unwrap_nullable(out));
 }
 
-template <typename T, typename Alloc>
-struct recv_impl<std::vector<T, Alloc>, Require<!std::is_same_v<T, char>>> {
-    using value_type = std::vector<T, Alloc>;
+template <typename M, typename Oid, typename Out>
+inline istream& recv_data_frame(istream& in, Oid oid, const oid_map_t<M>& oids, Out& out) {
+    size_type size = 0;
+    read(in, size);
+    return recv(in, oid, size, oids, out);
+}
+
+} // namespace detail
+
+template <typename M, typename Out>
+inline istream& recv(istream& in, oid_t oid, size_type size, const oid_map_t<M>& oids, Out& out) {
+    return detail::recv(in, oid, size, oids, out);
+}
+
+template <typename M, typename Out>
+inline istream& recv_data_frame(istream& in, const oid_map_t<M>& oids, Out& out) {
+    return detail::recv_data_frame(in, null_oid, oids, out);
+}
+
+template <typename T, typename>
+struct recv_array_impl {
+    using out_type = T;
 
     template <typename M>
-    static istream& apply(istream& in, size_type, const oid_map_t<M>& oids, value_type& out) {
+    static istream& apply(istream& in, size_type, const oid_map_t<M>& oids, out_type& out) {
         detail::pg_array array_header;
         detail::pg_array_dimension dim_header;
 
@@ -93,7 +130,7 @@ struct recv_impl<std::vector<T, Alloc>, Require<!std::is_same_v<T, char>>> {
                  + std::to_string(array_header.dimensions_count));
         }
 
-        using item_type = typename value_type::value_type;
+        using item_type = typename out_type::value_type;
         using unwrapped_item_type = unwrap_nullable_type<item_type>;
 
         if (!accepts_oid<unwrapped_item_type>(oids, array_header.elemtype)) {
@@ -115,41 +152,23 @@ struct recv_impl<std::vector<T, Alloc>, Require<!std::is_same_v<T, char>>> {
         out.resize(dim_header.size);
 
         for (auto& item : out) {
-            size_type size = 0;
-            read(in, size);
-            const bool is_null = size == null_state_size;
-            if (!recv_null(is_null, item)) {
-                recv(in, size, oids, unwrap_nullable(item));
-            }
+            recv_data_frame(in, oids, item);
         }
         return in;
     }
 };
 
 template <typename T, typename Tag>
-struct recv_impl<detail::strong_typedef_wrapper<T, Tag>> {
-    using out_type = detail::strong_typedef_wrapper<T, Tag>;
-    template <typename M>
-    static istream& apply(istream& in, size_type size, const oid_map_t<M>& oid_map, out_type& out) {
-        return recv_impl<typename out_type::base_type>::apply(in, size, oid_map, out);
-    }
-};
+struct recv_impl<detail::strong_typedef_wrapper<T, Tag>> : recv_impl<std::decay_t<T>> {};
+
+template <typename T>
+struct recv_impl<std::reference_wrapper<T>> : recv_impl<T> {};
 
 template <typename T, typename M, typename Out>
 void recv(const value<T>& in, const oid_map_t<M>& oids, Out& out) {
-    if (recv_null(in.is_null(), out)) {
-        return;
-    }
-
-    if (!accepts_oid(oids, unwrap_nullable(out), in.oid())) {
-        throw system_error(error::oid_type_mismatch, "unexpected oid "
-            + std::to_string(in.oid()) + " for type "
-            + boost::core::demangle(typeid(unwrap_nullable_type<Out>).name()));
-    }
-
     detail::istreambuf_view sbuf(in.data(), in.size());
     istream s(&sbuf);
-    recv(s, in.size(), oids, unwrap_nullable(out));
+    recv(s, in.oid(), (in.is_null() ? null_state_size : in.size()), oids, out);
 }
 
 template <typename T, typename M, typename Out>

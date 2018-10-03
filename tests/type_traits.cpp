@@ -181,7 +181,7 @@ struct builtin_type { std::int64_t v = 0; };
 
 } // namespace ozo::tests
 
-OZO_PG_DEFINE_CUSTOM_TYPE(some_type, "some_type", dynamic_size)
+OZO_PG_DEFINE_CUSTOM_TYPE(some_type, "some_type")
 OZO_PG_DEFINE_TYPE(builtin_type, "builtin_type", 5, bytes<8>)
 
 BOOST_FUSION_DEFINE_STRUCT(

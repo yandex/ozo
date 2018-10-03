@@ -126,6 +126,10 @@ template <typename T>
 struct is_nullable<boost::weak_ptr<T>> : std::true_type {};
 template <typename T>
 struct is_nullable<std::weak_ptr<T>> : std::true_type {};
+template <>
+struct is_nullable<std::nullptr_t> : std::true_type {};
+template <>
+struct is_nullable<__OZO_NULLOPT_T> : std::true_type {};
 
 /**
  * @brief Indicates if type meets nullable requirements.
@@ -206,6 +210,20 @@ constexpr decltype(auto) unwrap_nullable(T&& v) noexcept(
     return unwrap_nullable_impl<std::decay_t<T>>::apply(std::forward<T>(v));
 }
 
+template <>
+struct unwrap_nullable_impl<std::nullptr_t> {
+    constexpr static std::nullptr_t apply(std::nullptr_t) noexcept {
+        return nullptr;
+    }
+};
+
+template <>
+struct unwrap_nullable_impl<__OZO_NULLOPT_T> {
+    constexpr static __OZO_NULLOPT_T apply(__OZO_NULLOPT_T v) noexcept {
+        return v;
+    }
+};
+
 template <typename T>
 struct unwrap_nullable_impl<T, Require<!Nullable<T>>> {
     template <typename T1>
@@ -244,6 +262,10 @@ template <typename T>
 inline auto is_null(const std::weak_ptr<T>& v) noexcept {
     return is_null(v.lock());
 }
+
+constexpr std::true_type is_null(std::nullptr_t) noexcept {return {};}
+
+constexpr std::true_type is_null(__OZO_NULLOPT_T) noexcept {return {};}
 
 #ifdef OZO_DOCUMENTATION
 /**
@@ -359,6 +381,10 @@ struct type_traits : type_traits_default<T> {};
 template <typename T>
 struct type_traits_default<T, Require<Nullable<T>>>
     : type_traits<unwrap_nullable_type<T>> {};
+
+template <typename T>
+struct type_traits_default<std::reference_wrapper<T>>
+    : type_traits<std::decay_t<T>> {};
 #endif
 
 template <typename T>
@@ -465,7 +491,7 @@ struct is_built_in : std::false_type {};
 
 template <typename T>
 struct is_built_in<T, std::enable_if_t<
-    !std::is_same_v<typename type_traits<T>::oid, null_oid_t>>
+    !std::is_void_v<typename type_traits<T>::oid>>
 > : std::true_type {};
 
 /**
@@ -608,44 +634,56 @@ OZO_STRONG_TYPEDEF(std::vector<char>, bytea)
 #define OZO__TYPE_NAME_TYPE(Name) decltype(Name##_s)
 #define OZO__TYPE_ARRAY_NAME_TYPE(Name) decltype(Name##_s+"[]"_s)
 
-#define OZO_PG_DEFINE_TYPE(Type, Name, Oid, Size) \
+#define OZO_PG_DEFINE_TYPE_(Type, Name, OidType, Size) \
     namespace ozo {\
         template <>\
         struct type_traits<Type> : type_traits_helper<\
             Type, \
             OZO__TYPE_NAME_TYPE(Name), \
-            oid_constant<Oid>, \
+            OidType, \
             Size\
         >{};\
     }
 
-#define OZO_PG_DEFINE_TYPE_ARRAY(Type, Name, Oid) \
+#define OZO_PG_DEFINE_TYPE(Type, Name, Oid, Size) \
+    OZO_PG_DEFINE_TYPE_(Type, Name, oid_constant<Oid>, Size)
+
+#define OZO_PG_DEFINE_TYPE_ARRAY_(Type, Name, OidType) \
     namespace ozo {\
         template <>\
         struct type_traits<std::vector<Type>> : type_traits_helper<\
             std::vector<Type>, \
             OZO__TYPE_ARRAY_NAME_TYPE(Name), \
-            oid_constant<Oid>, \
+            OidType, \
             dynamic_size\
         >{};\
         template <>\
         struct is_array<std::vector<Type>> : std::true_type {};\
     }
 
+#define OZO_PG_DEFINE_TYPE_ARRAY(Type, Name, Oid) \
+    OZO_PG_DEFINE_TYPE_ARRAY_(Type, Name, oid_constant<Oid>)
+
 #ifdef __OZO_STD_OPTIONAL
-#define OZO_PG_DEFINE_TYPE_ARRAY_OZO_OPTIONAL(Type, Name, Oid) \
-    OZO_PG_DEFINE_TYPE_ARRAY(__OZO_STD_OPTIONAL<Type>, Name, Oid)
+#define OZO_PG_DEFINE_TYPE_ARRAY_OZO_OPTIONAL_(Type, Name, OidType) \
+    OZO_PG_DEFINE_TYPE_ARRAY_(__OZO_STD_OPTIONAL<Type>, Name, OidType)
 #else
-#define OZO_PG_DEFINE_TYPE_ARRAY_OZO_OPTIONAL(Type, Name, Oid)
+#define OZO_PG_DEFINE_TYPE_ARRAY_OZO_OPTIONAL_(Type, Name, OidType)
 #endif
 
-#define OZO_PG_DEFINE_TYPE_ARRAY_NULLABLES(Type, Name, Oid) \
-    OZO_PG_DEFINE_TYPE_ARRAY(boost::optional<Type>, Name, Oid) \
-    OZO_PG_DEFINE_TYPE_ARRAY_OZO_OPTIONAL(Type, Name, Oid) \
-    OZO_PG_DEFINE_TYPE_ARRAY(boost::scoped_ptr<Type>, Name, Oid) \
-    OZO_PG_DEFINE_TYPE_ARRAY(std::unique_ptr<Type>, Name, Oid) \
-    OZO_PG_DEFINE_TYPE_ARRAY(boost::shared_ptr<Type>, Name, Oid) \
-    OZO_PG_DEFINE_TYPE_ARRAY(std::shared_ptr<Type>, Name, Oid)
+#define OZO_PG_DEFINE_TYPE_ARRAY_NULLABLES_(Type, Name, OidType) \
+    OZO_PG_DEFINE_TYPE_ARRAY_(boost::optional<Type>, Name, OidType) \
+    OZO_PG_DEFINE_TYPE_ARRAY_OZO_OPTIONAL_(Type, Name, OidType) \
+    OZO_PG_DEFINE_TYPE_ARRAY_(boost::scoped_ptr<Type>, Name, OidType) \
+    OZO_PG_DEFINE_TYPE_ARRAY_(std::unique_ptr<Type>, Name, OidType) \
+    OZO_PG_DEFINE_TYPE_ARRAY_(boost::shared_ptr<Type>, Name, OidType) \
+    OZO_PG_DEFINE_TYPE_ARRAY_(std::shared_ptr<Type>, Name, OidType)
+
+
+#define OZO_PG_DEFINE_TYPE_AND_ARRAY_(Type, Name, OidType, ArrayOidType, Size) \
+    OZO_PG_DEFINE_TYPE_(Type, Name, OidType, Size) \
+    OZO_PG_DEFINE_TYPE_ARRAY_(Type, Name, ArrayOidType) \
+    OZO_PG_DEFINE_TYPE_ARRAY_NULLABLES_(Type, Name, ArrayOidType)
 
 /**
  * @brief Helper macro to define type mapping
@@ -659,8 +697,8 @@ OZO_STRONG_TYPEDEF(std::vector<char>, bytea)
  *
  * @param Type --- C++ type to be mapped to database type
  * @param Name --- string with name of database type
- * @param Oid --- oid for built-in type and `ozo::null_oid_t` for custom type
- * @param ArrayOid --- oid for an array of built-in type and `ozo::null_oid_t` for custom type
+ * @param Oid --- oid for built-in type and `void` for custom type
+ * @param ArrayOid --- oid for an array of built-in type and `void` for custom type
  * @param Size --- `bytes<N>` for fixed-size type (like integer, bigint and so on),
  * there N - size of the type in database, `dynamic_type` for dynamic size types (like `text`
  * `bytea` and so on)
@@ -671,6 +709,34 @@ OZO_STRONG_TYPEDEF(std::vector<char>, bytea)
 @code
 OZO_PG_DEFINE_TYPE_AND_ARRAY(boost::uuids::uuid, "uuid", UUIDOID, 2951, bytes<16>)
 @endcode
+
+@sa OZO_PG_DEFINE_CUSTOM_TYPE
+
+ */
+#ifdef OZO_DOCUMENTATION
+#define OZO_PG_DEFINE_TYPE_AND_ARRAY(Type, Name, Oid, ArrayOid, Size)
+#else
+#define OZO_PG_DEFINE_TYPE_AND_ARRAY(Type, Name, Oid, ArrayOid, Size) \
+    OZO_PG_DEFINE_TYPE_AND_ARRAY_(Type, Name, oid_constant<Oid>, oid_constant<ArrayOid>, Size)
+#endif
+
+/**
+ * @brief Helper macro to define custom type mapping
+ * @ingroup group-type_system-mapping
+ * In general type mapping is provided via `ozo::type_traits` specialization.
+ * But for a single type you need to define a type, an array of the type, an
+ * optional of the type (to support null), shared_ptr... and many other boilerplate.
+ * To reduce such things this macro is made.
+ *
+ * @note This macro can be called in the global namespace only
+ *
+ * @param Type --- C++ type to be mapped to database type
+ * @param Name --- string with name of database type
+ * @param Size --- optional parameter, `bytes<N>` for fixed-size type (like integer, bigint and so on),
+ * there N - size of the type in database, `dynamic_type` for dynamic size types (like `text`
+ * `bytea` and so on), if parameter not pointed size type will be evaluated basing on C++ type size.
+ *
+ * ### Example
  *
  * Definition of user defined composite type may look like this:
 @code
@@ -684,30 +750,26 @@ BOOST_FUSION_DEFINE_STRUCT((smtp), message,
 
 //...
 
-OZO_PG_DEFINE_TYPE_AND_ARRAY(smtp::message, "code.message", null_oid, null_oid, dynamic_size)
+OZO_PG_DEFINE_CUSTOM_TYPE(smtp::message, "code.message")
 @endcode
+
+@sa OZO_PG_DEFINE_TYPE_AND_ARRAY
  */
 #ifdef OZO_DOCUMENTATION
-#define OZO_PG_DEFINE_TYPE_AND_ARRAY(Type, Name, Oid, ArrayOid, Size)
+#define OZO_PG_DEFINE_CUSTOM_TYPE(Type, Name [, Size])
 #else
-#define OZO_PG_DEFINE_TYPE_AND_ARRAY(Type, Name, Oid, ArrayOid, Size) \
-    OZO_PG_DEFINE_TYPE(Type, Name, Oid, Size) \
-    OZO_PG_DEFINE_TYPE_ARRAY(Type, Name, ArrayOid) \
-    OZO_PG_DEFINE_TYPE_ARRAY_NULLABLES(Type, Name, ArrayOid)
+#define OZO_PG_DEFINE_CUSTOM_TYPE_IMPL_3(Type, Name, Size) \
+    OZO_PG_DEFINE_TYPE_AND_ARRAY_(Type, Name, void, void, Size)
+
+#define OZO_PG_DEFINE_CUSTOM_TYPE_IMPL_2(Type, Name) \
+    OZO_PG_DEFINE_CUSTOM_TYPE_IMPL_3(Type, Name, dynamic_size)
+
+#define OZO_PG_DEFINE_CUSTOM_TYPE(...)\
+    BOOST_PP_OVERLOAD(OZO_PG_DEFINE_CUSTOM_TYPE_IMPL_,__VA_ARGS__)(__VA_ARGS__)
 #endif
 
-
-#define OZO_PG_DEFINE_CUSTOM_TYPE(Type, Name, Size) \
-    namespace ozo {\
-        template <>\
-        struct type_traits<Type> : type_traits_helper<\
-            Type, \
-            OZO__TYPE_NAME_TYPE(Name), \
-            null_oid_t, \
-            Size\
-        >{};\
-    }
-
+OZO_PG_DEFINE_TYPE(std::nullptr_t, "null", null_oid, bytes<sizeof(std::nullptr_t)>)
+OZO_PG_DEFINE_TYPE(__OZO_NULLOPT_T, "null", null_oid, bytes<sizeof(__OZO_NULLOPT_T)>)
 /**
  * @brief Bool type mapping
  * @ingroup group-type_system-mapping
@@ -864,7 +926,7 @@ oid_t type_oid(const OidMap& map) noexcept;
 template <typename T, typename MapImplT>
 inline auto type_oid(const oid_map_t<MapImplT>& map) noexcept
         -> Require<!BuiltIn<T>, oid_t> {
-    return map.impl[hana::type_c<T>];
+    return map.impl[hana::type_c<unwrap_nullable_type<T>>];
 }
 
 template <typename T, typename MapImplT>

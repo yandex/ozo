@@ -88,7 +88,7 @@ struct some_type {
 
 } // namespace ozo::tests
 
-OZO_PG_DEFINE_CUSTOM_TYPE(ozo::tests::some_type, "some_type", dynamic_size)
+OZO_PG_DEFINE_CUSTOM_TYPE(ozo::tests::some_type, "some_type")
 
 namespace {
 
