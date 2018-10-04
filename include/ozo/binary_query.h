@@ -137,11 +137,11 @@ private:
     template <class T, std::size_t field>
     static void write_meta(const oid_map_type& oid_map, const T& value, field_proxy<field>& result) {
         using ozo::send;
+        using ozo::size_of;
         result.set_type(type_oid(oid_map, value));
         result.set_format(binary_format);
-        const auto start_pos = result.stream_pos();
         send(result.stream(), oid_map, value);
-        result.set_length(result.stream_pos() - start_pos);
+        result.set_length(size_of(value));
     }
 };
 
