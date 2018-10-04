@@ -350,6 +350,114 @@ inline void reset_nullable(T& n) {
 }
 
 /**
+ * @brief Unwraps nullable or reference wrapped type
+ * @ingroup group-type_system-types
+ * Sometimes it is needed to know the underlying type of #Nullable or
+ * type is wrapped with `std::reference_type`. So that is why the type exists.
+ * Convenient shortcut is `ozo::unwrap_type_t`.
+ * @tparam T -- type to unwrap.
+ *
+ * ### Example
+ *
+ * @code
+int a = 42;
+auto ref_a = std::ref(a);
+auto opt_a = std::make_optional(a);
+
+static_assert(std::is_same<ozo::unwrap_type_t<decltype(ref_a)>, decltype(a)>);
+static_assert(std::is_same<ozo::unwrap_type_t<decltype(opt_a)>, decltype(a)>);
+ * @endcode
+ *
+ * @sa ozo::unwrap_type_t
+ */
+template <typename T>
+struct unwrap_type {
+#ifdef OZO_DOCUMENTATION
+    using type = <unwrapped type>; //!< Unwrapped type
+#else
+    using type = unwrap_nullable_type<T>;
+#endif
+};
+
+template <typename T>
+struct unwrap_type<std::reference_wrapper<T>> {using type = std::decay_t<T>;};
+
+/**
+ * @brief Shortcut for `ozo::unwrap_type`.
+ * @ingroup group-type_system-types
+ *
+ * @tparam T -- type to unwrap.
+ */
+template <typename T>
+using unwrap_type_t = typename unwrap_type<T>::type;
+
+/**
+ * @brief Indicates if type is PostgreSQL array representation.
+ * @ingroup group-type_system-types
+ * Representation means that you can obtain PostgreSQL array into the supported
+ * container.
+ * Array by default can be represented via next containers:
+ *   * `std::vector<T>`
+ *   * `std::list<T>`
+ *
+ * @tparam T --- type to examine.
+ *
+ * ### Customization point
+ *
+ * User can add representation of `Array` by defining specialization of
+ * `ozo::is_array` for the desired container like this:
+ *
+ * @code
+template <typename ...Ts>
+struct is_array<std::vector<Ts...>> : std::true_type {};
+ * @endcode
+ * @hideinitializer
+ */
+template <typename T>
+struct is_array : std::false_type {};
+template <typename ...Ts>
+struct is_array<std::vector<Ts...>> : std::true_type {};
+template <typename ...Ts>
+struct is_array<std::list<Ts...>> : std::true_type {};
+
+/**
+ * @brief Indicates if type is PostgreSQL array representation.
+ * @ingroup group-type_system-concepts
+ *
+ * Representation means that you can obtain PostgreSQL array into the type.
+ * See `ozo::is_array` for the list of supported array representation.
+ * @tparam T --- type to examine.
+ *
+ * @hideinitializer
+ */
+template <typename T>
+constexpr auto Array = is_array<std::decay_t<T>>::value;
+
+namespace definitions {
+template <typename T>
+struct type;
+
+template <typename T>
+struct array;
+} // namespace definitions
+
+namespace detail {
+
+template <typename T, typename = std::void_t<>>
+struct get_type_traits { using type = void; };
+
+template <typename T>
+struct get_type_traits<T, std::void_t<typename definitions::type<T>::name>> {
+    using type = definitions::type<T>;
+};
+
+template <typename T>
+struct get_type_traits<T, Require<Array<T>>> {
+    using type = definitions::array<unwrap_type_t<typename T::value_type>>;
+};
+
+}
+/**
  * @brief Type traits template forward declaration.
  * @ingroup group-type_system-types
  *
@@ -361,43 +469,28 @@ inline void reset_nullable(T& n) {
  * must define traits.
  *
  * @tparam T --- type to examine
- * @sa `ozo::type_traits_helper`
  */
 #ifdef OZO_DOCUMENTATION
 template <typename T>
 struct type_traits {
     using name = <implementation defined>; //!< `boost::hana::string` with name of the type in a database
     using oid = <implementation defined>; //!< `ozo::oid_constant` with Oid of the built-in type or null_oid_t for non built-in type
-    using size = <implementation defined>; //!< `std::integral_constant` with size of the type object in bytes or `ozo::dynamic_size` in other case
+    using size = <implementation defined>; //!< `ozo::size_constant` with size of the type object in bytes or `ozo::dynamic_size` in other case
 };
-#else
-
-template <typename T, typename = std::void_t<>>
-struct type_traits_default {};
-
-template <typename T>
-struct type_traits : type_traits_default<T> {};
-
-template <typename T>
-struct type_traits_default<T, Require<Nullable<T>>>
-    : type_traits<unwrap_nullable_type<T>> {};
-
-template <typename T>
-struct type_traits_default<std::reference_wrapper<T>>
-    : type_traits<std::decay_t<T>> {};
 #endif
 
 template <typename T>
-struct is_array : std::false_type {};
+using type_traits = typename detail::get_type_traits<unwrap_type_t<T>>::type;
 
 /**
- * @brief Indicates if type is an array of PostgreSQL mapped type objects.
- * @ingroup group-type_system-concepts
- * @tparam T --- type to examine.
+ * @brief Condition indicates if type has corresponding type traits for PostgreSQL
+ *
+ * @tparam T --- type to examine
+ * @ingroup group-core-concepts
  * @hideinitializer
  */
 template <typename T>
-constexpr auto Array = is_array<std::decay_t<T>>::value;
+constexpr auto HasDefinition = !std::is_void_v<type_traits<T>>;
 
 template <typename T>
 struct is_composite : std::bool_constant<
@@ -438,53 +531,7 @@ constexpr size_constant<-1> null_state_size;
 */
 template <size_type n>
 using bytes = size_constant<n>;
-struct dynamic_size {};
-
-template <typename T, typename Size>
-struct type_size_match : std::bool_constant<static_cast<size_type>(sizeof(T)) == Size::value> {};
-
-template <typename T>
-struct type_size_match<T, dynamic_size> : std::true_type {};
-/**
- * @brief Helper for the type traits definitions.
- * @ingroup group-type_system-types
- *
- * @tparam Name --- type which can be converted into a string representation
- * which contain the fully qualified type name in DB
- * @tparam Oid --- `ozo::oid_constant`-based oid type - provides type's oid in database, may be defined for
- * built-in types only; custom types have only dynamic oid, depended
- * from the current state of DB.
- * @tparam Size --- size type - provides information about type's object size, may
- *         be specified only if the type's object has fixed size.
- */
-template <typename T, typename Name, typename Oid = null_oid_t, typename Size = dynamic_size>
-struct type_traits_helper {
-    using name = Name;
-    using oid = Oid;
-    using size = Size;
-    static_assert(type_size_match<T, size>::value,
-        "type size does not match to declared size");
-};
-
-template <typename T, typename = std::void_t<>>
-struct has_type_traits : std::false_type {};
-
-template <typename T>
-struct has_type_traits<T, std::void_t<
-    typename type_traits<T>::name,
-    typename type_traits<T>::oid,
-    typename type_traits<T>::size
->> : std::true_type {};
-
-/**
- * @brief Condition indicates if type has corresponding type traits for PostrgreSQL
- *
- * @tparam T --- type to examine
- * @ingroup group-core-concepts
- * @hideinitializer
- */
-template <typename T>
-constexpr auto HasTypeTraits = has_type_traits<std::decay_t<T>>::value;
+struct dynamic_size : size_constant<-1> {};
 
 template <typename T, typename = std::void_t<>>
 struct is_built_in : std::false_type {};
@@ -501,7 +548,7 @@ struct is_built_in<T, std::enable_if_t<
  * @hideinitializer
  */
 template <typename T>
-constexpr auto BuiltIn = is_built_in<std::decay_t<T>>::value;
+constexpr bool BuiltIn = is_built_in<std::decay_t<T>>::value;
 
 template <typename T>
 struct is_dynamic_size : std::is_same<typename type_traits<T>::size, dynamic_size> {};
@@ -557,31 +604,51 @@ constexpr auto type_name(const T&) noexcept {return type_name<T>();}
  * This is how it can be implemented for the static size type (*exposition only*):
  *
  * @code
-template <typename T>
-struct size_of_impl<T, Require<StaticSize<T>>> {
-    static constexpr auto apply(const T&) {
-        return typename type_traits<T>::size{};
+template <>
+struct size_of_impl<std::nullptr_t> {
+    static constexpr auto apply(std::nullptr_t) noexcept {
+        return null_state_size;
     }
 };
  * @endcode
  */
 template <typename T, typename = std::void_t<>>
-struct size_of_impl {
-    static constexpr void apply(const T&) noexcept {
-        static_assert(std::is_void_v<T>, "no size_of() specified for this type");
+struct size_of_impl;
+
+namespace detail {
+
+template <typename T, typename = std::void_t<>>
+struct size_of_default_impl {
+    static constexpr auto apply(const T&) noexcept {
+        return typename type_traits<T>::size{};
     }
 };
 
+template <typename T>
+struct size_of_default_impl<T, Require<DynamicSize<T>>> {
+    static constexpr auto apply(const T& v) noexcept(noexcept(std::size(v))){
+        return std::size(v) * sizeof(decltype(*v.begin()));
+    }
+};
+
+template <typename T, typename = std::void_t<>>
+struct size_of_impl_dispatcher { using type = size_of_impl<std::decay_t<T>>; };
+
+template <typename T>
+using get_size_of_impl = typename size_of_impl_dispatcher<unwrap_type_t<T>>::type;
+
+} // namespace detail
 /**
  * @brief Returns size of object binary representation in bytes.
  * @ingroup group-type_system-functions
  *
- * This function returns binary representation size of the object including all the
- * meta-information is used for the PostgreSQL binary protocol.
+ * This function returns binary representation size of the object
+ * is used for the PostgreSQL binary protocol.
  *
  * @param v --- object to examine
- * @return `ozo::size_type` --- size of object in bytes if object is not #Nullable or not in null state.
- * @return `ozo::null_state_size` --- for #Nullable in null state.
+ * @return `ozo::size_type` --- size of object in bytes if object is
+ * not #Nullable or not in null state.
+ * @return `ozo::null_state_size` --- for #Nullable object in null state.
  *
  * @note T has to have `ozo::type_traits` specialization.
  *
@@ -590,36 +657,16 @@ struct size_of_impl {
  * This function can be customized for the type or concept via `ozo::size_of_impl` structure
  * template specialization.
  *
- * @sa ozo::size_of_impl
+ * @sa ozo::size_of_impl, OZO_PG_DEFINE_TYPE_AND_ARRAY, OZO_PG_DEFINE_CUSTOM_TYPE
  */
 template <typename T>
-constexpr size_type size_of(const T& v) noexcept(noexcept(size_of_impl<T>::apply(v))) {
-    static_assert(HasTypeTraits<T>, "type has no type_traits specialization");
-    return size_of_impl<T>::apply(v);
+constexpr size_type size_of(const T& v) {
+    static_assert(HasDefinition<T>, "the type has not been defined with PostgreSQL type traits");
+    return is_null(v) ? null_state_size : detail::get_size_of_impl<T>::apply(unwrap_nullable(v));
 }
 
-template <typename T>
-struct size_of_impl<T, Require<Nullable<T>>> {
-    static constexpr auto apply(const T& v) noexcept(
-            noexcept(size_of(unwrap_nullable(v)))) {
-        return is_null(v) ? null_state_size : size_of(unwrap_nullable(v));
-    }
-};
-
-template <typename T>
-struct size_of_impl<T, Require<StaticSize<T>>> {
-    static constexpr auto apply(const T&) noexcept {
-        return typename type_traits<T>::size{};
-    }
-};
-
-template <typename T>
-struct size_of_impl<T, Require<!(Array<T> || Composite<T>) && DynamicSize<T>>> {
-    static constexpr auto apply(const T& v) {
-        return std::empty(v) ? 0 : std::size(v) * size_of(*std::begin(v));
-    }
-};
-
+template <typename T, typename>
+struct size_of_impl : detail::size_of_default_impl<T> {};
 /**
  * @brief Namespace for PostgreSQL specific types
  */
@@ -629,69 +676,57 @@ OZO_STRONG_TYPEDEF(std::string, name)
 OZO_STRONG_TYPEDEF(std::vector<char>, bytea)
 
 } // namespace pg
+
+
+namespace detail {
+
+template <typename Name, typename Oid = void, typename Size = dynamic_size>
+struct type_definition {
+    using name = Name;
+    using oid = Oid;
+    using size = Size;
+};
+
+template <typename Type, typename Oid>
+using array_definition = type_definition<
+    decltype(typename type_traits<Type>::name{} + "[]"_s),
+    Oid
+>;
+
+} // namespace detail
 } // namespace ozo
 
-#define OZO__TYPE_NAME_TYPE(Name) decltype(Name##_s)
-#define OZO__TYPE_ARRAY_NAME_TYPE(Name) decltype(Name##_s+"[]"_s)
 
 #define OZO_PG_DEFINE_TYPE_(Type, Name, OidType, Size) \
-    namespace ozo {\
-        template <>\
-        struct type_traits<Type> : type_traits_helper<\
-            Type, \
-            OZO__TYPE_NAME_TYPE(Name), \
-            OidType, \
-            Size\
-        >{};\
+    namespace ozo::definitions {\
+    template <>\
+    struct type<Type> : detail::type_definition<decltype(Name##_s), OidType, Size>{\
+        static_assert(std::is_same_v<Size, dynamic_size>\
+            || Size::value == null_state_size\
+            || static_cast<size_type>(sizeof(Type)) == Size::value,\
+            #Type " type size does not match to declared size");\
+    };\
     }
 
 #define OZO_PG_DEFINE_TYPE(Type, Name, Oid, Size) \
     OZO_PG_DEFINE_TYPE_(Type, Name, oid_constant<Oid>, Size)
 
-#define OZO_PG_DEFINE_TYPE_ARRAY_(Type, Name, OidType) \
-    namespace ozo {\
-        template <>\
-        struct type_traits<std::vector<Type>> : type_traits_helper<\
-            std::vector<Type>, \
-            OZO__TYPE_ARRAY_NAME_TYPE(Name), \
-            OidType, \
-            dynamic_size\
-        >{};\
-        template <>\
-        struct is_array<std::vector<Type>> : std::true_type {};\
+#define OZO_PG_DEFINE_TYPE_ARRAY_(Type, OidType) \
+    namespace ozo::definitions {\
+    template <>\
+    struct array<Type> : detail::array_definition<Type, OidType>{};\
     }
-
-#define OZO_PG_DEFINE_TYPE_ARRAY(Type, Name, Oid) \
-    OZO_PG_DEFINE_TYPE_ARRAY_(Type, Name, oid_constant<Oid>)
-
-#ifdef __OZO_STD_OPTIONAL
-#define OZO_PG_DEFINE_TYPE_ARRAY_OZO_OPTIONAL_(Type, Name, OidType) \
-    OZO_PG_DEFINE_TYPE_ARRAY_(__OZO_STD_OPTIONAL<Type>, Name, OidType)
-#else
-#define OZO_PG_DEFINE_TYPE_ARRAY_OZO_OPTIONAL_(Type, Name, OidType)
-#endif
-
-#define OZO_PG_DEFINE_TYPE_ARRAY_NULLABLES_(Type, Name, OidType) \
-    OZO_PG_DEFINE_TYPE_ARRAY_(boost::optional<Type>, Name, OidType) \
-    OZO_PG_DEFINE_TYPE_ARRAY_OZO_OPTIONAL_(Type, Name, OidType) \
-    OZO_PG_DEFINE_TYPE_ARRAY_(boost::scoped_ptr<Type>, Name, OidType) \
-    OZO_PG_DEFINE_TYPE_ARRAY_(std::unique_ptr<Type>, Name, OidType) \
-    OZO_PG_DEFINE_TYPE_ARRAY_(boost::shared_ptr<Type>, Name, OidType) \
-    OZO_PG_DEFINE_TYPE_ARRAY_(std::shared_ptr<Type>, Name, OidType)
-
 
 #define OZO_PG_DEFINE_TYPE_AND_ARRAY_(Type, Name, OidType, ArrayOidType, Size) \
     OZO_PG_DEFINE_TYPE_(Type, Name, OidType, Size) \
-    OZO_PG_DEFINE_TYPE_ARRAY_(Type, Name, ArrayOidType) \
-    OZO_PG_DEFINE_TYPE_ARRAY_NULLABLES_(Type, Name, ArrayOidType)
+    OZO_PG_DEFINE_TYPE_ARRAY_(Type, ArrayOidType)
 
 /**
  * @brief Helper macro to define type mapping
  * @ingroup group-type_system-mapping
- * In general type mapping is provided via `ozo::type_traits` specialization.
- * But for a single type you need to define a type, an array of the type, an
- * optional of the type (to support null), shared_ptr... and many other boilerplate.
- * To reduce such things this macro is made.
+ * In general type mapping is provided via `ozo::definitions::type` and
+ * `ozo::definitions::array` specialization.
+ * To reduce the boilerplate code the macro exists.
  *
  * @note This macro can be called in the global namespace only
  *
@@ -723,10 +758,8 @@ OZO_PG_DEFINE_TYPE_AND_ARRAY(boost::uuids::uuid, "uuid", UUIDOID, 2951, bytes<16
 /**
  * @brief Helper macro to define custom type mapping
  * @ingroup group-type_system-mapping
- * In general type mapping is provided via `ozo::type_traits` specialization.
- * But for a single type you need to define a type, an array of the type, an
- * optional of the type (to support null), shared_ptr... and many other boilerplate.
- * To reduce such things this macro is made.
+ * In general type mapping is provided via `ozo::definitions::type` and
+ * `ozo::definitions::array` specialization.
  *
  * @note This macro can be called in the global namespace only
  *
@@ -768,8 +801,8 @@ OZO_PG_DEFINE_CUSTOM_TYPE(smtp::message, "code.message")
     BOOST_PP_OVERLOAD(OZO_PG_DEFINE_CUSTOM_TYPE_IMPL_,__VA_ARGS__)(__VA_ARGS__)
 #endif
 
-OZO_PG_DEFINE_TYPE(std::nullptr_t, "null", null_oid, bytes<sizeof(std::nullptr_t)>)
-OZO_PG_DEFINE_TYPE(__OZO_NULLOPT_T, "null", null_oid, bytes<sizeof(__OZO_NULLOPT_T)>)
+OZO_PG_DEFINE_TYPE(std::nullptr_t, "null", null_oid, decltype(null_state_size))
+OZO_PG_DEFINE_TYPE(__OZO_NULLOPT_T, "null", null_oid, decltype(null_state_size))
 /**
  * @brief Bool type mapping
  * @ingroup group-type_system-mapping
@@ -900,7 +933,7 @@ constexpr decltype(auto) register_types() noexcept {
 using empty_oid_map = std::decay_t<decltype(register_types<>())>;
 
 /**
-* Function sets oid for type in #OidMap.
+* Function sets oid for a type in #OidMap.
 * @ingroup group-type_system-functions
 * @tparam T --- type to set oid for.
 * @param map --- #OidMap to modify.
@@ -913,7 +946,7 @@ inline void set_type_oid(oid_map_t<MapImplT>& map, oid_t oid) noexcept {
 }
 
 /**
-* @brief Function returns oid for type from #OidMap.
+* @brief Function returns oid for a type from #OidMap.
 * @ingroup group-type_system-functions
 * @tparam T --- type to get OID for.
 * @param map --- #OidMap to get OID from.
