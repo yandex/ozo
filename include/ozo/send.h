@@ -2,6 +2,7 @@
 
 #include <ozo/concept.h>
 #include <ozo/type_traits.h>
+#include <ozo/size_of.h>
 #include <ozo/ostream.h>
 #include <libpq-fe.h>
 #include <type_traits>
