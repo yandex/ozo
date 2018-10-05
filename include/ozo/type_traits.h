@@ -13,23 +13,12 @@
 #include <boost/hana/pair.hpp>
 #include <boost/hana/type.hpp>
 #include <boost/uuid/uuid.hpp>
-#include <boost/optional.hpp>
-#include <boost/scoped_ptr.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/make_shared.hpp>
-#include <boost/weak_ptr.hpp>
-
-// Fusion adaptors support
-#include <boost/fusion/support/is_sequence.hpp>
-#include <boost/fusion/include/is_sequence.hpp>
 
 #include <ozo/concept.h>
 #include <ozo/optional.h>
 #include <memory>
 #include <string>
-#include <list>
 #include <vector>
-#include <set>
 #include <type_traits>
 
 /**
@@ -106,31 +95,6 @@ constexpr null_oid_t null_oid;
 template <typename T, typename Enable = void>
 struct is_nullable : std::false_type {};
 
-template <typename T>
-struct is_nullable<boost::optional<T>> : std::true_type {};
-
-#ifdef __OZO_STD_OPTIONAL
-template <typename T>
-struct is_nullable<__OZO_STD_OPTIONAL<T>> : std::true_type {};
-#endif
-
-template <typename T>
-struct is_nullable<boost::scoped_ptr<T>> : std::true_type {};
-template <typename T, typename Deleter>
-struct is_nullable<std::unique_ptr<T, Deleter>> : std::true_type {};
-template <typename T>
-struct is_nullable<boost::shared_ptr<T>> : std::true_type {};
-template <typename T>
-struct is_nullable<std::shared_ptr<T>> : std::true_type {};
-template <typename T>
-struct is_nullable<boost::weak_ptr<T>> : std::true_type {};
-template <typename T>
-struct is_nullable<std::weak_ptr<T>> : std::true_type {};
-template <>
-struct is_nullable<std::nullptr_t> : std::true_type {};
-template <>
-struct is_nullable<__OZO_NULLOPT_T> : std::true_type {};
-
 /**
  * @brief Indicates if type meets nullable requirements.
  *
@@ -203,13 +167,6 @@ struct unwrap_with_dereference {
     }
 };
 
-struct unwrap_with_lock_dereference {
-    template <typename T>
-    constexpr static decltype(auto) apply(T&& v) noexcept(noexcept(*v.lock())) {
-        return *v.lock();
-    }
-};
-
 struct unwrap_with_get {
     template <typename T>
     constexpr static decltype(auto) apply(T&& v) noexcept(noexcept(v.get())) {
@@ -246,35 +203,29 @@ constexpr decltype(auto) unwrap(T&& v) noexcept(
 
 template <typename T>
 struct unwrap_impl<std::reference_wrapper<T>> : detail::unwrap_with_get {};
-template <>
-struct unwrap_impl<std::nullptr_t> : detail::unwrap_with_forward {};
-template <>
-struct unwrap_impl<__OZO_NULLOPT_T> : detail::unwrap_with_forward {};
-template <typename T>
-struct unwrap_impl<std::weak_ptr<T>> : detail::unwrap_with_lock_dereference {};
-template <typename T>
-struct unwrap_impl<boost::weak_ptr<T>> : detail::unwrap_with_lock_dereference {};
+
+namespace detail {
+
+template <typename T, typename V>
+struct is_null_always {
+    constexpr static V apply(const T&) noexcept { return {};}
+};
+
+template <typename T, typename = std::void_t<>>
+struct is_null_default_impl : is_null_always<T, std::false_type> {};
 
 template <typename T>
-inline auto is_null(const T& v) noexcept -> Require<Nullable<T>, bool> {
-    return !v;
-}
+struct is_null_default_impl<T, Require<Nullable<T>>> {
+    constexpr static auto apply(const T& v) noexcept(noexcept(!v)) {
+        return !v;
+    }
+};
+
+} // namespace detail
 
 template <typename T>
-inline auto is_null(const std::weak_ptr<T>& v) noexcept(noexcept(is_null(v.lock()))) {
-    return is_null(v.lock());
-}
+struct is_null_impl : detail::is_null_default_impl<T> {};
 
-template <typename T>
-inline auto is_null(const boost::weak_ptr<T>& v) noexcept(noexcept(is_null(v.lock()))) {
-    return is_null(v.lock());
-}
-
-constexpr std::true_type is_null(std::nullptr_t) noexcept {return {};}
-
-constexpr std::true_type is_null(__OZO_NULLOPT_T) noexcept {return {};}
-
-#ifdef OZO_DOCUMENTATION
 /**
  * @brief Indicates if value is in null state
  *
@@ -287,12 +238,8 @@ constexpr std::true_type is_null(__OZO_NULLOPT_T) noexcept {return {};}
  * @ingroup group-core-functions
  */
 template <typename T>
-constexpr auto is_null(const T&) noexcept;
-#endif
-
-template <typename T>
-constexpr auto is_null(const T&) noexcept -> Require<!Nullable<T>, std::false_type> {
-    return {};
+constexpr auto is_null(const T& v) noexcept(noexcept(is_null_impl<T>::apply(v))) {
+    return is_null_impl<T>::apply(v);
 }
 
 template <typename T, typename = std::void_t<>>
@@ -301,38 +248,6 @@ struct allocate_nullable_impl {
     template <typename Alloc>
     static void apply(T& out, const Alloc&) {
         out.emplace();
-    }
-};
-
-template <typename T>
-struct allocate_nullable_impl<std::unique_ptr<T>> {
-    template <typename Alloc>
-    static void apply(std::unique_ptr<T>& out, const Alloc&) {
-        out = std::make_unique<T>();
-    }
-};
-
-template <typename T>
-struct allocate_nullable_impl<boost::scoped_ptr<T>> {
-    template <typename Alloc>
-    static void apply(boost::scoped_ptr<T>& out, const Alloc&) {
-        out.reset(new T{});
-    }
-};
-
-template <typename T>
-struct allocate_nullable_impl<boost::shared_ptr<T>> {
-    template <typename Alloc>
-    static void apply(boost::shared_ptr<T>& out, const Alloc& a) {
-        out = boost::allocate_shared<T, Alloc>(a);
-    }
-};
-
-template <typename T>
-struct allocate_nullable_impl<std::shared_ptr<T>> {
-    template <typename Alloc>
-    static void apply(std::shared_ptr<T>& out, const Alloc& a) {
-        out = std::allocate_shared<T, Alloc>(a);
     }
 };
 
@@ -419,10 +334,6 @@ struct is_array<std::vector<Ts...>> : std::true_type {};
  */
 template <typename T>
 struct is_array : std::false_type {};
-template <typename ...Ts>
-struct is_array<std::vector<Ts...>> : std::true_type {};
-template <typename ...Ts>
-struct is_array<std::list<Ts...>> : std::true_type {};
 
 /**
  * @brief Indicates if type is PostgreSQL array representation.
@@ -722,8 +633,6 @@ OZO_PG_DEFINE_CUSTOM_TYPE(smtp::message, "code.message")
     BOOST_PP_OVERLOAD(OZO_PG_DEFINE_CUSTOM_TYPE_IMPL_,__VA_ARGS__)(__VA_ARGS__)
 #endif
 
-OZO_PG_DEFINE_TYPE(std::nullptr_t, "null", null_oid, decltype(null_state_size))
-OZO_PG_DEFINE_TYPE(__OZO_NULLOPT_T, "null", null_oid, decltype(null_state_size))
 /**
  * @brief Bool type mapping
  * @ingroup group-type_system-mapping

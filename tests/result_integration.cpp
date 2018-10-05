@@ -1,5 +1,7 @@
 #include <ozo/result.h>
 #include <ozo/recv.h>
+#include <ozo/ext/boost.h>
+#include <ozo/ext/std.h>
 #include <ozo/detail/array.h>
 
 #include <gtest/gtest.h>

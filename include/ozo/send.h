@@ -47,14 +47,4 @@ inline ostream& send_frame(ostream& out, const oid_map_t<M>& oid_map, const In& 
 template <typename T, typename Tag>
 struct send_impl<detail::strong_typedef_wrapper<T, Tag>> : send_impl<std::decay_t<T>> {};
 
-struct send_null {
-    template <typename M, typename T>
-    static ostream& apply(ostream& out, M&&, T&&) { return out;}
-};
-
-template <>
-struct send_impl<std::nullptr_t> : send_null {};
-template <>
-struct send_impl<__OZO_NULLOPT_T> : send_null {};
-
 } // namespace ozo
