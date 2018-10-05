@@ -61,7 +61,7 @@ template <typename T>
 struct recv_impl_dispatcher<T, Require<Array<T>>> { using type = recv_array_impl<std::decay_t<T>>; };
 
 template <typename T>
-using get_recv_impl = typename recv_impl_dispatcher<unwrap_nullable_type<T>>::type;
+using get_recv_impl = typename recv_impl_dispatcher<unwrap_type<T>>::type;
 
 template <typename M, typename Oid, typename Out>
 inline istream& recv(istream& in, Oid oid, size_type size, const oid_map_t<M>& oids, Out& out) {
@@ -79,7 +79,7 @@ inline istream& recv(istream& in, Oid oid, size_type size, const oid_map_t<M>& o
         if (!accepts_oid(oids, out, oid)) {
             throw system_error(error::oid_type_mismatch, "unexpected oid "
                 + std::to_string(oid) + " for type "
-                + boost::core::demangle(typeid(unwrap_nullable_type<Out>).name()));
+                + boost::core::demangle(typeid(unwrap_type<Out>).name()));
         }
     }
 
@@ -92,7 +92,7 @@ inline istream& recv(istream& in, Oid oid, size_type size, const oid_map_t<M>& o
             + boost::core::demangle(typeid(out).name()));
     }
 
-    return detail::get_recv_impl<Out>::apply(in, size, oids, unwrap_nullable(out));
+    return detail::get_recv_impl<Out>::apply(in, size, oids, unwrap(out));
 }
 
 template <typename M, typename Oid, typename Out>
@@ -130,13 +130,12 @@ struct recv_array_impl {
                  + std::to_string(array_header.dimensions_count));
         }
 
-        using item_type = typename out_type::value_type;
-        using unwrapped_item_type = unwrap_nullable_type<item_type>;
+        using item_type = unwrap_type<typename out_type::value_type>;
 
-        if (!accepts_oid<unwrapped_item_type>(oids, array_header.elemtype)) {
+        if (!accepts_oid<item_type>(oids, array_header.elemtype)) {
             throw system_error(error::oid_type_mismatch,
                 "unexpected oid " + std::to_string(array_header.elemtype)
-                + " for element type of " + boost::core::demangle(typeid(unwrapped_item_type).name()));
+                + " for element type of " + boost::core::demangle(typeid(item_type).name()));
         }
 
         if (array_header.dimensions_count < 1) {

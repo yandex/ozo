@@ -180,20 +180,54 @@ struct allocate_nullable_impl<T*> {
 
  * @endcode
  *
- * @sa ozo::unwrap_nullable(), is_null(), allocate_nullable(), init_nullable(), reset_nullable()
+ * @sa ozo::unwrap(), is_null(), allocate_nullable(), init_nullable(), reset_nullable()
  * @ingroup group-core-concepts
  * @hideinitializer
  */
 template <typename T>
 constexpr auto Nullable = is_nullable<std::decay_t<T>>::value;
 
-template <typename T, typename = std::void_t<>>
-struct unwrap_nullable_impl {
-    template <typename T1>
-    constexpr static decltype(auto) apply(T1&& v) noexcept(noexcept(*v)) {
+namespace detail {
+
+struct unwrap_with_forward {
+    template <typename T>
+    constexpr static decltype(auto) apply(T&& v) noexcept {
+        return std::forward<T>(v);
+    }
+};
+
+struct unwrap_with_dereference {
+    template <typename T>
+    constexpr static decltype(auto) apply(T&& v) noexcept(noexcept(*v)) {
         return *v;
     }
 };
+
+struct unwrap_with_lock_dereference {
+    template <typename T>
+    constexpr static decltype(auto) apply(T&& v) noexcept(noexcept(*v.lock())) {
+        return *v.lock();
+    }
+};
+
+struct unwrap_with_get {
+    template <typename T>
+    constexpr static decltype(auto) apply(T&& v) noexcept(noexcept(v.get())) {
+        return v.get();
+    }
+};
+
+template <typename T, typename = std::void_t<>>
+struct unwrap_impl_default : unwrap_with_forward {};
+
+template <typename T>
+struct unwrap_impl_default <T, Require<Nullable<T>>> : unwrap_with_dereference {};
+
+} // namespace detail
+
+
+template <typename T>
+struct unwrap_impl : detail::unwrap_impl_default<T> {};
 
 /**
  * @brief Dereference #Nullable argument or forward it
@@ -205,48 +239,21 @@ struct unwrap_nullable_impl {
  * @ingroup group-core-functions
  */
 template <typename T>
-constexpr decltype(auto) unwrap_nullable(T&& v) noexcept(
-        noexcept(unwrap_nullable_impl<std::decay_t<T>>::apply(std::forward<T>(v)))) {
-    return unwrap_nullable_impl<std::decay_t<T>>::apply(std::forward<T>(v));
+constexpr decltype(auto) unwrap(T&& v) noexcept(
+        noexcept(unwrap_impl<std::decay_t<T>>::apply(std::forward<T>(v)))) {
+    return unwrap_impl<std::decay_t<T>>::apply(std::forward<T>(v));
 }
 
+template <typename T>
+struct unwrap_impl<std::reference_wrapper<T>> : detail::unwrap_with_get {};
 template <>
-struct unwrap_nullable_impl<std::nullptr_t> {
-    constexpr static std::nullptr_t apply(std::nullptr_t) noexcept {
-        return nullptr;
-    }
-};
-
+struct unwrap_impl<std::nullptr_t> : detail::unwrap_with_forward {};
 template <>
-struct unwrap_nullable_impl<__OZO_NULLOPT_T> {
-    constexpr static __OZO_NULLOPT_T apply(__OZO_NULLOPT_T v) noexcept {
-        return v;
-    }
-};
-
+struct unwrap_impl<__OZO_NULLOPT_T> : detail::unwrap_with_forward {};
 template <typename T>
-struct unwrap_nullable_impl<T, Require<!Nullable<T>>> {
-    template <typename T1>
-    constexpr static decltype(auto) apply(T1&& v) noexcept {
-        return std::forward<T1>(v);
-    }
-};
-
+struct unwrap_impl<std::weak_ptr<T>> : detail::unwrap_with_lock_dereference {};
 template <typename T>
-struct unwrap_nullable_impl<std::weak_ptr<T>> {
-    template <typename T1>
-    constexpr static decltype(auto) apply(T1&& v) noexcept(noexcept(*v.lock())) {
-        return *v.lock();
-    }
-};
-
-template <typename T>
-struct unwrap_nullable_impl<boost::weak_ptr<T>> {
-    template <typename T1>
-    constexpr static decltype(auto) apply(T1&& v) noexcept(noexcept(*v.lock())) {
-        return *v.lock();
-    }
-};
+struct unwrap_impl<boost::weak_ptr<T>> : detail::unwrap_with_lock_dereference {};
 
 template <typename T>
 inline auto is_null(const T& v) noexcept -> Require<Nullable<T>, bool> {
@@ -254,12 +261,12 @@ inline auto is_null(const T& v) noexcept -> Require<Nullable<T>, bool> {
 }
 
 template <typename T>
-inline auto is_null(const boost::weak_ptr<T>& v) noexcept {
+inline auto is_null(const std::weak_ptr<T>& v) noexcept(noexcept(is_null(v.lock()))) {
     return is_null(v.lock());
 }
 
 template <typename T>
-inline auto is_null(const std::weak_ptr<T>& v) noexcept {
+inline auto is_null(const boost::weak_ptr<T>& v) noexcept(noexcept(is_null(v.lock()))) {
     return is_null(v.lock());
 }
 
@@ -354,7 +361,7 @@ inline void reset_nullable(T& n) {
  * @ingroup group-type_system-types
  * Sometimes it is needed to know the underlying type of #Nullable or
  * type is wrapped with `std::reference_type`. So that is why the type exists.
- * Convenient shortcut is `ozo::unwrap_type_t`.
+ * Convenient shortcut is `ozo::unwrap_type`.
  * @tparam T -- type to unwrap.
  *
  * ### Example
@@ -364,23 +371,20 @@ int a = 42;
 auto ref_a = std::ref(a);
 auto opt_a = std::make_optional(a);
 
-static_assert(std::is_same<ozo::unwrap_type_t<decltype(ref_a)>, decltype(a)>);
-static_assert(std::is_same<ozo::unwrap_type_t<decltype(opt_a)>, decltype(a)>);
+static_assert(std::is_same<ozo::unwrap_type<decltype(ref_a)>, decltype(a)>);
+static_assert(std::is_same<ozo::unwrap_type<decltype(opt_a)>, decltype(a)>);
  * @endcode
  *
- * @sa ozo::unwrap_type_t
+ * @sa ozo::unwrap_type, ozo::unwrap
  */
 template <typename T>
-struct unwrap_type {
+struct get_unwrapped_type {
 #ifdef OZO_DOCUMENTATION
     using type = <unwrapped type>; //!< Unwrapped type
 #else
-    using type = unwrap_nullable_type<T>;
+    using type = std::decay_t<decltype(unwrap(std::declval<T>()))>;
 #endif
 };
-
-template <typename T>
-struct unwrap_type<std::reference_wrapper<T>> {using type = std::decay_t<T>;};
 
 /**
  * @brief Shortcut for `ozo::unwrap_type`.
@@ -389,7 +393,7 @@ struct unwrap_type<std::reference_wrapper<T>> {using type = std::decay_t<T>;};
  * @tparam T -- type to unwrap.
  */
 template <typename T>
-using unwrap_type_t = typename unwrap_type<T>::type;
+using unwrap_type = typename get_unwrapped_type<T>::type;
 
 /**
  * @brief Indicates if type is PostgreSQL array representation.
@@ -453,7 +457,7 @@ struct get_type_traits<T, std::void_t<typename definitions::type<T>::name>> {
 
 template <typename T>
 struct get_type_traits<T, Require<Array<T>>> {
-    using type = definitions::array<unwrap_type_t<typename T::value_type>>;
+    using type = definitions::array<unwrap_type<typename T::value_type>>;
 };
 
 }
@@ -480,7 +484,7 @@ struct type_traits {
 #endif
 
 template <typename T>
-using type_traits = typename detail::get_type_traits<unwrap_type_t<T>>::type;
+using type_traits = typename detail::get_type_traits<unwrap_type<T>>::type;
 
 /**
  * @brief Condition indicates if type has corresponding type traits for PostgreSQL
@@ -635,7 +639,7 @@ template <typename T, typename = std::void_t<>>
 struct size_of_impl_dispatcher { using type = size_of_impl<std::decay_t<T>>; };
 
 template <typename T>
-using get_size_of_impl = typename size_of_impl_dispatcher<unwrap_type_t<T>>::type;
+using get_size_of_impl = typename size_of_impl_dispatcher<unwrap_type<T>>::type;
 
 } // namespace detail
 /**
@@ -662,7 +666,7 @@ using get_size_of_impl = typename size_of_impl_dispatcher<unwrap_type_t<T>>::typ
 template <typename T>
 constexpr size_type size_of(const T& v) {
     static_assert(HasDefinition<T>, "the type has not been defined with PostgreSQL type traits");
-    return is_null(v) ? null_state_size : detail::get_size_of_impl<T>::apply(unwrap_nullable(v));
+    return is_null(v) ? null_state_size : detail::get_size_of_impl<T>::apply(unwrap(v));
 }
 
 template <typename T, typename>
@@ -959,7 +963,7 @@ oid_t type_oid(const OidMap& map) noexcept;
 template <typename T, typename MapImplT>
 inline auto type_oid(const oid_map_t<MapImplT>& map) noexcept
         -> Require<!BuiltIn<T>, oid_t> {
-    return map.impl[hana::type_c<unwrap_nullable_type<T>>];
+    return map.impl[hana::type_c<unwrap_type<T>>];
 }
 
 template <typename T, typename MapImplT>

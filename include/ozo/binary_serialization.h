@@ -30,13 +30,13 @@ template <typename T>
 struct send_impl_dispatcher<T, Require<Array<T>>> { using type = send_array_impl<std::decay_t<T>>; };
 
 template <typename T>
-using get_send_impl = typename send_impl_dispatcher<unwrap_nullable_type<T>>::type;
+using get_send_impl = typename send_impl_dispatcher<unwrap_type<T>>::type;
 
 } // namespace detail
 
 template <class M, class In>
 inline ostream& send(ostream& out, const oid_map_t<M>& oid_map, const In& in) {
-    return is_null(in) ? out : detail::get_send_impl<In>::apply(out, oid_map, unwrap_nullable(in));
+    return is_null(in) ? out : detail::get_send_impl<In>::apply(out, oid_map, unwrap(in));
 }
 
 template <class M, class In>
