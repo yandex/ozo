@@ -65,14 +65,19 @@ TEST(is_null, should_return_false_for_non_nullable_type) {
     EXPECT_TRUE(!ozo::is_null(int()));
 }
 
-TEST(unwrap_nullable, should_unwrap_nullable_type) {
+TEST(unwrap, should_unwrap_type) {
     boost::optional<int> n(7);
-    EXPECT_EQ(ozo::unwrap_nullable(n), 7);
+    EXPECT_EQ(ozo::unwrap(n), 7);
 }
 
-TEST(unwrap_nullable, should_unwrap_notnullable_type) {
+TEST(unwrap, should_unwrap_notnullable_type) {
     int n(7);
-    EXPECT_EQ(ozo::unwrap_nullable(n), 7);
+    EXPECT_EQ(ozo::unwrap(n), 7);
+}
+
+TEST(unwrap, should_unwrap_std_reference_wrapper) {
+    int n(7);
+    EXPECT_EQ(ozo::unwrap(std::ref(n)), 7);
 }
 
 }
