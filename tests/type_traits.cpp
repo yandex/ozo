@@ -1,4 +1,7 @@
 #include <ozo/type_traits.h>
+#include <ozo/size_of.h>
+#include <ozo/ext/boost.h>
+#include <ozo/ext/std.h>
 
 #include <boost/make_shared.hpp>
 #include <boost/fusion/adapted/std_tuple.hpp>

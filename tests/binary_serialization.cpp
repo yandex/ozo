@@ -1,5 +1,6 @@
 #include <ozo/send.h>
 #include <ozo/detail/array.h>
+#include <ozo/ext/std.h>
 
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>

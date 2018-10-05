@@ -1,3 +1,5 @@
+#pragma once
+
 #include <ozo/optional.h>
 #include <ozo/type_traits.h>
 
@@ -15,6 +17,7 @@
 #include <mutex>
 #include <thread>
 #include <vector>
+#include <atomic>
 
 namespace ozo::benchmark {
 

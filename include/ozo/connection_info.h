@@ -3,6 +3,7 @@
 #include <ozo/connector.h>
 #include <ozo/connection.h>
 #include <ozo/impl/async_connect.h>
+#include <ozo/ext/std/shared_ptr.h>
 
 #include <chrono>
 

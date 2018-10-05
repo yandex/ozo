@@ -1,6 +1,7 @@
 #include "test_asio.h"
 
 #include <ozo/connection.h>
+#include <ozo/ext/std/shared_ptr.h>
 
 #include <boost/fusion/adapted/std_tuple.hpp>
 #include <boost/fusion/adapted/struct/define_struct.hpp>
