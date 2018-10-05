@@ -1,6 +1,7 @@
 #include "result_mock.h"
 
-#include <ozo/binary_deserialization.h>
+#include <ozo/detail/array.h>
+#include <ozo/recv.h>
 
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>

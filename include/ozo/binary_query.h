@@ -1,6 +1,7 @@
 #pragma once
 
-#include <ozo/binary_serialization.h>
+#include <ozo/send.h>
+#include <ozo/detail/array.h>
 #include <ozo/concept.h>
 #include <ozo/query.h>
 #include <ozo/type_traits.h>

@@ -6,7 +6,6 @@
 #include <ozo/concept.h>
 #include <ozo/detail/endian.h>
 #include <ozo/detail/float.h>
-#include <ozo/detail/array.h>
 #include <ozo/istream.h>
 #include <boost/core/demangle.hpp>
 #include <boost/hana/for_each.hpp>
@@ -50,15 +49,10 @@ struct recv_impl {
     }
 };
 
-template <typename T, typename = std::void_t<>>
-struct recv_array_impl;
-
 namespace detail {
 
 template <typename T, typename = std::void_t<>>
 struct recv_impl_dispatcher { using type = recv_impl<std::decay_t<T>>; };
-template <typename T>
-struct recv_impl_dispatcher<T, Require<Array<T>>> { using type = recv_array_impl<std::decay_t<T>>; };
 
 template <typename T>
 using get_recv_impl = typename recv_impl_dispatcher<unwrap_type<T>>::type;
@@ -114,54 +108,8 @@ inline istream& recv_data_frame(istream& in, const oid_map_t<M>& oids, Out& out)
     return detail::recv_data_frame(in, null_oid, oids, out);
 }
 
-template <typename T, typename>
-struct recv_array_impl {
-    using out_type = T;
-
-    template <typename M>
-    static istream& apply(istream& in, size_type, const oid_map_t<M>& oids, out_type& out) {
-        detail::pg_array array_header;
-        detail::pg_array_dimension dim_header;
-
-        read(in, array_header);
-
-        if (array_header.dimensions_count > 1) {
-            throw std::range_error("multiply dimension count is not supported: "
-                 + std::to_string(array_header.dimensions_count));
-        }
-
-        using item_type = unwrap_type<typename out_type::value_type>;
-
-        if (!accepts_oid<item_type>(oids, array_header.elemtype)) {
-            throw system_error(error::oid_type_mismatch,
-                "unexpected oid " + std::to_string(array_header.elemtype)
-                + " for element type of " + boost::core::demangle(typeid(item_type).name()));
-        }
-
-        if (array_header.dimensions_count < 1) {
-            return in;
-        }
-
-        read(in, dim_header);
-
-        if (dim_header.size == 0) {
-            return in;
-        }
-
-        out.resize(dim_header.size);
-
-        for (auto& item : out) {
-            recv_data_frame(in, oids, item);
-        }
-        return in;
-    }
-};
-
 template <typename T, typename Tag>
 struct recv_impl<detail::strong_typedef_wrapper<T, Tag>> : recv_impl<std::decay_t<T>> {};
-
-template <typename T>
-struct recv_impl<std::reference_wrapper<T>> : recv_impl<T> {};
 
 template <typename T, typename M, typename Out>
 void recv(const value<T>& in, const oid_map_t<M>& oids, Out& out) {
