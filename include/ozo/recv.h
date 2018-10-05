@@ -3,6 +3,7 @@
 #include <ozo/result.h>
 #include <ozo/error.h>
 #include <ozo/type_traits.h>
+#include <ozo/size_of.h>
 #include <ozo/concept.h>
 #include <ozo/detail/endian.h>
 #include <ozo/detail/float.h>
