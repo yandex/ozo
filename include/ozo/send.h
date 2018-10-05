@@ -3,10 +3,7 @@
 #include <ozo/concept.h>
 #include <ozo/type_traits.h>
 #include <ozo/ostream.h>
-#include <ozo/detail/array.h>
-
 #include <libpq-fe.h>
-#include <boost/range/algorithm/for_each.hpp>
 #include <type_traits>
 
 namespace ozo {
@@ -19,15 +16,10 @@ struct send_impl{
     }
 };
 
-template <typename T, typename = std::void_t<>>
-struct send_array_impl;
-
 namespace detail {
 
 template <typename T, typename = std::void_t<>>
 struct send_impl_dispatcher { using type = send_impl<std::decay_t<T>>; };
-template <typename T>
-struct send_impl_dispatcher<T, Require<Array<T>>> { using type = send_array_impl<std::decay_t<T>>; };
 
 template <typename T>
 using get_send_impl = typename send_impl_dispatcher<unwrap_type<T>>::type;
@@ -45,23 +37,14 @@ inline ostream& send_data_frame(ostream& out, const oid_map_t<M>& oid_map, const
     return send(out, oid_map, in);
 }
 
-template <typename T, typename>
-struct send_array_impl {
-    template <typename M>
-    static ostream& apply(ostream& out, const oid_map_t<M>& oid_map, const T& in) {
-        using value_type = typename T::value_type;
-        write(out, detail::pg_array {1, 0, type_oid<value_type>(oid_map)});
-        write(out, detail::pg_array_dimension {std::int32_t(std::size(in)), 0});
-        boost::for_each(in, [&] (const auto& v) { send_data_frame(out, oid_map, v);});
-        return out;
-    }
-};
+template <class M, class In>
+inline ostream& send_frame(ostream& out, const oid_map_t<M>& oid_map, const In& in) {
+    write(out, type_oid(oid_map, in));
+    return send_data_frame(out, oid_map, in);
+}
 
 template <typename T, typename Tag>
 struct send_impl<detail::strong_typedef_wrapper<T, Tag>> : send_impl<std::decay_t<T>> {};
-
-template <typename T>
-struct send_impl<std::reference_wrapper<T>> : send_impl<std::decay_t<T>> {};
 
 struct send_null {
     template <typename M, typename T>

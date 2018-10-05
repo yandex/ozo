@@ -1,4 +1,5 @@
-#include <ozo/binary_serialization.h>
+#include <ozo/send.h>
+#include <ozo/detail/array.h>
 
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>

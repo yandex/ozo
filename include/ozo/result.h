@@ -1,11 +1,6 @@
 #pragma once
 
-#include <ozo/impl/io.h>
-#include <ozo/type_traits.h>
-#include <ozo/native_result_handle.h>
-
-#include <libpq-fe.h>
-
+#include <ozo/impl/result.h>
 #include <boost/iterator/iterator_facade.hpp>
 #include <memory>
 #include <vector>
