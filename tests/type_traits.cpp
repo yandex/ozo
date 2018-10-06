@@ -1,5 +1,5 @@
 #include <ozo/type_traits.h>
-#include <ozo/size_of.h>
+#include <ozo/io/size_of.h>
 #include <ozo/ext/boost.h>
 #include <ozo/ext/std.h>
 

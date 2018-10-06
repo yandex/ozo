@@ -2,7 +2,7 @@
 
 #include <ozo/type_traits.h>
 #include <ozo/optional.h>
-#include <ozo/send.h>
+#include <ozo/io/send.h>
 
 namespace ozo {
 

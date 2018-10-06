@@ -1,4 +1,4 @@
-#include <ozo/binary_query.h>
+#include <ozo/io/binary_query.h>
 #include <ozo/optional.h>
 
 #include <iterator>

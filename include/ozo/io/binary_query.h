@@ -2,8 +2,8 @@
 
 #include <ozo/ext/std.h>
 #include <ozo/ext/boost.h>
-#include <ozo/send.h>
-#include <ozo/detail/array.h>
+#include <ozo/io/send.h>
+#include <ozo/io/array.h>
 #include <ozo/core/concept.h>
 #include <ozo/query.h>
 #include <ozo/type_traits.h>
