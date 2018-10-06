@@ -4,9 +4,7 @@
 #include <vector>
 #include <list>
 #include <ozo/result.h>
-/**
- * Useful shortcuts for typed unnamed results containers
- */
+
 namespace ozo {
 
 template <typename ... Ts>
@@ -90,7 +88,7 @@ constexpr auto into(T& v) { return std::back_inserter(v);}
  * @ingroup group-requests-functions
  * @brief Shortcut for create reference wrapper for `ozo::basic_result`.
  *
- * This shortcut creates insert iterator for row container.
+ * This shortcut creates reference wrapper for `ozo::basic_result` to obtain raw result into it.
  *
  * ### Example
  *
