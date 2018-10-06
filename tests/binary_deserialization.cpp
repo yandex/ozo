@@ -1,7 +1,7 @@
 #include "result_mock.h"
 
-#include <ozo/detail/array.h>
-#include <ozo/recv.h>
+#include <ozo/io/array.h>
+#include <ozo/io/recv.h>
 
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>

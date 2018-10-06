@@ -3,7 +3,7 @@
 #include <ozo/native_conn_handle.h>
 #include <ozo/connection.h>
 #include <ozo/error.h>
-#include <ozo/binary_query.h>
+#include <ozo/io/binary_query.h>
 #include <ozo/detail/bind.h>
 #include <ozo/impl/result_status.h>
 #include <ozo/impl/result.h>

@@ -3,12 +3,12 @@
 #include <ozo/result.h>
 #include <ozo/error.h>
 #include <ozo/type_traits.h>
-#include <ozo/size_of.h>
+#include <ozo/io/size_of.h>
 #include <ozo/core/concept.h>
 #include <ozo/ext/std.h>
 #include <ozo/detail/endian.h>
 #include <ozo/detail/float.h>
-#include <ozo/istream.h>
+#include <ozo/io/istream.h>
 #include <boost/core/demangle.hpp>
 #include <boost/hana/for_each.hpp>
 #include <boost/hana/members.hpp>

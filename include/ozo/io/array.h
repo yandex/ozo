@@ -1,8 +1,8 @@
 #pragma once
 
 #include <ozo/type_traits.h>
-#include <ozo/send.h>
-#include <ozo/recv.h>
+#include <ozo/io/send.h>
+#include <ozo/io/recv.h>
 #include <boost/hana/adapt_struct.hpp>
 #include <boost/hana/size.hpp>
 #include <boost/hana/fold.hpp>
