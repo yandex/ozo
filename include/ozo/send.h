@@ -45,6 +45,6 @@ inline ostream& send_frame(ostream& out, const oid_map_t<M>& oid_map, const In& 
 }
 
 template <typename T, typename Tag>
-struct send_impl<detail::strong_typedef_wrapper<T, Tag>> : send_impl<std::decay_t<T>> {};
+struct send_impl<strong_typedef_wrapper<T, Tag>> : send_impl<std::decay_t<T>> {};
 
 } // namespace ozo
