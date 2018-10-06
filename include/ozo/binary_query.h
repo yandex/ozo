@@ -4,7 +4,7 @@
 #include <ozo/ext/boost.h>
 #include <ozo/send.h>
 #include <ozo/detail/array.h>
-#include <ozo/concept.h>
+#include <ozo/core/concept.h>
 #include <ozo/query.h>
 #include <ozo/type_traits.h>
 #include <ozo/optional.h>

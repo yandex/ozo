@@ -4,7 +4,7 @@
 #include <ozo/error.h>
 #include <ozo/type_traits.h>
 #include <ozo/size_of.h>
-#include <ozo/concept.h>
+#include <ozo/core/concept.h>
 #include <ozo/ext/std.h>
 #include <ozo/detail/endian.h>
 #include <ozo/detail/float.h>

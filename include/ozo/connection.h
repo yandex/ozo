@@ -3,7 +3,7 @@
 #include <ozo/error.h>
 #include <ozo/type_traits.h>
 #include <ozo/asio.h>
-#include <ozo/concept.h>
+#include <ozo/core/concept.h>
 
 #include <ozo/detail/bind.h>
 #include <ozo/impl/connection.h>

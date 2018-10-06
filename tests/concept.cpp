@@ -1,4 +1,4 @@
-#include <ozo/concept.h>
+#include <ozo/core/concept.h>
 
 #include <list>
 #include <vector>
