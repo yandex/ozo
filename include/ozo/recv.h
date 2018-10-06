@@ -111,7 +111,7 @@ inline istream& recv_data_frame(istream& in, const oid_map_t<M>& oids, Out& out)
 }
 
 template <typename T, typename Tag>
-struct recv_impl<detail::strong_typedef_wrapper<T, Tag>> : recv_impl<std::decay_t<T>> {};
+struct recv_impl<strong_typedef_wrapper<T, Tag>> : recv_impl<std::decay_t<T>> {};
 
 template <typename T, typename M, typename Out>
 void recv(const value<T>& in, const oid_map_t<M>& oids, Out& out) {

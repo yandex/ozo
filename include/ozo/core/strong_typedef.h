@@ -1,7 +1,7 @@
 #include <boost/operators.hpp>
 #include <type_traits>
 
-namespace ozo::detail {
+namespace ozo {
 
 template <typename T, typename Tag>
 class strong_typedef_wrapper
@@ -55,7 +55,7 @@ struct is_strong_typedef<strong_typedef_wrapper<T, Tag>> : std::true_type {};
 template <typename T>
 constexpr auto StrongTypedef = is_strong_typedef<std::decay_t<T>>::value;
 
-} // namespace ozo::detail
+} // namespace ozo
 
 /**
  * @brief Strong typedef
@@ -97,5 +97,5 @@ assert(std::addressof(base) == std::addressof(b.get()));
 #else
 #define OZO_STRONG_TYPEDEF(base, type)\
     struct type##_strong_typedef_tag;\
-    using type = ozo::detail::strong_typedef_wrapper<base, type##_strong_typedef_tag>;
+    using type = ozo::strong_typedef_wrapper<base, type##_strong_typedef_tag>;
 #endif
