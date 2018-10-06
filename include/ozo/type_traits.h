@@ -16,7 +16,7 @@
 #include <boost/hana/type.hpp>
 #include <boost/uuid/uuid.hpp>
 
-#include <ozo/concept.h>
+#include <ozo/core/concept.h>
 #include <ozo/optional.h>
 #include <memory>
 #include <string>

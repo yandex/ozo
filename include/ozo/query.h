@@ -1,7 +1,7 @@
 #pragma once
 
 #include <ozo/impl/query.h>
-#include <ozo/concept.h>
+#include <ozo/core/concept.h>
 
 /**
  * @defgroup group-query Queries

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ozo/concept.h>
+#include <ozo/core/concept.h>
 
 #include <limits.h>
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ozo/concept.h>
+#include <ozo/core/concept.h>
 #include <ozo/error.h>
 #include <ozo/detail/ostream.h>
 #include <ozo/detail/endian.h>

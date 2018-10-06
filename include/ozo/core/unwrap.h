@@ -1,7 +1,7 @@
 #pragma once
 
 #include <ozo/core/nullable.h>
-#include <ozo/concept.h>
+#include <ozo/core/concept.h>
 
 namespace ozo {
 
