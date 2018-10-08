@@ -56,6 +56,9 @@ namespace detail {
 template <typename T, typename = std::void_t<>>
 struct recv_impl_dispatcher { using type = recv_impl<std::decay_t<T>>; };
 
+template <typename T, typename Tag>
+struct recv_impl_dispatcher<strong_typedef_wrapper<T, Tag>> { using type = recv_impl<std::decay_t<T>>; };
+
 template <typename T>
 using get_recv_impl = typename recv_impl_dispatcher<unwrap_type<T>>::type;
 

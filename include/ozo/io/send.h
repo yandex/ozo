@@ -22,6 +22,9 @@ namespace detail {
 template <typename T, typename = std::void_t<>>
 struct send_impl_dispatcher { using type = send_impl<std::decay_t<T>>; };
 
+template <typename T, typename Tag>
+struct send_impl_dispatcher<strong_typedef_wrapper<T, Tag>> { using type = send_impl<std::decay_t<T>>; };
+
 template <typename T>
 using get_send_impl = typename send_impl_dispatcher<unwrap_type<T>>::type;
 
@@ -43,8 +46,5 @@ inline ostream& send_frame(ostream& out, const oid_map_t<M>& oid_map, const In& 
     write(out, type_oid(oid_map, in));
     return send_data_frame(out, oid_map, in);
 }
-
-template <typename T, typename Tag>
-struct send_impl<strong_typedef_wrapper<T, Tag>> : send_impl<std::decay_t<T>> {};
 
 } // namespace ozo
