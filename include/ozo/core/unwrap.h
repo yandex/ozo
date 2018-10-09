@@ -60,7 +60,7 @@ struct unwrap_impl<std::reference_wrapper<T>> : detail::unwrap_with_get {};
 
 /**
  * @brief Unwraps nullable or reference wrapped type
- * @ingroup group-type_system-types
+ * @ingroup group-core-types
  * Sometimes it is needed to know the underlying type of #Nullable or
  * type is wrapped with `std::reference_type`. So that is why the type exists.
  * Convenient shortcut is `ozo::unwrap_type`.
@@ -90,7 +90,7 @@ struct get_unwrapped_type {
 
 /**
  * @brief Shortcut for `ozo::get_unwrapped_type`.
- * @ingroup group-type_system-types
+ * @ingroup group-core-types
  *
  * @tparam T -- type to unwrap.
  */

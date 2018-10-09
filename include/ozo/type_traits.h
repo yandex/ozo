@@ -196,6 +196,18 @@ struct is_composite : std::bool_constant<
     HanaStruct<T> || FusionAdaptedStruct<T>
 > {};
 
+/**
+ * @brief Indicates if type is PostgreSQL composite representation.
+ * @ingroup group-type_system-concepts
+ *
+ * Representation means that you can obtain PostgreSQL composite into the type.
+ * The library treats as `Composite` Boost.Hana or Boost.Fusion adapted structures or
+ * `std::tuple` as record.
+ *
+ * @tparam T --- type to examine.
+ *
+ * @hideinitializer
+ */
 template <typename T>
 constexpr auto Composite = is_composite<std::decay_t<T>>::value;
 

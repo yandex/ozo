@@ -34,10 +34,6 @@
  * @brief Database requests related types.
  */
 
-/**
- * @defgroup group-introspection Introspection
- * @brief Serialization and deserialization related concepts, types and functions.
- */
 #include <ozo/connection_pool.h>
 
 namespace ozo {
