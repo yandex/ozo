@@ -3,11 +3,15 @@
 #include <ozo/ext/boost.h>
 #include <ozo/ext/std.h>
 #include <ozo/io/array.h>
+#include <ozo/io/composite.h>
+#include <ozo/shortcuts.h>
 
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
 namespace {
+
+using namespace ::testing;
 
 auto execute_query(const char* query_text, int binary = 1) {
     using scoped_connection = std::unique_ptr<PGconn, void(*)(PGconn*)>;
@@ -105,6 +109,21 @@ TEST(result, for_result_and_reference_wrapper_of_result_should_move_in_to_out) {
 
     EXPECT_EQ(result.handle(), nullptr);
     EXPECT_EQ(out.handle().get(), handle);
+}
+
+TEST(result, should_convert_in_rows_of_tuple_rows_of_records) {
+    auto result = execute_query("SELECT * FROM (VALUES ((1, 'one'::text)), ((2, 'two'::text)), ((3, 'three'::text))) AS t (tuple);");
+    auto oid_map = ozo::empty_oid_map();
+
+    ozo::rows_of<std::tuple<int, std::string>> out;
+
+    ozo::recv_result(result, oid_map, ozo::into(out));
+
+    EXPECT_THAT(out, ElementsAre(
+        std::make_tuple(std::make_tuple(int(1), "one")),
+        std::make_tuple(std::make_tuple(int(2), "two")),
+        std::make_tuple(std::make_tuple(int(3), "three"))
+    ));
 }
 
 } // namespace

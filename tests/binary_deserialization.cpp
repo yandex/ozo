@@ -2,6 +2,7 @@
 
 #include <ozo/io/array.h>
 #include <ozo/io/recv.h>
+#include <ozo/ext/std.h>
 
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>

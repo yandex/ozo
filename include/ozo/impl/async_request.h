@@ -4,8 +4,6 @@
 #include <ozo/detail/post_handler.h>
 #include <ozo/detail/timeout_handler.h>
 #include <ozo/impl/io.h>
-#include <ozo/io/array.h>
-#include <ozo/io/recv.h>
 #include <ozo/io/binary_query.h>
 #include <ozo/connection.h>
 #include <ozo/query_builder.h>

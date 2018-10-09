@@ -64,6 +64,7 @@ set(SOURCES
     binary_query.cpp
     binary_serialization.cpp
     bind.cpp
+    composite.cpp
     connection.cpp
     connection_info.cpp
     connection_pool.cpp

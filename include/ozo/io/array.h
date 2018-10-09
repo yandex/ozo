@@ -47,10 +47,10 @@ struct size_of_array_impl {
     constexpr static size_type data_size(const T& v) {
         using ozo::size_of;
         if constexpr (StaticSize<typename T::value_type>) {
-            return std::empty(v) ? 0 : (sizeof(size_type) + size_of(*std::begin(v))) * std::size(v);
+            return std::empty(v) ? 0 : data_frame_size(*std::begin(v)) * std::size(v);
         }
         return boost::accumulate(v, size_type(0),
-            [&] (auto r, const auto& item) { return r + sizeof(size_type) + size_of(item);});
+            [&] (auto r, const auto& item) { return r + data_frame_size(item);});
     }
 
     static constexpr auto apply(const T& v) {
@@ -74,8 +74,8 @@ struct send_array_impl {
     template <typename M>
     static ostream& apply(ostream& out, const oid_map_t<M>& oid_map, const T& in) {
         using value_type = typename T::value_type;
-        write(out, detail::pg_array {1, 0, type_oid<value_type>(oid_map)});
-        write(out, detail::pg_array_dimension {std::int32_t(std::size(in)), 0});
+        write(out, pg_array {1, 0, type_oid<value_type>(oid_map)});
+        write(out, pg_array_dimension {std::int32_t(std::size(in)), 0});
         boost::for_each(in, [&] (const auto& v) { send_data_frame(out, oid_map, v);});
         return out;
     }
@@ -90,8 +90,8 @@ struct recv_array_impl {
 
     template <typename M>
     static istream& apply(istream& in, size_type, const oid_map_t<M>& oids, out_type& out) {
-        detail::pg_array array_header;
-        detail::pg_array_dimension dim_header;
+        pg_array array_header;
+        pg_array_dimension dim_header;
 
         read(in, array_header);
 

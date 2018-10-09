@@ -82,4 +82,34 @@ TEST_F(send, should_convert_pg_name_as_string) {
     EXPECT_THAT(buffer, ElementsAre('n', 'a', 'm', 'e'));
 }
 
+TEST_F(send, should_send_nothing_for_std_nullptr_t) {
+    ozo::send(os, oid_map, nullptr);
+    EXPECT_TRUE(buffer.empty());
+}
+
+TEST_F(send, should_send_nothing_for_std_nullopt_t) {
+    ozo::send(os, oid_map, __OZO_NULLOPT);
+    EXPECT_TRUE(buffer.empty());
+}
+
+TEST(send_impl, should_send_nothing_for_std_nullptr_t) {
+    std::vector<char> buffer;
+    ozo::detail::ostreambuf obuf{buffer};
+    ozo::ostream os{&obuf};
+    ozo::empty_oid_map oid_map;
+
+    ozo::send_impl<std::nullptr_t>::apply(os, oid_map, nullptr);
+    EXPECT_TRUE(buffer.empty());
+}
+
+TEST(send_impl, should_send_nothing_for_std_nullopt_t) {
+    std::vector<char> buffer;
+    ozo::detail::ostreambuf obuf{buffer};
+    ozo::ostream os{&obuf};
+    ozo::empty_oid_map oid_map;
+
+    ozo::send_impl<__OZO_NULLOPT_T>::apply(os, oid_map, __OZO_NULLOPT);
+    EXPECT_TRUE(buffer.empty());
+}
+
 } // namespace
