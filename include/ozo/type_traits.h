@@ -196,9 +196,6 @@ struct is_composite : std::bool_constant<
     HanaStruct<T> || FusionAdaptedStruct<T>
 > {};
 
-template <typename ...Ts>
-struct is_composite<std::tuple<Ts...>> : std::true_type {};
-
 template <typename T>
 constexpr auto Composite = is_composite<std::decay_t<T>>::value;
 
@@ -252,9 +249,21 @@ constexpr bool BuiltIn = is_built_in<std::decay_t<T>>::value;
 template <typename T>
 struct is_dynamic_size : std::is_same<typename type_traits<T>::size, dynamic_size> {};
 
+/**
+ * @brief Condition indicates if the specified type is has dynamic size
+ * @ingroup group-type_system-concepts
+ * @tparam T --- type to check
+ * @hideinitializer
+ */
 template <typename T>
 constexpr auto DynamicSize = is_dynamic_size<std::decay_t<T>>::value;
 
+/**
+ * @brief Condition indicates if the specified type is has fixed size
+ * @ingroup group-type_system-concepts
+ * @tparam T --- type to check
+ * @hideinitializer
+ */
 template <typename T>
 constexpr auto StaticSize = !DynamicSize<T>;
 

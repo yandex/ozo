@@ -5,7 +5,6 @@
 #include <ozo/type_traits.h>
 #include <ozo/io/size_of.h>
 #include <ozo/core/concept.h>
-#include <ozo/ext/std.h>
 #include <ozo/detail/endian.h>
 #include <ozo/detail/float.h>
 #include <ozo/io/istream.h>
@@ -115,6 +114,13 @@ inline istream& recv_data_frame(istream& in, const oid_map_t<M>& oids, Out& out)
 
 template <typename T, typename Tag>
 struct recv_impl<strong_typedef_wrapper<T, Tag>> : recv_impl<std::decay_t<T>> {};
+
+template <typename M, typename Out>
+inline istream& recv_frame(istream& in, const oid_map_t<M>& oids, Out& out) {
+    oid_t oid = null_oid;
+    read(in, oid);
+    return recv_data_frame(in, oid, oids, out);
+}
 
 template <typename T, typename M, typename Out>
 void recv(const value<T>& in, const oid_map_t<M>& oids, Out& out) {

@@ -2,11 +2,28 @@
 
 #include <ozo/type_traits.h>
 
+/**
+ * @defgroup group-io Type system
+ * @brief Data IO system of the library.
+ */
+
+/**
+ * @defgroup group-io-types Types
+ * @ingroup group-io
+ * @brief IO-related types.
+ */
+
+/**
+ * @defgroup group-io-functions Functions
+ * @ingroup group-type_system
+ * @brief IO-related functions.
+ */
+
 namespace ozo {
 
 /**
  * @brief `ozo::size_of` implementation functor
- * @ingroup group-type_system-types
+ * @ingroup group-io-types
  *
  * This template is used to implement object binary representation size calculation
  * including all the meta-information is used for the PostgreSQL binary protocol.
@@ -62,7 +79,7 @@ using get_size_of_impl = typename size_of_impl_dispatcher<unwrap_type<T>>::type;
 
 /**
  * @brief Returns size of object binary representation in bytes.
- * @ingroup group-type_system-functions
+ * @ingroup group-io-functions
  *
  * This function returns binary representation size of the object
  * is used for the PostgreSQL binary protocol.
@@ -89,5 +106,36 @@ constexpr size_type size_of(const T& v) {
 
 template <typename T, typename>
 struct size_of_impl : detail::size_of_default_impl<T> {};
+
+/**
+ * @brief Returns size of IO data frame
+ * @ingroup group-io-functions
+ * Data frame contains a data and its size as first element. The data frame has this structure:
+ * | size | 4 bytes             |
+ * | data | size_of(data) bytes |
+ *
+ * @param v --- object to which size of a data frame is calculated
+ * @return size_type --- size of an object's data frame
+ */
+template <typename T>
+constexpr size_type data_frame_size(const T& v) {
+    return sizeof(ozo::size_type) + size_of(v);
+}
+
+/**
+ * @brief Returns size of full IO frame
+ * @ingroup group-io-functions
+ * The full frame contains a data frame and object's type oid as a first element. The frame has this structure:
+ * | oid        | 4 bytes                    |
+ * | data frame | size | 4 bytes             |
+ * |            | data | size_of(data) bytes |
+ *
+ * @param v --- object to which size of a frame is calculated
+ * @return size_type --- size of an object's frame
+ */
+template <typename T>
+constexpr size_type frame_size(const T& v) {
+    return sizeof(ozo::oid_t) + data_frame_size(v);
+}
 
 } // namespace ozo

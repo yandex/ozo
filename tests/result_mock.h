@@ -1,3 +1,5 @@
+#pragma once
+
 #include <ozo/result.h>
 
 #include <gtest/gtest.h>
