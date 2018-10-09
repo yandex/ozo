@@ -3,7 +3,7 @@
 #include <ozo/type_traits.h>
 
 /**
- * @defgroup group-io Type system
+ * @defgroup group-io Input/Output
  * @brief Data IO system of the library.
  */
 
@@ -15,7 +15,7 @@
 
 /**
  * @defgroup group-io-functions Functions
- * @ingroup group-type_system
+ * @ingroup group-io
  * @brief IO-related functions.
  */
 
@@ -29,7 +29,7 @@ namespace ozo {
  * including all the meta-information is used for the PostgreSQL binary protocol.
  * By default it provides `static_assert` failure - which means that there is no
  * know algorithm to calculate size. There are default specializations for different
- * common types and concepts, incluiding `BuiltIn`, `Array`, `Composite`, `Nullable`.
+ * common types and concepts, incluiding #BuiltIn, #Array, #Composite, #Nullable.
  *
  * @tparam T --- type to examine.
  * @tparam <anonymous> --- SFINAE overloading rule.
@@ -111,8 +111,11 @@ struct size_of_impl : detail::size_of_default_impl<T> {};
  * @brief Returns size of IO data frame
  * @ingroup group-io-functions
  * Data frame contains a data and its size as first element. The data frame has this structure:
- * | size | 4 bytes             |
- * | data | size_of(data) bytes |
+ *
+ * | SECTION | SIZE                |
+ * | ------- | ------------------- |
+ * | size    | 4 bytes             |
+ * | data    | size_of(data) bytes |
  *
  * @param v --- object to which size of a data frame is calculated
  * @return size_type --- size of an object's data frame
@@ -126,9 +129,12 @@ constexpr size_type data_frame_size(const T& v) {
  * @brief Returns size of full IO frame
  * @ingroup group-io-functions
  * The full frame contains a data frame and object's type oid as a first element. The frame has this structure:
- * | oid        | 4 bytes                    |
- * | data frame | size | 4 bytes             |
- * |            | data | size_of(data) bytes |
+ *
+ * | SECTION | SIZE                |
+ * | ------- | ------------------- |
+ * | oid     | 4 bytes             |
+ * | size    | 4 bytes             |
+ * | data    | size_of(data) bytes |
  *
  * @param v --- object to which size of a frame is calculated
  * @return size_type --- size of an object's frame

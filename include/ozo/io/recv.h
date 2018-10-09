@@ -36,8 +36,95 @@ constexpr decltype(auto) member_value(Adt&& v, const Index&) {
     return fusion::at<Index>(std::forward<Adt>(v));
 }
 
+/**
+ * @brief Defines how to receive an object from an input stream.
+ * @ingroup group-io-types
+ *
+ * This functor is used to deserialize object as query result.
+ *
+ * @tparam Out --- type of an object to apply to
+ * @tparam <anonymous> --- SFINAE-based overloading parameter.
+ *
+ * The default implementation uses `ozo::read` function to deserialize
+ * simple objects like integers or strings. For the #DynamicSize objects
+ * method `resize()` will be called. So if your special implementation
+ * of #DynamicSize type object does not have such method, you need to specialize
+ * this template for the type to resize it to fit the incoming size (see the example below).
+ * For the #StaticSize objects size check will be made. In case of incoming size does not
+ * equal to value returned by `ozo::size_of()` for the object --- `std::range_error`
+ * will be thrown.
+ *
+ * To deserialize complex types like #Array or #Composite special
+ * internal implementations are used.
+ *
+ * @note This functor requires type definition via #OZO_PG_DEFINE_TYPE_AND_ARRAY or
+ * #OZO_PG_DEFINE_CUSTOM_TYPE.
+ *
+ * ### Customization point
+ *
+ * This template is a customization point for specializing deserialization for user
+ * defined types if it can not be obtained via the library. Typically user does not
+ * need it.
+ *
+ * ### Example
+ *
+ * File MyString.h
+ * @code
+namespace NSdemo {
+// Out string-like class with our own code-style
+class MyString {
+public:
+//...
+    SizeType Size() const;
+    char* Buffer();
+    void Resize(size_type size);
+//...
+};
+} // namespace NSdemo
+ * @endcode
+ * File MyStringOzoAdaptor.h
+ * @code
+#include <A/MyString.h>
+
+namespace NSdemo {
+// E.g. size and data can be adapted via the free functions
+// in same namespace
+inline auto size(const MyString& s) { return s.Size(); }
+inline auto data(const MyString& s) { return s.Buffer(); }
+
+} // namespace NSdemo
+
+// We want to use it for the 'text' type
+OZO_PG_DEFINE_TYPE_AND_ARRAY(demo::my_string, "text", TEXTOID, TEXTARRAYOID, dynamic_size)
+
+namespace ozo {
+// Since we do not have resize() method and can not implement it
+// we need to specialize ozo::recv_impl template to allocate place
+// for the data.
+template <>
+struct recv_impl<NSdemo::MyString> {
+    template <typename OidMap>
+    static istream& apply(istream& in, size_type size, const OidMap&, NSdemo::MyString& out) {
+        // Allocating space for info
+        out.Resize(size);
+        // Reading raw info from the input stream
+        return read(in, out);
+    }
+};
+} // namespace ozo
+ * @endcode
+ */
 template <typename Out, typename = std::void_t<>>
 struct recv_impl {
+    /**
+     * @brief Implementation of deserialization object from a stream.
+     *
+     * @param in --- input stream
+     * @param size --- size of incoming data
+     * @param oid_map_t<M> --- #OidMap to get oid for custom types
+     * @param out --- object to deserialize
+     * @return ostream& --- input stream
+     */
     template <typename M>
     static istream& apply(istream& in, size_type size, const oid_map_t<M>&, Out& out) {
         if constexpr (DynamicSize<Out>) {
@@ -102,24 +189,80 @@ inline istream& recv_data_frame(istream& in, Oid oid, const oid_map_t<M>& oids, 
 
 } // namespace detail
 
+/**
+ * @brief Receive object from an input stream and control incoming oid
+ * @ingroup group-io-functions
+ *
+ * This function is used to get an object from an input stream.
+ * It checks:
+ * * incoming oid is acceptable by output object type --- if oid can not be accepted by the type
+ *   `ozo::system_error` with `ozo::error::oid_type_mismatch` will be thrown, it uses `ozo::accepts_oid()`
+ *   for this check;
+ * * null state is acceptable --- if output object is not #Nullable, but null state received then
+ *   `std::invalid_argument` will be thrown.
+ *
+ * For nullables the function allocates or resets nullables according to incoming data size which
+ * indicates null state via `ozo::null_state_size`. `ozo::reset_nullable()` and `ozo::init_nullable()`
+ * are used.
+ *
+ * For deserialization implementation of simple objects like strings, integers, uuid and so on
+ * `ozo::recv_impl` is used. To deserialize complex types like #Array or #Composite special
+ * internal implementations are used.
+ *
+ * @param in --- input stream to read data from.
+ * @param oid --- incoming oid type to check.
+ * @param size --- incoming data size.
+ * @param oids --- #OidMap to get oid for custom types from
+ * @param out --- object to deserialize into
+ * @return istream& --- input stream
+ */
 template <typename M, typename Out>
 inline istream& recv(istream& in, oid_t oid, size_type size, const oid_map_t<M>& oids, Out& out) {
     return detail::recv(in, oid, size, oids, out);
 }
 
+/**
+ * @brief Receive data frame of an object from an input stream.
+ * @ingroup group-io-functions
+ *
+ * This function is used to read from stream object's data frame to receive the object.
+ * E.g. it is used for array items deserialization. Data frame contains object's
+ * size and object's data.
+ * See `ozo::data_frame_size()` for more details about data frame.
+ *
+ * @note This function does not check objects oid on purpose.
+ *
+ * @param in --- input stream
+ * @param oids --- #OidMap to determine possible nested object's oid
+ * @param out --- object to receive
+ * @return ostream& --- reference to the input stream
+ */
 template <typename M, typename Out>
 inline istream& recv_data_frame(istream& in, const oid_map_t<M>& oids, Out& out) {
     return detail::recv_data_frame(in, null_oid, oids, out);
 }
 
-template <typename T, typename Tag>
-struct recv_impl<strong_typedef_wrapper<T, Tag>> : recv_impl<std::decay_t<T>> {};
-
+/**
+ * @brief Receive full frame of an object from an input stream.
+ * @ingroup group-io-functions
+ *
+ * This function is used to read from stream object's frame and receive the object.
+ * E.g. it is used for composite items deserialization. Frame contains object's type oid,
+ * object's size and object's data. See `ozo::frame_size()` for more details
+ * about the frame.
+ *
+ * @note The function uses `ozo::recv` underhood, so all the checks will be made.
+ *
+ * @param in --- input stream
+ * @param oids --- #OidMap to determine object's oid
+ * @param out --- object to receive
+ * @return ostream& --- reference to the output stream
+ */
 template <typename M, typename Out>
 inline istream& recv_frame(istream& in, const oid_map_t<M>& oids, Out& out) {
     oid_t oid = null_oid;
     read(in, oid);
-    return recv_data_frame(in, oid, oids, out);
+    return detail::recv_data_frame(in, oid, oids, out);
 }
 
 template <typename T, typename M, typename Out>
