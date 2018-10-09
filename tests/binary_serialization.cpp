@@ -22,7 +22,7 @@ struct send : Test {
 
 TEST_F(send, with_single_byte_type_and_bad_ostream_should_throw) {
     EXPECT_THROW(
-        ozo::send(bad_ostream, oid_map, std::int8_t(42)),
+        ozo::send(bad_ostream, oid_map, char(42)),
         ozo::system_error
     );
 }
@@ -35,7 +35,7 @@ TEST_F(send, with_multi_byte_type_and_bad_ostream_should_throw) {
 }
 
 TEST_F(send, with_std_int8_t_should_store_it_as_is) {
-    ozo::send(os, oid_map, std::int8_t(42));
+    ozo::send(os, oid_map, char(42));
     EXPECT_THAT(buffer, ElementsAre(42));
 }
 

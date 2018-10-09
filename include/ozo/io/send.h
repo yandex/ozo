@@ -11,6 +11,7 @@ namespace ozo {
 
 template <typename In, typename = std::void_t<>>
 struct send_impl{
+    static_assert(HasDefinition<In>, "type In must be defined as PostgreSQL type");
     template <typename M>
     static ostream& apply(ostream& out, const oid_map_t<M>&, const In& in) {
         return write(out, in);
