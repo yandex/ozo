@@ -319,7 +319,7 @@ public:
         std::size_t number = 0;
         if constexpr (HasMembers<parameters_type>) {
             bool found = false;
-            hana::for_each(hana::keys(parameters_type {}), [&] (const auto& key) {
+            hana::for_each(hana::transform(hana::accessors<parameters_type>(), hana::first), [&] (const auto& key) {
                 if (std::string_view(hana::to<const char*>(key), hana::size(key)) == value.value) {
                     found = true;
                 } else if (!found) {
