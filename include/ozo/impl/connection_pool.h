@@ -3,6 +3,7 @@
 #include <ozo/connection.h>
 #include <yamail/resource_pool/async/pool.hpp>
 #include <ozo/asio.h>
+#include <ozo/ext/std/shared_ptr.h>
 
 namespace ozo::impl {
 
