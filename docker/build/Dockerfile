@@ -1,16 +1,16 @@
-FROM ubuntu:17.10
+FROM ubuntu:18.10
 
 RUN apt-get update && \
     apt-get install -y \
         ccache \
-        clang-5.0 \
+        clang-7 \
         cmake \
         curl \
-        g++-7 \
+        g++-8 \
         git \
         gdb \
         libpq-dev \
-        llvm-5.0 \
+        llvm-7 \
         postgresql-client \
         postgresql-server-dev-all \
         python-openssl \
@@ -21,11 +21,11 @@ RUN apt-get update && \
         && \
     rm -rf /var/lib/apt/lists/*
 
-RUN update-alternatives --install /usr/bin/clang clang /usr/bin/clang-5.0 100 && \
-    update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-5.0 100 && \
-    update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 100 && \
-    update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-7 100 && \
-    update-alternatives --install /usr/bin/llvm-symbolizer llvm-symbolizer /usr/bin/llvm-symbolizer-5.0 100
+RUN update-alternatives --install /usr/bin/clang clang /usr/bin/clang-7 100 && \
+    update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-7 100 && \
+    update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 100 && \
+    update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-8 100 && \
+    update-alternatives --install /usr/bin/llvm-symbolizer llvm-symbolizer /usr/bin/llvm-symbolizer-7 100
 
 RUN wget -qO boost_1_66_0.tar.gz https://dl.bintray.com/boostorg/release/1.66.0/source/boost_1_66_0.tar.gz && \
     tar xzf boost_1_66_0.tar.gz && \
