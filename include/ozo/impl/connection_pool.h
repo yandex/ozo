@@ -69,16 +69,24 @@ struct pooled_connection_wrapper {
         void operator () (error_code ec, Conn&& conn) {
             static_assert(std::is_same_v<connection_type<Provider>, std::decay_t<Conn>>,
                 "Conn must connectiable type of Provider");
-            if (!ec) {
+            if (conn) {
                 conn_->reset(std::move(conn));
+            } else {
+                conn_ = nullptr;
             }
             handler_(std::move(ec), std::move(conn_));
         }
 
         using executor_type = decltype(asio::get_associated_executor(handler_));
 
-        auto get_executor() const noexcept {
+        executor_type get_executor() const noexcept {
             return asio::get_associated_executor(handler_);
+        }
+
+        using allocator_type = decltype(asio::get_associated_allocator(handler_));
+
+        allocator_type get_allocator() const noexcept {
+            return asio::get_associated_allocator(handler_);
         }
 
         template <typename Func>

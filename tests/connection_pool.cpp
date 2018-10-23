@@ -148,6 +148,10 @@ struct pooled_connection_wrapper : Test {
         return std::make_shared<connection<>>();
     }
 
+    auto null_connection() {
+        return std::shared_ptr<connection<>>();
+    }
+
     auto make_connection(native_handle h) {
         auto conn = make_connection();
         conn->mock_ = &connection_mock;
@@ -238,7 +242,30 @@ TEST_F(pooled_connection_wrapper, should_call_async_get_connection_and_invoke_ha
     h({}, connection_pool::handle{&handle_mock});
 }
 
-TEST_F(pooled_connection_wrapper, should_invoke_callback_with_error_if_async_get_connection_fails) {
+TEST_F(pooled_connection_wrapper, should_invoke_callback_with_error_and_provided_connection_if_async_get_connection_fails) {
+    auto h = ozo::impl::wrap_pooled_connection_handler(
+            io,
+            connection_provider{&provider_mock},
+            wrap(callback_mock)
+        );
+
+    EXPECT_CALL(handle_mock, empty()).WillRepeatedly(Return(true));
+
+    auto conn = make_connection();
+
+    EXPECT_CALL(provider_mock, async_get_connection(_))
+        .WillOnce(InvokeArgument<0>(
+            error::error, conn)
+        );
+
+    EXPECT_CALL(handle_mock, reset(conn)).WillOnce(Return());
+
+    EXPECT_CALL(callback_mock, call(error_code{error::error}, _)).WillOnce(Return());
+
+    h({}, connection_pool::handle{&handle_mock});
+}
+
+TEST_F(pooled_connection_wrapper, should_invoke_callback_with_null_pointer_if_async_get_connection_provides_null_pointer) {
     auto h = ozo::impl::wrap_pooled_connection_handler(
             io,
             connection_provider{&provider_mock},
@@ -249,10 +276,10 @@ TEST_F(pooled_connection_wrapper, should_invoke_callback_with_error_if_async_get
 
     EXPECT_CALL(provider_mock, async_get_connection(_))
         .WillOnce(InvokeArgument<0>(
-            error::error, make_connection())
+            error::error, null_connection())
         );
 
-    EXPECT_CALL(callback_mock, call(error_code{error::error}, _)).WillOnce(Return());
+    EXPECT_CALL(callback_mock, call(error_code{error::error}, pooled_connection_ptr{})).WillOnce(Return());
 
     h({}, connection_pool::handle{&handle_mock});
 }
