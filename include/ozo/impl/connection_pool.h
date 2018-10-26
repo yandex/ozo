@@ -113,8 +113,14 @@ struct pooled_connection_wrapper {
 
     using executor_type = decltype(asio::get_associated_executor(handler_));
 
-    auto get_executor() const noexcept {
+    executor_type get_executor() const noexcept {
         return asio::get_associated_executor(handler_);
+    }
+
+    using allocator_type = decltype(asio::get_associated_allocator(handler_));
+
+    allocator_type get_allocator() const noexcept {
+        return asio::get_associated_allocator(handler_);
     }
 
     template <typename Func>
