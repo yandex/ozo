@@ -22,6 +22,9 @@ struct request_operation_context {
     ozo::strand<decltype(get_io_context(conn))> strand {get_io_context(conn)};
     query_state state = query_state::send_in_progress;
 
+    using result_type = std::decay_t<decltype(get_result(conn))>;
+    result_type result;
+
     request_operation_context(Connection conn, Handler handler)
       : conn(std::forward<Connection>(conn)),
         handler(std::forward<Handler>(handler)) {}
@@ -56,6 +59,17 @@ template <typename ...Ts>
 inline void set_query_state(const request_operation_context_ptr<Ts...>& ctx,
         query_state state) noexcept {
     ctx->state = state;
+}
+
+template <typename ...Ts>
+inline auto& get_request_result(const request_operation_context_ptr<Ts...>& ctx) noexcept {
+    return ctx->result;
+}
+
+template <typename ...Ts>
+inline void set_request_result(const request_operation_context_ptr<Ts...>& ctx,
+        typename request_operation_context<Ts...>::result_type value) noexcept {
+    ctx->result = std::move(value);
 }
 
 template <typename ... Ts>
@@ -232,45 +246,57 @@ struct async_get_result_op : boost::asio::coroutine {
                 }
             }
 
-            if (auto res = get_result(get_connection(ctx_))) {
-                const auto status = result_status(*res);
-                switch (status) {
-                    case PGRES_SINGLE_TUPLE:
-                        process_and_done(std::move(res));
-                        return;
-                    case PGRES_TUPLES_OK:
-                        process_and_done(std::move(res));
-                        consume_result(get_connection(ctx_));
-                        return;
-                    case PGRES_COMMAND_OK:
-                        done();
-                        consume_result(get_connection(ctx_));
-                        return;
-                    case PGRES_BAD_RESPONSE:
-                        done(error::result_status_bad_response);
-                        consume_result(get_connection(ctx_));
-                        return;
-                    case PGRES_EMPTY_QUERY:
-                        done(error::result_status_empty_query);
-                        consume_result(get_connection(ctx_));
-                        return;
-                    case PGRES_FATAL_ERROR:
-                        done(result_error(*res));
-                        consume_result(get_connection(ctx_));
-                        return;
-                    case PGRES_COPY_OUT:
-                    case PGRES_COPY_IN:
-                    case PGRES_COPY_BOTH:
-                    case PGRES_NONFATAL_ERROR:
-                        break;
-                }
-                set_error_context(get_connection(ctx_), get_result_status_name(status));
-                done(error::result_status_unexpected);
-                consume_result(get_connection(ctx_));
-            } else {
-                done();
+            set_request_result(ctx_, get_result(get_connection(ctx_)));
+
+            if (!get_request_result(ctx_)) {
+                return done();
             }
+
+            if (result_status(*get_request_result(ctx_)) != PGRES_SINGLE_TUPLE) {
+                do {
+                    while (is_busy(get_connection(ctx_))) {
+                        yield read_poll(ctx_, *this);
+                        if (consume_input(get_connection(ctx_))) {
+                            return handle_result();
+                        }
+                    }
+                } while (get_result(get_connection(ctx_)));
+            }
+
+            handle_result();
         }
+    }
+
+    void handle_result() {
+        const auto status = result_status(*get_request_result(ctx_));
+        switch (status) {
+            case PGRES_SINGLE_TUPLE:
+                process_and_done(std::move(get_request_result(ctx_)));
+                return;
+            case PGRES_TUPLES_OK:
+                process_and_done(std::move(get_request_result(ctx_)));
+                return;
+            case PGRES_COMMAND_OK:
+                done();
+                return;
+            case PGRES_BAD_RESPONSE:
+                done(error::result_status_bad_response);
+                return;
+            case PGRES_EMPTY_QUERY:
+                done(error::result_status_empty_query);
+                return;
+            case PGRES_FATAL_ERROR:
+                done(result_error(*get_request_result(ctx_)));
+                return;
+            case PGRES_COPY_OUT:
+            case PGRES_COPY_IN:
+            case PGRES_COPY_BOTH:
+            case PGRES_NONFATAL_ERROR:
+                break;
+        }
+
+        set_error_context(get_connection(ctx_), get_result_status_name(status));
+        done(error::result_status_unexpected);
     }
 
     template <typename Result>
@@ -282,11 +308,6 @@ struct async_get_result_op : boost::asio::coroutine {
             return done(error::bad_result_process);
         }
         done();
-    }
-
-    template <typename Connection>
-    void consume_result(Connection&& conn) const noexcept {
-        while(get_result(conn));
     }
 
     using executor_type = std::decay_t<decltype(impl::get_executor(ctx_))>;
