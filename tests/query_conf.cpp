@@ -92,6 +92,16 @@ struct query_with_struct_parameters {
     using parameters_type = struct_parameters;
 };
 
+struct non_default_constructible_struct_parameters {
+    std::reference_wrapper<std::string> string;
+    std::reference_wrapper<int> number;
+};
+
+struct query_with_non_default_constructible_struct_parameters {
+    static constexpr auto name = "query with non default-constructible struct parameters"_s;
+    using parameters_type = non_default_constructible_struct_parameters;
+};
+
 struct query_with_typo_in_name {
     static constexpr auto name = "qeury with typo in name"_s;
     using parameters_type = std::tuple<>;
@@ -152,6 +162,12 @@ struct require_copy_struct_query {
 
 BOOST_HANA_ADAPT_STRUCT(
     ozo::tests::struct_parameters,
+    string,
+    number
+);
+
+BOOST_HANA_ADAPT_STRUCT(
+    ozo::tests::non_default_constructible_struct_parameters,
     string,
     number
 );
@@ -437,6 +453,13 @@ TEST(query_part_visitor, should_append_libpq_placeholder_for_query_with_tuple_pa
 TEST(query_part_visitor, should_append_libpq_placeholder_for_query_with_struct_parameters_according_to_name) {
     query_description result;
     query_part_visitor<query_with_struct_parameters> visitor(result);
+    visitor(query_parameter_name {"number"});
+    EXPECT_EQ(result.text, "$2");
+}
+
+TEST(query_part_visitor, should_append_libpq_placeholder_for_query_with_non_default_constructible_struct_parameters_according_to_name) {
+    query_description result;
+    query_part_visitor<query_with_non_default_constructible_struct_parameters> visitor(result);
     visitor(query_parameter_name {"number"});
     EXPECT_EQ(result.text, "$2");
 }
