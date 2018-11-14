@@ -22,27 +22,35 @@ install:
 matrix:
   include:
   - os: linux
+    dist: xenial
     env: BUILD_ARGS='pg docker gcc debug'
 
   - os: linux
+    dist: xenial
     env: BUILD_ARGS='pg docker gcc release'
 
   - os: linux
+    dist: xenial
     env: BUILD_ARGS='pg docker clang debug'
 
   - os: linux
+    dist: xenial
     env: BUILD_ARGS='pg docker clang release'
 
   - os: linux
+    dist: xenial
     env: BUILD_ARGS='pg docker clang asan'
 
   - os: linux
+    dist: xenial
     env: BUILD_ARGS='pg docker clang ubsan'
 
   - os: linux
+    dist: xenial
     env: BUILD_ARGS='pg docker clang tsan'
 
   - os: linux
+    dist: xenial
     env: BUILD_ARGS='pg docker gcc coverage'
     after_success:
     - >
