@@ -27,8 +27,13 @@
 namespace ozo {
 
 template <class QueryT>
-constexpr auto get_raw_query_name(const QueryT& = QueryT {}) noexcept {
+constexpr auto get_raw_query_name(const QueryT&) noexcept {
     return QueryT::name;
+}
+
+template <class QueryT>
+constexpr auto get_raw_query_name() noexcept {
+    return get_raw_query_name(QueryT{});
 }
 
 template <class QueryT>
@@ -273,7 +278,7 @@ void check_for_duplicates(const hana::tuple<QueriesT ...>& queries) {
         [] (auto set, auto query) {
             const auto result = hana::insert(set, query.name);
             if (set == result) {
-                throw std::invalid_argument(hana::to<const char*>("Duplicate declaration for query: "_s + query.name));
+                throw std::invalid_argument(hana::to<const char*>("Duplicate declaration for query: "_s + get_raw_query_name(query)));
             }
             return result;
         }
@@ -293,8 +298,8 @@ inline std::unordered_set<std::string_view> check_for_duplicates(const std::vect
 template <class ... QueriesT>
 void check_for_undefined(const hana::tuple<QueriesT ...>& declarations, const std::unordered_set<std::string_view>& definitions) {
     hana::for_each(declarations, [&] (const auto& query) {
-        if (!definitions.count(std::string_view(hana::to<const char*>(query.name), hana::size(query.name)))) {
-            throw std::invalid_argument(hana::to<const char*>("Query is not defined in query conf: "_s + query.name));
+        if (!definitions.count(get_query_name(query))) {
+            throw std::invalid_argument(hana::to<const char*>("Query is not defined in query conf: "_s + get_raw_query_name(query)));
         }
     });
 }
@@ -328,7 +333,7 @@ public:
             });
             if (!found) {
                 throw std::invalid_argument(
-                    hana::to<const char*>("Parameter is not found in query \""_s + QueryT::name + "\": "_s)
+                    hana::to<const char*>("Parameter is not found in query \""_s + get_raw_query_name<QueryT>() + "\": "_s)
                     + value.value
                 );
             }
@@ -371,7 +376,7 @@ ozo::detail::query_description make_query_description(const hana::tuple<QueriesT
                                                       const parsed_query& parsed) {
     boost::optional<ozo::detail::query_description> opt_query_description;
     hana::for_each(queries, [&] (const auto& query) {
-        if (std::string_view(hana::to<const char*>(query.name), hana::size(query.name)) == parsed.name) {
+        if (get_query_name(query) == parsed.name) {
             opt_query_description = make_query_description(query, parsed);
         }
     });

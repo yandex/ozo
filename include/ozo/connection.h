@@ -617,31 +617,67 @@ inline decltype(auto) get_timer(T&& conn) noexcept {
  */
 ///@{
 
+namespace detail {
+
+template <typename ConnectionProvider, typename = std::void_t<>>
+struct get_connection_type_default {};
+
+template <typename ConnectionProvider>
+struct get_connection_type_default<ConnectionProvider,
+    std::void_t<typename ConnectionProvider::connection_type>> {
+    using type = typename ConnectionProvider::connection_type;
+};
+
+} // namespace detail
+
 /**
  * @brief Connection type getter
  *
  * @ingroup group-connection-types
  *
- * This type describes connection type from a #ConnectionProvider. By default
- * it assumes on ConnectionProvider::connection_type type, like this (`exposition only`):
+ * This type describes connection type from a #ConnectionProvider.
+ *
+ * @tparam ConnectionProvider - #ConnectionProvider type to get #Connection type from.
+ *
+ * By default it assumes on `ConnectionProvider::connection_type` type, if no nested type
+ * `connection_type` is found no inner type `type`.
+ * Possible implementation may look like this (`exposition only`):
  *
 @code
-template <typename ConnectionProvider, typename = std::void_t<>>
-struct get_connection_type {
-    using type = typename std::decay_t<ConnectionProvider>::connection_type;
+template <typename T, typename = void>
+struct get_connection_type_default {};
+
+template <typename T>
+struct get_connection_type_default<T,
+        std::void_t<typename T::connection_type> {
+    using type = typename T::connection_type;
 };
+
+template <typename T>
+struct get_connection_type : get_connection_type_default<T>{};
 @endcode
  *
- * **Customization point**
+ * ### Customization point
  *
- * Here you can specify how to obtain connection type from your own #ConnectionProvider.
- *
- * @tparam ConnectionProvider
- */
-template <typename ConnectionProvider, typename = std::void_t<>>
-struct get_connection_type {
-    using type = typename std::decay_t<ConnectionProvider>::connection_type;
+ * Here you can specify how to obtain #Connection type from your own #ConnectionProvider.
+ * E.g. for custom #Connection implementation which is used via pointer the specialization
+ * can be:
+@code
+template <>
+struct get_connection_type<MyConnection*> {
+    using type = MyConnection*;
 };
+@endcode
+ */
+template <typename ConnectionProvider>
+struct get_connection_type
+#ifdef OZO_DOCUMENTATION
+{
+    using type = <implementation defined>; ///!< Type of #Connection object provided by the #ConnectionProvider specified
+};
+#else
+ : detail::get_connection_type_default<ConnectionProvider>{};
+#endif
 
 /**
  * @brief Gives exact type of a connection object which #ConnectionProvider or #ConnectionSource provide
@@ -655,7 +691,7 @@ struct get_connection_type {
  * @tparam ConnectionProvider - #ConnectionSource or #ConnectionProvider type.
  */
 template <typename ConnectionProvider>
-using connection_type = typename get_connection_type<ConnectionProvider>::type;
+using connection_type = typename get_connection_type<std::decay_t<ConnectionProvider>>::type;
 
 template <typename T, typename = std::void_t<>>
 struct async_get_connection_impl {
@@ -855,10 +891,14 @@ struct async_get_connection_impl<T, Require<Connection<T>>> {
     }
 };
 
+namespace detail {
+
 template <typename T>
-struct get_connection_type<T, Require<Connection<T>>> {
-    using type = std::decay_t<T>;
+struct get_connection_type_default<T, Require<Connection<T>>> {
+    using type = T;
 };
+
+} // namespace detail
 
 /**
  * @brief Close connection to the database immediately
