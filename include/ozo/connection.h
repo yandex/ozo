@@ -26,13 +26,15 @@ namespace ozo {
 using no_statistics = decltype(hana::make_map());
 
 template <typename, typename = std::void_t<>>
-struct unwrap_connection_impl {
+struct unwrap_connection_default_impl {
     template <typename Conn>
     static constexpr decltype(auto) apply(Conn&& conn) noexcept {
         return std::forward<Conn>(conn);
     }
 };
 
+template <typename T>
+struct unwrap_connection_impl : unwrap_connection_default_impl<T> {};
 /**
  * @ingroup group-connection-functions
  * @brief Unwrap connection if wrapped with Nullable
@@ -47,7 +49,7 @@ struct unwrap_connection_impl {
  * The deafult implementation of the function is perfect forwarding. And may look like
  * this (*for exposition only - actual implementation may be different*):
  * @code
-    template <typename, typename = std::void_t<>>
+    template <typename T>
     struct unwrap_connection_impl {
         template <typename Conn>
         static constexpr decltype(auto) apply(Conn&& conn) noexcept {
@@ -60,10 +62,10 @@ struct unwrap_connection_impl {
  * E.g.:
   * @code
     template <typename T>
-    struct unwrap_connection_impl<T, Require<Nullable<T>>>{
+    struct unwrap_connection_impl<CustomWrapper<T>>{
         template <typename Conn>
         static constexpr decltype(auto) apply(Conn&& conn) noexcept {
-            return unwrap_connection(*conn);
+            return unwrap_connection(conn.underlying());
         }
     };
  * @endcode
@@ -78,10 +80,10 @@ inline constexpr decltype(auto) unwrap_connection(T&& conn) noexcept {
 }
 
 template <typename T>
-struct unwrap_connection_impl<T, Require<Nullable<T>>>{
+struct unwrap_connection_default_impl<T, Require<Nullable<T>>>{
     template <typename Conn>
     static constexpr decltype(auto) apply(Conn&& conn) noexcept {
-        return unwrap_connection(*conn);
+        return unwrap_connection(unwrap(conn));
     }
 };
 
@@ -473,13 +475,8 @@ inline error_code rebind_io_context(T& conn, IoContext& io) {
 template <typename T>
 inline bool connection_bad(const T& conn) noexcept {
     static_assert(Connection<T>, "T must be a Connection");
-    if constexpr (Nullable<T>) {
-        if (!conn) {
-            return true;
-        }
-    }
     using impl::connection_status_bad;
-    return connection_status_bad(get_native_handle(conn));
+    return is_null(conn) ? true : connection_status_bad(get_native_handle(conn));
 }
 
 /**
@@ -508,6 +505,9 @@ inline bool connection_good(const T& conn) noexcept {
 template <typename T>
 inline std::string_view error_message(T&& conn) {
     static_assert(Connection<T>, "T must be a Connection");
+    if (is_null(conn)) {
+        return {};
+    }
     return impl::connection_error_message(get_native_handle(conn));
 }
 

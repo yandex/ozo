@@ -68,51 +68,7 @@ constexpr decltype(auto) member_value(Adt&& v, const Index&) {
  *
  * ### Example
  *
- * File MyString.h
- * @code
-namespace NSdemo {
-// Out string-like class with our own code-style
-class MyString {
-public:
-//...
-    SizeType Size() const;
-    char* Buffer();
-    void Resize(size_type size);
-//...
-};
-} // namespace NSdemo
- * @endcode
- * File MyStringOzoAdaptor.h
- * @code
-#include <A/MyString.h>
-
-namespace NSdemo {
-// E.g. size and data can be adapted via the free functions
-// in same namespace
-inline auto size(const MyString& s) { return s.Size(); }
-inline auto data(const MyString& s) { return s.Buffer(); }
-
-} // namespace NSdemo
-
-// We want to use it for the 'text' type
-OZO_PG_DEFINE_TYPE_AND_ARRAY(demo::my_string, "text", TEXTOID, TEXTARRAYOID, dynamic_size)
-
-namespace ozo {
-// Since we do not have resize() method and can not implement it
-// we need to specialize ozo::recv_impl template to allocate place
-// for the data.
-template <>
-struct recv_impl<NSdemo::MyString> {
-    template <typename OidMap>
-    static istream& apply(istream& in, size_type size, const OidMap&, NSdemo::MyString& out) {
-        // Allocating space for info
-        out.Resize(size);
-        // Reading raw info from the input stream
-        return read(in, out);
-    }
-};
-} // namespace ozo
- * @endcode
+ * @includedoc recv_impl_example.dox
  */
 template <typename Out, typename = std::void_t<>>
 struct recv_impl {

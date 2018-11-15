@@ -273,4 +273,12 @@ TEST(connection_error_message, should_return_empty_string_for_string_of_spaces){
         "");
 }
 
+static const char* PQerrorMessage(const native_handle*) {
+    return "";
+}
+
+TEST(error_message, should_return_empty_string_view_for_nullable_connection_in_null_state){
+    EXPECT_EQ(std::string(ozo::error_message(connection_ptr<>{})), "");
+}
+
 } //namespace
