@@ -276,7 +276,7 @@ void check_for_duplicates(const hana::tuple<QueriesT ...>& queries) {
     hana::fold_left(
         queries, hana::make_set(),
         [] (auto set, auto query) {
-            const auto result = hana::insert(set, query.name);
+            const auto result = hana::insert(set, get_raw_query_name(query));
             if (set == result) {
                 throw std::invalid_argument(hana::to<const char*>("Duplicate declaration for query: "_s + get_raw_query_name(query)));
             }
