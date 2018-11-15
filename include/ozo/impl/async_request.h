@@ -356,14 +356,14 @@ struct async_request_op {
 
         auto ctx = make_request_operation_context(
             std::move(conn),
-            detail::make_cancel_timer_handler(
-                detail::make_post_handler(std::move(handler_))
+            detail::cancel_timer_handler(
+                detail::post_handler(std::move(handler_))
             )
         );
 
         get_timer(get_connection(ctx)).expires_after(timeout_);
         get_timer(get_connection(ctx)).async_wait(asio::bind_executor(get_executor(ctx),
-            detail::make_timeout_handler(get_socket(get_connection(ctx)))));
+            detail::timeout_handler(get_socket(get_connection(ctx)))));
 
         async_send_query_params(ctx, std::move(query_));
         async_get_result(std::move(ctx), std::move(out_));

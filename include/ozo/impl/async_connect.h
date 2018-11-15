@@ -83,7 +83,7 @@ struct async_connect_op {
 
         get_timer(get_connection(context)).expires_after(timeout);
         get_timer(get_connection(context)).async_wait(asio::bind_executor(get_executor(),
-            detail::make_timeout_handler(get_socket(get_connection(context)))));
+            detail::timeout_handler(get_socket(get_connection(context)))));
 
         return write_poll(get_connection(context), *this);
     }
@@ -167,8 +167,8 @@ inline Require<Connection<ConnectionT>> async_connect(std::string conninfo, cons
         make_connect_operation_context(
             std::forward<ConnectionT>(connection),
             make_request_oid_map_handler(
-                detail::make_cancel_timer_handler(
-                    detail::make_post_handler(std::forward<Handler>(handler))
+                detail::cancel_timer_handler(
+                    detail::post_handler(std::forward<Handler>(handler))
                 )
             )
         )
