@@ -85,13 +85,19 @@ TEST_F(async_send_query_params_op, should_call_send_query_params_while_it_return
     Sequence s;
     EXPECT_CALL(m.connection, set_nonblocking()).InSequence(s).WillOnce(Return(0));
     EXPECT_CALL(m.connection, send_query_params()).InSequence(s).WillOnce(Return(0));
+
+    EXPECT_CALL(m.executor, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(m.strand, dispatch(_)).InSequence(s).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(m.connection, send_query_params()).InSequence(s).WillOnce(Return(0));
+
+    EXPECT_CALL(m.executor, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(m.strand, dispatch(_)).InSequence(s).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(m.connection, send_query_params()).InSequence(s).WillOnce(Return(1));
-    EXPECT_CALL(m.executor, post(_)).InSequence(s).WillOnce(Return());
+    EXPECT_CALL(m.connection, flush_output()).InSequence(s).WillOnce(Return(ozo::impl::flush_result::success));
 
     ozo::impl::make_async_send_query_params_op(m.ctx, fake_query{}).perform();
 
-    EXPECT_EQ(m.ctx->state, ozo::impl::query_state::flushing);
+    EXPECT_EQ(m.ctx->state, ozo::impl::query_state::done);
 }
 
 TEST_F(async_send_query_params_op, should_exit_immediately_if_query_state_is_error_and_called_with_no_error) {
@@ -124,6 +130,22 @@ TEST_F(async_send_query_params_op, should_exit_immediately_if_query_state_is_don
     ozo::impl::make_async_send_query_params_op(m.ctx, fake_query{})(error::error);
 
     EXPECT_EQ(m.ctx->state, ozo::impl::query_state::done);
+}
+
+TEST_F(async_send_query_params_op, should_invoke_callback_with_given_error_if_called_with_error_and_query_state_is_sending) {
+    const InSequence s;
+
+    EXPECT_CALL(m.socket, cancel(_)).WillOnce(Return());
+    EXPECT_CALL(m.callback, get_executor()).WillOnce(Return(ozo::tests::executor {&m.callback_executor}));
+    EXPECT_CALL(m.strand, post(_)).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(m.callback_executor, dispatch(_)).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(m.callback, call(error_code{error::error}, _))
+        .WillOnce(Return());
+
+    m.ctx->state = ozo::impl::query_state::sending;
+    ozo::impl::make_async_send_query_params_op(m.ctx, fake_query{})(error::error);
+
+    EXPECT_EQ(m.ctx->state, ozo::impl::query_state::error);
 }
 
 TEST_F(async_send_query_params_op, should_invoke_callback_with_given_error_if_called_with_error_and_query_state_is_flushing) {

@@ -60,7 +60,7 @@ TEST_F(async_get_result_op, perform_should_preserve_query_state) {
 
     ozo::impl::make_async_get_result_op(m.ctx, [](auto, auto){}).perform();
 
-    EXPECT_EQ(m.ctx->state, query_state::flushing);
+    EXPECT_EQ(m.ctx->state, query_state::sending);
 }
 
 struct async_get_result_op_call : async_get_result_op,
@@ -160,7 +160,7 @@ TEST_P(async_get_result_op_call_with_error, should_preserve_not_empty_connection
 INSTANTIATE_TEST_CASE_P(
     with_query_state_NOT_error,
     async_get_result_op_call_with_error,
-    Values(query_state::flushing, query_state::done));
+    Values(query_state::sending, query_state::flushing, query_state::done));
 
 struct process_mock {
     MOCK_CONST_METHOD0(call, void());

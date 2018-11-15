@@ -20,7 +20,7 @@ struct request_operation_context {
     std::decay_t<Connection> conn;
     std::decay_t<Handler> handler;
     ozo::strand<decltype(get_io_context(conn))> strand {get_io_context(conn)};
-    query_state state = query_state::flushing;
+    query_state state = query_state::sending;
 
     using result_type = std::decay_t<decltype(get_result(conn))>;
     result_type result;
@@ -132,19 +132,37 @@ struct async_send_query_params_op {
         // In the nonblocking state, calls to PQsendQuery, PQputline,
         // PQputnbytes, PQputCopyData, and PQendcopy will not block
         // but instead return an error if they need to be called again.
-        while (!send_query_params(conn, query_));
+        if (send_query_params(conn, query_)) {
+            set_query_state(ctx_, query_state::flushing);
+        }
 
         post(ctx_, *this);
     }
 
     void operator () (error_code ec = error_code{}, std::size_t = 0) {
         switch (get_query_state(ctx_)) {
+            case query_state::sending:
+                return try_send_query_params(ec);
+
             case query_state::flushing:
                 return try_flush_output(ec);
 
             case query_state::done:
             case query_state::error:
                 break;
+        }
+    }
+
+    void try_send_query_params(error_code ec) {
+        if (ec) {
+            return done(ctx_, ec);
+        }
+
+        if (send_query_params(get_connection(ctx_), query_)) {
+            set_query_state(ctx_, query_state::flushing);
+            (*this)();
+        } else {
+            post(ctx_, *this);
         }
     }
 

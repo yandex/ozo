@@ -20,6 +20,7 @@ namespace ozo::impl {
 * send process with async query result receiving process.
 */
 enum class query_state : int {
+    sending,
     flushing,
     done,
     error,
