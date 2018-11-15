@@ -282,12 +282,12 @@ constexpr auto StaticSize = !DynamicSize<T>;
 /**
 * @brief Function returns type name in Postgre SQL.
 * @tparam T --- type
-* @return `boost::hana::string` --- name of the type
+* @return `const char*` --- name of the type
 * @ingroup group-type_system-functions
 */
 template <typename T>
 constexpr auto type_name() noexcept {
-    static_assert(!std::is_void<typename type_traits<T>::name>::value,
+    static_assert(!std::is_void_v<type_traits<T>>,
         "no type_traits found for the type");
     constexpr auto name = typename type_traits<T>::name{};
     constexpr char const* retval = hana::to<char const*>(name);
@@ -297,7 +297,7 @@ constexpr auto type_name() noexcept {
 /**
 * @brief Function returns type name in Postgre SQL.
 * @param T --- type
-* @return `boost::hana::string` --- name of the type
+* @return `const char*` --- name of the type
 * @ingroup group-type_system-functions
 */
 template <typename T>
