@@ -50,7 +50,7 @@ TEST_F(async_request_op, should_set_timer_and_send_query_params_and_get_result_a
 
     EXPECT_CALL(executor, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(strand, dispatch(_)).InSequence(s).WillOnce(InvokeArgument<0>());
-    EXPECT_CALL(connection, flush_output()).InSequence(s).WillOnce(Return(ozo::impl::query_state::send_finish));
+    EXPECT_CALL(connection, flush_output()).InSequence(s).WillOnce(Return(ozo::impl::flush_result::success));
 
     // Get result
     EXPECT_CALL(executor, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());

@@ -15,14 +15,20 @@
 namespace ozo::impl {
 
 /**
-* Query states. The values similar to PQflush function results.
+* Query states.
 * This state is used to synchronize async query parameters
 * send process with async query result receiving process.
 */
 enum class query_state : int {
+    flushing,
+    done,
+    error,
+};
+
+enum class flush_result : int {
     error = -1,
-    send_finish = 0,
-    send_in_progress = 1
+    success = 0,
+    send_in_progress = 1,
 };
 
 namespace pq {
@@ -100,9 +106,9 @@ inline bool pq_is_busy(T& conn) noexcept {
 }
 
 template <typename T>
-inline query_state pq_flush_output(T& conn) noexcept {
+inline flush_result pq_flush_output(T& conn) noexcept {
     static_assert(Connection<T>, "T must be a Connection");
-    return static_cast<query_state>(PQflush(get_native_handle(conn)));
+    return static_cast<flush_result>(PQflush(get_native_handle(conn)));
 }
 
 template <typename T>
@@ -198,7 +204,7 @@ inline bool is_busy(T& conn) noexcept {
 }
 
 template <typename T>
-inline query_state flush_output(T& conn) noexcept {
+inline flush_result flush_output(T& conn) noexcept {
     static_assert(Connection<T>, "T must be a Connection");
     using pq::pq_flush_output;
     return pq_flush_output(unwrap_connection(conn));

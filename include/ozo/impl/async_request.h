@@ -20,7 +20,7 @@ struct request_operation_context {
     std::decay_t<Connection> conn;
     std::decay_t<Handler> handler;
     ozo::strand<decltype(get_io_context(conn))> strand {get_io_context(conn)};
-    query_state state = query_state::send_in_progress;
+    query_state state = query_state::flushing;
 
     using result_type = std::decay_t<decltype(get_result(conn))>;
     result_type result;
@@ -128,23 +128,27 @@ struct async_send_query_params_op {
         if (auto ec = set_nonblocking(conn)) {
             return done(ctx_, ec);
         }
+
         //In the nonblocking state, calls to PQsendQuery, PQputline,
         //PQputnbytes, PQputCopyData, and PQendcopy will not block
         //but instead return an error if they need to be called again.
         while (!send_query_params(conn, query_));
+
         post(ctx_, *this);
     }
 
     void operator () (error_code ec = error_code{}, std::size_t = 0) {
-        // if data has been flushed or error has been set by
-        // read operation no write opertion handling is needed
-        // anymore.
-        if (get_query_state(ctx_) != query_state::send_in_progress) {
-            return;
-        }
+        switch (get_query_state(ctx_)) {
+            case query_state::flushing:
+                return try_flush_output(ec);
 
-        // In case of write operation error - finish the request
-        // with error.
+            case query_state::done:
+            case query_state::error:
+                break;
+        }
+    }
+
+    void try_flush_output(error_code ec) {
         if (ec) {
             return done(ctx_, ec);
         }
@@ -152,14 +156,17 @@ struct async_send_query_params_op {
         // Trying to flush output one more time according to the
         // documentation
         switch (flush_output(get_connection(ctx_))) {
-            case query_state::error:
+            case flush_result::error:
+                set_query_state(ctx_, query_state::error);
                 done(ctx_, error::pg_flush_failed);
                 break;
-            case query_state::send_in_progress:
+
+            case flush_result::send_in_progress:
                 write_poll(ctx_, *this);
                 break;
-            case query_state::send_finish:
-                set_query_state(ctx_, query_state::send_finish);
+
+            case flush_result::success:
+                set_query_state(ctx_, query_state::done);
                 break;
         }
     }

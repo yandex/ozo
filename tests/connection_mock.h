@@ -33,7 +33,7 @@ struct connection_mock {
     virtual int send_query_params() = 0;
     virtual int consume_input() = 0;
     virtual bool is_busy() const = 0;
-    virtual ozo::impl::query_state flush_output() = 0;
+    virtual ozo::impl::flush_result flush_output() = 0;
     virtual boost::optional<pg_result> get_result() = 0;
 
     virtual int connect_poll() const = 0;
@@ -51,7 +51,7 @@ struct connection_gmock : connection_mock {
     MOCK_METHOD0(send_query_params, int());
     MOCK_METHOD0(consume_input, int());
     MOCK_CONST_METHOD0(is_busy, bool());
-    MOCK_METHOD0(flush_output, ozo::impl::query_state());
+    MOCK_METHOD0(flush_output, ozo::impl::flush_result());
     MOCK_METHOD0(get_result, boost::optional<pg_result>());
 
     MOCK_CONST_METHOD0(connect_poll, int());
@@ -117,7 +117,7 @@ struct connection {
         return c.mock_->is_busy();
     }
 
-    friend ozo::impl::query_state pq_flush_output(connection& c) noexcept {
+    friend ozo::impl::flush_result pq_flush_output(connection& c) noexcept {
         return c.mock_->flush_output();
     }
 
