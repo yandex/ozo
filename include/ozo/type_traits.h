@@ -5,6 +5,8 @@
 #include <ozo/core/strong_typedef.h>
 #include <ozo/core/nullable.h>
 #include <ozo/core/unwrap.h>
+#include <ozo/core/concept.h>
+#include <ozo/optional.h>
 
 #include <libpq-fe.h>
 
@@ -16,10 +18,9 @@
 #include <boost/hana/type.hpp>
 #include <boost/uuid/uuid.hpp>
 
-#include <ozo/core/concept.h>
-#include <ozo/optional.h>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <vector>
 #include <type_traits>
 
@@ -458,6 +459,7 @@ OZO_PG_DEFINE_TYPE_AND_ARRAY(double, "float8", FLOAT8OID, 1022, bytes<8>)
 OZO_PG_DEFINE_TYPE_AND_ARRAY(float, "float4", FLOAT4OID, FLOAT4ARRAYOID, bytes<4>)
 
 OZO_PG_DEFINE_TYPE_AND_ARRAY(std::string, "text", TEXTOID, TEXTARRAYOID, dynamic_size)
+OZO_PG_DEFINE_TYPE_AND_ARRAY(std::string_view, "text", TEXTOID, TEXTARRAYOID, dynamic_size)
 
 OZO_PG_DEFINE_TYPE_AND_ARRAY(ozo::pg::name, "name", NAMEOID, 1003, dynamic_size)
 

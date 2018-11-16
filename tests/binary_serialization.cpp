@@ -5,6 +5,8 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
+#include <string_view>
+
 namespace {
 
 using namespace testing;
@@ -62,6 +64,12 @@ TEST_F(send, with_float_should_store_it_as_integral_in_big_endian_order) {
 TEST_F(send, with_std_string_should_store_it_as_is) {
     ozo::send(os, oid_map, std::string("text"));
     EXPECT_THAT(buffer, ElementsAre('t', 'e', 'x', 't'));
+}
+
+TEST_F(send, with_std_string_view_should_store_it_as_is) {
+    using namespace std::string_view_literals;
+    ozo::send(os, oid_map, "view"sv);
+    EXPECT_THAT(buffer, ElementsAre('v', 'i', 'e', 'w'));
 }
 
 TEST_F(send, with_std_vector_of_float_should_store_with_one_dimension_array_header_and_values) {
