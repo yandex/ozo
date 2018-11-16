@@ -129,9 +129,9 @@ struct async_send_query_params_op {
             return done(ctx_, ec);
         }
 
-        //In the nonblocking state, calls to PQsendQuery, PQputline,
-        //PQputnbytes, PQputCopyData, and PQendcopy will not block
-        //but instead return an error if they need to be called again.
+        // In the nonblocking state, calls to PQsendQuery, PQputline,
+        // PQputnbytes, PQputCopyData, and PQendcopy will not block
+        // but instead return an error if they need to be called again.
         while (!send_query_params(conn, query_));
 
         post(ctx_, *this);
