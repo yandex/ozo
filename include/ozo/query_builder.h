@@ -103,7 +103,7 @@ struct query_builder {
             [] (auto&& r, auto&& e) {
                 using tag_type = typename std::decay_t<decltype(e)>::tag_type;
                 if constexpr (std::is_same_v<tag_type, query_text_tag>) {
-                    return r;
+                    return std::move(r);
                 } else if constexpr (std::is_same_v<tag_type, query_param_tag>) {
                     return hana::append(std::move(r), std::move(e.value));
                 } else {
