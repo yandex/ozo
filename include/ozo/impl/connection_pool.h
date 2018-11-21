@@ -88,12 +88,6 @@ struct pooled_connection_wrapper {
         allocator_type get_allocator() const noexcept {
             return asio::get_associated_allocator(handler_);
         }
-
-        template <typename Func>
-        friend void asio_handler_invoke(Func&& f, wrapper* ctx) {
-            using boost::asio::asio_handler_invoke;
-            asio_handler_invoke(std::forward<Func>(f), std::addressof(ctx->handler_));
-        }
     };
 
     template <typename Handle>
@@ -121,12 +115,6 @@ struct pooled_connection_wrapper {
 
     allocator_type get_allocator() const noexcept {
         return asio::get_associated_allocator(handler_);
-    }
-
-    template <typename Func>
-    friend void asio_handler_invoke(Func&& f, pooled_connection_wrapper* ctx) {
-        using boost::asio::asio_handler_invoke;
-        asio_handler_invoke(std::forward<Func>(f), std::addressof(ctx->handler_));
     }
 };
 

@@ -87,6 +87,11 @@ auto& get_handler(const request_operation_context_ptr<Ts ...>& context) noexcept
     return context->handler;
 }
 
+template <typename ... Ts>
+decltype(auto) get_allocator(const request_operation_context_ptr<Ts ...>& context) noexcept {
+    return asio::get_associated_allocator(get_handler(context));
+}
+
 template <typename Oper, typename ...Ts>
 inline void post(const request_operation_context_ptr<Ts...>& ctx, Oper&& op) {
     post(get_connection(ctx), std::forward<Oper>(op));
@@ -166,14 +171,14 @@ struct async_send_query_params_op {
 
     using executor_type = std::decay_t<decltype(impl::get_executor(ctx_))>;
 
-    auto get_executor() const noexcept {
+    executor_type get_executor() const noexcept {
         return impl::get_executor(ctx_);
     }
 
-    template <typename Function>
-    friend void asio_handler_invoke(Function&& f, async_send_query_params_op* ctx) {
-        using boost::asio::asio_handler_invoke;
-        asio_handler_invoke(std::forward<Function>(f), get_handler_context(ctx->ctx_));
+    using allocator_type = std::decay_t<decltype(impl::get_allocator(ctx_))>;
+
+    allocator_type get_allocator() const noexcept {
+        return impl::get_allocator(ctx_);
     }
 };
 
@@ -312,14 +317,14 @@ struct async_get_result_op : boost::asio::coroutine {
 
     using executor_type = std::decay_t<decltype(impl::get_executor(ctx_))>;
 
-    auto get_executor() const noexcept {
+    executor_type get_executor() const noexcept {
         return impl::get_executor(ctx_);
     }
 
-    template <typename Function>
-    friend void asio_handler_invoke(Function&& f, async_get_result_op* ctx) {
-        using boost::asio::asio_handler_invoke;
-        asio_handler_invoke(std::forward<Function>(f), get_handler_context(ctx->ctx_));
+    using allocator_type = std::decay_t<decltype(impl::get_allocator(ctx_))>;
+
+    allocator_type get_allocator() const noexcept {
+        return impl::get_allocator(ctx_);
     }
 };
 
