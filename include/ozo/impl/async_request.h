@@ -32,7 +32,8 @@ struct request_operation_context {
 
 template <typename Connection, typename Handler>
 inline decltype(auto) make_request_operation_context(Connection&& conn, Handler&& h) {
-    return std::make_shared<request_operation_context<Connection, Handler>>(
+    return std::allocate_shared<request_operation_context<Connection, Handler>>(
+        asio::get_associated_allocator(h),
         std::forward<Connection>(conn), std::forward<Handler>(h)
     );
 }

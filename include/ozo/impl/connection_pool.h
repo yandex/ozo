@@ -96,7 +96,7 @@ struct pooled_connection_wrapper {
             return handler_(std::move(ec), connection_ptr{});
         }
 
-        auto conn = std::make_shared<connection>(std::forward<Handle>(handle));
+        auto conn = std::allocate_shared<connection>(get_allocator(), std::forward<Handle>(handle));
         if (!conn->empty() && connection_good(conn)) {
             ec = rebind_io_context(conn, io_);
             return handler_(std::move(ec), std::move(conn));

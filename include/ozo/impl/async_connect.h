@@ -35,7 +35,8 @@ using connect_operation_context_ptr = std::shared_ptr<connect_operation_context<
 template <typename Connection, typename Handler>
 auto make_connect_operation_context(Connection&& connection, Handler&& handler) {
     using context_type = connect_operation_context<std::decay_t<Connection>, std::decay_t<Handler>>;
-    return std::make_shared<context_type>(
+    return std::allocate_shared<context_type>(
+        asio::get_associated_allocator(handler),
         std::forward<Connection>(connection),
         std::forward<Handler>(handler)
     );
@@ -52,13 +53,13 @@ auto& get_handler(const connect_operation_context_ptr<Ts ...>& context) noexcept
 }
 
 template <typename ... Ts>
-decltype(auto) get_handler_context(const connect_operation_context_ptr<Ts ...>& context) noexcept {
-    return std::addressof(context->handler);
+auto& get_executor(const connect_operation_context_ptr<Ts ...>& context) noexcept {
+    return context->strand;
 }
 
 template <typename ... Ts>
-auto& get_executor(const connect_operation_context_ptr<Ts ...>& context) noexcept {
-    return context->strand;
+auto get_allocator(const connect_operation_context_ptr<Ts ...>& context) noexcept {
+    return asio::get_associated_allocator(get_handler(context));
 }
 
 /**
@@ -125,8 +126,14 @@ struct async_connect_op {
 
     using executor_type = std::decay_t<decltype(impl::get_executor(context))>;
 
-    auto get_executor() const noexcept {
+    executor_type get_executor() const noexcept {
         return impl::get_executor(context);
+    }
+
+    using allocator_type = std::decay_t<decltype(impl::get_allocator(context))>;
+
+    allocator_type get_allocator() const noexcept {
+        return impl::get_allocator(context);
     }
 };
 

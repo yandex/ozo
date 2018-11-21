@@ -91,9 +91,10 @@ struct request_oid_map_op {
 
 template <typename Handler>
 auto make_async_request_oid_map_op(Handler&& handler) {
+    auto allocator = asio::get_associated_allocator(handler);
     return request_oid_map_op<std::decay_t<Handler>> {
         std::forward<Handler>(handler),
-        std::make_shared<oids_result>()
+        std::allocate_shared<oids_result>(allocator)
     };
 }
 
