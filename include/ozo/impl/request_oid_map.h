@@ -78,14 +78,14 @@ struct request_oid_map_op {
 
     using executor_type = decltype(asio::get_associated_executor(handler_));
 
-    auto get_executor() const noexcept {
+    executor_type get_executor() const noexcept {
         return asio::get_associated_executor(handler_);
     }
 
-    template <typename Func>
-    friend void asio_handler_invoke(Func&& f, request_oid_map_op* ctx) {
-        using boost::asio::asio_handler_invoke;
-        asio_handler_invoke(std::forward<Func>(f), std::addressof(ctx->handler_));
+    using allocator_type = decltype(asio::get_associated_allocator(handler_));
+
+    allocator_type get_allocator() const noexcept {
+        return asio::get_associated_allocator(handler_);
     }
 };
 
