@@ -4,6 +4,7 @@
 #include <ozo/type_traits.h>
 #include <ozo/io/size_of.h>
 #include <ozo/io/ostream.h>
+#include <ozo/io/type_traits.h>
 #include <libpq-fe.h>
 #include <type_traits>
 
@@ -35,6 +36,13 @@ namespace ozo {
 template <typename In, typename = std::void_t<>>
 struct send_impl{
     static_assert(HasDefinition<In>, "type In must be defined as PostgreSQL type");
+
+    static_assert(
+        Readable<In&>,
+        "In object type can't be sent. Probably it is not an arithmetic or doens't have data and size methods"
+        " or it is a struct with field which can't be sent."
+    );
+
     /**
      * @brief Implementation of serialization object into stream.
      *

@@ -8,7 +8,8 @@ namespace ozo {
 using detail::ostream;
 
 template <typename T>
-inline ostream& write(ostream& out, const T& in) {
+inline auto write(ostream& out, const T& in)
+        -> Require<std::is_void_v<std::void_t<decltype(impl::write(out, in))>>, ostream&> {
     return impl::write(out, in);
 }
 
