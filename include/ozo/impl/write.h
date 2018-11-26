@@ -25,7 +25,7 @@ write(ostream& out, T in) {
 }
 
 template <typename T>
-inline Require<RawDataWritable<T>, ostream&> write(ostream& out, const T& in) {
+inline Require<RawDataReadable<T>, ostream&> write(ostream& out, const T& in) {
     using std::data;
     using std::size;
     out.write(data(in), size(in));
