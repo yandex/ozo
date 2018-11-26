@@ -72,6 +72,8 @@ constexpr decltype(auto) member_value(Adt&& v, const Index&) {
  */
 template <typename Out, typename = std::void_t<>>
 struct recv_impl {
+    static_assert(HasDefinition<Out>, "type Out must be defined as PostgreSQL type");
+
     /**
      * @brief Implementation of deserialization object from a stream.
      *
