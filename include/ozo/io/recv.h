@@ -8,6 +8,7 @@
 #include <ozo/detail/endian.h>
 #include <ozo/detail/float.h>
 #include <ozo/io/istream.h>
+#include <ozo/io/type_traits.h>
 #include <boost/core/demangle.hpp>
 #include <boost/hana/for_each.hpp>
 #include <boost/hana/members.hpp>
@@ -73,6 +74,24 @@ constexpr decltype(auto) member_value(Adt&& v, const Index&) {
 template <typename Out, typename = std::void_t<>>
 struct recv_impl {
     static_assert(HasDefinition<Out>, "type Out must be defined as PostgreSQL type");
+
+    static_assert(
+        Writable<Out&> || !Readable<Out&>,
+        "Out type object can't be received. Probably it is read only type"
+        " or it is an adapted struct with read only field."
+    );
+
+    static_assert(
+        Writable<Out&>,
+        "Out type object can't be received. Probably it is not an arithmetic"
+        " or doesn't have non const data and size methods "
+        " or it is a struct with field which can't be received."
+    );
+
+    static_assert(
+        !DynamicSize<Out&> || Resizable<Out&>,
+        "Out type object has dynamic size but doesn't have resize method."
+    );
 
     /**
      * @brief Implementation of deserialization object from a stream.

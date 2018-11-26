@@ -8,7 +8,8 @@ namespace ozo {
 using detail::istream;
 
 template <typename T>
-inline istream& read(istream& in, T& out) {
+inline auto read(istream& in, T& out)
+        -> Require<std::is_void_v<std::void_t<decltype(impl::read(in, out))>>, istream&> {
     return impl::read(in, out);
 }
 
