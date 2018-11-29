@@ -366,10 +366,7 @@ struct async_request_op {
                 detail::post_handler(std::move(handler_))
             )
         );
-
-        get_timer(get_connection(ctx)).expires_after(timeout_);
-        get_timer(get_connection(ctx)).async_wait(asio::bind_executor(get_executor(ctx),
-            detail::timeout_handler(get_socket(get_connection(ctx)))));
+        detail::set_io_timeout(get_connection(ctx), get_executor(ctx), timeout_);
 
         async_send_query_params(ctx, std::move(query_));
         async_get_result(std::move(ctx), std::move(out_));

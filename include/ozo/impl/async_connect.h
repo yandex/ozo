@@ -82,9 +82,7 @@ struct async_connect_op {
             return done(ec);
         }
 
-        get_timer(get_connection(context)).expires_after(timeout);
-        get_timer(get_connection(context)).async_wait(asio::bind_executor(get_executor(),
-            detail::timeout_handler(get_socket(get_connection(context)))));
+        detail::set_io_timeout(get_connection(context), get_executor(), timeout);
 
         return write_poll(get_connection(context), *this);
     }
