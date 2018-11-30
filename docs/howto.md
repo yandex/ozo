@@ -189,3 +189,29 @@ OZO_PG_DEFINE_TYPE_AND_ARRAY(Stroka, "text", TEXTOID, TEXTARRAYOID, dynamic_size
 ```
 
 Now you can get `text` into `Stroka` type, and put `Stroka` object like text in queries.
+
+## How To Bind One More PostgreSQL Type For C++ Type With Existing Binding
+
+This is very common problem. A lot of PostgreSQL types can be represented via the same C++ types. E.g. `text`, `name`, `varchar` can be easily and convenient represented via `std::string`. But it can not be done, due to relation "one to many" between PostgreSQL type and C++ types. You can map `text` to several C++ types but you can not map several PostgreSQL types to a single C++ type. There is a solution for the problem in the library - `OZO_STRONG_TYPEDEF`. This macro allows you to define an alias on a type with strong type definition guarantee.
+
+E.g. alias and definition for `bytea` type looks like this:
+
+```cpp
+OZO_STRONG_TYPEDEF(std::vector<char>, bytea)
+//...
+OZO_PG_DEFINE_TYPE_AND_ARRAY(bytea, "bytea", BYTEAOID, 1001, dynamic_size)
+```
+
+You can access for the underlying type via conversion operator or `get()` method:
+
+```cpp
+bytea wrapped_value;
+
+auto n = static_cast<const std::string&>(wrapped_value).find(' ');
+// or
+auto n = wrapped_value.get().find(' ');
+// or
+bool is_good_string(const std::string& v);
+//...
+bool flag = is_good_string(wrapped_value);
+```
