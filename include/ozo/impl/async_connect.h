@@ -22,7 +22,6 @@ struct connect_operation_context {
 
     ConnectionT connection;
     Handler handler;
-    ozo::strand<decltype(get_io_context(connection))> strand {get_io_context(connection)};
 
     connect_operation_context(ConnectionT connection, Handler handler)
             : connection(std::move(connection)),
@@ -35,8 +34,8 @@ using connect_operation_context_ptr = std::shared_ptr<connect_operation_context<
 template <typename Connection, typename Handler>
 auto make_connect_operation_context(Connection&& connection, Handler&& handler) {
     using context_type = connect_operation_context<std::decay_t<Connection>, std::decay_t<Handler>>;
-    return std::allocate_shared<context_type>(
-        asio::get_associated_allocator(handler),
+    auto allocator = asio::get_associated_allocator(handler);
+    return std::allocate_shared<context_type>(allocator,
         std::forward<Connection>(connection),
         std::forward<Handler>(handler)
     );
@@ -53,8 +52,8 @@ auto& get_handler(const connect_operation_context_ptr<Ts ...>& context) noexcept
 }
 
 template <typename ... Ts>
-auto& get_executor(const connect_operation_context_ptr<Ts ...>& context) noexcept {
-    return context->strand;
+auto get_executor(const connect_operation_context_ptr<Ts ...>& context) noexcept {
+    return asio::get_associated_executor(get_handler(context));
 }
 
 template <typename ... Ts>
@@ -82,7 +81,7 @@ struct async_connect_op {
             return done(ec);
         }
 
-        detail::set_io_timeout(get_connection(context), get_executor(), timeout);
+        detail::set_io_timeout(get_connection(context), get_handler(context), timeout);
 
         return write_poll(get_connection(context), *this);
     }
@@ -114,7 +113,7 @@ struct async_connect_op {
     }
 
     void done(error_code ec = error_code {}) {
-        asio::post(get_executor(),
+        asio::post(
             detail::bind(
                 std::move(get_handler(context)),
                 std::move(ec), std::move(get_connection(context))
@@ -158,6 +157,18 @@ struct request_oid_map_handler {
             request_oid_map(std::forward<Connection>(conn), std::move(handler_));
         }
     }
+
+    using executor_type = decltype(asio::get_associated_executor(handler_));
+
+    executor_type get_executor() const noexcept {
+        return asio::get_associated_executor(handler_);
+    }
+
+    using allocator_type = decltype(asio::get_associated_allocator(handler_));
+
+    allocator_type get_allocator() const noexcept {
+        return asio::get_associated_allocator(handler_);
+    }
 };
 
 template <typename Handler>
@@ -168,13 +179,14 @@ inline auto make_request_oid_map_handler(Handler&& handler) {
 template <typename ConnectionT, typename Handler>
 inline Require<Connection<ConnectionT>> async_connect(std::string conninfo, const time_traits::duration& timeout,
         ConnectionT&& connection, Handler&& handler) {
+    auto strand = ozo::make_strand_executor(get_io_context(connection));
     make_async_connect_op(
         make_connect_operation_context(
             std::forward<ConnectionT>(connection),
             make_request_oid_map_handler(
-                detail::cancel_timer_handler(
+                asio::bind_executor(strand, detail::cancel_timer_handler(
                     detail::post_handler(std::forward<Handler>(handler))
-                )
+                ))
             )
         )
     ).perform(conninfo, timeout);
