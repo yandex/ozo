@@ -20,7 +20,6 @@ struct fixture {
     StrictMock<executor_gmock> callback_executor{};
     StrictMock<callback_mock> callback{};
     StrictMock<executor_gmock> executor{};
-    StrictMock<executor_gmock> strand{};
     StrictMock<strand_executor_service_gmock> strand_service{};
     StrictMock<stream_descriptor_gmock> socket{};
     StrictMock<steady_timer_gmock> timer{};
@@ -29,7 +28,7 @@ struct fixture {
             make_connection(connection, io, socket, timer);
 
     auto make_operation_context() {
-        EXPECT_CALL(strand_service, get_executor()).WillOnce(ReturnRef(strand));
+        EXPECT_CALL(callback, get_executor()).WillRepeatedly(Return(ozo::tests::executor {&callback_executor}));
         return ozo::impl::make_request_operation_context(conn, wrap(callback));
     }
 
@@ -46,11 +45,11 @@ struct async_get_result_op : Test {
     fixture m;
 };
 
-TEST_F(async_get_result_op, perform_should_post_continuation_within_strand) {
+TEST_F(async_get_result_op, perform_should_post_continuation_within_handler_executor) {
     const InSequence s;
 
     EXPECT_CALL(m.executor, post(_)).WillOnce(InvokeArgument<0>());
-    EXPECT_CALL(m.strand, dispatch(_)).WillOnce(Return());
+    EXPECT_CALL(m.callback_executor, dispatch(_)).WillOnce(Return());
 
     ozo::impl::make_async_get_result_op(m.ctx, [](auto, auto){}).perform();
 }
@@ -89,9 +88,7 @@ TEST_P(async_get_result_op_call_with_error, should_post_callback_with_given_erro
     const InSequence s;
 
     EXPECT_CALL(m.socket, cancel(_)).WillOnce(Return());
-    EXPECT_CALL(m.callback, get_executor()).WillOnce(Return(ozo::tests::executor {&m.callback_executor}));
-    EXPECT_CALL(m.strand, post(_)).WillOnce(InvokeArgument<0>());
-    EXPECT_CALL(m.callback_executor, dispatch(_)).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(m.callback_executor, post(_)).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(m.callback, call(error_code{error::error}, _)).WillOnce(Return());
 
     ozo::impl::make_async_get_result_op(m.ctx, [](auto, auto){})(error::error);
@@ -103,9 +100,7 @@ TEST_P(async_get_result_op_call_with_error, should_post_callback_with_operation_
     const InSequence s;
 
     EXPECT_CALL(m.socket, cancel(_)).WillOnce(Return());
-    EXPECT_CALL(m.callback, get_executor()).WillOnce(Return(ozo::tests::executor {&m.callback_executor}));
-    EXPECT_CALL(m.strand, post(_)).WillOnce(InvokeArgument<0>());
-    EXPECT_CALL(m.callback_executor, dispatch(_)).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(m.callback_executor, post(_)).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(m.callback, call(error_code{boost::asio::error::operation_aborted}, _)).WillOnce(Return());
 
     ozo::impl::make_async_get_result_op(m.ctx, [](auto, auto){})(boost::asio::error::bad_descriptor);
@@ -117,9 +112,7 @@ TEST_P(async_get_result_op_call_with_error, should_set_query_state_in_error) {
     const InSequence s;
 
     EXPECT_CALL(m.socket, cancel(_)).WillOnce(Return());
-    EXPECT_CALL(m.callback, get_executor()).WillOnce(Return(ozo::tests::executor {&m.callback_executor}));
-    EXPECT_CALL(m.strand, post(_)).WillOnce(InvokeArgument<0>());
-    EXPECT_CALL(m.callback_executor, dispatch(_)).WillOnce(Return());
+    EXPECT_CALL(m.callback_executor, post(_)).WillOnce(Return());
 
     ozo::impl::make_async_get_result_op(m.ctx, [](auto, auto){})(error::error);
 
@@ -132,9 +125,7 @@ TEST_P(async_get_result_op_call_with_error, should_replace_empty_connection_erro
     const InSequence s;
 
     EXPECT_CALL(m.socket, cancel(_)).WillOnce(Return());
-    EXPECT_CALL(m.callback, get_executor()).WillOnce(Return(ozo::tests::executor {&m.callback_executor}));
-    EXPECT_CALL(m.strand, post(_)).WillOnce(InvokeArgument<0>());
-    EXPECT_CALL(m.callback_executor, dispatch(_)).WillOnce(Return());
+    EXPECT_CALL(m.callback_executor, post(_)).WillOnce(Return());
 
     ozo::impl::make_async_get_result_op(m.ctx, [](auto, auto){})(error::error);
 
@@ -148,9 +139,7 @@ TEST_P(async_get_result_op_call_with_error, should_preserve_not_empty_connection
     const InSequence s;
 
     EXPECT_CALL(m.socket, cancel(_)).WillOnce(Return());
-    EXPECT_CALL(m.callback, get_executor()).WillOnce(Return(ozo::tests::executor {&m.callback_executor}));
-    EXPECT_CALL(m.strand, post(_)).WillOnce(InvokeArgument<0>());
-    EXPECT_CALL(m.callback_executor, dispatch(_)).WillOnce(Return());
+    EXPECT_CALL(m.callback_executor, post(_)).WillOnce(Return());
 
     ozo::impl::make_async_get_result_op(m.ctx, [](auto, auto){})(error::error);
 
@@ -183,12 +172,12 @@ TEST_F(async_get_result, should_wait_for_read_and_consume_input_while_is_busy_re
 
     // Post self to strand
     EXPECT_CALL(m.executor, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
-    EXPECT_CALL(m.strand, dispatch(_)).InSequence(s).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(m.callback_executor, dispatch(_)).InSequence(s).WillOnce(InvokeArgument<0>());
 
     // Wait for read while is_busy() returns true
     EXPECT_CALL(m.connection, is_busy()).InSequence(s).WillOnce(Return(true));
     EXPECT_CALL(m.socket, async_read_some(_)).InSequence(s).WillOnce(InvokeArgument<0>(error_code{}));
-    EXPECT_CALL(m.strand, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(m.callback_executor, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
 
     // Consume input
     EXPECT_CALL(m.connection, consume_input()).InSequence(s).WillOnce(Return(1));
@@ -205,12 +194,12 @@ TEST_F(async_get_result, should_post_callback_with_error_if_consume_input_failed
 
     // Post self to strand
     EXPECT_CALL(m.executor, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
-    EXPECT_CALL(m.strand, dispatch(_)).InSequence(s).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(m.callback_executor, dispatch(_)).InSequence(s).WillOnce(InvokeArgument<0>());
 
     // Wait for read while is_busy() returns true
     EXPECT_CALL(m.connection, is_busy()).InSequence(s).WillOnce(Return(true));
     EXPECT_CALL(m.socket, async_read_some(_)).InSequence(s).WillOnce(InvokeArgument<0>(error_code{}));
-    EXPECT_CALL(m.strand, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(m.callback_executor, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
 
     // Consume input
     EXPECT_CALL(m.connection, consume_input()).InSequence(s).WillOnce(Return(0));
@@ -219,9 +208,7 @@ TEST_F(async_get_result, should_post_callback_with_error_if_consume_input_failed
     EXPECT_CALL(m.socket, cancel(_)).InSequence(s).WillOnce(Return());
 
     // Post callback with error
-    EXPECT_CALL(m.callback, get_executor()).WillOnce(Return(ozo::tests::executor {&m.callback_executor}));
-    EXPECT_CALL(m.strand, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
-    EXPECT_CALL(m.callback_executor, dispatch(_)).InSequence(s).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(m.callback_executor, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(m.callback, call(error_code{ozo::error::pg_consume_input_failed}, _))
         .InSequence(s).WillOnce(Return());
 
@@ -233,7 +220,7 @@ TEST_F(async_get_result, should_process_data_and_post_callback_if_result_is_empt
 
     // Post self to strand
     EXPECT_CALL(m.executor, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
-    EXPECT_CALL(m.strand, dispatch(_)).InSequence(s).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(m.callback_executor, dispatch(_)).InSequence(s).WillOnce(InvokeArgument<0>());
 
     // Get result since is_busy() is false
     EXPECT_CALL(m.connection, is_busy()).InSequence(s).WillOnce(Return(false));
@@ -242,9 +229,7 @@ TEST_F(async_get_result, should_process_data_and_post_callback_if_result_is_empt
         .WillOnce(Return(boost::none));
 
     // Post callback with no error since result is empty
-    EXPECT_CALL(m.callback, get_executor()).WillOnce(Return(ozo::tests::executor {&m.callback_executor}));
-    EXPECT_CALL(m.strand, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
-    EXPECT_CALL(m.callback_executor, dispatch(_)).InSequence(s).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(m.callback_executor, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(m.callback, call(error_code{}, _)).InSequence(s).WillOnce(Return());
 
     ozo::impl::async_get_result(m.ctx, process_f);
@@ -255,7 +240,7 @@ TEST_F(async_get_result, should_post_callback_with_error_and_consume_if_process_
 
     // Post self to strand
     EXPECT_CALL(m.executor, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
-    EXPECT_CALL(m.strand, dispatch(_)).InSequence(s).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(m.callback_executor, dispatch(_)).InSequence(s).WillOnce(InvokeArgument<0>());
 
     // Get result since is_busy() is false
     EXPECT_CALL(m.connection, is_busy()).InSequence(s).WillOnce(Return(false));
@@ -273,9 +258,7 @@ TEST_F(async_get_result, should_post_callback_with_error_and_consume_if_process_
 
     // Post callback with no error since result is error
     EXPECT_CALL(m.socket, cancel(_)).InSequence(s).WillOnce(Return());
-    EXPECT_CALL(m.callback, get_executor()).WillOnce(Return(ozo::tests::executor {&m.callback_executor}));
-    EXPECT_CALL(m.strand, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
-    EXPECT_CALL(m.callback_executor, dispatch(_)).InSequence(s).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(m.callback_executor, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(m.callback, call(error_code{ozo::error::bad_result_process}, _))
         .InSequence(s).WillOnce(Return());
 
@@ -287,7 +270,7 @@ TEST_F(async_get_result, should_process_data_and_post_callback_and_consume_if_re
 
     // Post self to strand
     EXPECT_CALL(m.executor, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
-    EXPECT_CALL(m.strand, dispatch(_)).InSequence(s).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(m.callback_executor, dispatch(_)).InSequence(s).WillOnce(InvokeArgument<0>());
 
     // Get result since is_busy() is false
     EXPECT_CALL(m.connection, is_busy()).InSequence(s).WillOnce(Return(false));
@@ -304,9 +287,7 @@ TEST_F(async_get_result, should_process_data_and_post_callback_and_consume_if_re
     EXPECT_CALL(process, call()).InSequence(s).WillOnce(Return());
 
     // Post callback with no error since result is ok
-    EXPECT_CALL(m.callback, get_executor()).WillOnce(Return(ozo::tests::executor {&m.callback_executor}));
-    EXPECT_CALL(m.strand, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
-    EXPECT_CALL(m.callback_executor, dispatch(_)).InSequence(s).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(m.callback_executor, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(m.callback, call(error_code{}, _)).InSequence(s).WillOnce(Return());
 
     ozo::impl::async_get_result(m.ctx, process_f);
@@ -317,7 +298,7 @@ TEST_F(async_get_result, should_process_data_and_post_callback_if_result_status_
 
     // Post self to strand
     EXPECT_CALL(m.executor, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
-    EXPECT_CALL(m.strand, dispatch(_)).InSequence(s).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(m.callback_executor, dispatch(_)).InSequence(s).WillOnce(InvokeArgument<0>());
 
     // Get result since is_busy() is false
     EXPECT_CALL(m.connection, is_busy()).InSequence(s).WillOnce(Return(false));
@@ -329,9 +310,7 @@ TEST_F(async_get_result, should_process_data_and_post_callback_if_result_status_
     EXPECT_CALL(process, call()).InSequence(s).WillOnce(Return());
 
     // Post callback with no error since result is ok
-    EXPECT_CALL(m.callback, get_executor()).WillOnce(Return(ozo::tests::executor {&m.callback_executor}));
-    EXPECT_CALL(m.strand, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
-    EXPECT_CALL(m.callback_executor, dispatch(_)).InSequence(s).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(m.callback_executor, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(m.callback, call(error_code{}, _)).InSequence(s).WillOnce(Return());
 
     ozo::impl::async_get_result(m.ctx, process_f);
@@ -342,7 +321,7 @@ TEST_F(async_get_result, should_post_callback_and_consume_result_if_result_statu
 
     // Post self to strand
     EXPECT_CALL(m.executor, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
-    EXPECT_CALL(m.strand, dispatch(_)).InSequence(s).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(m.callback_executor, dispatch(_)).InSequence(s).WillOnce(InvokeArgument<0>());
 
     // Get result since is_busy() is false
     EXPECT_CALL(m.connection, is_busy()).InSequence(s).WillOnce(Return(false));
@@ -357,9 +336,7 @@ TEST_F(async_get_result, should_post_callback_and_consume_result_if_result_statu
         .WillOnce(Return(boost::none));
 
     // Post callback with no error since result is ok
-    EXPECT_CALL(m.callback, get_executor()).WillOnce(Return(ozo::tests::executor {&m.callback_executor}));
-    EXPECT_CALL(m.strand, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
-    EXPECT_CALL(m.callback_executor, dispatch(_)).InSequence(s).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(m.callback_executor, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(m.callback, call(error_code{}, _)).InSequence(s).WillOnce(Return());
 
     ozo::impl::async_get_result(m.ctx, process_f);
@@ -370,7 +347,7 @@ TEST_F(async_get_result, should_post_callback_with_error_and_consume_result_if_r
 
     // Post self to strand
     EXPECT_CALL(m.executor, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
-    EXPECT_CALL(m.strand, dispatch(_)).InSequence(s).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(m.callback_executor, dispatch(_)).InSequence(s).WillOnce(InvokeArgument<0>());
 
     // Get result since is_busy() is false
     EXPECT_CALL(m.connection, is_busy()).InSequence(s).WillOnce(Return(false));
@@ -386,9 +363,7 @@ TEST_F(async_get_result, should_post_callback_with_error_and_consume_result_if_r
 
     // Post callback with error and cancel all io
     EXPECT_CALL(m.socket, cancel(_)).WillOnce(Return());
-    EXPECT_CALL(m.callback, get_executor()).WillOnce(Return(ozo::tests::executor {&m.callback_executor}));
-    EXPECT_CALL(m.strand, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
-    EXPECT_CALL(m.callback_executor, dispatch(_)).InSequence(s).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(m.callback_executor, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(m.callback, call(error_code{ozo::error::result_status_bad_response}, _))
         .InSequence(s)
         .WillOnce(Return());
@@ -401,7 +376,7 @@ TEST_F(async_get_result, should_post_callback_with_error_and_consume_result_if_r
 
     // Post self to strand
     EXPECT_CALL(m.executor, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
-    EXPECT_CALL(m.strand, dispatch(_)).InSequence(s).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(m.callback_executor, dispatch(_)).InSequence(s).WillOnce(InvokeArgument<0>());
 
     // Get result since is_busy() is false
     EXPECT_CALL(m.connection, is_busy()).InSequence(s).WillOnce(Return(false));
@@ -417,9 +392,7 @@ TEST_F(async_get_result, should_post_callback_with_error_and_consume_result_if_r
 
     // Post callback with error and cancel all io
     EXPECT_CALL(m.socket, cancel(_)).WillOnce(Return());
-    EXPECT_CALL(m.callback, get_executor()).WillOnce(Return(ozo::tests::executor {&m.callback_executor}));
-    EXPECT_CALL(m.strand, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
-    EXPECT_CALL(m.callback_executor, dispatch(_)).InSequence(s).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(m.callback_executor, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(m.callback, call(error_code{ozo::error::result_status_empty_query}, _))
         .InSequence(s)
         .WillOnce(Return());
@@ -432,7 +405,7 @@ TEST_F(async_get_result, should_post_callback_with_error_from_result_and_consume
 
     // Post self to strand
     EXPECT_CALL(m.executor, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
-    EXPECT_CALL(m.strand, dispatch(_)).InSequence(s).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(m.callback_executor, dispatch(_)).InSequence(s).WillOnce(InvokeArgument<0>());
 
     // Get result since is_busy() is false
     EXPECT_CALL(m.connection, is_busy()).InSequence(s).WillOnce(Return(false));
@@ -448,9 +421,7 @@ TEST_F(async_get_result, should_post_callback_with_error_from_result_and_consume
 
     // Post callback with error and cancel all io
     EXPECT_CALL(m.socket, cancel(_)).WillOnce(Return());
-    EXPECT_CALL(m.callback, get_executor()).WillOnce(Return(ozo::tests::executor {&m.callback_executor}));
-    EXPECT_CALL(m.strand, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
-    EXPECT_CALL(m.callback_executor, dispatch(_)).InSequence(s).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(m.callback_executor, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(m.callback, call(error_code{error::error}, _)).InSequence(s).WillOnce(Return());
 
     ozo::impl::async_get_result(m.ctx, process_f);
@@ -461,7 +432,7 @@ TEST_F(async_get_result, should_consume_tail_data_asynchronously) {
 
     // Post self to strand
     EXPECT_CALL(m.executor, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
-    EXPECT_CALL(m.strand, dispatch(_)).InSequence(s).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(m.callback_executor, dispatch(_)).InSequence(s).WillOnce(InvokeArgument<0>());
 
     // Get result since is_busy() is false
     EXPECT_CALL(m.connection, is_busy()).InSequence(s).WillOnce(Return(false));
@@ -472,15 +443,13 @@ TEST_F(async_get_result, should_consume_tail_data_asynchronously) {
     // Consume result with calling get_result until it returns nothing
     EXPECT_CALL(m.connection, is_busy()).InSequence(s).WillOnce(Return(true));
     EXPECT_CALL(m.socket, async_read_some(_)).InSequence(s).WillOnce(InvokeArgument<0>(error_code{}));
-    EXPECT_CALL(m.strand, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(m.callback_executor, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(m.connection, consume_input()).InSequence(s).WillOnce(Return(1));
     EXPECT_CALL(m.connection, is_busy()).InSequence(s).WillOnce(Return(false));
     EXPECT_CALL(m.connection, get_result()).InSequence(s).WillOnce(Return(boost::none));
 
     // Post callback with no error since result is ok
-    EXPECT_CALL(m.callback, get_executor()).WillOnce(Return(ozo::tests::executor {&m.callback_executor}));
-    EXPECT_CALL(m.strand, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
-    EXPECT_CALL(m.callback_executor, dispatch(_)).InSequence(s).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(m.callback_executor, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(m.callback, call(error_code{}, _)).InSequence(s).WillOnce(Return());
 
     ozo::impl::async_get_result(m.ctx, process_f);
@@ -491,7 +460,7 @@ TEST_F(async_get_result, should_post_callback_with_result_on_consume_input_error
 
     // Post self to strand
     EXPECT_CALL(m.executor, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
-    EXPECT_CALL(m.strand, dispatch(_)).InSequence(s).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(m.callback_executor, dispatch(_)).InSequence(s).WillOnce(InvokeArgument<0>());
 
     // Get result since is_busy() is false
     EXPECT_CALL(m.connection, is_busy()).InSequence(s).WillOnce(Return(false));
@@ -502,13 +471,11 @@ TEST_F(async_get_result, should_post_callback_with_result_on_consume_input_error
     // Consume result with calling get_result until it returns nothing
     EXPECT_CALL(m.connection, is_busy()).InSequence(s).WillOnce(Return(true));
     EXPECT_CALL(m.socket, async_read_some(_)).InSequence(s).WillOnce(InvokeArgument<0>(error_code{}));
-    EXPECT_CALL(m.strand, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(m.callback_executor, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(m.connection, consume_input()).InSequence(s).WillOnce(Return(0));
 
     // Post callback with error and cancel all io
-    EXPECT_CALL(m.callback, get_executor()).WillOnce(Return(ozo::tests::executor {&m.callback_executor}));
-    EXPECT_CALL(m.strand, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
-    EXPECT_CALL(m.callback_executor, dispatch(_)).InSequence(s).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(m.callback_executor, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(m.callback, call(error_code{}, _)).InSequence(s).WillOnce(Return());
 
     ozo::impl::async_get_result(m.ctx, process_f);
@@ -523,7 +490,7 @@ TEST_P(async_get_result_, should_post_callback_with_error_from_result_and_consum
 
     // Post self to strand
     EXPECT_CALL(m.executor, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
-    EXPECT_CALL(m.strand, dispatch(_)).InSequence(s).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(m.callback_executor, dispatch(_)).InSequence(s).WillOnce(InvokeArgument<0>());
 
     // Get result since is_busy() is false
     EXPECT_CALL(m.connection, is_busy()).InSequence(s).WillOnce(Return(false));
@@ -539,9 +506,7 @@ TEST_P(async_get_result_, should_post_callback_with_error_from_result_and_consum
 
     // Post callback with error and cancel all io
     EXPECT_CALL(m.socket, cancel(_)).WillOnce(Return());
-    EXPECT_CALL(m.callback, get_executor()).WillOnce(Return(ozo::tests::executor {&m.callback_executor}));
-    EXPECT_CALL(m.strand, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
-    EXPECT_CALL(m.callback_executor, dispatch(_)).InSequence(s).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(m.callback_executor, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(m.callback, call(error_code{ozo::error::result_status_unexpected}, _))
         .InSequence(s)
         .WillOnce(Return());
