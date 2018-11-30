@@ -19,7 +19,6 @@ template <typename Connection, typename Handler>
 struct request_operation_context {
     std::decay_t<Connection> conn;
     std::decay_t<Handler> handler;
-    ozo::strand<decltype(get_io_context(conn))> strand {get_io_context(conn)};
     query_state state = query_state::send_in_progress;
 
     using result_type = std::decay_t<decltype(get_result(conn))>;
@@ -74,11 +73,6 @@ inline void set_request_result(const request_operation_context_ptr<Ts...>& ctx,
 }
 
 template <typename ... Ts>
-auto& get_executor(const request_operation_context_ptr<Ts ...>& context) noexcept {
-    return context->strand;
-}
-
-template <typename ... Ts>
 auto& get_query(const request_operation_context_ptr<Ts ...>& context) noexcept {
     return context->query;
 }
@@ -89,7 +83,12 @@ auto& get_handler(const request_operation_context_ptr<Ts ...>& context) noexcept
 }
 
 template <typename ... Ts>
-decltype(auto) get_allocator(const request_operation_context_ptr<Ts ...>& context) noexcept {
+auto get_executor(const request_operation_context_ptr<Ts ...>& context) noexcept {
+    return asio::get_associated_executor(get_handler(context));
+}
+
+template <typename ... Ts>
+auto get_allocator(const request_operation_context_ptr<Ts ...>& context) noexcept {
     return asio::get_associated_allocator(get_handler(context));
 }
 
@@ -104,14 +103,12 @@ inline void done(const request_operation_context_ptr<Ts...>& ctx, error_code ec)
     decltype(auto) conn = get_connection(ctx);
     error_code _;
     get_socket(conn).cancel(_);
-    auto ex = get_executor(ctx);
-    asio::post(ex, detail::bind(std::move(get_handler(ctx)), std::move(ec), conn));
+    asio::post(detail::bind(std::move(get_handler(ctx)), std::move(ec), conn));
 }
 
 template <typename ...Ts>
 inline void done(const request_operation_context_ptr<Ts...>& ctx) {
-    auto ex = get_executor(ctx);
-    asio::post(ex, detail::bind(std::move(get_handler(ctx)), error_code {}, get_connection(ctx)));
+    asio::post(detail::bind(std::move(get_handler(ctx)), error_code {}, get_connection(ctx)));
 }
 
 template <typename Continuation, typename ...Ts>
@@ -360,14 +357,15 @@ struct async_request_op {
             return handler_(ec, std::move(conn));
         }
 
+        auto strand = ozo::make_strand_executor(get_io_context(conn));
+
         auto ctx = make_request_operation_context(
             std::move(conn),
-            detail::cancel_timer_handler(
+            asio::bind_executor(strand, detail::cancel_timer_handler(
                 detail::post_handler(std::move(handler_))
-            )
+            ))
         );
-        detail::set_io_timeout(get_connection(ctx),
-            asio::bind_executor(get_executor(ctx), get_handler(ctx)), timeout_);
+        detail::set_io_timeout(get_connection(ctx), get_handler(ctx), timeout_);
 
         async_send_query_params(ctx, std::move(query_));
         async_get_result(std::move(ctx), std::move(out_));

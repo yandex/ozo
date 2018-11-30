@@ -36,9 +36,11 @@ struct async_request_op : Test {
 };
 
 TEST_F(async_request_op, should_set_timer_and_send_query_params_and_get_result_and_call_handler) {
-    Sequence s;
 
-    EXPECT_CALL(strand_service, get_executor()).InSequence(s).WillOnce(ReturnRef(strand));
+    EXPECT_CALL(strand_service, get_executor()).WillRepeatedly(ReturnRef(strand));
+    EXPECT_CALL(callback, get_executor()).WillRepeatedly(Return(ozo::tests::executor {&callback_executor}));
+
+    Sequence s;
 
     // Set timer
     EXPECT_CALL(timer, expires_after(time_traits::duration(42))).InSequence(s).WillOnce(Return(0));
@@ -63,7 +65,6 @@ TEST_F(async_request_op, should_set_timer_and_send_query_params_and_get_result_a
     EXPECT_CALL(timer, cancel()).InSequence(s).WillOnce(Return(1));
 
     // Call client handler
-    EXPECT_CALL(callback, get_executor()).WillOnce(Return(ozo::tests::executor {&callback_executor}));
     EXPECT_CALL(executor, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(callback_executor, dispatch(_)).InSequence(s).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(callback, call(error_code {}, _)).InSequence(s).WillOnce(Return());
