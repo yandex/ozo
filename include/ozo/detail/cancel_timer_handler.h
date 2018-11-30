@@ -16,6 +16,18 @@ struct cancel_timer_handler {
         get_timer(connection).cancel();
         handler(ec, std::forward<Connection>(connection));
     }
+
+    using executor_type = decltype(asio::get_associated_executor(handler));
+
+    executor_type get_executor() const noexcept {
+        return asio::get_associated_executor(handler);
+    }
+
+    using allocator_type = decltype(asio::get_associated_allocator(handler));
+
+    allocator_type get_allocator() const noexcept {
+        return asio::get_associated_allocator(handler);
+    }
 };
 
 } // namespace ozo::detail

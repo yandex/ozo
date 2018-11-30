@@ -32,9 +32,9 @@ struct request_operation_context {
 
 template <typename Connection, typename Handler>
 inline decltype(auto) make_request_operation_context(Connection&& conn, Handler&& h) {
+    auto allocator = asio::get_associated_allocator(h);
     return std::allocate_shared<request_operation_context<Connection, Handler>>(
-        asio::get_associated_allocator(h),
-        std::forward<Connection>(conn), std::forward<Handler>(h)
+        allocator, std::forward<Connection>(conn), std::forward<Handler>(h)
     );
 }
 
@@ -104,14 +104,14 @@ inline void done(const request_operation_context_ptr<Ts...>& ctx, error_code ec)
     decltype(auto) conn = get_connection(ctx);
     error_code _;
     get_socket(conn).cancel(_);
-    asio::post(get_executor(ctx),
-        detail::bind(std::move(get_handler(ctx)), std::move(ec), conn));
+    auto ex = get_executor(ctx);
+    asio::post(ex, detail::bind(std::move(get_handler(ctx)), std::move(ec), conn));
 }
 
 template <typename ...Ts>
 inline void done(const request_operation_context_ptr<Ts...>& ctx) {
-    asio::post(get_executor(ctx),
-        detail::bind(std::move(get_handler(ctx)), error_code {}, get_connection(ctx)));
+    auto ex = get_executor(ctx);
+    asio::post(ex, detail::bind(std::move(get_handler(ctx)), error_code {}, get_connection(ctx)));
 }
 
 template <typename Continuation, typename ...Ts>
@@ -366,7 +366,8 @@ struct async_request_op {
                 detail::post_handler(std::move(handler_))
             )
         );
-        detail::set_io_timeout(get_connection(ctx), get_executor(ctx), timeout_);
+        detail::set_io_timeout(get_connection(ctx),
+            asio::bind_executor(get_executor(ctx), get_handler(ctx)), timeout_);
 
         async_send_query_params(ctx, std::move(query_));
         async_get_result(std::move(ctx), std::move(out_));
