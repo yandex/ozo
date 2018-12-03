@@ -39,7 +39,7 @@ struct socket_mock {
 
     socket_mock(io_context& io) : io_(std::addressof(io)) {}
 
-    io_context& get_io_service() {
+    io_context& get_io_context() {
         return *io_;
     }
 
