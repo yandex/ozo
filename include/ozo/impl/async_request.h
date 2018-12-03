@@ -377,17 +377,14 @@ template <typename T>
 struct async_request_out_handler {
     T out;
 
+    async_request_out_handler(T out) : out(std::move(out)) {}
+
     template <typename Handle, typename Conn>
     void operator() (Handle&& h, Conn& conn) {
         auto res = ozo::make_result(std::forward<Handle>(h));
         ozo::recv_result(res, get_oid_map(conn), out);
     }
 };
-
-template <typename T>
-auto make_async_request_out_handler(T&& out) {
-    return async_request_out_handler<std::decay_t<T>> {std::forward<T>(out)};
-}
 
 template <typename Query, typename OutHandler, typename Handler>
 inline auto make_async_request_op(Query&& query, const time_traits::duration& timeout, OutHandler&& out, Handler&& handler) {
@@ -412,7 +409,7 @@ inline void async_request(P&& provider, Q&& query, const time_traits::duration& 
         make_async_request_op(
             std::forward<Q>(query),
             timeout,
-            make_async_request_out_handler(std::forward<Out>(out)),
+            async_request_out_handler{std::forward<Out>(out)},
             std::forward<Handler>(handler)
         )
     );

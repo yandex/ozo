@@ -41,6 +41,7 @@ struct connection_mock {
     virtual ozo::error_code assign_socket() = 0;
     virtual void async_request() = 0;
     virtual void async_execute() = 0;
+    virtual void request_oid_map() = 0;
     virtual ozo::error_code rebind_io_context() = 0;
 
     virtual ~connection_mock() = default;
@@ -59,6 +60,7 @@ struct connection_gmock : connection_mock {
     MOCK_METHOD0(assign_socket, ozo::error_code());
     MOCK_METHOD0(async_request, void());
     MOCK_METHOD0(async_execute, void());
+    MOCK_METHOD0(request_oid_map, void());
     MOCK_METHOD0(rebind_io_context, ozo::error_code());
 
 };
@@ -146,6 +148,11 @@ struct connection {
     template <typename Q, typename Handler>
     friend void async_execute(std::shared_ptr<connection>& provider, Q&&, const ozo::time_traits::duration&, Handler&&) {
         provider->mock_->async_execute();
+    }
+
+    template <typename Handler>
+    friend void request_oid_map(std::shared_ptr<connection>&& provider, Handler&&) {
+        provider->mock_->request_oid_map();
     }
 
     template <typename Q, typename Handler>
