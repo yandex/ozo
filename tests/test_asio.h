@@ -179,7 +179,7 @@ struct stream_descriptor {
         mock_->close(ec);
     }
 
-    io_context& get_io_service() { return *io_;}
+    io_context& get_io_context() { return *io_;}
 };
 
 struct steady_timer_mock {
