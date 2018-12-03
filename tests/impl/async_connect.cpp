@@ -390,7 +390,7 @@ TEST_F(async_connect, should_request_oid_map_when_oid_map_is_not_empty) {
     EXPECT_CALL(f.connection, connect_poll()).InSequence(s).WillOnce(Return(PGRES_POLLING_OK));
 
     EXPECT_CALL(f.strand, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
-    EXPECT_CALL(f.connection, async_request()).InSequence(s).WillOnce(Return());
+    EXPECT_CALL(f.connection, request_oid_map()).InSequence(s).WillOnce(Return());
 
     ozo::impl::async_connect("conninfo", time_traits::duration(42), conn, wrap(callback));
 }

@@ -56,13 +56,10 @@ struct request_oid_map_op {
 
     template <typename Connection>
     void perform(Connection&& conn) {
-        async_request(
-            std::forward<Connection>(conn),
-            make_oids_query(get_oid_map(conn)),
-            time_traits::duration::max(),
-            std::back_inserter(*res_),
-            *this
-        );
+        const auto oid_map = get_oid_map(conn);
+        auto ctx = make_request_operation_context(std::forward<Connection>(conn), *this);
+        async_send_query_params(ctx, make_oids_query(oid_map));
+        async_get_result(std::move(ctx), async_request_out_handler{std::back_inserter(*res_)});
     }
 
     template <typename Connection>
