@@ -20,8 +20,8 @@ struct async_end_transaction_op {
     void operator ()(error_code ec, impl::transaction<Connection> transaction) {
         Connection connection;
         transaction.take_connection(connection);
-        decltype(auto) io = get_io_context(connection);
-        asio::post(io,
+        auto ex = get_executor(connection);
+        asio::post(ex,
             detail::bind(
                 std::move(handler),
                 std::move(ec),

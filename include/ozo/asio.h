@@ -1,22 +1,34 @@
 #pragma once
 
 #include <boost/asio/io_service.hpp>
+#include <boost/asio/executor.hpp>
+#include <boost/asio/strand.hpp>
 
 namespace ozo {
 
 namespace asio = boost::asio;
 using asio::async_completion;
-using io_context = asio::io_service;
+using asio::io_context;
 
-template <typename ExecutionContext>
-struct asio_strand { using type = typename ExecutionContext::strand; };
+namespace detail {
 
-template <typename ExecutionContext>
-using strand = typename asio_strand<std::decay_t<ExecutionContext>>::type;
+template <typename Executor>
+struct strand_executor {
+    using type = asio::strand<Executor>;
 
-template <typename ExecutionContext>
-auto make_strand_executor(ExecutionContext& ctx) {
-    return strand<ExecutionContext>{ctx};
+    static auto get(const Executor& ex = Executor{}) {
+        return type{ex};
+    }
+};
+
+template <typename Executor>
+using strand = typename strand_executor<std::decay_t<Executor>>::type;
+
+template <typename Executor>
+auto make_strand_executor(const Executor& ex) {
+    return strand_executor<Executor>::get(ex);
 }
+
+} // namespace detail
 
 } // namespace ozo

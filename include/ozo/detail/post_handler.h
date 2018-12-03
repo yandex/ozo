@@ -16,8 +16,8 @@ struct post_handler {
 
     template <typename Connection>
     void operator() (error_code ec, Connection&& connection) {
-        decltype(auto) io = get_io_context(connection);
-        asio::post(io, detail::bind(std::move(handler), std::move(ec), std::forward<Connection>(connection)));
+        auto ex = get_executor(connection);
+        asio::post(ex, detail::bind(std::move(handler), std::move(ec), std::forward<Connection>(connection)));
     }
 };
 

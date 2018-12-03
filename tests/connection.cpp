@@ -43,6 +43,10 @@ struct socket_mock {
         return *io_;
     }
 
+    auto get_executor() {
+        return get_io_context().get_executor();
+    }
+
     void assign(std::shared_ptr<native_handle_mock> handle, ozo::error_code& ec) {
         native_handle_ = std::move(handle);
         native_handle_->assign(ec);
