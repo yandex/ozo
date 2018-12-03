@@ -153,7 +153,7 @@ inline void read_poll(T& conn, Handler&& h) {
 // Shortcut for post operation with connection associated executor
 template <typename T, typename Oper, typename = Require<Connection<T>>>
 inline void post(T& conn, Oper&& op) {
-    asio::post(get_io_context(conn), std::forward<Oper>(op));
+    asio::post(get_executor(conn), std::forward<Oper>(op));
 }
 
 template <typename T>

@@ -41,11 +41,13 @@ auto wrap_shared(Function&& f) {
     return shared_wrapper<std::decay_t<Function>> {std::make_shared<std::decay_t<Function>>(std::forward<Function>(f))};
 }
 
+struct io_context;
+
 struct executor {
     const executor_mock* impl = nullptr;
-    asio::execution_context* context_ = nullptr;
+    io_context* context_ = nullptr;
 
-    asio::execution_context& context() noexcept {
+    io_context& context() const noexcept {
         return *context_;
     }
 
@@ -91,10 +93,10 @@ struct io_context : asio::execution_context {
     io_context() = default;
 
     io_context(const executor_mock& executor)
-        : executor_ {&executor} {}
+        : executor_ {&executor, this} {}
 
     io_context(const executor_mock& executor, strand_executor_service_mock& strand_service)
-        : executor_ {&executor}, strand_service_(&strand_service) {}
+        : executor_ {&executor, this}, strand_service_(&strand_service) {}
 
     auto get_executor() const noexcept {
         return executor_;
@@ -180,6 +182,10 @@ struct stream_descriptor {
     }
 
     io_context& get_io_context() { return *io_;}
+
+    auto get_executor() {
+        return get_io_context().get_executor();
+    }
 };
 
 struct steady_timer_mock {
@@ -216,8 +222,18 @@ struct steady_timer {
 
 } // namespace tests
 
+namespace detail {
+
 template <>
-struct asio_strand<tests::io_context> { using type = tests::strand; };
+struct strand_executor<ozo::tests::executor> {
+    using type = ozo::tests::strand;
+
+    static auto get(const tests::executor& ex) {
+        return type{ex.context()};
+    }
+};
+
+} // namespace detail
 
 namespace tests {
 

@@ -452,6 +452,22 @@ inline decltype(auto) get_io_context(T& conn) noexcept {
 }
 
 /**
+ * @brief Executor for connection related asynchronous operations
+ *
+ * This executor must be used to schedule all the asynchronous operations
+ * related to #Connection to allow timer-based timeouts works for all of the
+ * operations.
+ *
+ * @param conn --- #Connection object
+ * @return `executor` of socket stream object of the connection
+ */
+template <typename T>
+inline auto get_executor(T& conn) noexcept {
+    static_assert(Connection<T>, "T must be a Connection");
+    return get_socket(conn).get_executor();
+}
+
+/**
  * @brief Rebinds `io_context` for the connection
  *
  * @param conn --- #Connection which must be rebound
@@ -855,8 +871,8 @@ constexpr auto ConnectionProvider = is_connection_provider<std::decay_t<T>>::val
         template <typename Conn, typename Handler>
         static constexpr void apply(Conn&& c, Handler&& h) {
             reset_error_context(c);
-            decltype(auto) io = get_io_context(c);
-            asio::dispatch(io, detail::bind(
+            auto ex = get_executor(c);
+            asio::dispatch(ex, detail::bind(
                 std::forward<Handler>(h), error_code{}, std::forward<Conn>(c)));
         }
     };
@@ -886,8 +902,8 @@ struct async_get_connection_impl<T, Require<Connection<T>>> {
     template <typename Conn, typename Handler>
     static constexpr void apply(Conn&& c, Handler&& h) {
         reset_error_context(c);
-        decltype(auto) io = get_io_context(c);
-        asio::dispatch(io, detail::bind(std::forward<Handler>(h), error_code{}, std::forward<Conn>(c)));
+        auto ex = get_executor(c);
+        asio::dispatch(ex, detail::bind(std::forward<Handler>(h), error_code{}, std::forward<Conn>(c)));
     }
 };
 

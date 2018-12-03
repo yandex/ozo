@@ -94,7 +94,8 @@ auto get_allocator(const request_operation_context_ptr<Ts ...>& context) noexcep
 
 template <typename Oper, typename ...Ts>
 inline void post(const request_operation_context_ptr<Ts...>& ctx, Oper&& op) {
-    post(get_connection(ctx), std::forward<Oper>(op));
+    using asio::post;
+    post(get_executor(get_connection(ctx)), std::forward<Oper>(op));
 }
 
 template <typename ...Ts>
@@ -357,7 +358,7 @@ struct async_request_op {
             return handler_(ec, std::move(conn));
         }
 
-        auto strand = ozo::make_strand_executor(get_io_context(conn));
+        auto strand = ozo::detail::make_strand_executor(get_executor(conn));
 
         auto ctx = make_request_operation_context(
             std::move(conn),

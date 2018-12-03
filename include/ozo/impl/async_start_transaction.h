@@ -18,8 +18,8 @@ struct async_start_transaction_op {
 
     template <typename Connection>
     void operator ()(error_code ec, Connection&& connection) {
-        decltype(auto) io = get_io_context(connection);
-        asio::post(io,
+        auto ex = get_executor(connection);
+        asio::post(ex,
             detail::bind(
                 std::move(handler),
                 std::move(ec),

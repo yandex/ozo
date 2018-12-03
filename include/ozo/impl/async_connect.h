@@ -179,7 +179,7 @@ inline auto make_request_oid_map_handler(Handler&& handler) {
 template <typename ConnectionT, typename Handler>
 inline Require<Connection<ConnectionT>> async_connect(std::string conninfo, const time_traits::duration& timeout,
         ConnectionT&& connection, Handler&& handler) {
-    auto strand = ozo::make_strand_executor(get_io_context(connection));
+    auto strand = ozo::detail::make_strand_executor(get_executor(connection));
     make_async_connect_op(
         make_connect_operation_context(
             std::forward<ConnectionT>(connection),
