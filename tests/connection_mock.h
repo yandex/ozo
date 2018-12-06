@@ -73,8 +73,8 @@ inline boost::optional<pg_result> make_pg_result(
 struct fake_query {
     hana::tuple<> params;
 
-    template <typename T>
-    friend auto make_binary_query(fake_query query, const ozo::oid_map_t<T>&) {
+    template <typename T, typename Allocator>
+    friend auto make_binary_query(fake_query query, const ozo::oid_map_t<T>&, Allocator) {
         return query;
     }
 
