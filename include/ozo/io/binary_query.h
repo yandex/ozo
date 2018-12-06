@@ -30,7 +30,10 @@ public:
     static_assert(OidMap<OidMapT>, "OidMapT must be ozo::oid_map_t");
     static_assert(QueryText<TextT>, "Text must be QueryText concept");
 
-    using buffer_allocator_type = BufferAllocatorT;
+    using buffer_allocator_type = std::conditional_t<
+                                    std::is_same_v<typename BufferAllocatorT::value_type, char>,
+                                        BufferAllocatorT,
+                                        typename BufferAllocatorT::template rebind<char>::other>;
     using oid_map_type = OidMapT;
     using text_type = TextT;
     using params_type = ParamsT;
