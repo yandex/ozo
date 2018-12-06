@@ -80,7 +80,7 @@ struct connection {
 
 TEST(request_oid_map_op, should_call_handler_with_oid_request_failed_error_when_oid_map_length_differs_from_result_length) {
     StrictMock<callback_gmock<connection<>>> cb_mock {};
-    auto operation = ozo::impl::make_async_request_oid_map_op(wrap(cb_mock));
+    auto operation = ozo::impl::request_oid_map_op{wrap(cb_mock)};
     operation.res_ = std::make_shared<ozo::impl::oids_result>(1);
 
     EXPECT_CALL(cb_mock, call(ozo::error_code(ozo::error::oid_request_failed), _)).WillOnce(Return());

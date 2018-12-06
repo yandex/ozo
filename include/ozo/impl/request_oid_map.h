@@ -54,6 +54,10 @@ struct request_oid_map_op {
     Handler handler_;
     std::shared_ptr<oids_result> res_;
 
+    request_oid_map_op(Handler handler)
+    : handler_(std::move(handler)),
+      res_(std::allocate_shared<oids_result>(get_allocator())) {}
+
     template <typename Connection>
     void perform(Connection&& conn) {
         const auto oid_map = get_oid_map(conn);
@@ -85,14 +89,5 @@ struct request_oid_map_op {
         return asio::get_associated_allocator(handler_);
     }
 };
-
-template <typename Handler>
-auto make_async_request_oid_map_op(Handler&& handler) {
-    auto allocator = asio::get_associated_allocator(handler);
-    return request_oid_map_op<std::decay_t<Handler>> {
-        std::forward<Handler>(handler),
-        std::allocate_shared<oids_result>(allocator)
-    };
-}
 
 } // namespace ozo::impl
