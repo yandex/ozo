@@ -46,11 +46,6 @@ inline auto& get_connection(const request_operation_context_ptr<Ts...>& ctx) noe
 }
 
 template <typename ...Ts>
-inline decltype(auto) get_handler_context(const request_operation_context_ptr<Ts...>& ctx) noexcept {
-    return std::addressof(ctx->handler);
-}
-
-template <typename ...Ts>
 inline query_state get_query_state(const request_operation_context_ptr<Ts...>& ctx) noexcept {
     return ctx->state;
 }
@@ -105,6 +100,9 @@ template <typename Context, typename BinaryQuery>
 struct async_send_query_params_op {
     Context ctx_;
     BinaryQuery query_;
+
+    async_send_query_params_op(Context ctx, BinaryQuery query)
+    : ctx_(std::move(ctx)), query_(std::move(query)) {}
 
     void perform() {
         decltype(auto) conn = get_connection(ctx_);
@@ -161,13 +159,6 @@ struct async_send_query_params_op {
     }
 };
 
-template <typename Context, typename BinaryQuery>
-inline auto make_async_send_query_params_op(Context&& ctx, BinaryQuery&& q) {
-    return async_send_query_params_op<std::decay_t<Context>, std::decay_t<BinaryQuery>> {
-        std::forward<Context>(ctx), std::forward<BinaryQuery>(q)
-    };
-}
-
 template <typename T, typename Allocator, typename ...Ts>
 inline decltype(auto) make_binary_query(const query_builder<Ts...>& builder, const oid_map_t<T>& m, Allocator a) {
     return make_binary_query(builder.build(), m, a);
@@ -179,7 +170,8 @@ void async_send_query_params(std::shared_ptr<Context> ctx, Query&& query) {
                         get_oid_map(get_connection(ctx)),
                         asio::get_associated_allocator(get_handler(ctx)));
 
-    make_async_send_query_params_op(std::move(ctx), std::move(q)).perform();
+    async_send_query_params_op op{std::move(ctx), std::move(q)};
+    op.perform();
 }
 
 #include <boost/asio/yield.hpp>
