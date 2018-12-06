@@ -343,7 +343,7 @@ struct async_request_op {
             return handler_(ec, std::move(conn));
         }
 
-        auto strand = ozo::detail::make_strand_executor(get_executor(conn));
+        auto strand = ozo::detail::make_strand_executor(ozo::get_executor(conn));
 
         auto ctx = make_request_operation_context(
             std::move(conn),
@@ -355,6 +355,18 @@ struct async_request_op {
 
         async_send_query_params(ctx, std::move(query_));
         async_get_result(std::move(ctx), std::move(out_));
+    }
+
+    using executor_type = std::decay_t<decltype(asio::get_associated_executor(handler_))>;
+
+    executor_type get_executor() const noexcept {
+        return asio::get_associated_executor(handler_);
+    }
+
+    using allocator_type = std::decay_t<decltype(asio::get_associated_allocator(handler_))>;
+
+    allocator_type get_allocator() const noexcept {
+        return asio::get_associated_allocator(handler_);
     }
 };
 
