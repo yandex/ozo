@@ -73,11 +73,6 @@ inline void set_request_result(const request_operation_context_ptr<Ts...>& ctx,
 }
 
 template <typename ... Ts>
-auto& get_query(const request_operation_context_ptr<Ts ...>& context) noexcept {
-    return context->query;
-}
-
-template <typename ... Ts>
 auto& get_handler(const request_operation_context_ptr<Ts ...>& context) noexcept {
     return context->handler;
 }
@@ -316,19 +311,9 @@ struct async_get_result_op : boost::asio::coroutine {
 #include <boost/asio/unyield.hpp>
 
 template <typename Context, typename ResultProcessor>
-inline auto make_async_get_result_op(Context&& ctx, ResultProcessor&& process) {
-    return async_get_result_op<std::decay_t<Context>, std::decay_t<ResultProcessor>>{
-        std::forward<Context>(ctx),
-        std::forward<ResultProcessor>(process)
-    };
-}
-
-template <typename Context, typename ResultProcessor>
-inline void async_get_result(Context&& ctx, ResultProcessor&& process) {
-    make_async_get_result_op(
-        std::forward<Context>(ctx),
-        std::forward<ResultProcessor>(process)
-    ).perform();
+inline void async_get_result(Context&& ctx, ResultProcessor&& p) {
+    async_get_result_op op{std::forward<Context>(ctx), std::forward<ResultProcessor>(p)};
+    op.perform();
 }
 
 template <typename OutHandler, typename Query, typename Handler>
@@ -337,6 +322,9 @@ struct async_request_op {
     Query query_;
     time_traits::duration timeout_;
     Handler handler_;
+
+    async_request_op(Query query, time_traits::duration timeout, OutHandler out, Handler handler)
+    : out_(std::move(out)), query_(std::move(query)), timeout_(timeout), handler_(std::move(handler)) {}
 
     template <typename Connection>
     void operator() (error_code ec, Connection conn) {
@@ -384,32 +372,17 @@ struct async_request_out_handler {
     }
 };
 
-template <typename Query, typename OutHandler, typename Handler>
-inline auto make_async_request_op(Query&& query, const time_traits::duration& timeout, OutHandler&& out, Handler&& handler) {
-    using result_type = impl::async_request_op<
-        std::decay_t<OutHandler>,
-        std::decay_t<Query>,
-        std::decay_t<Handler>
-    >;
-    return result_type {
-        std::forward<OutHandler>(out),
-        std::forward<Query>(query),
-        timeout,
-        std::forward<Handler>(handler)
-    };
-}
-
 template <typename P, typename Q, typename Out, typename Handler>
 inline void async_request(P&& provider, Q&& query, const time_traits::duration& timeout, Out&& out, Handler&& handler) {
     static_assert(ConnectionProvider<P>, "is not a ConnectionProvider");
     static_assert(Query<Q> || QueryBuilder<Q>, "is neither Query nor QueryBuilder");
     async_get_connection(std::forward<P>(provider),
-        make_async_request_op(
+        async_request_op{
             std::forward<Q>(query),
             timeout,
             async_request_out_handler{std::forward<Out>(out)},
             std::forward<Handler>(handler)
-        )
+        }
     );
 }
 

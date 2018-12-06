@@ -12,12 +12,12 @@ inline void async_execute(P&& provider, Q&& query, const time_traits::duration& 
     static_assert(ConnectionProvider<P>, "is not a ConnectionProvider");
     static_assert(Query<Q> || QueryBuilder<Q>, "is neither Query nor QueryBuilder");
     async_get_connection(std::forward<P>(provider),
-        make_async_request_op(
+        async_request_op {
             std::forward<Q>(query),
             timeout,
             detail::do_nothing {},
             std::forward<Handler>(handler)
-        )
+        }
     );
 }
 
