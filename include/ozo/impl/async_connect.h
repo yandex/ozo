@@ -126,8 +126,8 @@ inline auto make_async_connect_op(Context&& context) {
 
 template <typename Connection, typename Handler>
 inline void request_oid_map(Connection&& conn, Handler&& handler) {
-    make_async_request_oid_map_op(std::forward<Handler>(handler))
-        .perform(std::forward<Connection>(conn));
+    ozo::impl::request_oid_map_op op{std::forward<Handler>(handler)};
+    op.perform(std::forward<Connection>(conn));
 }
 
 template <typename Handler>
