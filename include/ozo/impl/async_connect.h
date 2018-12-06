@@ -51,16 +51,6 @@ auto& get_handler(const connect_operation_context_ptr<Ts ...>& context) noexcept
     return context->handler;
 }
 
-template <typename ... Ts>
-auto get_executor(const connect_operation_context_ptr<Ts ...>& context) noexcept {
-    return asio::get_associated_executor(get_handler(context));
-}
-
-template <typename ... Ts>
-auto get_allocator(const connect_operation_context_ptr<Ts ...>& context) noexcept {
-    return asio::get_associated_allocator(get_handler(context));
-}
-
 /**
 * Asynchronous connection operation
 */
@@ -113,24 +103,19 @@ struct async_connect_op {
     }
 
     void done(error_code ec = error_code {}) {
-        asio::post(
-            detail::bind(
-                std::move(get_handler(context)),
-                std::move(ec), std::move(get_connection(context))
-            )
-        );
+        std::move(get_handler(context))(std::move(ec), std::move(get_connection(context)));
     }
 
-    using executor_type = std::decay_t<decltype(impl::get_executor(context))>;
+    using executor_type = std::decay_t<decltype(asio::get_associated_executor(get_handler(context)))>;
 
     executor_type get_executor() const noexcept {
-        return impl::get_executor(context);
+        return asio::get_associated_executor(get_handler(context));
     }
 
-    using allocator_type = std::decay_t<decltype(impl::get_allocator(context))>;
+    using allocator_type = std::decay_t<decltype(asio::get_associated_allocator(get_handler(context)))>;
 
     allocator_type get_allocator() const noexcept {
-        return impl::get_allocator(context);
+        return asio::get_associated_allocator(get_handler(context));
     }
 };
 
@@ -151,7 +136,7 @@ struct request_oid_map_handler {
 
     template <typename Connection>
     void operator() (error_code ec, Connection&& conn) {
-        if (ec || empty(get_oid_map(conn))) {
+        if (ec) {
             handler_(std::move(ec), std::forward<Connection>(conn));
         } else {
             request_oid_map(std::forward<Connection>(conn), std::move(handler_));
@@ -171,9 +156,20 @@ struct request_oid_map_handler {
     }
 };
 
-template <typename Handler>
-inline auto make_request_oid_map_handler(Handler&& handler) {
+template <typename Connection>
+constexpr bool OidMapEmpty = std::is_same_v<
+    std::decay_t<decltype(get_oid_map(std::declval<Connection>()))>,
+    ozo::empty_oid_map
+>;
+
+template <typename Conn, typename Handler>
+constexpr auto make_request_oid_map_handler(Handler&& handler, Require<!OidMapEmpty<Conn>>* = nullptr) {
     return request_oid_map_handler<std::decay_t<Handler>> {std::forward<Handler>(handler)};
+}
+
+template <typename Conn, typename Handler>
+constexpr decltype(auto) make_request_oid_map_handler(Handler&& handler, Require<OidMapEmpty<Conn>>* = nullptr) {
+    return std::forward<Handler>(handler);
 }
 
 template <typename ConnectionT, typename Handler>
@@ -183,7 +179,7 @@ inline Require<Connection<ConnectionT>> async_connect(std::string conninfo, cons
     make_async_connect_op(
         make_connect_operation_context(
             std::forward<ConnectionT>(connection),
-            make_request_oid_map_handler(
+            make_request_oid_map_handler<ConnectionT>(
                 asio::bind_executor(strand, detail::cancel_timer_handler(
                     detail::post_handler(std::forward<Handler>(handler))
                 ))

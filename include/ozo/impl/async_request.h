@@ -82,34 +82,18 @@ auto& get_handler(const request_operation_context_ptr<Ts ...>& context) noexcept
     return context->handler;
 }
 
-template <typename ... Ts>
-auto get_executor(const request_operation_context_ptr<Ts ...>& context) noexcept {
-    return asio::get_associated_executor(get_handler(context));
-}
-
-template <typename ... Ts>
-auto get_allocator(const request_operation_context_ptr<Ts ...>& context) noexcept {
-    return asio::get_associated_allocator(get_handler(context));
-}
-
-template <typename Oper, typename ...Ts>
-inline void post(const request_operation_context_ptr<Ts...>& ctx, Oper&& op) {
-    using asio::post;
-    post(get_executor(get_connection(ctx)), std::forward<Oper>(op));
-}
-
 template <typename ...Ts>
 inline void done(const request_operation_context_ptr<Ts...>& ctx, error_code ec) {
     set_query_state(ctx, query_state::error);
     decltype(auto) conn = get_connection(ctx);
     error_code _;
     get_socket(conn).cancel(_);
-    asio::post(detail::bind(std::move(get_handler(ctx)), std::move(ec), conn));
+    std::move(get_handler(ctx))(std::move(ec), conn);
 }
 
 template <typename ...Ts>
 inline void done(const request_operation_context_ptr<Ts...>& ctx) {
-    asio::post(detail::bind(std::move(get_handler(ctx)), error_code {}, get_connection(ctx)));
+    std::move(get_handler(ctx))(error_code {}, get_connection(ctx));
 }
 
 template <typename Continuation, typename ...Ts>
@@ -132,11 +116,12 @@ struct async_send_query_params_op {
         if (auto ec = set_nonblocking(conn)) {
             return done(ctx_, ec);
         }
-        //In the nonblocking state, calls to PQsendQuery, PQputline,
-        //PQputnbytes, PQputCopyData, and PQendcopy will not block
-        //but instead return an error if they need to be called again.
-        while (!send_query_params(conn, query_));
-        post(ctx_, *this);
+
+        if (!send_query_params(conn, query_)) {
+            return done(ctx_, error::pg_send_query_params_failed);
+        }
+
+        (*this)();
     }
 
     void operator () (error_code ec = error_code{}, std::size_t = 0) {
@@ -168,16 +153,16 @@ struct async_send_query_params_op {
         }
     }
 
-    using executor_type = std::decay_t<decltype(impl::get_executor(ctx_))>;
+    using executor_type = std::decay_t<decltype(asio::get_associated_executor(get_handler(ctx_)))>;
 
     executor_type get_executor() const noexcept {
-        return impl::get_executor(ctx_);
+        return asio::get_associated_executor(get_handler(ctx_));
     }
 
-    using allocator_type = std::decay_t<decltype(impl::get_allocator(ctx_))>;
+    using allocator_type = std::decay_t<decltype(asio::get_associated_allocator(get_handler(ctx_)))>;
 
     allocator_type get_allocator() const noexcept {
-        return impl::get_allocator(ctx_);
+        return asio::get_associated_allocator(get_handler(ctx_));
     }
 };
 
@@ -212,7 +197,7 @@ struct async_get_result_op : boost::asio::coroutine {
     : ctx_(ctx), process_(process) {}
 
     void perform() {
-        post(ctx_, *this);
+        (*this)();
     }
 
     void done() {
@@ -314,16 +299,16 @@ struct async_get_result_op : boost::asio::coroutine {
         done();
     }
 
-    using executor_type = std::decay_t<decltype(impl::get_executor(ctx_))>;
+    using executor_type = std::decay_t<decltype(asio::get_associated_executor(get_handler(ctx_)))>;
 
     executor_type get_executor() const noexcept {
-        return impl::get_executor(ctx_);
+        return asio::get_associated_executor(get_handler(ctx_));
     }
 
-    using allocator_type = std::decay_t<decltype(impl::get_allocator(ctx_))>;
+    using allocator_type = std::decay_t<decltype(asio::get_associated_allocator(get_handler(ctx_)))>;
 
     allocator_type get_allocator() const noexcept {
-        return impl::get_allocator(ctx_);
+        return asio::get_associated_allocator(get_handler(ctx_));
     }
 };
 
