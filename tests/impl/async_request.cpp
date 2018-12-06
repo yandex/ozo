@@ -50,18 +50,13 @@ TEST_F(async_request_op, should_set_timer_and_send_query_params_and_get_result_a
     EXPECT_CALL(connection, set_nonblocking()).InSequence(s).WillOnce(Return(0));
     EXPECT_CALL(connection, send_query_params()).InSequence(s).WillOnce(Return(1));
 
-    EXPECT_CALL(executor, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
-    EXPECT_CALL(strand, dispatch(_)).InSequence(s).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(connection, flush_output()).InSequence(s).WillOnce(Return(ozo::impl::query_state::send_finish));
 
     // Get result
-    EXPECT_CALL(executor, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
-    EXPECT_CALL(strand, dispatch(_)).InSequence(s).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(connection, is_busy()).InSequence(s).WillOnce(Return(false));
     EXPECT_CALL(connection, get_result()).InSequence(s).WillOnce(Return(boost::none));
 
     // Cancel timer
-    EXPECT_CALL(strand, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(timer, cancel()).InSequence(s).WillOnce(Return(1));
 
     // Call client handler
@@ -87,11 +82,12 @@ TEST_F(async_request_op, should_cancel_socket_on_timeout) {
     // Send query params
     EXPECT_CALL(connection, set_nonblocking()).InSequence(s).WillOnce(Return(0));
     EXPECT_CALL(connection, send_query_params()).InSequence(s).WillOnce(Return(1));
+    EXPECT_CALL(connection, flush_output()).InSequence(s).WillOnce(Return(ozo::impl::query_state::send_finish));
 
-    EXPECT_CALL(executor, post(_)).InSequence(s).WillOnce(Return());
 
-    // Get result
-    EXPECT_CALL(executor, post(_)).InSequence(s).WillOnce(Return());
+    EXPECT_CALL(connection, is_busy()).InSequence(s).WillOnce(Return(true));
+    EXPECT_CALL(socket, async_read_some(_)).InSequence(s).WillOnce(InvokeArgument<0>(error_code {}));
+    EXPECT_CALL(strand, post(_)).InSequence(s).WillOnce(Return());
 
     ozo::impl::make_async_request_op(fake_query {}, timeout, [] (auto, auto) {}, wrap(callback))(error_code {}, conn);
 }

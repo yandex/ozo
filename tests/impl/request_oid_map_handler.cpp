@@ -35,6 +35,10 @@ struct connection_wrapper {
         return conn.oid_map_;
     }
 
+    friend OidMap& get_oid_map(connection_wrapper&& conn) {
+        return conn.oid_map_;
+    }
+
     template <typename Handler>
     friend void request_oid_map(connection_wrapper c, Handler&&) {
         c.mock_.request_oid_map();
@@ -61,7 +65,7 @@ TEST_F(request_oid_map_handler, should_request_for_oid_when_oid_map_is_not_empty
 
     EXPECT_CALL(connection, request_oid_map()).WillOnce(Return());
 
-    ozo::impl::make_request_oid_map_handler(wrap(callback))(error_code{}, std::move(conn));
+    ozo::impl::make_request_oid_map_handler<decltype(conn)>(wrap(callback))(error_code{}, std::move(conn));
 }
 
 TEST_F(request_oid_map_handler, should_not_request_for_oid_when_oid_map_is_not_empty_but_error_occured) {
@@ -71,7 +75,7 @@ TEST_F(request_oid_map_handler, should_not_request_for_oid_when_oid_map_is_not_e
     EXPECT_CALL(callback, call(error_code{error::error}, _))
         .WillOnce(Return());
 
-    ozo::impl::make_request_oid_map_handler(wrap(callback))(error::error, std::move(conn));
+    ozo::impl::make_request_oid_map_handler<decltype(conn)>(wrap(callback))(error::error, std::move(conn));
 }
 
 TEST_F(request_oid_map_handler, should_not_request_for_oid_when_oid_map_ist_empty) {
@@ -80,7 +84,7 @@ TEST_F(request_oid_map_handler, should_not_request_for_oid_when_oid_map_ist_empt
 
     EXPECT_CALL(callback, call(error_code{}, _)).WillOnce(Return());
 
-    ozo::impl::make_request_oid_map_handler(wrap(callback))(error_code{}, std::move(conn));
+    ozo::impl::make_request_oid_map_handler<decltype(conn)>(wrap(callback))(error_code{}, std::move(conn));
 }
 
 } // namespace
