@@ -23,6 +23,7 @@ TEST(transaction, create_schema_in_transaction_and_commit_then_table_should_exis
 
     asio::spawn(io, [&] (asio::yield_context yield) {
         auto transaction = ozo::begin(ozo::make_connector(conn_info, io), yield);
+        ASSERT_TRUE(transaction);
         ozo::result result;
         ozo::request(transaction, "DROP SCHEMA IF EXISTS ozo_test CASCADE;"_SQL, std::ref(result), yield);
         ozo::request(transaction, "CREATE SCHEMA ozo_test;"_SQL, std::ref(result), yield);

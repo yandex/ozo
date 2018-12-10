@@ -36,4 +36,15 @@ TEST_F(impl_transaction, when_destruct_last_copy_without_connection_should_not_c
     ozo::impl::make_transaction(std::move(conn)).take_connection(conn);
 }
 
+TEST_F(impl_transaction, should_be_able_to_convert_to_bool) {
+    ozo::impl::transaction<decltype(conn)> t;
+    EXPECT_FALSE(static_cast<bool>(t));
+}
+
+TEST_F(impl_transaction, has_connection_when_constructed_with) {
+    EXPECT_CALL(socket, close(_)).WillOnce(Return());
+
+    EXPECT_TRUE(ozo::impl::make_transaction(std::move(conn)).has_connection());
+}
+
 } // namespace

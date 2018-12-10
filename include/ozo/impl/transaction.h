@@ -27,6 +27,14 @@ public:
         impl.reset();
     }
 
+    bool has_connection() const {
+        return impl != nullptr && impl->has_connection();
+    }
+
+    operator bool() const {
+        return has_connection();
+    }
+
     friend auto& unwrap_connection(transaction& self) noexcept {
         return unwrap_connection(*self.impl->connection);
     }
@@ -40,6 +48,10 @@ private:
         __OZO_STD_OPTIONAL<T> connection;
 
         impl_type(T&& connection) : connection(std::move(connection)) {}
+
+        bool has_connection() const {
+            return connection.has_value() && static_cast<bool>(connection);
+        }
     };
 
     std::shared_ptr<impl_type> impl;
