@@ -6,6 +6,8 @@ namespace ozo::impl {
 
 template <typename T>
 class transaction {
+    friend unwrap_connection_impl<transaction>;
+
 public:
     static_assert(Connection<T>, "T is not a Connection");
 
@@ -35,14 +37,6 @@ public:
         return has_connection();
     }
 
-    friend auto& unwrap_connection(transaction& self) noexcept {
-        return unwrap_connection(*self.impl->connection);
-    }
-
-    friend const auto& unwrap_connection(const transaction& self) noexcept {
-        return unwrap_connection(*self.impl->connection);
-    }
-
 private:
     struct impl_type {
         __OZO_STD_OPTIONAL<T> connection;
@@ -63,3 +57,15 @@ auto make_transaction(T&& conn) {
 }
 
 } // namespace ozo::impl
+
+namespace ozo {
+
+template <typename T>
+struct unwrap_connection_impl<impl::transaction<T>> {
+    template <typename Transaction>
+    static constexpr decltype(auto) apply(Transaction&& self) noexcept {
+        return unwrap_connection(*self.impl->connection);
+    }
+};
+
+} // namespace ozo
