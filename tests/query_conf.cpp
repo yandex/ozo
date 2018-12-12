@@ -690,7 +690,20 @@ TEST(query_repository_make_query, should_return_query_for_struct_parameters_pass
     );
     const struct_parameters parameters {std::string_view("42"), 13};
     EXPECT_EQ(
-        repository.make_query<query_with_struct_parameters>(parameters),
+        repository.make_query<query_with_struct_parameters>(static_cast<const struct_parameters&>(parameters)),
+        ozo::make_query("SELECT $1::text || $2::text", std::string_view("42"), 13)
+    );
+}
+
+TEST(query_repository_make_query, should_return_query_for_struct_parameters_passed_by_reference) {
+    const auto repository = ozo::make_query_repository(
+        "-- name: query with struct parameters\n"
+        "SELECT :string::text || :number::text",
+        hana::tuple<query_with_struct_parameters>()
+    );
+    struct_parameters parameters {std::string_view("42"), 13};
+    EXPECT_EQ(
+        repository.make_query<query_with_struct_parameters>(static_cast<struct_parameters&>(parameters)),
         ozo::make_query("SELECT $1::text || $2::text", std::string_view("42"), 13)
     );
 }
