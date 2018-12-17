@@ -62,6 +62,11 @@ struct execution_context : asio::execution_context {
         explicit executor_type(execution_context& context)
         : context_(&context){}
 
+        explicit executor_type(executor_mock& impl)
+        : impl_(&impl) {}
+
+        executor_type() = default;
+
         execution_context& context() const noexcept {
             return *context_;
         }

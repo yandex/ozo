@@ -46,6 +46,14 @@ inline error_code pq_result_error(const pg_result& res) noexcept {
 
 using ozo::empty_oid_map;
 
+struct cancel_handle_mock {
+    MOCK_METHOD0(dispatch_cancel, std::tuple<error_code, std::string>());
+
+    friend auto dispatch_cancel(cancel_handle_mock* self) {
+        return self->dispatch_cancel();
+    }
+};
+
 struct connection_mock {
     MOCK_METHOD0(set_nonblocking, int());
     MOCK_METHOD0(send_query_params, int());
@@ -61,7 +69,7 @@ struct connection_mock {
     MOCK_METHOD0(async_execute, void());
     MOCK_METHOD0(request_oid_map, void());
     MOCK_METHOD0(rebind_io_context, ozo::error_code());
-
+    MOCK_METHOD0(get_cancel_handle, cancel_handle_mock*());
 };
 
 using connection_gmock = connection_mock;
@@ -146,6 +154,10 @@ struct connection {
 
     friend ozo::error_code pq_assign_socket(connection& c) {
         return c.mock_->assign_socket();
+    }
+
+    friend decltype(auto) get_cancel_handle(connection& c) {
+        return c.mock_->get_cancel_handle();
     }
 
     template <typename Q, typename Out, typename Handler>

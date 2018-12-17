@@ -7,8 +7,8 @@ namespace ozo {
 
 /**
  * @brief None type
+ * None type modelling void as ordinary type. This type is callable with return type void.
  * @ingroup group-core-types
- * None type modelling void as ordinary type. This type is collable with return type void.
  */
 struct none_t {
     using type = void;
