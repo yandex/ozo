@@ -56,8 +56,12 @@ struct deadline_handler : Test {
 };
 
 TEST_F(deadline_handler, should_call_timeout_handler_on_timeout) {
+    ozo::tests::executor_gmock on_deadline_executor;
     EXPECT_CALL(timer, async_wait(_)).WillOnce(InvokeArgument<0>(ozo::error_code{}));
     EXPECT_CALL(strand, post(_)).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(on_deadline, get_executor())
+        .WillOnce(Return(ozo::tests::executor{on_deadline_executor, io}));
+    EXPECT_CALL(on_deadline_executor, dispatch(_)).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(on_deadline, call(_));
     using ozo::tests::wrap;
     ozo::detail::deadline_handler(io, ozo::time_traits::time_point{}, wrap(continuation), wrap(on_deadline));

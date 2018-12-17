@@ -28,7 +28,7 @@ int main(int argc, char **argv) {
     const auto coroutine = [&] (asio::yield_context yield) {
         // The next step is bind asio::io_context with ConnectionSource to setup executor for all
         // callbacks. Default connection is a ConnectionProvider. If there is some problem with network
-        // or database we don't want to wait indefinetely, so we establish connect timeout.
+        // or database we don't want to wait endlessly, so we establish connect timeout.
         const std::chrono::seconds connect_timeout(1);
         const auto connector = ozo::make_connector(connection_info, io, connect_timeout);
 
@@ -80,7 +80,7 @@ int main(int argc, char **argv) {
     };
 
     // All IO is asynchronous, therefore we have a choice here, what should be our CompletionToken.
-    // We use Boost.Coroutines to write asynchronouse code in synchronouse style. Coroutine will be
+    // We use Boost.Coroutines to write asynchronous code in synchronouse style. Coroutine will be
     // called after io.run() is called.
     asio::spawn(io, coroutine);
 

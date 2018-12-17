@@ -48,7 +48,7 @@ private:
 
         void operator() (error_code ec) {
             if (ec != asio::error::operation_aborted) {
-                target_(ec);
+                asio::dispatch(ozo::detail::bind(std::move(target_), std::move(ec)));
             }
         }
 
