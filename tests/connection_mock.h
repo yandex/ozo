@@ -17,6 +17,7 @@ struct native_handle {
     bool operator == (state rhs) const { return state_ == rhs; }
 
     native_handle(state s) : state_(s) {}
+    native_handle(state s, PGTransactionStatusType status) : state_(s), status_(status) {}
     native_handle() = default;
     state state_;
     PGTransactionStatusType status_ = PQTRANS_UNKNOWN;
