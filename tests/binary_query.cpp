@@ -95,6 +95,12 @@ TEST_F(binary_query_values, for_string_value_should_be_equal_to_input) {
         ElementsAre('s', 't', 'r', 'i', 'n', 'g'));
 }
 
+TEST_F(binary_query_values, with_strong_typedef_wrapped_type_should_be_represented_as_underlying_type) {
+    const auto query = ozo::make_binary_query("", hana::make_tuple(ozo::pg::bytea({1,2,3,4})));
+    EXPECT_THAT(std::vector<char>(query.values()[0], query.values()[0] + 4),
+        ElementsAre(1, 2, 3, 4));
+}
+
 TEST_F(binary_query_values, for_nullptr_should_be_equal_to_nullptr) {
     const auto query = ozo::make_binary_query("", hana::make_tuple(nullptr));
     EXPECT_EQ(query.values()[0], nullptr);

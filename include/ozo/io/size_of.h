@@ -72,6 +72,9 @@ struct size_of_default_impl<T, Require<DynamicSize<T>>> {
 template <typename T, typename = std::void_t<>>
 struct size_of_impl_dispatcher { using type = size_of_impl<std::decay_t<T>>; };
 
+template <typename T, typename Tag>
+struct size_of_impl_dispatcher<ozo::strong_typedef_wrapper<T, Tag>> : size_of_impl_dispatcher<T> {};
+
 template <typename T>
 using get_size_of_impl = typename size_of_impl_dispatcher<unwrap_type<T>>::type;
 
