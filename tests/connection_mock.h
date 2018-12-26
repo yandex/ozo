@@ -8,11 +8,29 @@
 
 namespace ozo::tests {
 
-enum class native_handle {bad, good};
+struct native_handle {
+    enum state {bad, good};
+    native_handle& operator = (state v) {
+        state_ = v;
+        return *this;
+    }
+    bool operator == (state rhs) const { return state_ == rhs; }
+
+    native_handle(state s) : state_(s) {}
+    native_handle(state s, PGTransactionStatusType status) : state_(s), status_(status) {}
+    native_handle() = default;
+    state state_;
+    PGTransactionStatusType status_ = PQTRANS_UNKNOWN;
+};
 
 inline bool connection_status_bad(const native_handle* h) {
     return *h == native_handle::bad;
 }
+
+inline PGTransactionStatusType PQtransactionStatus(const native_handle* h) {
+    return h->status_;
+}
+
 struct pg_result {
     ExecStatusType status;
     error_code error;

@@ -398,7 +398,7 @@ constexpr auto Connection = is_connection<std::decay_t<T>>::value;
  * In common cases you do not need this function. It's purpose is to support
  * extention and customization of the library. See get_native_handle for details.
  *
- * @param conn --- #Connection objec
+ * @param conn --- #Connection object
  * @return refernce to a wrapped PostgreSQL connection handle
  */
 template <typename T>
@@ -530,7 +530,7 @@ inline std::string_view error_message(T&& conn) {
 /**
  * @brief Gives additional error context from OZO
  *
- * Like libpq OZO provides additional context for different errors which
+ * In parallel with libpq OZO provides additional context for different errors which
  * can be while interacting via connection. This function gives access for
  * such context.
  *

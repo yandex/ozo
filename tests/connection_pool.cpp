@@ -108,8 +108,39 @@ TEST_F(pooled_connection, should_call_handle_waste_on_destruction_if_handle_is_n
     }
 }
 
-TEST_F(pooled_connection, should_call_nothing_on_destruction_if_handle_is_not_empty_and_connection_is_good) {
-    auto conn = make_connection(native_handle::good);
+namespace with_params {
+
+struct pooled_connection : ::pooled_connection,
+        testing::WithParamInterface<PGTransactionStatusType> {
+};
+
+TEST_P(pooled_connection, should_call_handle_waste_on_destruction_if_connection_is_good_and_not_idle) {
+    auto conn = make_connection({native_handle::good, GetParam()});
+
+    EXPECT_CALL(handle_mock, value()).WillRepeatedly(ReturnRef(conn));
+    EXPECT_CALL(handle_mock, empty()).WillRepeatedly(Return(false));
+    EXPECT_CALL(handle_mock, waste()).WillOnce(Return());
+
+    {
+        impl p(connection_pool::handle{&handle_mock});
+    }
+}
+
+INSTANTIATE_TEST_CASE_P(
+    with_not_PQTRANS_IDLE_transaction_status,
+    pooled_connection,
+    testing::Values(
+        PQTRANS_UNKNOWN,
+        PQTRANS_ACTIVE,
+        PQTRANS_INTRANS,
+        PQTRANS_INERROR
+    )
+);
+
+} // namespace with_params
+
+TEST_F(pooled_connection, should_call_nothing_on_destruction_if_handle_is_not_empty_connection_is_good_and_idle) {
+    auto conn = make_connection({native_handle::good, PQTRANS_IDLE});
 
     EXPECT_CALL(handle_mock, value()).WillRepeatedly(ReturnRef(conn));
     EXPECT_CALL(handle_mock, empty()).WillRepeatedly(Return(false));
@@ -175,7 +206,7 @@ TEST_F(pooled_connection_wrapper, should_invoke_handler_with_error_if_error_is_p
 }
 
 TEST_F(pooled_connection_wrapper, should_invoke_handler_if_passed_connection_is_good_and_handle_is_not_empty) {
-    auto conn = make_connection(native_handle::good);
+    auto conn = make_connection({native_handle::good, PQTRANS_IDLE});
 
     auto h = ozo::impl::wrap_pooled_connection_handler(
             io,
@@ -196,7 +227,7 @@ TEST_F(pooled_connection_wrapper, should_call_async_get_connection_and_invoke_ha
     auto bad_conn = make_connection(native_handle::bad);
 
     auto good_conn = make_connection();
-    good_conn->handle_ = std::make_unique<native_handle>(native_handle::good);
+    good_conn->handle_ = std::make_unique<native_handle>(native_handle::good, PQTRANS_IDLE);
 
     auto h = ozo::impl::wrap_pooled_connection_handler(
             io,

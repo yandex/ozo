@@ -1,6 +1,7 @@
 #pragma once
 
 #include <ozo/connection.h>
+#include <ozo/transaction_status.h>
 #include <yamail/resource_pool/async/pool.hpp>
 #include <ozo/asio.h>
 #include <ozo/ext/std/shared_ptr.h>
@@ -31,7 +32,8 @@ struct pooled_connection {
     }
 
     ~pooled_connection() {
-        if (!empty() && connection_bad(*this)) {
+        if (!empty() && (connection_bad(*this)
+                || get_transaction_status(*this) != transaction_status::idle)) {
             handle_.waste();
         }
     }
