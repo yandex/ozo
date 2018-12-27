@@ -85,11 +85,6 @@ TEST_F(send, with_std_vector_of_float_should_store_with_one_dimension_array_head
     }));
 }
 
-TEST_F(send, should_convert_pg_name_as_string) {
-    ozo::send(os, oid_map, ozo::pg::name {"name"});
-    EXPECT_THAT(buffer, ElementsAre('n', 'a', 'm', 'e'));
-}
-
 TEST_F(send, should_send_nothing_for_std_nullptr_t) {
     ozo::send(os, oid_map, nullptr);
     EXPECT_TRUE(buffer.empty());
@@ -118,6 +113,46 @@ TEST(send_impl, should_send_nothing_for_std_nullopt_t) {
 
     ozo::send_impl<__OZO_NULLOPT_T>::apply(os, oid_map, __OZO_NULLOPT);
     EXPECT_TRUE(buffer.empty());
+}
+
+struct send_frame : Test {
+    using buffer_t = std::vector<char>;
+    buffer_t buffer;
+    ozo::detail::ostreambuf obuf{buffer};
+    ozo::ostream os{&obuf};
+
+    ozo::empty_oid_map oid_map;
+    auto buffer_range(int pos, int count) {
+        const auto first = buffer.begin() + pos;
+        const auto end = first + count;
+        return boost::make_iterator_range(first, end);
+    }
+
+    auto oid_buffer() {
+        return buffer_range(0, 4);
+    }
+
+    auto size_buffer() {
+        return buffer_range(4, 4);
+    }
+
+    auto data_buffer() {
+        return boost::make_iterator_range(buffer.begin() + 8, buffer.end());
+    }
+};
+
+TEST_F(send_frame, should_write_pg_bytea_as_binary_byte_buffer) {
+    ozo::send_frame(os, oid_map, ozo::pg::bytea({0,1,2,3,4,5,6,7,8,9,0}));
+    EXPECT_THAT(oid_buffer(), ElementsAreArray({0x00, 0x00, 0x00, 0x11}));
+    EXPECT_THAT(size_buffer(), ElementsAreArray({0x00, 0x00, 0x00, 0x0B}));
+    EXPECT_THAT(data_buffer(), ElementsAreArray({0,1,2,3,4,5,6,7,8,9,0}));
+}
+
+TEST_F(send_frame, should_write_pg_name_as_string) {
+    ozo::send_frame(os, oid_map, ozo::pg::name {"name"});
+    EXPECT_THAT(oid_buffer(), ElementsAreArray({0x00, 0x00, 0x00, 0x13}));
+    EXPECT_THAT(size_buffer(), ElementsAreArray({0x00, 0x00, 0x00, 0x04}));
+    EXPECT_THAT(data_buffer(), ElementsAre('n', 'a', 'm', 'e'));
 }
 
 } // namespace
