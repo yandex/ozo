@@ -287,4 +287,26 @@ TEST(request, should_send_custom_composite) {
     io.run();
 }
 
+TEST(result, should_send_bytea_properly) {
+    using namespace ozo::literals;
+    using namespace boost::hana::literals;
+
+    ozo::io_context io;
+    ozo::connection_info<> conn_info(OZO_PG_TEST_CONNINFO);
+
+    std::vector<std::tuple<ozo::pg::bytea>> res;
+    const std::string foo = "foo";
+    auto arr = ozo::pg::bytea({0,1,2,3,4,5,6,7,8,9,0,0});
+    EXPECT_EQ(std::size(arr.get())* sizeof(decltype(*arr.get().begin())), ozo::size_of(arr));
+    ozo::request(ozo::make_connector(conn_info, io), "SELECT "_SQL + arr, std::back_inserter(res),
+            [&](ozo::error_code ec, auto conn) {
+        ASSERT_FALSE(ec);
+        ASSERT_TRUE(conn);
+        ASSERT_EQ(1u, res.size());
+        ASSERT_EQ(std::get<0>(res[0]).get(), std::vector<char>({0,1,2,3,4,5,6,7,8,9,0,0}));
+    });
+
+    io.run();
+}
+
 } // namespace
