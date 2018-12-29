@@ -14,7 +14,7 @@ public:
     transaction() = default;
 
     transaction(T connection)
-            : impl(std::make_shared<impl_type>(std::move(connection))) {}
+            : impl(is_null(connection) ? nullptr : std::make_shared<impl_type>(std::move(connection))) {}
 
     ~transaction() {
         const auto c = std::move(impl);
