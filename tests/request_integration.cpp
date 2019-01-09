@@ -309,4 +309,28 @@ TEST(result, should_send_bytea_properly) {
     io.run();
 }
 
+TEST(request, should_send_empty_optional) {
+    using namespace ozo::literals;
+    using namespace std::string_literals;
+    using namespace std::string_view_literals;
+    namespace asio = boost::asio;
+
+    ozo::io_context io;
+    const ozo::connection_info<> conn_info(OZO_PG_TEST_CONNINFO);
+    const auto timeout = ozo::time_traits::duration::max();
+    __OZO_STD_OPTIONAL<std::int32_t> value;
+
+    ozo::rows_of<__OZO_STD_OPTIONAL<std::int32_t>> result;
+    std::atomic_flag called {};
+    ozo::request(ozo::make_connector(conn_info, io), "SELECT "_SQL + value + "::integer"_SQL, timeout, ozo::into(result),
+            [&](ozo::error_code ec, auto conn) {
+        EXPECT_FALSE(called.test_and_set());
+        ASSERT_REQUEST_OK(ec, conn);
+        EXPECT_THAT(result, ElementsAre(value));
+        EXPECT_FALSE(ozo::connection_bad(conn));
+    });
+
+    io.run();
+}
+
 } // namespace
