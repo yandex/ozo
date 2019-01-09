@@ -327,7 +327,8 @@ TEST_F(async_connect, should_cancel_timer_when_operation_is_done_before_timeout)
     *f.conn->handle_ = native_handle::good;
 
     StrictMock<callback_gmock<decltype(f.conn)>> callback{};
-    EXPECT_CALL(callback, get_executor()).WillRepeatedly(Return(ozo::tests::executor {&f.callback_executor}));
+    execution_context cb_io {f.callback_executor};
+    EXPECT_CALL(callback, get_executor()).WillRepeatedly(Return(cb_io.get_executor()));
     EXPECT_CALL(f.strand_service, get_executor()).WillRepeatedly(ReturnRef(f.strand));
 
     Sequence s;
@@ -358,7 +359,8 @@ TEST_F(async_connect, should_request_oid_map_when_oid_map_is_not_empty) {
 
     *conn->handle_ = native_handle::good;
 
-    EXPECT_CALL(callback, get_executor()).WillRepeatedly(Return(ozo::tests::executor {&f.callback_executor}));
+    execution_context cb_io {f.callback_executor};
+    EXPECT_CALL(callback, get_executor()).WillRepeatedly(Return(cb_io.get_executor()));
     EXPECT_CALL(f.strand_service, get_executor()).WillRepeatedly(ReturnRef(f.strand));
 
     Sequence s;
