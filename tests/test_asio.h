@@ -7,6 +7,7 @@
 
 #include <boost/asio/post.hpp>
 #include <boost/asio/executor.hpp>
+#include <boost/asio/bind_executor.hpp>
 
 #include <gmock/gmock.h>
 
@@ -41,102 +42,73 @@ auto wrap_shared(Function&& f) {
     return shared_wrapper<std::decay_t<Function>> {std::make_shared<std::decay_t<Function>>(std::forward<Function>(f))};
 }
 
-struct io_context;
-
-struct executor {
-    const executor_mock* impl = nullptr;
-    io_context* context_ = nullptr;
-
-    io_context& context() const noexcept {
-        return *context_;
-    }
-
-    void on_work_started() const {}
-
-    void on_work_finished() const {}
-
-    template <typename Function>
-    void dispatch(Function&& f, std::allocator<void>) const {
-        return impl->dispatch(wrap_shared(std::forward<Function>(f)));
-    }
-
-    template <typename Function>
-    void post(Function&& f, std::allocator<void>) const {
-        return impl->post(wrap_shared(std::forward<Function>(f)));
-    }
-
-    template <typename Function>
-    void defer(Function&& f, std::allocator<void>) const {
-        return impl->defer(wrap_shared(std::forward<Function>(f)));
-    }
-
-    friend bool operator ==(const executor& lhs, const executor& rhs) {
-        return lhs.context_ == rhs.context_ && lhs.impl == rhs.impl;
-    }
-};
-
 struct strand_executor_service_mock {
     virtual ~strand_executor_service_mock() = default;
-    virtual executor_mock& get_executor() const = 0;
+    virtual executor_mock& get_executor() = 0;
 };
 
 struct strand_executor_service_gmock : strand_executor_service_mock {
-    MOCK_CONST_METHOD0(get_executor, executor_mock& ());
+    MOCK_METHOD0(get_executor, executor_mock& ());
 };
 
-struct io_context : asio::execution_context {
-    using executor_type = executor;
+struct execution_context : asio::execution_context {
+    struct executor_type {
+        executor_mock* impl_ = nullptr;
+        execution_context* context_ = nullptr;
 
-    executor_type executor_;
+        executor_type(executor_mock& impl, execution_context& context)
+        : impl_(&impl), context_(&context){}
+
+        execution_context& context() const noexcept {
+            return *context_;
+        }
+
+        void on_work_started() const {}
+
+        void on_work_finished() const {}
+
+        template <typename Function>
+        void dispatch(Function&& f, std::allocator<void>) const {
+            return impl_->dispatch(wrap_shared(std::forward<Function>(f)));
+        }
+
+        template <typename Function>
+        void post(Function&& f, std::allocator<void>) const {
+            return impl_->post(wrap_shared(std::forward<Function>(f)));
+        }
+
+        template <typename Function>
+        void defer(Function&& f, std::allocator<void>) const {
+            return impl_->defer(wrap_shared(std::forward<Function>(f)));
+        }
+
+        friend bool operator ==(const executor_type& lhs, const executor_type& rhs) {
+            return lhs.context_ == rhs.context_ && lhs.impl_ == rhs.impl_;
+        }
+    };
+
+    executor_mock* executor_ = nullptr;
     strand_executor_service_mock* strand_service_ = nullptr;
 
-    io_context() = default;
+    execution_context() = default;
 
-    io_context(const executor_mock& executor)
-        : executor_ {&executor, this} {}
+    execution_context(executor_mock& executor)
+        : executor_ {&executor} {}
 
-    io_context(const executor_mock& executor, strand_executor_service_mock& strand_service)
-        : executor_ {&executor, this}, strand_service_(&strand_service) {}
+    execution_context(executor_mock& executor, strand_executor_service_mock& strand_service)
+        : executor_ {&executor}, strand_service_(&strand_service) {}
 
-    auto get_executor() const noexcept {
-        return executor_;
+    executor_type get_executor() {
+        if (!executor_) {
+            throw std::logic_error("ozo::testing::execution_context::get_executor() bad executor mock");
+        }
+        return {*executor_, *this};
     }
 };
 
-struct strand {
-    io_context& context_;
-    executor_mock& executor_;
-
-    explicit strand(io_context& context)
-        : context_(context), executor_(context.strand_service_->get_executor()) {}
-
-    io_context& context() const noexcept {
-        return context_;
-    }
-
-    void on_work_started() const {}
-
-    void on_work_finished() const {}
-
-    template <typename Function, typename Allocator>
-    void dispatch(Function&& f, Allocator) const {
-        return executor_.dispatch(wrap_shared(std::forward<Function>(f)));
-    }
-
-    template <typename Function, typename Allocator>
-    void post(Function&& f, Allocator) const {
-        return executor_.post(wrap_shared(std::forward<Function>(f)));
-    }
-
-    template <typename Function, typename Allocator>
-    void defer(Function&& f, Allocator) const {
-        return executor_.defer(wrap_shared(std::forward<Function>(f)));
-    }
-
-    friend bool operator ==(const strand& lhs, const strand& rhs) {
-        return &lhs.executor_ == &rhs.executor_;
-    }
-};
+using io_context = execution_context;
+using executor = execution_context::executor_type;
+using strand = executor;
 
 struct stream_descriptor_mock {
     virtual void async_write_some(std::function<void(error_code)> handler) = 0;
@@ -226,10 +198,10 @@ namespace detail {
 
 template <>
 struct strand_executor<ozo::tests::executor> {
-    using type = ozo::tests::strand;
+    using type = ozo::tests::executor;
 
     static auto get(const tests::executor& ex) {
-        return type{ex.context()};
+        return type{ex.context().strand_service_->get_executor(), ex.context()};
     }
 };
 
@@ -274,15 +246,17 @@ template <typename M>
 struct callback_handler {
     using executor_type = typename M::executor_type;
 
-    M& mock_;
+    M* mock_ = nullptr;
+
+    callback_handler(M& mock) : mock_(std::addressof(mock)) {}
 
     template <typename ...Args>
     void operator ()(ozo::error_code ec, Args&&... args) const {
-        mock_.call(ec, std::forward<Args>(args)...);
+        mock_->call(ec, std::forward<Args>(args)...);
     }
 
     auto get_executor() const noexcept {
-        return mock_.get_executor();
+        return mock_->get_executor();
     }
 };
 
@@ -299,6 +273,21 @@ inline callback_handler<callback_gmock<Ts...>> wrap(callback_gmock<Ts...>& mock)
 template <typename ...Ts>
 inline callback_handler<callback_gmock<Ts...>> wrap(testing::StrictMock<callback_gmock<Ts...>>& mock) {
     return {mock};
+}
+
+template <typename T, typename Executor>
+inline auto wrap(T& mock, const Executor& e) {
+    return asio::bind_executor(e, callback_handler<typename T::type>{object(mock)});
+}
+
+template <typename Executor, typename ...Ts>
+inline auto wrap(callback_gmock<Ts...>& mock, const Executor& e) {
+    return asio::bind_executor(e, callback_handler<callback_gmock<Ts...>>{mock});
+}
+
+template <typename Executor, typename ...Ts>
+inline auto wrap(testing::StrictMock<callback_gmock<Ts...>>& mock, const Executor& e) {
+    return asio::bind_executor(e, callback_handler<callback_gmock<Ts...>>{mock});
 }
 
 } // namespace tests

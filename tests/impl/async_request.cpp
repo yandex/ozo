@@ -30,6 +30,7 @@ struct async_request_op : Test {
     StrictMock<stream_descriptor_gmock> socket {};
     StrictMock<steady_timer_gmock> timer {};
     io_context io {executor, strand_service};
+    execution_context cb_io {callback_executor};
     decltype(make_connection(connection, io, socket, timer)) conn =
             make_connection(connection, io, socket, timer);
     time_traits::duration timeout {42};
@@ -38,7 +39,7 @@ struct async_request_op : Test {
 TEST_F(async_request_op, should_set_timer_and_send_query_params_and_get_result_and_call_handler) {
 
     EXPECT_CALL(strand_service, get_executor()).WillRepeatedly(ReturnRef(strand));
-    EXPECT_CALL(callback, get_executor()).WillRepeatedly(Return(ozo::tests::executor {&callback_executor}));
+    EXPECT_CALL(callback, get_executor()).WillRepeatedly(Return(cb_io.get_executor()));
 
     Sequence s;
 
