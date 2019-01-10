@@ -125,7 +125,7 @@ struct size_of_impl : detail::size_of_default_impl<T> {};
  */
 template <typename T>
 constexpr size_type data_frame_size(const T& v) {
-    return sizeof(ozo::size_type) + size_of(v);
+    return sizeof(ozo::size_type) + std::max(size_of(v), 0);
 }
 
 /**

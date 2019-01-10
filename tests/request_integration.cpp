@@ -11,6 +11,7 @@
 #include <gmock/gmock.h>
 
 namespace ozo::tests {
+
 struct custom_type {
     std::int16_t number;
     std::string text;
@@ -24,11 +25,29 @@ static std::ostream& operator << (std::ostream& s, const custom_type& v) {
     return s << '(' << v.number << ",\"" << v.text <<"\")";
 }
 
+struct with_optional {
+    __OZO_STD_OPTIONAL<std::int32_t> value;
+};
+
+static bool operator ==(const with_optional& lhs, const with_optional& rhs) {
+    return lhs.value == rhs.value;
+}
+
+static std::ostream& operator <<(std::ostream& s, const with_optional& v) {
+    if (v.value) {
+        return s << *v.value;
+    } else {
+        return s << "none";
+    }
+}
+
 } // namespace ozo::tests
 
 BOOST_FUSION_ADAPT_STRUCT(ozo::tests::custom_type, number, text)
+BOOST_FUSION_ADAPT_STRUCT(ozo::tests::with_optional, value)
 
 OZO_PG_DEFINE_CUSTOM_TYPE(ozo::tests::custom_type, "custom_type")
+OZO_PG_DEFINE_CUSTOM_TYPE(ozo::tests::with_optional, "with_optional")
 
 
 #define ASSERT_REQUEST_OK(ec, conn)\
@@ -328,6 +347,66 @@ TEST(request, should_send_empty_optional) {
         ASSERT_REQUEST_OK(ec, conn);
         EXPECT_THAT(result, ElementsAre(value));
         EXPECT_FALSE(ozo::connection_bad(conn));
+    });
+
+    io.run();
+}
+
+TEST(request, should_send_and_receive_empty_optional) {
+    using namespace ozo::literals;
+    using namespace std::string_literals;
+    using namespace std::string_view_literals;
+    namespace asio = boost::asio;
+
+    ozo::io_context io;
+    const ozo::connection_info<> conn_info(OZO_PG_TEST_CONNINFO);
+    const auto timeout = ozo::time_traits::duration::max();
+    __OZO_STD_OPTIONAL<std::int32_t> value;
+
+    ozo::rows_of<__OZO_STD_OPTIONAL<std::int32_t>> result;
+    std::atomic_flag called {};
+    ozo::request(ozo::make_connector(conn_info, io), "SELECT "_SQL + value + "::integer"_SQL, timeout, ozo::into(result),
+            [&](ozo::error_code ec, auto conn) {
+        EXPECT_FALSE(called.test_and_set());
+        ASSERT_REQUEST_OK(ec, conn);
+        EXPECT_THAT(result, ElementsAre(value));
+        EXPECT_FALSE(ozo::connection_bad(conn));
+    });
+
+    io.run();
+}
+
+TEST(request, should_send_and_receive_composite_with_empty_optional) {
+    using namespace ozo::literals;
+    namespace asio = boost::asio;
+
+    ozo::io_context io;
+
+    asio::spawn(io, [&] (asio::yield_context yield) {
+        [&] {
+            const auto conn_info = ozo::make_connection_info(OZO_PG_TEST_CONNINFO);
+            ozo::error_code ec;
+            auto conn = ozo::execute(ozo::make_connector(conn_info, io),
+                "DROP TYPE IF EXISTS with_optional"_SQL, yield[ec]);
+            ASSERT_REQUEST_OK(ec, conn);
+            ozo::execute(conn, "CREATE TYPE with_optional AS (value integer)"_SQL, yield[ec]);
+            ASSERT_REQUEST_OK(ec, conn);
+        } ();
+
+        const auto conn_info = ozo::make_connection_info(
+            OZO_PG_TEST_CONNINFO,
+            ozo::register_types<with_optional>()
+        );
+
+        const with_optional value;
+        ozo::rows_of<with_optional> result;
+        ozo::error_code ec;
+        auto conn = ozo::request(ozo::make_connector(conn_info, io), "SELECT "_SQL + value + "::with_optional"_SQL,
+                                 ozo::into(result), yield[ec]);
+
+        ASSERT_REQUEST_OK(ec, conn);
+
+        EXPECT_THAT(result, ElementsAre(value));
     });
 
     io.run();
