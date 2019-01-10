@@ -57,6 +57,7 @@ constexpr auto data_size(const T& v)  -> Require<HanaStruct<T>, size_type>{
 template <typename T>
 struct size_of_composite {
     static constexpr auto apply(const T& v) {
+        using ozo::size_of;
         constexpr const auto header_size = size_of(detail::pg_composite{});
         return header_size +  data_size(v);
     }
