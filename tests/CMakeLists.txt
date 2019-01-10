@@ -83,6 +83,7 @@ set(SOURCES
     impl/transaction.cpp
     transaction_status.cpp
     impl/async_request.cpp
+    io/size_of.cpp
     main.cpp
 )
 
