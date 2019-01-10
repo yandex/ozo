@@ -44,14 +44,12 @@ constexpr auto fields_number(const T& v) -> Require<HanaStruct<T>, size_type> {
 
 template <typename T>
 constexpr auto data_size(const T& v) -> Require<FusionSequence<T>&&!HanaStruct<T>, size_type> {
-    using ozo::size_of;
     return fusion::fold(v, size_type(0),
         [&] (auto r, const auto& item) { return r + frame_size(item); });
 }
 
 template <typename T>
 constexpr auto data_size(const T& v)  -> Require<HanaStruct<T>, size_type>{
-    using ozo::size_of;
     return hana::fold(hana::members(v), size_type(0),
         [&] (auto r, const auto& item) { return r + frame_size(item); });
 }
