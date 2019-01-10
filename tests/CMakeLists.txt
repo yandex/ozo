@@ -90,11 +90,11 @@ set(SOURCES
 if(OZO_BUILD_PG_TESTS)
     set(SOURCES
         ${SOURCES}
-        result_integration.cpp
-        request_integration.cpp
-        get_connection_integration.cpp
-        execute_integration.cpp
-        transaction_integration.cpp
+        integration/result_integration.cpp
+        integration/request_integration.cpp
+        integration/get_connection_integration.cpp
+        integration/execute_integration.cpp
+        integration/transaction_integration.cpp
     )
     add_definitions(-DOZO_PG_TEST_CONNINFO="${OZO_PG_TEST_CONNINFO}")
 endif()
