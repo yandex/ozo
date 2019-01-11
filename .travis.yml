@@ -27,7 +27,7 @@ matrix:
     env: BUILD_ARGS='pg docker gcc coverage'
     after_success:
     - >
-      docker run -ti --rm -v ${PWD}:/code $(bash <(curl -s https://codecov.io/env)) \
+      docker run -ti --rm -v ${PWD}:/code $(bash -e <(curl -s https://codecov.io/env)) \
         ozo_build /codecov.sh -f "!*tests*" -f "!*error.h*" -f "!*do_nothing.h*"
 
   - os: linux
