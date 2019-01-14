@@ -28,7 +28,7 @@ matrix:
     after_success:
     - >
       docker run -ti --rm -v ${PWD}:/code $(bash -e <(curl -s https://codecov.io/env)) \
-        ozo_build /codecov.sh -f "!*tests*" -f "!*error.h*" -f "!*do_nothing.h*"
+        ozo_build /codecov.sh
 
   - os: linux
     dist: xenial
