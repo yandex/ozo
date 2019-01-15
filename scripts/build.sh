@@ -128,9 +128,10 @@ build() {
     if [[ $OZO_BUILD_PG_TESTS == "ON" ]]; then
         ${SOURCE_DIR}/scripts/wait_postgres.sh
     fi
-    ctest -V
     if [[ ${OZO_COVERAGE} == "ON" ]]; then
         make ozo_coverage
+    else
+        ctest -V
     fi
     if [[ ${OZO_TEST_EXTERNAL_PROJECT} == "ON" ]]; then
         INSTALL_DIR="${BUILD_DIR}/ozo_install"
