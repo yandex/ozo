@@ -710,13 +710,15 @@ template <typename ConnectionProvider>
 using connection_type = typename get_connection_type<std::decay_t<ConnectionProvider>>::type;
 
 template <typename T, typename = std::void_t<>>
-struct async_get_connection_impl {
+struct async_get_connection_impl_default {
     template <typename Provider, typename Handler>
-    static constexpr auto apply(Provider&& p, Handler&& h) ->
-        decltype(p.async_get_connection(std::forward<Handler>(h))) {
+    static constexpr decltype(auto) apply(Provider&& p, Handler&& h) {
         p.async_get_connection(std::forward<Handler>(h));
     }
 };
+
+template <typename Provider>
+struct async_get_connection_impl : async_get_connection_impl_default<Provider> {};
 
 template <typename, typename = std::void_t<>>
 struct is_connection_source : std::false_type {};
@@ -785,10 +787,9 @@ struct is_connection_source<T, std::void_t<decltype(
 template <typename T>
 constexpr auto ConnectionSource = is_connection_source<std::decay_t<T>>::value;
 
-template <typename T, typename Handler>
-inline auto async_get_connection(T&& provider, Handler&& handler)
-         -> decltype(async_get_connection_impl<std::decay_t<T>>::apply(std::forward<T>(provider), std::forward<Handler>(handler))) {
-    return async_get_connection_impl<std::decay_t<T>>::apply(std::forward<T>(provider), std::forward<Handler>(handler));
+template <typename Provider, typename Handler>
+constexpr decltype(auto) async_get_connection(Provider&& p, Handler&& h) {
+    return async_get_connection_impl<std::decay_t<Provider>>::apply(std::forward<Provider>(p), std::forward<Handler>(h));
 }
 
 template <typename, typename = std::void_t<>>
@@ -862,18 +863,18 @@ constexpr auto ConnectionProvider = is_connection_provider<std::decay_t<T>>::val
     void (error_code ec, connection_type<ConnectionProvider> conn);
  * @endcode
  *
- * This behaviour can be customized via `async_get_connection_impl` specialization. E.g. for #Connection
- * possible customization may looks like this (*exposition only*):
+ * This behaviour can be customized via `async_get_connection_impl` specialization. E.g. for custom implementation
+ * of #Connection customization may looks like this (*exposition only*):
  *
  * @code
-    template <typename T>
-    struct async_get_connection_impl<T, Require<Connection<T>>> {
+    template <typename ...Ts>
+    struct async_get_connection_impl<MyConnection<Ts...>> {
         template <typename Conn, typename Handler>
         static constexpr void apply(Conn&& c, Handler&& h) {
-            reset_error_context(c);
-            auto ex = get_executor(c);
-            asio::dispatch(ex, detail::bind(
-                std::forward<Handler>(h), error_code{}, std::forward<Conn>(c)));
+            c->prepareForNextOp();
+            async_get_connection_impl_default<MyConnection<Ts...>>::apply(
+                std::forward<Conn>(c), std::forward<Handler>(h)
+            );
         }
     };
  * @endcode
@@ -898,7 +899,7 @@ inline auto get_connection(T&& provider, CompletionToken&& token) {
 }
 
 template <typename T>
-struct async_get_connection_impl<T, Require<Connection<T>>> {
+struct async_get_connection_impl_default<T, Require<Connection<T>>> {
     template <typename Conn, typename Handler>
     static constexpr void apply(Conn&& c, Handler&& h) {
         reset_error_context(c);

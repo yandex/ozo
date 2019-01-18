@@ -134,8 +134,12 @@ private:
         std::size_t offset = 0;
         hana::for_each(range, [&] (auto field) {
                 const auto size = result->lengths[field];
-                result->values[field] = size ? std::data(result->buffer) + offset : nullptr;
-                offset += size;
+                if (size && size != null_state_size) {
+                    result->values[field] = std::data(result->buffer) + offset;
+                    offset += size;
+                } else {
+                    result->values[field] = nullptr;
+                }
             }
         );
         return result;

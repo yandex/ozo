@@ -47,25 +47,6 @@ inline error_code pq_result_error(const pg_result& res) noexcept {
 using ozo::empty_oid_map;
 
 struct connection_mock {
-    virtual int set_nonblocking() = 0;
-    virtual int send_query_params() = 0;
-    virtual int consume_input() = 0;
-    virtual bool is_busy() const = 0;
-    virtual ozo::impl::query_state flush_output() = 0;
-    virtual boost::optional<pg_result> get_result() = 0;
-
-    virtual int connect_poll() const = 0;
-    virtual ozo::error_code start_connection(const std::string&) = 0;
-    virtual ozo::error_code assign_socket() = 0;
-    virtual void async_request() = 0;
-    virtual void async_execute() = 0;
-    virtual void request_oid_map() = 0;
-    virtual ozo::error_code rebind_io_context() = 0;
-
-    virtual ~connection_mock() = default;
-};
-
-struct connection_gmock : connection_mock {
     MOCK_METHOD0(set_nonblocking, int());
     MOCK_METHOD0(send_query_params, int());
     MOCK_METHOD0(consume_input, int());
@@ -82,6 +63,8 @@ struct connection_gmock : connection_mock {
     MOCK_METHOD0(rebind_io_context, ozo::error_code());
 
 };
+
+using connection_gmock = connection_mock;
 
 inline boost::optional<pg_result> make_pg_result(
         ExecStatusType status, error_code error) {
