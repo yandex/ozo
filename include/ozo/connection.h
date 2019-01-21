@@ -712,7 +712,8 @@ using connection_type = typename get_connection_type<std::decay_t<ConnectionProv
 template <typename T, typename = std::void_t<>>
 struct async_get_connection_impl_default {
     template <typename Provider, typename Handler>
-    static constexpr decltype(auto) apply(Provider&& p, Handler&& h) {
+    static constexpr auto apply(Provider&& p, Handler&& h) ->
+            decltype(p.async_get_connection(std::forward<Handler>(h))) {
         p.async_get_connection(std::forward<Handler>(h));
     }
 };
@@ -788,7 +789,8 @@ template <typename T>
 constexpr auto ConnectionSource = is_connection_source<std::decay_t<T>>::value;
 
 template <typename Provider, typename Handler>
-constexpr decltype(auto) async_get_connection(Provider&& p, Handler&& h) {
+constexpr auto async_get_connection(Provider&& p, Handler&& h) ->
+        decltype(async_get_connection_impl<std::decay_t<Provider>>::apply(std::forward<Provider>(p), std::forward<Handler>(h))) {
     return async_get_connection_impl<std::decay_t<Provider>>::apply(std::forward<Provider>(p), std::forward<Handler>(h));
 }
 

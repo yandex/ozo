@@ -286,4 +286,8 @@ TEST(error_message, should_return_empty_string_view_for_nullable_connection_in_n
     EXPECT_EQ(std::string(ozo::error_message(connection_ptr<>{})), "");
 }
 
+TEST(ConnectionProvider, should_return_false_for_non_connection_provider_type){
+    EXPECT_FALSE(ozo::ConnectionProvider<int>);
+}
+
 } //namespace
