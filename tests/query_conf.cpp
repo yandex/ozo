@@ -583,6 +583,25 @@ TEST(get_query_name, should_return_std_string_view_of_static_field_name_for_quer
               std::string_view("query without parameters"));
 }
 
+TEST(query_repository, should_be_default_constructible) {
+    const ozo::query_repository<> q;
+}
+
+TEST(query_repository, default_should_not_be_initialized) {
+    const ozo::query_repository<> q;
+    EXPECT_FALSE(q.is_initialized());
+}
+
+TEST(query_repository, initialized_by_query_conf_should_be_initialized) {
+    const ozo::query_repository<> q(std::make_shared<ozo::detail::query_conf>(std::vector<ozo::detail::query_description>()));
+    EXPECT_TRUE(q.is_initialized());
+}
+
+TEST(query_repository, oprerator_bool_should_be_like_is_initialized_method) {
+    const ozo::query_repository<> q;
+    EXPECT_FALSE(q);
+}
+
 TEST(make_query_repository, should_return_query_repository_for_empty_query_conf_and_no_types) {
     EXPECT_NO_THROW(ozo::make_query_repository(std::string_view()));
 }
