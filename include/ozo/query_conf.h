@@ -418,8 +418,18 @@ inline std::shared_ptr<query_conf> make_query_conf(std::vector<ozo::detail::quer
 template <class ... QueriesT>
 class query_repository {
 public:
+    query_repository() = default;
+
     query_repository(std::shared_ptr<detail::query_conf> query_conf)
         : query_conf(std::move(query_conf)) {}
+
+    bool is_initialized() const {
+        return query_conf != nullptr;
+    }
+
+    operator bool() const {
+        return is_initialized();
+    }
 
     template <class QueryT>
     auto make_query() const {
