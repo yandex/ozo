@@ -119,14 +119,9 @@ struct recv_hana_adapted_composite_impl {
     template <typename M>
     static istream& apply(istream& in, size_type, const oid_map_t<M>& oid_map, T& out) {
         read_and_verify_header(in, out);
-        out = hana::unpack(
-            hana::fold(hana::members(out), hana::tuple<>(),
-                [&] (auto&& r, auto&& v) {
-                    recv_frame(in, oid_map, v);
-                    return hana::append(std::move(r), std::move(v));
-                }),
-            [] (auto&& ... args) { return T {std::move(args) ...}; }
-        );
+        hana::for_each(hana::keys(out), [&in, &out, &oid_map](auto key) {
+            recv_frame(in, oid_map, hana::at_key(out, key));
+        });
         return in;
     }
 };
