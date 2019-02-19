@@ -17,6 +17,7 @@ namespace {
 
 using namespace testing;
 using namespace ozo::tests;
+using namespace std::literals;
 
 struct read : Test {
     struct badbuf_t : std::streambuf{} badbuf;
@@ -340,9 +341,10 @@ TEST_F(recv, should_convert_TEXTARRAYOID_to_std_vector_of_std_unique_ptr_of_std_
     std::vector<std::unique_ptr<std::string>> got;
     ozo::recv(value, oid_map, got);
     EXPECT_THAT(got, ElementsAre(
-        Pointee(std::string("test")),
-        Pointee(std::string("foo")),
-        Pointee(std::string("bar"))));
+        Pointee("test"s),
+        Pointee("foo"s),
+        Pointee("bar"s)
+    ));
 }
 
 TEST_F(recv, should_reset_nullable_on_null_element) {
@@ -367,8 +369,9 @@ TEST_F(recv, should_reset_nullable_on_null_element) {
     ozo::recv(value, oid_map, got);
     EXPECT_THAT(got, ElementsAre(
         IsNull(),
-        Pointee(std::string("foo")),
-        Pointee(std::string("bar"))));
+        Pointee("foo"s),
+        Pointee("bar"s)
+    ));
 }
 
 TEST_F(recv, should_convert_NAMEOID_to_pg_name) {
@@ -414,7 +417,7 @@ TEST_F(recv_row, should_convert_INT4OID_and_TEXTOID_to_std_tuple_int32_t_std_str
 
     std::tuple<int, std::string> got;
     ozo::recv_row(row, oid_map, got);
-    EXPECT_EQ(std::make_tuple(int32_t(7), std::string("test")), got);
+    EXPECT_EQ(std::make_tuple(int32_t(7), "test"s), got);
 }
 
 TEST_F(recv_row, should_return_type_mismatch_error_if_size_of_tuple_does_not_equal_to_row_size) {
@@ -430,13 +433,13 @@ TEST_F(recv_row, should_convert_INT4OID_and_TEXTOID_to_fusion_adapted_structure)
 
     EXPECT_CALL(mock, nfields()).WillRepeatedly(Return(2));
 
-    EXPECT_CALL(mock, field_number(Eq("digit"))).WillOnce(Return(0));
+    EXPECT_CALL(mock, field_number(Eq("digit"s))).WillOnce(Return(0));
     EXPECT_CALL(mock, field_type(0)).WillRepeatedly(Return(INT4OID));
     EXPECT_CALL(mock, get_value(_, 0)).WillRepeatedly(Return(int32_bytes));
     EXPECT_CALL(mock, get_length(_, 0)).WillRepeatedly(Return(4));
     EXPECT_CALL(mock, get_isnull(_, 0)).WillRepeatedly(Return(false));
 
-    EXPECT_CALL(mock, field_number(Eq("text"))).WillOnce(Return(1));
+    EXPECT_CALL(mock, field_number(Eq("text"s))).WillOnce(Return(1));
     EXPECT_CALL(mock, field_type(1)).WillRepeatedly(Return(TEXTOID));
     EXPECT_CALL(mock, get_value(_, 1)).WillRepeatedly(Return(string_bytes));
     EXPECT_CALL(mock, get_length(_, 1)).WillRepeatedly(Return(4));
@@ -484,13 +487,13 @@ TEST_F(recv_result, send_convert_INT4OID_and_TEXTOID_to_fusion_adapted_structure
     EXPECT_CALL(mock, nfields()).WillRepeatedly(Return(2));
     EXPECT_CALL(mock, ntuples()).WillRepeatedly(Return(2));
 
-    EXPECT_CALL(mock, field_number(Eq("digit"))).WillRepeatedly(Return(0));
+    EXPECT_CALL(mock, field_number(Eq("digit"s))).WillRepeatedly(Return(0));
     EXPECT_CALL(mock, field_type(0)).WillRepeatedly(Return(INT4OID));
     EXPECT_CALL(mock, get_value(_, 0)).WillRepeatedly(Return(int32_bytes));
     EXPECT_CALL(mock, get_length(_, 0)).WillRepeatedly(Return(4));
     EXPECT_CALL(mock, get_isnull(_, 0)).WillRepeatedly(Return(false));
 
-    EXPECT_CALL(mock, field_number(Eq("text"))).WillRepeatedly(Return(1));
+    EXPECT_CALL(mock, field_number(Eq("text"s))).WillRepeatedly(Return(1));
     EXPECT_CALL(mock, field_type(1)).WillRepeatedly(Return(TEXTOID));
     EXPECT_CALL(mock, get_value(_, 1)).WillRepeatedly(Return(string_bytes));
     EXPECT_CALL(mock, get_length(_, 1)).WillRepeatedly(Return(4));
@@ -512,13 +515,13 @@ TEST_F(recv_result, send_convert_INT4OID_and_TEXTOID_to_fusion_adapted_structure
     EXPECT_CALL(mock, nfields()).WillRepeatedly(Return(2));
     EXPECT_CALL(mock, ntuples()).WillRepeatedly(Return(2));
 
-    EXPECT_CALL(mock, field_number(Eq("digit"))).WillRepeatedly(Return(0));
+    EXPECT_CALL(mock, field_number(Eq("digit"s))).WillRepeatedly(Return(0));
     EXPECT_CALL(mock, field_type(0)).WillRepeatedly(Return(INT4OID));
     EXPECT_CALL(mock, get_value(_, 0)).WillRepeatedly(Return(int32_bytes));
     EXPECT_CALL(mock, get_length(_, 0)).WillRepeatedly(Return(4));
     EXPECT_CALL(mock, get_isnull(_, 0)).WillRepeatedly(Return(false));
 
-    EXPECT_CALL(mock, field_number(Eq("text"))).WillRepeatedly(Return(1));
+    EXPECT_CALL(mock, field_number(Eq("text"s))).WillRepeatedly(Return(1));
     EXPECT_CALL(mock, field_type(1)).WillRepeatedly(Return(TEXTOID));
     EXPECT_CALL(mock, get_value(_, 1)).WillRepeatedly(Return(string_bytes));
     EXPECT_CALL(mock, get_length(_, 1)).WillRepeatedly(Return(4));
@@ -539,7 +542,7 @@ TEST_F(recv_result, send_convert_INT4OID_to_vector_via_iterator) {
     EXPECT_CALL(mock, nfields()).WillRepeatedly(Return(1));
     EXPECT_CALL(mock, ntuples()).WillRepeatedly(Return(2));
 
-    EXPECT_CALL(mock, field_number(Eq("digit"))).WillRepeatedly(Return(0));
+    EXPECT_CALL(mock, field_number(Eq("digit"s))).WillRepeatedly(Return(0));
     EXPECT_CALL(mock, field_type(0)).WillRepeatedly(Return(INT4OID));
     EXPECT_CALL(mock, get_value(_, 0)).WillRepeatedly(Return(int32_bytes));
     EXPECT_CALL(mock, get_length(_, 0)).WillRepeatedly(Return(4));
