@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include <ozo/query.h>
 
