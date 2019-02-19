@@ -12,6 +12,7 @@
 #include <boost/core/demangle.hpp>
 #include <boost/hana/for_each.hpp>
 #include <boost/hana/members.hpp>
+#include <boost/hana/size.hpp>
 
 namespace ozo {
 template <int... I>
@@ -250,7 +251,7 @@ void recv(const value<T>& in, const oid_map_t<M>& oids, Out& out) {
 }
 
 template <typename T, typename M, typename Out>
-Require<!FusionSequence<Out> && !FusionAdaptedStruct<Out>>
+Require<!FusionSequence<Out> && !FusionAdaptedStruct<Out> && !HanaStruct<Out>>
 recv_row(const row<T>& in, const oid_map_t<M>& oid_map, Out& out) {
     if (std::size(in) != 1) {
         throw std::range_error("row size " + std::to_string(std::size(in))
@@ -261,7 +262,7 @@ recv_row(const row<T>& in, const oid_map_t<M>& oid_map, Out& out) {
 }
 
 template <typename T, typename M, typename Out>
-Require<FusionSequence<Out> && !FusionAdaptedStruct<Out>>
+Require<FusionSequence<Out> && !FusionAdaptedStruct<Out> && !HanaStruct<Out>>
 recv_row(const row<T>& in, const oid_map_t<M>& oid_map, Out& out) {
 
     if (static_cast<std::size_t>(fusion::size(out)) != std::size(in)) {
@@ -278,7 +279,7 @@ recv_row(const row<T>& in, const oid_map_t<M>& oid_map, Out& out) {
 }
 
 template <typename T, typename M, typename Out>
-Require<FusionAdaptedStruct<Out>>
+Require<FusionAdaptedStruct<Out> && !HanaStruct<Out>>
 recv_row(const row<T>& in, const oid_map_t<M>& oid_map, Out& out) {
 
     if (static_cast<std::size_t>(fusion::size(out)) != std::size(in)) {
@@ -295,6 +296,30 @@ recv_row(const row<T>& in, const oid_map_t<M>& oid_map, Out& out) {
                 + boost::core::demangle(typeid(out).name()));
         } else {
             recv(*i, oid_map, member_value(out, idx));
+        }
+    });
+}
+
+template <typename T, typename M, typename Out>
+Require<HanaStruct<Out>>
+recv_row(const row<T>& in, const oid_map_t<M>& oid_map, Out& out) {
+
+    const auto keys = hana::keys(out);
+    const auto size = size_type(hana::value(hana::size(keys)));
+    if (size != std::size(in)) {
+        throw std::range_error("row size " + std::to_string(std::size(in))
+            + " does not match structure " + boost::core::demangle(typeid(out).name())
+            + " size " + std::to_string(size));
+    }
+
+    hana::for_each(keys, [&](auto key) {
+        auto i = in.find(hana::to<const char*>(key));
+        if (i == in.end()) {
+            throw std::range_error(std::string("row does not contain \"")
+                + hana::to<const char*>(key) + "\" column for "
+                + boost::core::demangle(typeid(out).name()));
+        } else {
+            recv(*i, oid_map, hana::at_key(out, key));
         }
     });
 }

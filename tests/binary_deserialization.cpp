@@ -13,10 +13,18 @@ BOOST_FUSION_DEFINE_STRUCT((),
     (int32_t, digit)
 )
 
+struct hana_adapted_test_result {
+    BOOST_HANA_DEFINE_STRUCT(hana_adapted_test_result,
+        (std::string, text),
+        (int32_t, digit)
+    );
+};
+
 namespace {
 
 using namespace testing;
 using namespace ozo::tests;
+using namespace std::literals;
 
 struct read : Test {
     struct badbuf_t : std::streambuf{} badbuf;
@@ -340,9 +348,10 @@ TEST_F(recv, should_convert_TEXTARRAYOID_to_std_vector_of_std_unique_ptr_of_std_
     std::vector<std::unique_ptr<std::string>> got;
     ozo::recv(value, oid_map, got);
     EXPECT_THAT(got, ElementsAre(
-        Pointee(std::string("test")),
-        Pointee(std::string("foo")),
-        Pointee(std::string("bar"))));
+        Pointee("test"s),
+        Pointee("foo"s),
+        Pointee("bar"s)
+    ));
 }
 
 TEST_F(recv, should_reset_nullable_on_null_element) {
@@ -367,8 +376,9 @@ TEST_F(recv, should_reset_nullable_on_null_element) {
     ozo::recv(value, oid_map, got);
     EXPECT_THAT(got, ElementsAre(
         IsNull(),
-        Pointee(std::string("foo")),
-        Pointee(std::string("bar"))));
+        Pointee("foo"s),
+        Pointee("bar"s)
+    ));
 }
 
 TEST_F(recv, should_convert_NAMEOID_to_pg_name) {
@@ -414,7 +424,7 @@ TEST_F(recv_row, should_convert_INT4OID_and_TEXTOID_to_std_tuple_int32_t_std_str
 
     std::tuple<int, std::string> got;
     ozo::recv_row(row, oid_map, got);
-    EXPECT_EQ(std::make_tuple(int32_t(7), std::string("test")), got);
+    EXPECT_EQ(std::make_tuple(int32_t(7), "test"s), got);
 }
 
 TEST_F(recv_row, should_return_type_mismatch_error_if_size_of_tuple_does_not_equal_to_row_size) {
@@ -430,13 +440,13 @@ TEST_F(recv_row, should_convert_INT4OID_and_TEXTOID_to_fusion_adapted_structure)
 
     EXPECT_CALL(mock, nfields()).WillRepeatedly(Return(2));
 
-    EXPECT_CALL(mock, field_number(Eq("digit"))).WillOnce(Return(0));
+    EXPECT_CALL(mock, field_number(Eq("digit"s))).WillOnce(Return(0));
     EXPECT_CALL(mock, field_type(0)).WillRepeatedly(Return(INT4OID));
     EXPECT_CALL(mock, get_value(_, 0)).WillRepeatedly(Return(int32_bytes));
     EXPECT_CALL(mock, get_length(_, 0)).WillRepeatedly(Return(4));
     EXPECT_CALL(mock, get_isnull(_, 0)).WillRepeatedly(Return(false));
 
-    EXPECT_CALL(mock, field_number(Eq("text"))).WillOnce(Return(1));
+    EXPECT_CALL(mock, field_number(Eq("text"s))).WillOnce(Return(1));
     EXPECT_CALL(mock, field_type(1)).WillRepeatedly(Return(TEXTOID));
     EXPECT_CALL(mock, get_value(_, 1)).WillRepeatedly(Return(string_bytes));
     EXPECT_CALL(mock, get_length(_, 1)).WillRepeatedly(Return(4));
@@ -448,15 +458,56 @@ TEST_F(recv_row, should_convert_INT4OID_and_TEXTOID_to_fusion_adapted_structure)
     EXPECT_EQ(got.text, "test");
 }
 
-TEST_F(recv_row, should_throw_range_error_if_number_elements_of_structure_does_not_equal_to_row_size) {
+TEST_F(recv_row, should_convert_INT4OID_and_TEXTOID_to_hana_adapted_structure) {
+    const char int32_bytes[] = { 0x00, 0x00, 0x00, 0x07 };
+    const char* string_bytes = "test";
+
+    EXPECT_CALL(mock, nfields()).WillRepeatedly(Return(2));
+
+    EXPECT_CALL(mock, field_number(Eq("digit"s))).WillOnce(Return(0));
+    EXPECT_CALL(mock, field_type(0)).WillRepeatedly(Return(INT4OID));
+    EXPECT_CALL(mock, get_value(_, 0)).WillRepeatedly(Return(int32_bytes));
+    EXPECT_CALL(mock, get_length(_, 0)).WillRepeatedly(Return(4));
+    EXPECT_CALL(mock, get_isnull(_, 0)).WillRepeatedly(Return(false));
+
+    EXPECT_CALL(mock, field_number(Eq("text"s))).WillOnce(Return(1));
+    EXPECT_CALL(mock, field_type(1)).WillRepeatedly(Return(TEXTOID));
+    EXPECT_CALL(mock, get_value(_, 1)).WillRepeatedly(Return(string_bytes));
+    EXPECT_CALL(mock, get_length(_, 1)).WillRepeatedly(Return(4));
+    EXPECT_CALL(mock, get_isnull(_, 1)).WillRepeatedly(Return(false));
+
+    hana_adapted_test_result got;
+    ozo::recv_row(row, oid_map, got);
+    EXPECT_EQ(got.digit, 7);
+    EXPECT_EQ(got.text, "test");
+}
+
+TEST_F(recv_row, should_throw_range_error_if_number_elements_of_fusion_adapted_structure_does_not_equal_to_row_size) {
     fusion_adapted_test_result out;
     EXPECT_CALL(mock, nfields()).WillRepeatedly(Return(1));
 
     EXPECT_THROW(ozo::recv_row(row, oid_map, out), std::range_error);
 }
 
-TEST_F(recv_row, should_throw_range_error_if_column_name_corresponding_to_elements_of_structure_does_not_found) {
+
+TEST_F(recv_row, should_throw_range_error_if_number_elements_of_hana_adapted_structure_does_not_equal_to_row_size) {
+    hana_adapted_test_result out;
+    EXPECT_CALL(mock, nfields()).WillRepeatedly(Return(1));
+
+    EXPECT_THROW(ozo::recv_row(row, oid_map, out), std::range_error);
+}
+
+TEST_F(recv_row, should_throw_range_error_if_column_name_corresponding_to_elements_of_fusion_adapted_structure_does_not_found) {
     fusion_adapted_test_result out;
+    EXPECT_CALL(mock, nfields()).WillRepeatedly(Return(2));
+
+    EXPECT_CALL(mock, field_number(_)).WillRepeatedly(Return(-1));
+
+    EXPECT_THROW(ozo::recv_row(row, oid_map, out), std::range_error);
+}
+
+TEST_F(recv_row, should_throw_range_error_if_column_name_corresponding_to_elements_of_hana_adapted_structure_does_not_found) {
+    hana_adapted_test_result out;
     EXPECT_CALL(mock, nfields()).WillRepeatedly(Return(2));
 
     EXPECT_CALL(mock, field_number(_)).WillRepeatedly(Return(-1));
@@ -484,19 +535,47 @@ TEST_F(recv_result, send_convert_INT4OID_and_TEXTOID_to_fusion_adapted_structure
     EXPECT_CALL(mock, nfields()).WillRepeatedly(Return(2));
     EXPECT_CALL(mock, ntuples()).WillRepeatedly(Return(2));
 
-    EXPECT_CALL(mock, field_number(Eq("digit"))).WillRepeatedly(Return(0));
+    EXPECT_CALL(mock, field_number(Eq("digit"s))).WillRepeatedly(Return(0));
     EXPECT_CALL(mock, field_type(0)).WillRepeatedly(Return(INT4OID));
     EXPECT_CALL(mock, get_value(_, 0)).WillRepeatedly(Return(int32_bytes));
     EXPECT_CALL(mock, get_length(_, 0)).WillRepeatedly(Return(4));
     EXPECT_CALL(mock, get_isnull(_, 0)).WillRepeatedly(Return(false));
 
-    EXPECT_CALL(mock, field_number(Eq("text"))).WillRepeatedly(Return(1));
+    EXPECT_CALL(mock, field_number(Eq("text"s))).WillRepeatedly(Return(1));
     EXPECT_CALL(mock, field_type(1)).WillRepeatedly(Return(TEXTOID));
     EXPECT_CALL(mock, get_value(_, 1)).WillRepeatedly(Return(string_bytes));
     EXPECT_CALL(mock, get_length(_, 1)).WillRepeatedly(Return(4));
     EXPECT_CALL(mock, get_isnull(_, 1)).WillRepeatedly(Return(false));
 
     std::vector<fusion_adapted_test_result> got;
+    ozo::recv_result(res, oid_map, std::back_inserter(got));
+    EXPECT_EQ(got.size(), 2u);
+    EXPECT_EQ(got[0].digit, 7);
+    EXPECT_EQ(got[0].text, "test");
+    EXPECT_EQ(got[1].digit, 7);
+    EXPECT_EQ(got[1].text, "test");
+}
+
+TEST_F(recv_result, send_convert_INT4OID_and_TEXTOID_to_hana_adapted_structures_vector_via_back_inserter) {
+    const char int32_bytes[] = { 0x00, 0x00, 0x00, 0x07 };
+    const char* string_bytes = "test";
+
+    EXPECT_CALL(mock, nfields()).WillRepeatedly(Return(2));
+    EXPECT_CALL(mock, ntuples()).WillRepeatedly(Return(2));
+
+    EXPECT_CALL(mock, field_number(Eq("digit"s))).WillRepeatedly(Return(0));
+    EXPECT_CALL(mock, field_type(0)).WillRepeatedly(Return(INT4OID));
+    EXPECT_CALL(mock, get_value(_, 0)).WillRepeatedly(Return(int32_bytes));
+    EXPECT_CALL(mock, get_length(_, 0)).WillRepeatedly(Return(4));
+    EXPECT_CALL(mock, get_isnull(_, 0)).WillRepeatedly(Return(false));
+
+    EXPECT_CALL(mock, field_number(Eq("text"s))).WillRepeatedly(Return(1));
+    EXPECT_CALL(mock, field_type(1)).WillRepeatedly(Return(TEXTOID));
+    EXPECT_CALL(mock, get_value(_, 1)).WillRepeatedly(Return(string_bytes));
+    EXPECT_CALL(mock, get_length(_, 1)).WillRepeatedly(Return(4));
+    EXPECT_CALL(mock, get_isnull(_, 1)).WillRepeatedly(Return(false));
+
+    std::vector<hana_adapted_test_result> got;
     ozo::recv_result(res, oid_map, std::back_inserter(got));
     EXPECT_EQ(got.size(), 2u);
     EXPECT_EQ(got[0].digit, 7);
@@ -512,13 +591,13 @@ TEST_F(recv_result, send_convert_INT4OID_and_TEXTOID_to_fusion_adapted_structure
     EXPECT_CALL(mock, nfields()).WillRepeatedly(Return(2));
     EXPECT_CALL(mock, ntuples()).WillRepeatedly(Return(2));
 
-    EXPECT_CALL(mock, field_number(Eq("digit"))).WillRepeatedly(Return(0));
+    EXPECT_CALL(mock, field_number(Eq("digit"s))).WillRepeatedly(Return(0));
     EXPECT_CALL(mock, field_type(0)).WillRepeatedly(Return(INT4OID));
     EXPECT_CALL(mock, get_value(_, 0)).WillRepeatedly(Return(int32_bytes));
     EXPECT_CALL(mock, get_length(_, 0)).WillRepeatedly(Return(4));
     EXPECT_CALL(mock, get_isnull(_, 0)).WillRepeatedly(Return(false));
 
-    EXPECT_CALL(mock, field_number(Eq("text"))).WillRepeatedly(Return(1));
+    EXPECT_CALL(mock, field_number(Eq("text"s))).WillRepeatedly(Return(1));
     EXPECT_CALL(mock, field_type(1)).WillRepeatedly(Return(TEXTOID));
     EXPECT_CALL(mock, get_value(_, 1)).WillRepeatedly(Return(string_bytes));
     EXPECT_CALL(mock, get_length(_, 1)).WillRepeatedly(Return(4));
@@ -533,13 +612,41 @@ TEST_F(recv_result, send_convert_INT4OID_and_TEXTOID_to_fusion_adapted_structure
     EXPECT_EQ(got[1].text, "test");
 }
 
+TEST_F(recv_result, send_convert_INT4OID_and_TEXTOID_to_hana_adapted_structures_vector_via_iterator) {
+    const char int32_bytes[] = { 0x00, 0x00, 0x00, 0x07 };
+    const char* string_bytes = "test";
+
+    EXPECT_CALL(mock, nfields()).WillRepeatedly(Return(2));
+    EXPECT_CALL(mock, ntuples()).WillRepeatedly(Return(2));
+
+    EXPECT_CALL(mock, field_number(Eq("digit"s))).WillRepeatedly(Return(0));
+    EXPECT_CALL(mock, field_type(0)).WillRepeatedly(Return(INT4OID));
+    EXPECT_CALL(mock, get_value(_, 0)).WillRepeatedly(Return(int32_bytes));
+    EXPECT_CALL(mock, get_length(_, 0)).WillRepeatedly(Return(4));
+    EXPECT_CALL(mock, get_isnull(_, 0)).WillRepeatedly(Return(false));
+
+    EXPECT_CALL(mock, field_number(Eq("text"s))).WillRepeatedly(Return(1));
+    EXPECT_CALL(mock, field_type(1)).WillRepeatedly(Return(TEXTOID));
+    EXPECT_CALL(mock, get_value(_, 1)).WillRepeatedly(Return(string_bytes));
+    EXPECT_CALL(mock, get_length(_, 1)).WillRepeatedly(Return(4));
+    EXPECT_CALL(mock, get_isnull(_, 1)).WillRepeatedly(Return(false));
+
+    std::vector<hana_adapted_test_result> got;
+    got.resize(2);
+    ozo::recv_result(res, oid_map, got.begin());
+    EXPECT_EQ(got[0].digit, 7);
+    EXPECT_EQ(got[0].text, "test");
+    EXPECT_EQ(got[1].digit, 7);
+    EXPECT_EQ(got[1].text, "test");
+}
+
 TEST_F(recv_result, send_convert_INT4OID_to_vector_via_iterator) {
     const char int32_bytes[] = { 0x00, 0x00, 0x00, 0x07 };
 
     EXPECT_CALL(mock, nfields()).WillRepeatedly(Return(1));
     EXPECT_CALL(mock, ntuples()).WillRepeatedly(Return(2));
 
-    EXPECT_CALL(mock, field_number(Eq("digit"))).WillRepeatedly(Return(0));
+    EXPECT_CALL(mock, field_number(Eq("digit"s))).WillRepeatedly(Return(0));
     EXPECT_CALL(mock, field_type(0)).WillRepeatedly(Return(INT4OID));
     EXPECT_CALL(mock, get_value(_, 0)).WillRepeatedly(Return(int32_bytes));
     EXPECT_CALL(mock, get_length(_, 0)).WillRepeatedly(Return(4));
