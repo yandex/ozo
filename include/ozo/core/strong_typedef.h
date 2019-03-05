@@ -1,3 +1,5 @@
+#pragma once
+
 #include <boost/operators.hpp>
 #include <type_traits>
 
