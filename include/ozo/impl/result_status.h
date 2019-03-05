@@ -1,3 +1,5 @@
+#pragma once
+
 #include <libpq-fe.h>
 
 namespace ozo::impl {
