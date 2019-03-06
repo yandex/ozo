@@ -14,24 +14,24 @@ class strong_typedef_wrapper
 public:
     using base_type = T;
 
-    explicit strong_typedef_wrapper(const base_type& v) noexcept(noexcept(base_type(v)))
+    constexpr explicit strong_typedef_wrapper(const base_type& v) noexcept(noexcept(base_type(v)))
         : base_(v) {}
-    explicit strong_typedef_wrapper(base_type&& v) noexcept(noexcept(base_type(v)))
+    constexpr explicit strong_typedef_wrapper(base_type&& v) noexcept(noexcept(base_type(v)))
         : base_(v) {}
 
-    strong_typedef_wrapper() = default;
-    strong_typedef_wrapper(const strong_typedef_wrapper&) = default;
-    strong_typedef_wrapper(strong_typedef_wrapper&&) = default;
+    constexpr strong_typedef_wrapper() = default;
+    constexpr strong_typedef_wrapper(const strong_typedef_wrapper&) = default;
+    constexpr strong_typedef_wrapper(strong_typedef_wrapper&&) = default;
 
-    strong_typedef_wrapper& operator = (const strong_typedef_wrapper&) = default;
-    strong_typedef_wrapper& operator = (strong_typedef_wrapper&&) = default;
+    constexpr strong_typedef_wrapper& operator = (const strong_typedef_wrapper&) = default;
+    constexpr strong_typedef_wrapper& operator = (strong_typedef_wrapper&&) = default;
 
-    strong_typedef_wrapper& operator = (const base_type& rhs) noexcept(noexcept(base_ = rhs)) {
+    constexpr strong_typedef_wrapper& operator = (const base_type& rhs) noexcept(noexcept(base_ = rhs)) {
         base_ = rhs;
         return *this;
     }
 
-    strong_typedef_wrapper& operator = (base_type&& rhs) noexcept(noexcept(base_ = std::move(rhs))) {
+    constexpr strong_typedef_wrapper& operator = (base_type&& rhs) noexcept(noexcept(base_ = std::move(rhs))) {
         base_ = std::move(rhs);
         return *this;
     }
@@ -40,12 +40,12 @@ public:
     constexpr base_type& get() & noexcept { return base_;}
     constexpr base_type&& get() && noexcept { return std::move(base_);}
 
-    operator const base_type&() const & noexcept {return get();}
-    operator base_type&() & noexcept {return get();}
-    operator base_type&&() && noexcept {return get();}
+    constexpr operator const base_type&() const & noexcept {return get();}
+    constexpr operator base_type&() & noexcept {return get();}
+    constexpr operator base_type&&() && noexcept {return get();}
 
-    bool operator == (const strong_typedef_wrapper& rhs) const {return base_ == rhs.base_;}
-    bool operator < (const strong_typedef_wrapper& rhs) const {return base_ < rhs.base_;}
+    constexpr bool operator == (const strong_typedef_wrapper& rhs) const {return base_ == rhs.base_;}
+    constexpr bool operator < (const strong_typedef_wrapper& rhs) const {return base_ < rhs.base_;}
 };
 
 template <typename T>
