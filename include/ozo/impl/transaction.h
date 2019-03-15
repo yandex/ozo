@@ -44,7 +44,7 @@ private:
         impl_type(T&& connection) : connection(std::move(connection)) {}
 
         bool has_connection() const {
-            return connection.has_value() && static_cast<bool>(connection);
+            return connection.has_value();
         }
     };
 
