@@ -47,4 +47,23 @@ TEST_F(impl_transaction, has_connection_when_constructed_with) {
     EXPECT_TRUE(ozo::impl::make_transaction(std::move(conn)).has_connection());
 }
 
+TEST_F(impl_transaction, transaction_with_initialized_connection_is_not_null) {
+    EXPECT_CALL(socket, close(_)).WillOnce(Return());
+
+    EXPECT_FALSE(is_null(ozo::impl::make_transaction(std::move(conn))));
+}
+
+TEST_F(impl_transaction, transaction_without_connection_is_null) {
+    ozo::impl::transaction<decltype(conn)> transaction;
+    EXPECT_TRUE(is_null(transaction));
+}
+
+TEST_F(impl_transaction, transaction_become_null_after_take_connection) {
+    auto transaction = ozo::impl::make_transaction(std::move(conn));
+
+    transaction.take_connection(conn);
+
+    EXPECT_TRUE(is_null(transaction));
+}
+
 } // namespace
