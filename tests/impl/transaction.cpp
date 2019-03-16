@@ -58,6 +58,11 @@ TEST_F(impl_transaction, transaction_without_connection_is_null) {
     EXPECT_TRUE(is_null(transaction));
 }
 
+TEST_F(impl_transaction, transaction_without_null_state_connection_is_null) {
+    ozo::impl::transaction<decltype(conn)> transaction(nullptr);
+    EXPECT_TRUE(is_null(transaction));
+}
+
 TEST_F(impl_transaction, transaction_become_null_after_take_connection) {
     auto transaction = ozo::impl::make_transaction(std::move(conn));
 
