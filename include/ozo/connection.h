@@ -4,6 +4,7 @@
 #include <ozo/type_traits.h>
 #include <ozo/asio.h>
 #include <ozo/core/concept.h>
+#include <ozo/core/recursive.h>
 
 #include <ozo/detail/bind.h>
 #include <ozo/impl/connection.h>
@@ -25,16 +26,8 @@ namespace ozo {
 
 using no_statistics = decltype(hana::make_map());
 
-template <typename, typename = std::void_t<>>
-struct unwrap_connection_default_impl {
-    template <typename Conn>
-    static constexpr decltype(auto) apply(Conn&& conn) noexcept {
-        return std::forward<Conn>(conn);
-    }
-};
-
 template <typename T>
-struct unwrap_connection_impl : unwrap_connection_default_impl<T> {};
+struct unwrap_connection_impl : unwrap_recursive_impl<T> {};
 /**
  * @ingroup group-connection-functions
  * @brief Unwrap connection if wrapped with Nullable
@@ -78,14 +71,6 @@ template <typename T>
 inline constexpr decltype(auto) unwrap_connection(T&& conn) noexcept {
     return unwrap_connection_impl<std::decay_t<T>>::apply(std::forward<T>(conn));
 }
-
-template <typename T>
-struct unwrap_connection_default_impl<T, Require<Nullable<T>>>{
-    template <typename Conn>
-    static constexpr decltype(auto) apply(Conn&& conn) noexcept {
-        return unwrap_connection(unwrap(conn));
-    }
-};
 
 template <typename T, typename = std::void_t<>>
 struct get_connection_oid_map_impl {
@@ -492,7 +477,7 @@ template <typename T>
 inline bool connection_bad(const T& conn) noexcept {
     static_assert(Connection<T>, "T must be a Connection");
     using impl::connection_status_bad;
-    return is_null(conn) ? true : connection_status_bad(get_native_handle(conn));
+    return is_null_recursive(conn) ? true : connection_status_bad(get_native_handle(conn));
 }
 
 /**
@@ -521,7 +506,7 @@ inline bool connection_good(const T& conn) noexcept {
 template <typename T>
 inline std::string_view error_message(T&& conn) {
     static_assert(Connection<T>, "T must be a Connection");
-    if (is_null(conn)) {
+    if (is_null_recursive(conn)) {
         return {};
     }
     return impl::connection_error_message(get_native_handle(conn));
