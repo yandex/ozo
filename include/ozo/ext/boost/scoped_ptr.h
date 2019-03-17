@@ -16,4 +16,7 @@ struct allocate_nullable_impl<boost::scoped_ptr<T>> {
     }
 };
 
+template <typename T>
+struct unwrap_impl<boost::scoped_ptr<T>> : detail::functional::dereference {};
+
 } // namespace ozo

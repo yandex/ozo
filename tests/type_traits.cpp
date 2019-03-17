@@ -2,6 +2,7 @@
 #include <ozo/io/size_of.h>
 #include <ozo/ext/boost.h>
 #include <ozo/ext/std.h>
+#include <ozo/core/recursive.h>
 
 #include <boost/make_shared.hpp>
 #include <boost/fusion/adapted/std_tuple.hpp>
@@ -68,6 +69,22 @@ TEST(is_null, should_return_false_for_non_nullable_type) {
     EXPECT_TRUE(!ozo::is_null(int()));
 }
 
+TEST(is_null_recursive, should_return_true_if_nested_nullable_type_is_null) {
+    boost::optional<boost::optional<std::shared_ptr<int>>> obj{{{nullptr}}};
+    EXPECT_FALSE(ozo::is_null(obj));
+    EXPECT_TRUE(ozo::is_null_recursive(obj));
+}
+
+TEST(is_null_recursive, should_return_false_if_nested_nullable_types_contains_no_null) {
+    boost::optional<boost::optional<std::shared_ptr<int>>> obj{{{std::make_shared<int>(0)}}};
+    EXPECT_FALSE(ozo::is_null(obj));
+    EXPECT_FALSE(ozo::is_null_recursive(obj));
+}
+
+TEST(is_null_recursive, should_return_false_for_non_nullable_type) {
+    EXPECT_FALSE(ozo::is_null_recursive(int()));
+}
+
 TEST(unwrap, should_unwrap_type) {
     boost::optional<int> n(7);
     EXPECT_EQ(ozo::unwrap(n), 7);
@@ -82,6 +99,27 @@ TEST(unwrap, should_unwrap_std_reference_wrapper) {
     int n(7);
     EXPECT_EQ(ozo::unwrap(std::ref(n)), 7);
 }
+
+TEST(unwrap_recursive, should_unwrap_type) {
+    boost::optional<int> n(7);
+    EXPECT_EQ(ozo::unwrap_recursive(n), 7);
+}
+
+TEST(unwrap_recursive, should_unwrap_type_recursively) {
+    boost::optional<boost::optional<int>> n{{7}};
+    EXPECT_EQ(ozo::unwrap_recursive(n), 7);
+}
+
+TEST(unwrap_recursive, should_unwrap_type_recursively_different_types) {
+    boost::optional<std::shared_ptr<int>> n{std::make_shared<int>(7)};
+    EXPECT_EQ(ozo::unwrap_recursive(n), 7);
+}
+
+TEST(unwrap_recursive, should_unwrap_notnullable_type) {
+    int n(7);
+    EXPECT_EQ(ozo::unwrap_recursive(n), 7);
+}
+
 
 }
 

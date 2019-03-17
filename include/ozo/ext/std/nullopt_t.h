@@ -3,6 +3,7 @@
 #include <ozo/type_traits.h>
 #include <ozo/optional.h>
 #include <ozo/io/send.h>
+#include <ozo/detail/functional.h>
 
 namespace ozo {
 
@@ -10,11 +11,10 @@ template <>
 struct is_nullable<__OZO_NULLOPT_T> : std::true_type {};
 
 template <>
-struct unwrap_impl<__OZO_NULLOPT_T> : detail::unwrap_with_forward {};
+struct unwrap_impl<__OZO_NULLOPT_T> : detail::functional::forward {};
 
 template <>
-struct is_null_impl<__OZO_NULLOPT_T> :
-    detail::is_null_always<__OZO_NULLOPT_T, std::true_type> {};
+struct is_null_impl<__OZO_NULLOPT_T> : detail::functional::always_true {};
 
 template <>
 struct send_impl<__OZO_NULLOPT_T> {

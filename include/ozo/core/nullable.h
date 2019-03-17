@@ -1,6 +1,7 @@
 #pragma once
 
 #include <ozo/core/concept.h>
+#include <ozo/detail/functional.h>
 #include <type_traits>
 #include <memory>
 
@@ -65,27 +66,11 @@ struct allocate_nullable_impl<T*> {
 template <typename T>
 constexpr auto Nullable = is_nullable<std::decay_t<T>>::value;
 
-namespace detail {
-
-template <typename T, typename V>
-struct is_null_always {
-    constexpr static V apply(const T&) noexcept { return {};}
-};
-
-template <typename T, typename = std::void_t<>>
-struct is_null_default_impl : is_null_always<T, std::false_type> {};
-
 template <typename T>
-struct is_null_default_impl<T, Require<Nullable<T>>> {
-    constexpr static auto apply(const T& v) noexcept(noexcept(!v)) {
-        return !v;
-    }
-};
-
-} // namespace detail
-
-template <typename T>
-struct is_null_impl : detail::is_null_default_impl<T> {};
+struct is_null_impl : std::conditional_t<Nullable<T>,
+    detail::functional::operator_not,
+    detail::functional::always_false
+> {};
 
 /**
  * @brief Indicates if value is in null state
@@ -99,7 +84,7 @@ struct is_null_impl : detail::is_null_default_impl<T> {};
  * @ingroup group-core-functions
  */
 template <typename T>
-constexpr auto is_null(const T& v) noexcept(noexcept(is_null_impl<T>::apply(v))) {
+constexpr decltype(auto) is_null(const T& v) noexcept(noexcept(is_null_impl<T>::apply(v))) {
     return is_null_impl<T>::apply(v);
 }
 
