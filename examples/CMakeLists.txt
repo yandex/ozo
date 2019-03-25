@@ -1,21 +1,4 @@
-execute_process(COMMAND echo "int main() { return 0;}" OUTPUT_FILE test.cpp)
-execute_process(COMMAND ${CMAKE_CXX_COMPILER} -std=c++17 test.cpp -o a.out RESULT_VARIABLE CPP17_READY_RESULT)
-execute_process(COMMAND rm test.cpp OUTPUT_QUIET ERROR_QUIET)
-execute_process(COMMAND rm a.out OUTPUT_QUIET ERROR_QUIET)
-
-if ("${CPP17_READY_RESULT}" STREQUAL "0")
-    set(CPP17_READY 1)
-else()
-    set(CPP17_NOT_READY 1)
-endif()
-
-if (CPP17_READY)
-    message(STATUS "compiler supports -std=c++17")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
-else()
-    message(STATUS "compiler does not support -std=c++17, using -std=c++1z instead")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++1z")
-endif()
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wsign-compare -pedantic -Werror")
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-ignored-optimization-argument")
@@ -42,7 +25,9 @@ set(LIBRARIES
 )
 
 add_executable(ozo_request request.cpp)
+target_compile_features(ozo_request PRIVATE cxx_std_17)
 target_link_libraries(ozo_request ${LIBRARIES})
 
 add_executable(ozo_connection_pool connection_pool.cpp)
+target_compile_features(ozo_connection_pool PRIVATE cxx_std_17)
 target_link_libraries(ozo_connection_pool ${LIBRARIES})

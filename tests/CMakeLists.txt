@@ -1,26 +1,5 @@
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wsign-compare -pedantic -Werror")
 
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
-execute_process(COMMAND echo "int main() { return 0;}" OUTPUT_FILE test.cpp)
-execute_process(COMMAND ${CMAKE_CXX_COMPILER} -std=c++17 test.cpp -o a.out RESULT_VARIABLE CPP17_READY_RESULT)
-execute_process(COMMAND rm test.cpp OUTPUT_QUIET ERROR_QUIET)
-execute_process(COMMAND rm a.out OUTPUT_QUIET ERROR_QUIET)
-
-if ("${CPP17_READY_RESULT}" STREQUAL "0")
-    set(CPP17_READY 1)
-else()
-    set(CPP17_NOT_READY 1)
-endif()
-
-if (CPP17_READY)
-    message(STATUS "compiler supports -std=c++17")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
-else()
-    message(STATUS "compiler does not support -std=c++17, using -std=c++1z instead")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++1z")
-endif()
-
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-ignored-optimization-argument")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-gnu-string-literal-operator-template")
@@ -107,6 +86,7 @@ set(LIBRARIES
 )
 
 add_executable(ozo_tests ${SOURCES})
+target_compile_features(ozo_tests PRIVATE cxx_std_17)
 add_dependencies(ozo_tests GoogleTest)
 target_link_libraries(ozo_tests ${LIBRARIES})
 add_test(ozo_tests ozo_tests)

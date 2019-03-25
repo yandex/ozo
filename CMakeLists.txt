@@ -11,6 +11,8 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DBOOST_HANA_CONFIG_ENABLE_STRING_UDL")
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
+set(CMAKE_CXX_EXTENSIONS OFF)
+
 include_directories(contrib/resource_pool/include)
 include_directories(include)
 
