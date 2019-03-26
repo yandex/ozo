@@ -211,6 +211,76 @@ TEST_F(recv, should_convert_TEXTARRAYOID_to_std_vector_of_std_string) {
     EXPECT_THAT(got, ElementsAre("test", "foo", "bar"));
 }
 
+TEST_F(recv, should_convert_TEXTARRAYOID_with_matched_size_to_std_array_of_std_string) {
+    const char bytes[] = {
+        0x00, 0x00, 0x00, 0x01, // dimension count
+        0x00, 0x00, 0x00, 0x00, // data offset
+        0x00, 0x00, 0x00, 0x19, // Oid
+        0x00, 0x00, 0x00, 0x03, // dimension size
+        0x00, 0x00, 0x00, 0x01, // dimension index
+        0x00, 0x00, 0x00, 0x04, // 1st element size
+        't', 'e', 's', 't',     // 1st element
+        0x00, 0x00, 0x00, 0x03, // 2nd element size
+        'f', 'o', 'o',          // 2ndst element
+        0x00, 0x00, 0x00, 0x03, // 3rd element size
+        'b', 'a', 'r',          // 3rd element
+    };
+    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(TEXTARRAYOID));
+    EXPECT_CALL(mock, get_value(_, _)).WillRepeatedly(Return(bytes));
+    EXPECT_CALL(mock, get_length(_, _)).WillRepeatedly(Return(sizeof bytes));
+    EXPECT_CALL(mock, get_isnull(_, _)).WillRepeatedly(Return(false));
+
+    std::array<std::string, 3> got;
+    ozo::recv(value, oid_map, got);
+    EXPECT_THAT(got, ElementsAre("test", "foo", "bar"));
+}
+
+TEST_F(recv, should_throw_exception_on_TEXTARRAYOID_with_greater_size_than_std_array) {
+    const char bytes[] = {
+        0x00, 0x00, 0x00, 0x01, // dimension count
+        0x00, 0x00, 0x00, 0x00, // data offset
+        0x00, 0x00, 0x00, 0x19, // Oid
+        0x00, 0x00, 0x00, 0x04, // dimension size
+        0x00, 0x00, 0x00, 0x01, // dimension index
+        0x00, 0x00, 0x00, 0x04, // 1st element size
+        't', 'e', 's', 't',     // 1st element
+        0x00, 0x00, 0x00, 0x03, // 2nd element size
+        'f', 'o', 'o',          // 2ndst element
+        0x00, 0x00, 0x00, 0x03, // 3rd element size
+        'b', 'a', 'r',          // 3rd element
+    };
+    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(TEXTARRAYOID));
+    EXPECT_CALL(mock, get_value(_, _)).WillRepeatedly(Return(bytes));
+    EXPECT_CALL(mock, get_length(_, _)).WillRepeatedly(Return(sizeof bytes));
+    EXPECT_CALL(mock, get_isnull(_, _)).WillRepeatedly(Return(false));
+
+    std::array<std::string, 2> got;
+    EXPECT_THROW(ozo::recv(value, oid_map, got), ozo::system_error);
+}
+
+TEST_F(recv, should_throw_exception_on_TEXTARRAYOID_with_less_size_than_std_array) {
+    const char bytes[] = {
+        0x00, 0x00, 0x00, 0x01, // dimension count
+        0x00, 0x00, 0x00, 0x00, // data offset
+        0x00, 0x00, 0x00, 0x19, // Oid
+        0x00, 0x00, 0x00, 0x04, // dimension size
+        0x00, 0x00, 0x00, 0x01, // dimension index
+        0x00, 0x00, 0x00, 0x04, // 1st element size
+        't', 'e', 's', 't',     // 1st element
+        0x00, 0x00, 0x00, 0x03, // 2nd element size
+        'f', 'o', 'o',          // 2ndst element
+        0x00, 0x00, 0x00, 0x03, // 3rd element size
+        'b', 'a', 'r',          // 3rd element
+    };
+    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(TEXTARRAYOID));
+    EXPECT_CALL(mock, get_value(_, _)).WillRepeatedly(Return(bytes));
+    EXPECT_CALL(mock, get_length(_, _)).WillRepeatedly(Return(sizeof bytes));
+    EXPECT_CALL(mock, get_isnull(_, _)).WillRepeatedly(Return(false));
+
+    std::array<std::string, 4> got;
+    EXPECT_THROW(ozo::recv(value, oid_map, got), ozo::system_error);
+}
+
 TEST_F(recv, should_throw_on_multidimential_arrays) {
     const char bytes[] = {
         0x00, 0x00, 0x00, 0x02, // dimension count
