@@ -85,6 +85,23 @@ TEST_F(send, with_std_vector_of_float_should_store_with_one_dimension_array_head
     }));
 }
 
+TEST_F(send, with_std_array_of_int_should_store_with_one_dimension_array_header_and_values) {
+    ozo::send(os, oid_map, std::array<int, 3>({1, 2, 3}));
+    EXPECT_EQ(buffer, std::vector<char>({
+        0, 0, 0, 1,
+        0, 0, 0, 0,
+        0, 0, 0, 0x17,
+        0, 0, 0, 3,
+        0, 0, 0, 0,
+        0, 0, 0, 4,
+        0, 0, 0, 0x1,
+        0, 0, 0, 4,
+        0, 0, 0, 0x2,
+        0, 0, 0, 4,
+        0, 0, 0, 0x3,
+    }));
+}
+
 TEST_F(send, should_send_nothing_for_std_nullptr_t) {
     ozo::send(os, oid_map, nullptr);
     EXPECT_TRUE(buffer.empty());

@@ -40,6 +40,61 @@ BOOST_FUSION_ADAPT_STRUCT(ozo::detail::pg_array_dimension,
     index
 )
 
+namespace ozo {
+
+template <typename T>
+struct fit_array_size_impl {
+    static void apply(T& array, size_type count) { array.resize(count); }
+};
+
+/**
+ * @brief Fits array container size to reqired one
+ *
+ * Function is used to request container which represents an array to
+ * to be able to store requested count of elements. The function may
+ * throw exception if the container can not accept the requested
+ * count of elements (see the example below).
+ *
+ * @param array --- container which represents an array
+ * @param count --- required count of elements to be able to contain
+ *
+ * The implementation can be customized with `ozo::fit_array_size_impl`
+ * template specialization. By default it uses `resize()` function of
+ * the array container and default implementation may look like this
+ *
+ * @code
+template <typename T>
+struct fit_array_size_impl {
+    static void apply(T& array, size_type count) {
+        array.resize(count);
+    }
+};
+ * @endcode
+ *
+ * E.g. the implementation for a fixed size container like `std::array` may
+ * be equal to:
+ *
+ * @code
+template <typename T, std::size_t S>
+struct fit_array_size_impl<std::array<T, S>> {
+    static void apply(const std::array<T, S>& array, size_type size) {
+        if (size != array.size()) {
+            throw ozo::system_error(ozo::error::bad_array_size,
+                "requested size does not match array size");
+        }
+    }
+};
+ * @endcode
+ * @ingroup group-io-functions
+ *
+ */
+template <typename T>
+inline void fit_array_size(T& array, size_type count) {
+    fit_array_size_impl<T>::apply(array, count);
+}
+
+} // namespace ozo
+
 namespace ozo::detail {
 
 template <typename T>
@@ -119,7 +174,7 @@ struct recv_array_impl {
             return in;
         }
 
-        out.resize(dim_header.size);
+        fit_array_size(out, dim_header.size);
 
         for (auto& item : out) {
             recv_data_frame(in, oids, item);
