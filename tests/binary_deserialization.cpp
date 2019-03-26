@@ -231,8 +231,7 @@ TEST_F(recv, should_throw_on_multidimential_arrays) {
     EXPECT_CALL(mock, get_isnull(_, _)).WillRepeatedly(Return(false));
 
     std::vector<std::string> got;
-    ;
-    EXPECT_THROW(ozo::recv(value, oid_map, got), std::range_error);
+    EXPECT_THROW(ozo::recv(value, oid_map, got), ozo::system_error);
 }
 
 TEST_F(recv, should_throw_on_inappropriate_element_oid) {
@@ -289,7 +288,7 @@ TEST_F(recv, should_throw_exception_when_size_of_integral_differs_from_given) {
     EXPECT_CALL(mock, get_isnull(_, _)).WillRepeatedly(Return(false));
 
     bool got = false;
-    EXPECT_THROW(ozo::recv(value, oid_map, got), std::range_error);
+    EXPECT_THROW(ozo::recv(value, oid_map, got), ozo::system_error);
 }
 
 TEST_F(recv, should_read_nothing_when_dimensions_count_is_zero) {

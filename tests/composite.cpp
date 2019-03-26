@@ -228,7 +228,7 @@ TEST_F(recv_composite, should_throw_exception_if_wrong_number_of_fields_are_rece
 
     std::tuple<std::string, std::int64_t> got;
     ozo::set_type_oid<hana_test_struct>(oid_map, 0x10);
-    EXPECT_THROW(ozo::recv(value, oid_map, got), std::range_error);
+    EXPECT_THROW(ozo::recv(value, oid_map, got), ozo::system_error);
 }
 
 } // namespace

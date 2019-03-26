@@ -96,7 +96,8 @@ inline Require<Composite<T>> read_and_verify_header(istream& in, const T& v) {
     pg_composite header;
     read(in, header);
     if (header.count != fields_number(v)) {
-        throw std::range_error("incoming composite fields count " + std::to_string(header.count)
+        throw system_error(error::bad_composite_size,
+            "incoming composite fields count " + std::to_string(header.count)
             + " does not match fields count " + std::to_string(fields_number(v))
             + " of type " + boost::core::demangle(typeid(v).name()));
     }

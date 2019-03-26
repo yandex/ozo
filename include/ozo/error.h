@@ -85,6 +85,10 @@ enum code {
     result_status_empty_query, //!< the string sent to the server was empty
     result_status_bad_response, //!< the server's response was not understood
     oid_request_failed, //!< error during request oids from a database
+    bad_object_size, //!< an object size received does not equal to the expected
+    bad_array_size, //!< an array size received does not equal to the expected or not supported by the type
+    bad_array_dimension, //!< an array dimension count received does not equal to the expected or not supported by the type
+    bad_composite_size, //!< a composite's fields number received does not equal to the expected or not supported by the type
 };
 
 /**
@@ -439,6 +443,14 @@ public:
                 return "result_status_bad_response - the server's response was not understood";
             case oid_request_failed:
                 return "error during request oids from a database";
+            case bad_object_size:
+                return "an object size received does not equal to the expected";
+            case bad_array_size:
+                return "an array size received does not equal to the expected or not supported by the type";
+            case bad_array_dimension:
+                return "an array dimension count received does not equal to the expected or not supported by the type";
+            case bad_composite_size:
+                return "a composite's fields number received does not equal to the expected or not supported by the type";
         }
         return "no message for value: " + std::to_string(value);
     }
