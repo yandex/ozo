@@ -108,7 +108,8 @@ struct recv_impl {
         if constexpr (DynamicSize<Out>) {
             out.resize(size);
         } else if (size != size_of(out)) {
-            throw std::range_error("data size " + std::to_string(size)
+            throw ozo::system_error(error::bad_object_size,
+                "data size " + std::to_string(size)
                 + " does not match type size " + std::to_string(size_of(out)));
         }
         return read(in, out);

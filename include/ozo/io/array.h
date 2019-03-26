@@ -96,7 +96,8 @@ struct recv_array_impl {
         read(in, array_header);
 
         if (array_header.dimensions_count > 1) {
-            throw std::range_error("multiply dimension count is not supported: "
+            throw system_error(error::bad_array_dimension,
+                "multiply dimension count is not supported: "
                  + std::to_string(array_header.dimensions_count));
         }
 
