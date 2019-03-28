@@ -10,36 +10,6 @@
 #include <boost/range/numeric.hpp>
 #include <boost/range/algorithm/for_each.hpp>
 
-namespace ozo::detail {
-
-struct pg_array {
-    BOOST_HANA_DEFINE_STRUCT(pg_array,
-        (std::int32_t, dimensions_count),
-        (std::int32_t, dataoffset),
-        (::Oid, elemtype)
-    );
-};
-
-struct pg_array_dimension {
-    BOOST_HANA_DEFINE_STRUCT(pg_array_dimension,
-        (size_type, size),
-        (std::int32_t, index)
-    );
-};
-
-} //namespace ozo::detail
-
-BOOST_FUSION_ADAPT_STRUCT(ozo::detail::pg_array,
-    dimensions_count,
-    dataoffset,
-    elemtype
-)
-
-BOOST_FUSION_ADAPT_STRUCT(ozo::detail::pg_array_dimension,
-    size,
-    index
-)
-
 namespace ozo {
 
 template <typename T>
@@ -49,6 +19,7 @@ struct fit_array_size_impl {
 
 /**
  * @brief Fits array container size to reqired one
+ * @ingroup group-io-functions
  *
  * Function is used to request container which represents an array to
  * to be able to store requested count of elements. The function may
@@ -85,8 +56,6 @@ struct fit_array_size_impl<std::array<T, S>> {
     }
 };
  * @endcode
- * @ingroup group-io-functions
- *
  */
 template <typename T>
 inline void fit_array_size(T& array, size_type count) {
@@ -94,6 +63,36 @@ inline void fit_array_size(T& array, size_type count) {
 }
 
 } // namespace ozo
+
+namespace ozo::detail {
+
+struct pg_array {
+    BOOST_HANA_DEFINE_STRUCT(pg_array,
+        (std::int32_t, dimensions_count),
+        (std::int32_t, dataoffset),
+        (::Oid, elemtype)
+    );
+};
+
+struct pg_array_dimension {
+    BOOST_HANA_DEFINE_STRUCT(pg_array_dimension,
+        (size_type, size),
+        (std::int32_t, index)
+    );
+};
+
+} //namespace ozo::detail
+
+BOOST_FUSION_ADAPT_STRUCT(ozo::detail::pg_array,
+    dimensions_count,
+    dataoffset,
+    elemtype
+)
+
+BOOST_FUSION_ADAPT_STRUCT(ozo::detail::pg_array_dimension,
+    size,
+    index
+)
 
 namespace ozo::detail {
 
