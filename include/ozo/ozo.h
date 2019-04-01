@@ -34,6 +34,15 @@
  * @brief Database requests related types.
  */
 
+/**
+ * @defgroup group-ext Extentions
+ * @brief Library extentions.
+ *
+ * The Library can be extended via specialization of different
+ * functors and traits. Here in-library extentions are collected.
+ * Use it as an example of extentions.
+ */
+
 #include <ozo/connection_pool.h>
 
 namespace ozo {

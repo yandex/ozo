@@ -4,7 +4,23 @@
 #include <array>
 
 namespace ozo {
-
+/**
+ * @defgroup group-ext-std-array std::array
+ * @ingroup group-ext-std
+ * @brief [std::array](https://en.cppreference.com/w/cpp/container/array) support
+ *
+ *@code
+#include <ozo/ext/std/array.h>
+ *@endcode
+ *
+ * `std::array<T, N>` is defined as an one dimensional #Array representation type
+ * with fixed size.
+ *
+ * The `ozo::fit_array_size()` function throws `ozo::system_error` exception,
+ * with `ozo::error::bad_array_size` error code, if it's size argument does not
+ * equal to the array size.
+ */
+///@{
 template <typename T, std::size_t size>
 struct is_array<std::array<T, size>> : std::true_type {};
 
@@ -18,5 +34,5 @@ struct fit_array_size_impl<std::array<T, S>> {
         }
     }
 };
-
+///@}
 } // namespace ozo

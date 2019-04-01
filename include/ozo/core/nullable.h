@@ -11,31 +11,29 @@ template <typename T, typename Enable = void>
 struct is_nullable : std::false_type {};
 
 /**
- * @brief Indicates if type meets nullable requirements.
+ * @brief Indicates if type is marked as conformed to nullable requirements.
  *
- * `Nullable` type has to:
- * * have a null-state,
- * * be `bool` convertable - `false` indicates null state,
- * * be dereferenceable via `operator *`,
- * * have `allocate_nullable()` specialization (see the function documentation for how to).
+ * These next types are defined as `Nullable` via @ref group-ext of the library:
+ * * @ref group-ext-boost-optional,
+ * * @ref group-ext-boost-scoped_ptr,
+ * * @ref group-ext-boost-shared_ptr,
+ * * @ref group-ext-boost-weak_ptr,
+ * * @ref group-ext-std-nullopt,
+ * * @ref group-ext-std-nullptr,
+ * * @ref group-ext-std-optional,
+ * * @ref group-ext-std-shared_ptr,
+ * * @ref group-ext-std-unique_ptr,
+ * * @ref group-ext-std-weak_ptr.
  *
- * These next types are `Nullable` out of the box:
- * * `boost::optional`,
- * * `std::optional`,
- * * `boost::scoped_ptr`,
- * * `std::unique_ptr`,
- * * `boost::shared_ptr`,
- * * `std::shared_ptr`,
- * * `boost::weak_ptr`,
- * * `std::weak_ptr`.
- *
- * @note Raw pointers are not supported as `Nullable` by default, because this library uses RAII model for objects and
- * no special deallocation functions are used. But if it is really needed and you want to deallocate the allocated
- * objects manually you can add them as described below.
+ * If it is needed to mark type as nullable then `ozo::is_nullable` from the type should
+ * be specialized as `std::true_type` type. If the type has to be allocated in special way
+ * --- `ozo::allocate_nullable()` should be specialized (see @ref group-ext-std-shared_ptr as an example).
  *
  * ### Example
  *
- * If you want to add nullable type to the library --- you have to specialize `ozo::is_nullable` struct and specify allocation function like this:
+ * Raw pointers are not supported as `Nullable` by default, because this library uses RAII model for objects and
+ * no special deallocation functions are used. But if it is really needed and you want to deallocate the allocated
+ * objects manually you can add them as described below.
  *
  * @code
 //Add raw pointer to nullables
@@ -59,7 +57,7 @@ struct allocate_nullable_impl<T*> {
 
  * @endcode
  *
- * @sa ozo::unwrap(), is_null(), allocate_nullable(), init_nullable(), reset_nullable()
+ * @sa is_null(), allocate_nullable(), init_nullable(), reset_nullable()
  * @ingroup group-core-concepts
  * @hideinitializer
  */
@@ -97,6 +95,19 @@ struct allocate_nullable_impl {
     }
 };
 
+/**
+ * @brief Allocates nullable object of given type
+ *
+ * This function allocates memory and constructs nullable object of given type
+ * by means of given allocator if applicable. It uses `ozo::allocate_nullable_impl`
+ * functional object as an implementation.
+ * @note The function implementation may use no allocator and ignore the argument
+ * (e.g.: if it is not applicable to the given object type).
+ *
+ * @param out --- object to allocate to
+ * @param a --- allocator to use
+ * @ingroup group-core-functions
+ */
 template <typename T, typename Alloc>
 inline void allocate_nullable(T& out, const Alloc& a) {
     static_assert(Nullable<T>, "T must be nullable");
