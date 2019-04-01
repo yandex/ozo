@@ -101,8 +101,9 @@ constexpr null_oid_t null_oid;
  * Representation means that you can obtain PostgreSQL array into the supported
  * container.
  * Array by default can be represented via next containers:
- *   * `std::vector<T>`
- *   * `std::list<T>`
+ *   * @ref group-ext-std-vector
+ *   * @ref group-ext-std-list
+ *   * @ref group-ext-std-array
  *
  * @tparam T --- type to examine.
  *

@@ -11,9 +11,9 @@ namespace ozo {
 namespace hana = boost::hana;
 
 /**
- * @brief Implementation of `ozo::unwrap()`
+ * @brief Default implementation of `ozo::unwrap()`
  *
- * This function defines how to unwrap ano object of type T by means of
+ * This functional class defines how to unwrap an object of type T by means of
  * static member function apply. E.g. in most common cases it may be defined
  * in general way like:
  *
@@ -42,15 +42,15 @@ struct unwrap_impl : detail::functional::forward {};
  * @brief Unwraps argument underlying value or forwards the argument.
  *
  * This utility function returns underlying value of it's argument as defined by
- * the operation implementation `ozo::unwrap_impl<std::decay_t<T>>::apply(std::forward<T>(v))`.
+ * the operation implementation `ozo::unwrap_impl`.
  *
- * Default in-library implementations:
- * - for #Nullable - returns result of argument object dereference,
- * - for `std::reference_wrapper` - returns result of `std::reference_wrapper::get()` member function,
- * - in other cases - returns result of `std::forward<T>(v)`
+ * In-library implementations returns:
+ * - reference on an underlying value - `std::reference_wrapper` and other types like pointers,
+ *   optional values which are defined via @ref group-ext,
+ * - argument itself by default.
  *
  * @param value --- object to unwrap
- * @return implementation depended value.
+ * @return implementation depended result of `unwrap_impl<std::decay_t<T>>::apply(std::forward<T>(v))` call
  * @ingroup group-core-functions
  */
 template <typename T>

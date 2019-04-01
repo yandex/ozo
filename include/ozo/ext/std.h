@@ -1,5 +1,13 @@
 #pragma once
 
+/**
+ * @defgroup group-ext-std STL
+ * @ingroup group-ext
+ * @brief Library extentions for STL.
+ *
+ * Contains extentions are related to the Standard C++ library types.
+ */
+
 #include <ozo/ext/std/list.h>
 #include <ozo/ext/std/nullopt_t.h>
 #include <ozo/ext/std/nullptr_t.h>
