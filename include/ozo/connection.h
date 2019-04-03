@@ -7,6 +7,7 @@
 #include <ozo/core/recursive.h>
 
 #include <ozo/detail/bind.h>
+#include <ozo/detail/functional.h>
 #include <ozo/impl/connection.h>
 
 #include <boost/asio/dispatch.hpp>
@@ -69,7 +70,7 @@ struct unwrap_connection_impl : unwrap_recursive_impl<T> {};
 */
 template <typename T>
 inline constexpr decltype(auto) unwrap_connection(T&& conn) noexcept {
-    return unwrap_connection_impl<std::decay_t<T>>::apply(std::forward<T>(conn));
+    return detail::apply<unwrap_connection_impl>(std::forward<T>(conn));
 }
 
 template <typename T, typename = std::void_t<>>
@@ -106,13 +107,13 @@ struct get_connection_oid_map_impl {
  * @param conn --- #Connection object
  * @return reference or proxy to OID map object.
  */
-template <typename T>
-constexpr auto get_connection_oid_map(T&& conn)
 #ifdef OZO_DOCUMENTATION
-;
+template <typename T>
+constexpr OidMap& get_connection_oid_map(T&& conn);
 #else
-        -> decltype (get_connection_oid_map_impl<std::decay_t<T>>::apply(std::forward<T>(conn))) {
-    return get_connection_oid_map_impl<std::decay_t<T>>::apply(std::forward<T>(conn));
+template <typename T>
+constexpr detail::result_of<get_connection_oid_map_impl, T> get_connection_oid_map(T&& conn) {
+    return detail::apply<get_connection_oid_map_impl>(std::forward<T>(conn));
 }
 #endif
 
@@ -150,13 +151,13 @@ struct get_connection_socket_impl {
  * @param conn --- #Connection object
  * @return reference or proxy to the socket object
  */
-template <typename T>
-constexpr auto get_connection_socket(T&& conn)
 #ifdef OZO_DOCUMENTATION
-;
+template <typename T>
+constexpr auto get_connection_socket(T&& conn);
 #else
-        -> decltype(get_connection_socket_impl<std::decay_t<T>>::apply(std::forward<T>(conn))) {
-    return get_connection_socket_impl<std::decay_t<T>>::apply(std::forward<T>(conn));
+template <typename T>
+constexpr detail::result_of<get_connection_socket_impl, T> get_connection_socket(T&& conn) {
+    return detail::apply<get_connection_socket_impl>(std::forward<T>(conn));
 }
 #endif
 
@@ -194,13 +195,13 @@ struct get_connection_handle_impl {
  * @param conn --- #Connection object
  * @return reference or proxy object to `ozo::native_conn_handle` object
  */
-template <typename T>
-constexpr auto get_connection_handle(T&& conn)
 #ifdef OZO_DOCUMENTATION
-;
+template <typename T>
+constexpr auto get_connection_handle(T&& conn);
 #else
-        -> decltype(get_connection_handle_impl<std::decay_t<T>>::apply(std::forward<T>(conn))) {
-    return get_connection_handle_impl<std::decay_t<T>>::apply(std::forward<T>(conn));
+template <typename T>
+constexpr detail::result_of<get_connection_handle_impl, T> get_connection_handle(T&& conn) {
+    return detail::apply<get_connection_handle_impl>(std::forward<T>(conn));
 }
 #endif
 
@@ -240,13 +241,13 @@ struct get_connection_error_context_impl {
  * @param conn --- #Connection object
  * @return additional error context, for now `std::string` is supported only
  */
-template <typename T>
-constexpr auto get_connection_error_context(T&& conn)
 #ifdef OZO_DOCUMENTATION
-;
+template <typename T>
+constexpr auto get_connection_error_context(T&& conn);
 #else
-        -> decltype(get_connection_error_context_impl<std::decay_t<T>>::apply(std::forward<T>(conn))) {
-    return get_connection_error_context_impl<std::decay_t<T>>::apply(std::forward<T>(conn));
+template <typename T>
+constexpr detail::result_of<get_connection_error_context_impl, T> get_connection_error_context(T&& conn) {
+    return detail::apply<get_connection_error_context_impl>(std::forward<T>(conn));
 }
 #endif
 
@@ -288,13 +289,13 @@ struct get_connection_timer_impl {
  * @param conn --- #Connection object
  * @return timer for the #Connection
  */
-template <typename T>
-constexpr auto get_connection_timer(T&& conn)
 #ifdef OZO_DOCUMENTATION
-;
+template <typename T>
+constexpr auto get_connection_timer(T&& conn);
 #else
-        -> decltype(get_connection_timer_impl<std::decay_t<T>>::apply(std::forward<T>(conn))) {
-    return get_connection_timer_impl<std::decay_t<T>>::apply(std::forward<T>(conn));
+template <typename T>
+constexpr detail::result_of<get_connection_timer_impl, T> get_connection_timer(T&& conn) {
+    return detail::apply<get_connection_timer_impl>(std::forward<T>(conn));
 }
 #endif
 
@@ -705,17 +706,32 @@ struct get_connection_type
 template <typename ConnectionProvider>
 using connection_type = typename get_connection_type<std::decay_t<ConnectionProvider>>::type;
 
-template <typename T, typename = std::void_t<>>
-struct async_get_connection_impl_default {
+namespace detail {
+
+struct call_async_get_connection {
     template <typename Provider, typename Handler>
     static constexpr auto apply(Provider&& p, Handler&& h) ->
             decltype(p.async_get_connection(std::forward<Handler>(h))) {
-        p.async_get_connection(std::forward<Handler>(h));
+        return p.async_get_connection(std::forward<Handler>(h));
     }
 };
 
+struct forward_connection {
+    template <typename Conn, typename Handler>
+    static constexpr void apply(Conn&& c, Handler&& h) {
+        reset_error_context(c);
+        auto ex = get_executor(c);
+        asio::dispatch(ex, detail::bind(std::forward<Handler>(h), error_code{}, std::forward<Conn>(c)));
+    }
+};
+
+} // namespace detail
+
 template <typename Provider>
-struct async_get_connection_impl : async_get_connection_impl_default<Provider> {};
+struct async_get_connection_impl : std::conditional_t<Connection<Provider>,
+    detail::forward_connection,
+    detail::call_async_get_connection
+> {};
 
 template <typename, typename = std::void_t<>>
 struct is_connection_source : std::false_type {};
@@ -784,10 +800,11 @@ struct is_connection_source<T, std::void_t<decltype(
 template <typename T>
 constexpr auto ConnectionSource = is_connection_source<std::decay_t<T>>::value;
 
-template <typename Provider, typename Handler>
-constexpr auto async_get_connection(Provider&& p, Handler&& h) ->
-        decltype(async_get_connection_impl<std::decay_t<Provider>>::apply(std::forward<Provider>(p), std::forward<Handler>(h))) {
-    return async_get_connection_impl<std::decay_t<Provider>>::apply(std::forward<Provider>(p), std::forward<Handler>(h));
+template <typename Provider, typename Handler,
+    typename = Require<detail::IsApplicable<async_get_connection_impl, Provider, Handler>>
+>
+constexpr void async_get_connection(Provider&& p, Handler&& h) {
+    detail::apply<async_get_connection_impl>(std::forward<Provider>(p), std::forward<Handler>(h));
 }
 
 template <typename, typename = std::void_t<>>
@@ -904,16 +921,6 @@ struct get_connection_op {
 
 constexpr get_connection_op get_connection;
 #endif
-
-template <typename T>
-struct async_get_connection_impl_default<T, Require<Connection<T>>> {
-    template <typename Conn, typename Handler>
-    static constexpr void apply(Conn&& c, Handler&& h) {
-        reset_error_context(c);
-        auto ex = get_executor(c);
-        asio::dispatch(ex, detail::bind(std::forward<Handler>(h), error_code{}, std::forward<Conn>(c)));
-    }
-};
 
 namespace detail {
 
