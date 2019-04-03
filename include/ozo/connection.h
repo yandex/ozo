@@ -838,6 +838,7 @@ struct is_connection_provider<T, std::void_t<decltype(
 template <typename T>
 constexpr auto ConnectionProvider = is_connection_provider<std::decay_t<T>>::value;
 
+#ifdef OZO_DOCUMENTATION
 /**
  * @brief Get a connection from provider
  *
@@ -885,16 +886,24 @@ constexpr auto ConnectionProvider = is_connection_provider<std::decay_t<T>>::val
  * `boost::asio::yield_context`, `std::future<Connection>` for `boost::asio::use_future`, and so on.
  */
 template <typename T, typename CompletionToken>
-inline auto get_connection(T&& provider, CompletionToken&& token) {
-    static_assert(ConnectionProvider<T>, "T is not a ConnectionProvider concept");
+decltype(auto) get_connection(T&& provider, CompletionToken&& token);
+#else
+struct get_connection_op {
+    template <typename T, typename CompletionToken>
+    decltype(auto) operator() (T&& provider, CompletionToken&& token) const {
+        static_assert(ConnectionProvider<T>, "T is not a ConnectionProvider concept");
 
-    using signature_t = void (error_code, connection_type<T>);
-    async_completion<CompletionToken, signature_t> init(token);
+        using signature_t = void (error_code, connection_type<T>);
+        async_completion<CompletionToken, signature_t> init(token);
 
-    async_get_connection(std::forward<T>(provider), init.completion_handler);
+        async_get_connection(std::forward<T>(provider), init.completion_handler);
 
-    return init.result.get();
-}
+        return init.result.get();
+    }
+};
+
+constexpr get_connection_op get_connection;
+#endif
 
 template <typename T>
 struct async_get_connection_impl_default<T, Require<Connection<T>>> {
