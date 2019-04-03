@@ -36,3 +36,44 @@ struct always_false {
 };
 
 } // namespace ozo::detail::functional
+
+namespace ozo::detail {
+
+template <template<typename...> typename Functional, typename T, typename ...Ts>
+constexpr Functional<std::decay_t<T>> make_functional(T&&, Ts&&...) { return {};}
+
+template <template<typename...> typename Functional, typename ...Ts>
+using functional_type = decltype(make_functional<Functional>(std::declval<Ts>()...));
+
+struct is_applicable_impl {
+    template <typename ...Ts>
+    using true_type = std::is_void<std::void_t<Ts...>>;
+
+    template <typename Functional, typename ...Ts>
+    static constexpr auto get(Functional, Ts&&... args) ->
+            true_type<decltype(Functional::apply(std::forward<Ts>(args)...))>;
+
+    static constexpr std::false_type get(...);
+};
+
+template <template<typename...> typename Functional, typename ...Ts>
+constexpr auto is_applicable(Ts&&... args) {
+    return decltype(
+        is_applicable_impl::get(
+            make_functional<Functional>(std::forward<Ts>(args)...),
+            std::forward<Ts>(args)...)
+     ){};
+}
+
+template <template<typename...> typename Functional, typename ...Ts>
+constexpr auto IsApplicable = decltype(is_applicable<Functional>(std::declval<Ts>()...)){};
+
+template <template<typename...> typename Functional, typename ...Ts>
+using result_of = decltype(functional_type<Functional, Ts...>::apply(std::declval<Ts>()...));
+
+template <template<typename...> typename Functional, typename ...Ts>
+constexpr result_of<Functional, Ts...> apply(Ts&&... args) {
+    return functional_type<Functional, Ts...>::apply(std::forward<Ts>(args)...);
+}
+
+} // namespace ozo::detail
