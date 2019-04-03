@@ -3,7 +3,7 @@
 #include <ozo/impl/async_request.h>
 
 namespace ozo {
-
+#ifdef OZO_DOCUMENTATION
 /**
  * @brief Send request to a database and provides query result (time-out version).
  * @ingroup group-requests-functions
@@ -48,19 +48,11 @@ int main() {
  * @param query --- #Query or `ozo::query_builder` object to send to a database.
  * @param timeout --- request timeout.
  * @param out --- output object like Iterator, #InsertIterator or `ozo::result`.
- * @param token --- any valid of #CompletionToken.
+ * @param token --- operation #CompletionToken.
  * @return depends on #CompletionToken.
  */
-template <typename P, typename Q, typename Out, typename CompletionToken, typename = Require<ConnectionProvider<P>>>
-inline auto request(P&& provider, Q&& query, const time_traits::duration& timeout, Out out, CompletionToken&& token) {
-    using signature_t = void (error_code, connection_type<P>);
-    async_completion<CompletionToken, signature_t> init(token);
-
-    impl::async_request(std::forward<P>(provider), std::forward<Q>(query), timeout, std::move(out),
-            init.completion_handler);
-
-    return init.result.get();
-}
+template <typename P, typename Q, typename Out, typename CompletionToken>
+decltype(auto) request (P&& provider, Q&& query, const time_traits::duration& timeout, Out out, CompletionToken&& token);
 
 /**
  * @brief Send request to a database and provides query result.
@@ -70,18 +62,42 @@ inline auto request(P&& provider, Q&& query, const time_traits::duration& timeou
  * @param provider --- #ConnectionProvider to get connection from.
  * @param query --- #Query or `ozo::query_builder` object to send to a database.
  * @param out --- output object like Iterator, #InsertIterator or `ozo::result`.
- * @param token --- any valid of #CompletionToken.
+ * @param token --- operation #CompletionToken.
  * @return depends on #CompletionToken.
  */
-template <typename P, typename Q, typename Out, typename CompletionToken, typename = Require<ConnectionProvider<P>>>
-inline auto request(P&& provider, Q&& query, Out out, CompletionToken&& token) {
-    return request(
-        std::forward<P>(provider),
-        std::forward<Q>(query),
-        time_traits::duration::max(),
-        std::move(out),
-        std::forward<CompletionToken>(token)
-    );
-}
+template <typename P, typename Q, typename Out, typename CompletionToken>
+decltype(auto) request (P&& provider, Q&& query, Out out, CompletionToken&& token);
+
+#else
+
+struct request_op {
+    template <typename P, typename Q, typename Out, typename CompletionToken>
+    decltype(auto) operator() (P&& provider, Q&& query, const time_traits::duration& timeout, Out out, CompletionToken&& token) const {
+        static_assert(ConnectionProvider<P>, "provider should be a ConnectionProvider");
+        using signature_t = void (error_code, connection_type<P>);
+        async_completion<CompletionToken, signature_t> init(token);
+
+        impl::async_request(std::forward<P>(provider), std::forward<Q>(query), timeout, std::move(out),
+                init.completion_handler);
+
+        return init.result.get();
+    }
+
+    template <typename P, typename Q, typename Out, typename CompletionToken>
+    decltype(auto) operator()(P&& provider, Q&& query, Out out, CompletionToken&& token) const {
+        static_assert(ConnectionProvider<P>, "provider should be a ConnectionProvider");
+        return (*this)(
+            std::forward<P>(provider),
+            std::forward<Q>(query),
+            time_traits::duration::max(),
+            std::move(out),
+            std::forward<CompletionToken>(token)
+        );
+    }
+};
+
+constexpr request_op request;
+
+#endif
 
 } // namespace ozo
