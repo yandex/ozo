@@ -513,14 +513,14 @@ inline std::string_view error_message(T&& conn) {
 }
 
 /**
- * @brief Gives additional error context from OZO
+ * @brief Additional error context getter
  *
- * In parallel with libpq OZO provides additional context for different errors which
- * can be while interacting via connection. This function gives access for
- * such context.
+ * In addition to libpq OZO provides its own error context. This is
+ * a getter for such a context. Please be sure that the connection
+ * is not in the null state via `ozo::is_null_recursive()` function.
  *
- * @sa ozo::set_error_context(), ozo::reset_error_context()
- * @param conn --- #Connection to get context from
+ * @sa ozo::set_error_context(), ozo::reset_error_context(), ozo::is_null_recursive()
+ * @param conn --- #Connection to get context from, should not be in null state
  * @return `std::string` contains a context
  */
 template <typename T>
@@ -530,12 +530,13 @@ inline const auto& get_error_context(const T& conn) {
 }
 
 /**
- * @brief Set connection OZO-related error context
+ * @brief Additional error context setter
  *
- * Like libpq OZO provides additional context for errors.
- * This function sets such context for the specified connection.
+ * In addition to libpq OZO provides its own error context. This is
+ * a setter for such a context. Please be sure that the connection
+ * is not in the null state via `ozo::is_null_recursive()` function.
  *
- * @sa ozo::get_error_context(), ozo::reset_error_context()
+ * @sa ozo::get_error_context(), ozo::reset_error_context(), ozo::is_null_recursive()
  * @param conn --- #Connection to set context to
  * @param ctx --- context to set, now only `std::string` is supported
  */
@@ -546,12 +547,14 @@ inline void set_error_context(T& conn, Ctx&& ctx) {
 }
 
 /**
- * @brief Reset connection OZO-related error context
+ * @brief Reset additional error context
  *
- * This function resets OZO-related error context to default.
+ * This function resets additional error context to its default value.
+ * Please be sure that the connection  is not in the null state via
+ * `ozo::is_null_recursive()` function.
  *
- * @sa ozo::set_error_context(), ozo::get_error_context()
- * @param conn --- #Connection to reset context to
+ * @sa ozo::set_error_context(), ozo::get_error_context(), ozo::is_null_recursive()
+ * @param conn --- #Connection to reset context, should not be in null state
  */
 template <typename T>
 inline void reset_error_context(T& conn) {
@@ -565,8 +568,10 @@ inline void reset_error_context(T& conn) {
  *
  * This function gives access to a connection OID map, which represents mapping
  * of custom types to its' OIDs in a database connected to.
+ * Please be sure that the connection  is not in the null state via
+ * `ozo::is_null_recursive()` function.
  *
- * @param conn --- #Connection to access OID map of
+ * @param conn --- #Connection to access OID map, should not be in null state
  * @return OID map of the Connection
  */
 template <typename T>
@@ -580,7 +585,10 @@ inline decltype(auto) get_oid_map(T&& conn) noexcept {
  *
  * @note This feature is not implemented yet
  *
- * @param conn --- #Connection to access statistics of
+ * Please be sure that the connection  is not in the null state via
+ * `ozo::is_null_recursive()` function.
+ *
+ * @param conn --- #Connection to access statistics, should not be in null state
  * @return statistics of the Connection
  */
 template <typename T>
@@ -601,7 +609,10 @@ inline decltype(auto) get_statistics(T&& conn) noexcept {
  * <a href="https://www.boost.org/doc/libs/1_66_0/doc/html/boost_asio/reference/steady_timer.html">
  * boost::asio::steady_timer</a>).
  *
- * @param conn --- #Connection to access statistics of
+ * Please be sure that the connection  is not in the null state via
+ * `ozo::is_null_recursive()` function.
+ *
+ * @param conn --- #Connection to access statistics of, should not be in null state
  * @return a reference or proxy for a timer
  */
 template <typename T>
