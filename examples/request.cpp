@@ -55,8 +55,12 @@ int main(int argc, char **argv) {
         // if there are no problems with target database, network or permissions for given user in connection
         // string.
         if (ec) {
-            std::cout << "Request failed with error: " << ec.message()
-                << ", error context: " << ozo::get_error_context(connection) << std::endl;
+            std::cout << "Request failed with error: " << ec.message();
+            // Here we should check if the connection is in null state to avoid UB.
+            if (!ozo::is_null_recursive(connection)) {
+                std::cout << ", error context: " << ozo::get_error_context(connection);
+            }
+            std::cout << std::endl;
             return;
         }
 
