@@ -29,7 +29,7 @@ const auto query =
 ozo::rows_of<std::int64_t, std::string> rows;
 //           ------------  ===========
 
-ozo::request(ozo::make_connector(io, conn_info), query, ozo::into(rows), boost::asio::use_future);
+ozo::request(conn_info[io], query, ozo::into(rows), boost::asio::use_future);
 @endcode
  * @tparam Ts --- types of columns in result
  */
@@ -55,7 +55,7 @@ const auto query =
 ozo::lrows_of<std::int64_t, std::string> rows;
 //            ------------  ===========
 
-ozo::request(ozo::make_connector(io, conn_info), query, ozo::into(rows), boost::asio::use_future);
+ozo::request(conn_info[io], query, ozo::into(rows), boost::asio::use_future);
 @endcode
  * @tparam Ts --- types of columns in result
  */
@@ -77,7 +77,7 @@ const auto query = "SELECT id, name FROM users_info WHERE amount>="_SQL + std::i
 
 ozo::rows_of<std::int64_t, std::string> rows;
 
-ozo::request(ozo::make_connector(io, conn_info), query, ozo::into(rows), boost::asio::use_future);
+ozo::request(conn_info[io], query, ozo::into(rows), boost::asio::use_future);
 @endcode
  * @param v --- container for rows
  */
@@ -99,7 +99,7 @@ const auto query = "SELECT id, name FROM users_info WHERE amount>="_SQL + std::i
 
 ozo::result res;
 
-ozo::request(ozo::make_connector(io, conn_info), query, ozo::into(res), boost::asio::use_future);
+ozo::request(conn_info[io], query, ozo::into(res), boost::asio::use_future);
 @endcode
  * @param v --- `ozo::basic_result` object for rows.
  */

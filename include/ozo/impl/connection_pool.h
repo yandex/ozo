@@ -64,14 +64,15 @@ struct is_null_impl<impl::pooled_connection<T>> {
 
 namespace ozo::impl {
 
-template <typename IoContext, typename Provider, typename Handler>
+template <typename IoContext, typename Source, typename Handler, typename TimeConstraint>
 struct pooled_connection_wrapper {
     IoContext& io_;
-    Provider provider_;
+    Source source_;
     Handler handler_;
+    TimeConstraint time_constrain_;
 
-    using connection = pooled_connection<typename Provider::source_type>;
-    using connection_ptr = pooled_connection_ptr<typename Provider::source_type>;
+    using connection = pooled_connection<Source>;
+    using connection_ptr = pooled_connection_ptr<Source>;
 
     struct wrapper {
         Handler handler_;
@@ -79,8 +80,8 @@ struct pooled_connection_wrapper {
 
         template <typename Conn>
         void operator () (error_code ec, Conn&& conn) {
-            static_assert(std::is_same_v<connection_type<Provider>, std::decay_t<Conn>>,
-                "Conn must connectiable type of Provider");
+            static_assert(std::is_same_v<connection_type<Source>, std::decay_t<Conn>>,
+                "Conn should be connection type of Source");
             if (conn) {
                 conn_->reset(std::move(conn));
             } else {
@@ -114,7 +115,7 @@ struct pooled_connection_wrapper {
             return handler_(std::move(ec), std::move(conn));
         }
 
-        async_get_connection(provider_, wrapper{std::move(handler_), std::move(conn)});
+        source_(io_, time_constrain_, wrapper{std::move(handler_), std::move(conn)});
     }
 
     using executor_type = decltype(asio::get_associated_executor(handler_));
@@ -130,13 +131,12 @@ struct pooled_connection_wrapper {
     }
 };
 
-template <typename P, typename IoContext, typename Handler>
-auto wrap_pooled_connection_handler(IoContext& io, P&& provider, Handler&& handler) {
+template <typename Source, typename IoContext, typename TimeConstraint, typename Handler>
+auto wrap_pooled_connection_handler(IoContext& io, Source&& source, TimeConstraint t, Handler&& handler) {
+    static_assert(ConnectionSource<Source>, "is not a ConnectionSource");
 
-    static_assert(ConnectionProvider<P>, "is not a ConnectionProvider");
-
-    return pooled_connection_wrapper<IoContext, std::decay_t<P>, std::decay_t<Handler>> {
-        io, std::forward<P>(provider), std::forward<Handler>(handler)
+    return pooled_connection_wrapper<IoContext, std::decay_t<Source>, std::decay_t<Handler>, TimeConstraint> {
+        io, std::forward<Source>(source), std::forward<Handler>(handler), t
     };
 }
 

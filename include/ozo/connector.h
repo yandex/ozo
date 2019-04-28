@@ -5,102 +5,112 @@
 
 namespace ozo {
 
+template <typename Provider>
+class bind_get_connection_timeout {
+public:
+    static_assert(ConnectionProvider<Provider>, "Provider should model ConnectionProvider concept");
+
+    using duration = time_traits::duration;
+    using target_type = Provider;
+    using connection_type = ozo::connection_type<target_type>;
+
+    bind_get_connection_timeout(Provider target, duration timeout)
+    : target_(std::move(target)), timeout_(timeout) {}
+
+    template <typename TimeConstraint, typename Handler>
+    void async_get_connection(TimeConstraint t, Handler&& handler) const& {
+        static_assert(ozo::TimeConstraint<TimeConstraint>, "should model TimeConstraint concept");
+        ozo::async_get_connection(target(), timeout(t), std::forward<Handler>(handler));
+    }
+
+    template <typename TimeConstraint, typename Handler>
+    void async_get_connection(TimeConstraint t, Handler&& handler) & {
+        static_assert(ozo::TimeConstraint<TimeConstraint>, "should model TimeConstraint concept");
+        ozo::async_get_connection(target(), timeout(t), std::forward<Handler>(handler));
+    }
+
+    template <typename TimeConstraint, typename Handler>
+    void async_get_connection(TimeConstraint t, Handler&& handler) && {
+        static_assert(ozo::TimeConstraint<TimeConstraint>, "should model TimeConstraint concept");
+        ozo::async_get_connection(std::move(target()), timeout(t), std::forward<Handler>(handler));
+    }
+
+    target_type& target() & { return target_; }
+    target_type& target() && { return target_; }
+    const target_type& target() const & { return target_; }
+    constexpr duration timeout() const {return timeout_;}
+    constexpr duration timeout(none_t) const {return timeout_;}
+    constexpr duration timeout(time_traits::time_point t) const {return std::min(timeout(), time_left(t));}
+    constexpr duration timeout(time_traits::duration t) const {return std::min(timeout(), t);}
+private:
+    target_type target_;
+    duration timeout_;
+};
+
 /**
  * @brief Default implementation of ConnectionProvider
  *
- * @ingroup group-connection-types
- *
  * This is the default implementation of the #ConnectionProvider concept. It binds
- * `io_context` and additional #ConnectionSource-specific parameters to the
- * #ConnectionSource implementation object.
+ * `io_context` to a #ConnectionSource implementation object.
  *
- * Thus `connector` can create connection via #ConnectionSource object running its
+ * Thus `connection_provider` can create connection via #ConnectionSource object running its
  * asynchronous connect operation on the `io_context` with additional parameters.
- * As a result, `connector` provides a #Connection object bound to `io_context` via
+ * As a result, `connection_provider` provides a #Connection object bound to `io_context` via
  * `ozo::get_connection()` function.
  *
- * @tparam Base --- ConnectionSource implementation
- * @tparam Args --- ConnectionSource additional parameters types.
+ * @tparam Source --- #ConnectionSource implementation
+ * @ingroup group-connection-types
  */
-template <typename Base, typename ... Args>
-class connector {
+template <typename Source>
+class connection_provider {
 public:
-    static_assert(ConnectionSource<Base>, "is not a ConnectionSource");
+    static_assert(ConnectionSource<Source>, "is not a ConnectionSource");
 
     /**
      * Source type according to #ConnectionProvider requirements
      */
-    using source_type = Base;
+    using source_type = Source;
     /**
      * #Connection implementation type according to #ConnectionProvider requirements.
      * Specifies the #Connection implementation type which can be obtained from this provider.
      */
-    using connection_type = typename source_type::connection_type;
+    using connection_type = typename connection_source_traits<source_type>::connection_type;
 
     /**
-     * @brief Construct a new `connector` object
+     * Construct a new `connection_provider` object
      *
-     * @param base --- #ConnectionSource implementation
+     * @param source --- #ConnectionSource implementation
      * @param io --- `io_context` for asynchronous IO
-     * @param args --- additional #ConnectionSource-specific arguments to be passed
-     *                 to make a #Connection
      */
-    connector(Base& base, io_context& io, std::tuple<Args ...>&& args)
-            : base(base), io(io), args(std::move(args)) {
+    template <typename T>
+    connection_provider(T&& source, io_context& io)
+     : source_(std::forward<T>(source)), io_(io) {
     }
 
-    template <typename Handler>
-    void async_get_connection(Handler&& handler) const& {
-        std::apply(
-            [&] (const auto& ... parameters) {
-                base(io, std::forward<Handler>(handler), parameters ...);
-            },
-            args
-        );
+    template <typename TimeConstraint, typename Handler>
+    void async_get_connection(TimeConstraint t, Handler&& h) const& {
+        static_assert(ozo::TimeConstraint<TimeConstraint>, "should model TimeConstraint concept");
+        source_(io_, std::move(t), std::forward<Handler>(h));
     }
 
-    template <typename Handler>
-    void async_get_connection(Handler&& handler) & {
-        std::apply(
-            [&] (auto& ... parameters) {
-                base(io, std::forward<Handler>(handler), parameters ...);
-            },
-            args
-        );
+    template <typename TimeConstraint, typename Handler>
+    void async_get_connection(TimeConstraint t, Handler&& h) & {
+        static_assert(ozo::TimeConstraint<TimeConstraint>, "should model TimeConstraint concept");
+        source_(io_, std::move(t), std::forward<Handler>(h));
     }
 
-    template <typename Handler>
-    void async_get_connection(Handler&& handler) && {
-        std::apply(
-            [&] (auto&& ... parameters) {
-                base(io, std::forward<Handler>(handler), parameters ...);
-            },
-            std::move(args)
-        );
+    template <typename TimeConstraint, typename Handler>
+    void async_get_connection(TimeConstraint t, Handler&& h) && {
+        static_assert(ozo::TimeConstraint<TimeConstraint>, "should model TimeConstraint concept");
+        std::forward<Source>(source_)(io_, std::move(t), std::forward<Handler>(h));
     }
 
 private:
-    Base& base;
-    io_context& io;
-    std::tuple<Args ...> args;
+    source_type source_;
+    io_context& io_;
 };
 
-template <class Base, class ... Args>
-auto make_connector(Base& base, io_context& io, Args&& ... args) {
-    return connector<std::decay_t<Base>, std::decay_t<Args> ...>(
-        base,
-        io,
-        std::make_tuple(std::forward<Args>(args) ...)
-    );
-}
-
-template <class Base, class ... Args>
-auto make_connector(const Base& base, io_context& io, Args&& ... args) {
-    return connector<const std::decay_t<Base>, std::decay_t<Args> ...>(
-        base,
-        io,
-        std::make_tuple(std::forward<Args>(args) ...)
-    );
-}
+template <typename T>
+connection_provider(T&& source, io_context& io) -> connection_provider<T>;
 
 } // namespace ozo

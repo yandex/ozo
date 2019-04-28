@@ -31,7 +31,7 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < 8; ++i) {
         asio::spawn(io, [&] (auto yield) {
             try {
-                auto connection = ozo::get_connection(ozo::make_connector(connection_info, io), yield);
+                auto connection = ozo::get_connection(connection_info[io], yield);
                 benchmark.start();
                 while (true) {
                     ozo::result result;
