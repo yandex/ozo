@@ -2,6 +2,8 @@
 
 #include <ozo/asio.h>
 #include <ozo/error.h>
+#include <ozo/time_traits.h>
+#include <ozo/deadline.h>
 
 namespace ozo::detail {
 
@@ -29,5 +31,26 @@ struct cancel_timer_handler {
         return asio::get_associated_allocator(handler);
     }
 };
+
+template <typename T>
+struct bind_cancel_timer_impl {
+    template <typename Handler>
+    constexpr static decltype(auto) apply(Handler&& h) {
+        return detail::cancel_timer_handler(std::forward<Handler>(h));
+    }
+};
+
+template <>
+struct bind_cancel_timer_impl<ozo::no_time_constrain_t> {
+    template <typename Handler>
+    constexpr static decltype(auto) apply(Handler&& h) {
+        return std::forward<Handler>(h);
+    }
+};
+
+template <typename TimeConstrain, typename Handler>
+inline constexpr decltype(auto) bind_cancel_timer(Handler&& h) {
+    return bind_cancel_timer_impl<TimeConstrain>::apply(std::forward<Handler>(h));
+}
 
 } // namespace ozo::detail

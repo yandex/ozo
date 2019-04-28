@@ -43,4 +43,19 @@ void set_io_timeout(T&& conn, const Handler& h, time_traits::duration t) {
     );
 }
 
+template <typename T, typename Handler>
+void set_io_timeout(T&& conn, const Handler& h, deadline at) {
+    get_timer(conn).expires_at(at);
+    get_timer(conn).async_wait(
+        timeout_handler{
+            get_socket(conn),
+            asio::get_associated_executor(h),
+            asio::get_associated_allocator(h)
+        }
+    );
+}
+
+template <typename T, typename Handler>
+void set_io_timeout(T&&, const Handler&, no_time_constrain_t) {}
+
 } // namespace ozo::detail
