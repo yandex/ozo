@@ -5,6 +5,7 @@
 #include <ozo/asio.h>
 #include <ozo/core/concept.h>
 #include <ozo/core/recursive.h>
+#include <ozo/deadline.h>
 
 #include <ozo/detail/bind.h>
 #include <ozo/detail/functional.h>
@@ -714,6 +715,11 @@ struct call_async_get_connection {
             decltype(p.async_get_connection(std::forward<Handler>(h))) {
         return p.async_get_connection(std::forward<Handler>(h));
     }
+    template <typename Provider, typename Handler>
+    static constexpr auto apply(Provider&& p, deadline at, Handler&& h) ->
+            decltype(p.async_get_connection(at, std::forward<Handler>(h))) {
+        return p.async_get_connection(at, std::forward<Handler>(h));
+    }
 };
 
 struct forward_connection {
@@ -733,16 +739,48 @@ struct async_get_connection_impl : std::conditional_t<Connection<Provider>,
     detail::call_async_get_connection
 > {};
 
+namespace detail {
+
 template <typename, typename = std::void_t<>>
-struct is_connection_source : std::false_type {};
+struct connection_source_supports_no_time_constrain : std::false_type {};
 
 template <typename T>
-struct is_connection_source<T, std::void_t<decltype(
+struct connection_source_supports_no_time_constrain<T, std::void_t<decltype(
     std::declval<T&>()(
         std::declval<io_context&>(),
         std::declval<std::function<void(error_code, connection_type<T>)>>()
     )
 )>> : std::true_type {};
+
+template <typename, typename = std::void_t<>>
+struct connection_source_supports_deadline : std::false_type {};
+
+template <typename T>
+struct connection_source_supports_deadline<T, std::void_t<decltype(
+    std::declval<T&>()(
+        std::declval<io_context&>(),
+        std::declval<deadline>(),
+        std::declval<std::function<void(error_code, connection_type<T>)>>()
+    )
+)>> : std::true_type {};
+
+template <typename T>
+using connection_source_defined = std::disjunction<
+    typename connection_source_supports_deadline<T>::type,
+    typename connection_source_supports_no_time_constrain<T>::type
+>;
+} // namespace detail
+
+template <typename T>
+using is_connection_source = typename detail::connection_source_defined<T>::type;
+
+template <typename T>
+struct connection_source_traits {
+    using type = connection_source_traits;
+    using supports_deadline = typename detail::connection_source_supports_deadline<T>::type;
+    using supports_no_time_constrain = typename detail::connection_source_supports_no_time_constrain<T>::type;
+    using connection_type = typename get_connection_type<std::decay_t<T>>::type;
+};
 
 /**
  * @brief ConnectionSource concept
@@ -807,16 +845,63 @@ constexpr void async_get_connection(Provider&& p, Handler&& h) {
     detail::apply<async_get_connection_impl>(std::forward<Provider>(p), std::forward<Handler>(h));
 }
 
+template <typename Provider, typename Handler,
+    typename = Require<detail::IsApplicable<async_get_connection_impl, Provider, deadline, Handler>>
+>
+constexpr void async_get_connection(Provider&& p, deadline at, Handler&& h) {
+    detail::apply<async_get_connection_impl>(std::forward<Provider>(p), at, std::forward<Handler>(h));
+}
+
+template <typename Provider, typename Handler,
+    typename = decltype(async_get_connection(std::declval<Provider>(), std::declval<Handler>()))
+>
+constexpr void async_get_connection(Provider&& p, no_time_constrain_t, Handler&& h) {
+    async_get_connection(std::forward<Provider>(p), std::forward<Handler>(h));
+}
+
+namespace detail {
+
 template <typename, typename = std::void_t<>>
-struct is_connection_provider : std::false_type {};
+struct connection_provider_supports_no_time_constrain : std::false_type {};
 
 template <typename T>
-struct is_connection_provider<T, std::void_t<decltype(
+struct connection_provider_supports_no_time_constrain<T, std::void_t<decltype(
     async_get_connection(
         std::declval<T&>(),
         std::declval<std::function<void(error_code, connection_type<T>)>>()
     )
 )>> : std::true_type {};
+
+
+template <typename, typename = std::void_t<>>
+struct connection_provider_supports_deadline : std::false_type {};
+
+template <typename T>
+struct connection_provider_supports_deadline<T, std::void_t<decltype(
+    async_get_connection(
+        std::declval<T&>(),
+        std::declval<deadline>(),
+        std::declval<std::function<void(error_code, connection_type<T>)>>()
+    )
+)>> : std::true_type {};
+
+template <typename T>
+using async_get_connection_defined = std::disjunction<
+    typename connection_provider_supports_deadline<T>::type,
+    typename connection_provider_supports_no_time_constrain<T>::type
+>;
+} // namespace detail
+
+template <typename T>
+using is_connection_provider = typename detail::async_get_connection_defined<T>::type;
+
+template <typename T>
+struct connection_provider_traits {
+    using type = connection_provider_traits;
+    using supports_deadline = typename detail::connection_provider_supports_deadline<T>::type;
+    using supports_no_time_constrain = typename detail::connection_provider_supports_no_time_constrain<T>::type;
+    using connection_type = typename get_connection_type<std::decay_t<T>>::type;
+};
 
 /**
  * @brief ConnectionProvider concept
@@ -846,6 +931,7 @@ struct is_connection_provider<T, std::void_t<decltype(
  * The `ConnectionProvider::async_get_connection()` member function has to have this signature:
  * @code
     void async_get_connection(Handler&& h);
+    void async_get_connection(deadline at, Handler&& h);
  * @endcode
  *
  * See `ozo::connector` class - the default implementation and `ozo::get_connection()` description for more details.
@@ -909,6 +995,65 @@ inline auto get_connection(T&& provider, CompletionToken&& token) {
     async_completion<CompletionToken, signature_t> init(token);
 
     async_get_connection(std::forward<T>(provider), init.completion_handler);
+
+    return init.result.get();
+}
+
+/**
+ * @brief Get a connection from provider
+ *
+ * @ingroup group-connection-functions
+ *
+ * Function allows to get #Connection from #ConnectionProvider in asynchronous way. There is
+ * built-in customization for Connection which provides connection itself and resets it's
+ * error context.
+ *
+ * **Customization point**
+ *
+ * This is a customization point of #ConnectionProvider. By default #ConnectionProvider must have
+ * `async_get_connection()` member function with signature:
+ * @code
+    void async_get_connection(deadline at, Handler&& h);
+ * @endcode
+ *
+ * where Handler must be a functor with such or compatible signature:
+ *
+ * @code
+    void (error_code ec, connection_type<ConnectionProvider> conn);
+ * @endcode
+ *
+ * This behaviour can be customized via `async_get_connection_impl` specialization. E.g. for custom implementation
+ * of #Connection customization may looks like this (*exposition only*):
+ *
+ * @code
+    template <typename ...Ts>
+    struct async_get_connection_impl<MyConnection<Ts...>> {
+        template <typename Conn, typename Handler>
+        static constexpr void apply(Conn&& c, deadline at, Handler&& h) {
+            c->prepareForNextOp();
+            async_get_connection_impl_default<MyConnection<Ts...>>::apply(
+                std::forward<Conn>(c), at, std::forward<Handler>(h)
+            );
+        }
+    };
+ * @endcode
+ *
+ * @param provider --- #ConnectionProvider to get connection from
+ * @param at --- deadline for the operation
+ * @param token --- completion token which determines the continuation of operation;
+ * it can be a callback, a `boost::asio::yield_context`, a `boost::use_future` and other
+ * Boost.Asio compatible tokens.
+ * @return completion token depent value like void for callback, connection for the
+ * `boost::asio::yield_context`, `std::future<Connection>` for `boost::asio::use_future`, and so on.
+ */
+template <typename T, typename CompletionToken>
+inline auto get_connection(T&& provider, deadline at, CompletionToken&& token) {
+    static_assert(ConnectionProvider<T>, "T is not a ConnectionProvider concept");
+
+    using signature_t = void (error_code, connection_type<T>);
+    async_completion<CompletionToken, signature_t> init(token);
+
+    async_get_connection(std::forward<T>(provider), at, init.completion_handler);
 
     return init.result.get();
 }
