@@ -53,6 +53,7 @@ set(SOURCES
     concept.cpp
     result.cpp
     none.cpp
+    deadline.cpp
     impl/async_send_query_params.cpp
     impl/async_get_result.cpp
     detail/base36.cpp
