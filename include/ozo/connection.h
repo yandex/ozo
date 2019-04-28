@@ -5,6 +5,8 @@
 #include <ozo/asio.h>
 #include <ozo/core/concept.h>
 #include <ozo/core/recursive.h>
+#include <ozo/core/none.h>
+#include <ozo/deadline.h>
 
 #include <ozo/detail/bind.h>
 #include <ozo/detail/functional.h>
@@ -646,8 +648,6 @@ struct get_connection_type_default<ConnectionProvider,
 /**
  * @brief Connection type getter
  *
- * @ingroup group-connection-types
- *
  * This type describes connection type from a #ConnectionProvider.
  *
  * @tparam ConnectionProvider - #ConnectionProvider type to get #Connection type from.
@@ -681,6 +681,8 @@ struct get_connection_type<MyConnection*> {
     using type = MyConnection*;
 };
 @endcode
+ *
+ * @ingroup group-connection-types
  */
 template <typename ConnectionProvider>
 struct get_connection_type
@@ -695,13 +697,12 @@ struct get_connection_type
 /**
  * @brief Gives exact type of a connection object which #ConnectionProvider or #ConnectionSource provide
  *
- * @ingroup group-connection-types
- *
  * This type alias can be used to determine exact type of a #Connection object which can be obtained from a
  * #ConnectionSource or #ConnectionProvider. It uses `ozo::get_connection_type` metafunction
  * to get a #Connection type.
  *
  * @tparam ConnectionProvider - #ConnectionSource or #ConnectionProvider type.
+ * @ingroup group-connection-types
  */
 template <typename ConnectionProvider>
 using connection_type = typename get_connection_type<std::decay_t<ConnectionProvider>>::type;
@@ -709,16 +710,18 @@ using connection_type = typename get_connection_type<std::decay_t<ConnectionProv
 namespace detail {
 
 struct call_async_get_connection {
-    template <typename Provider, typename Handler>
-    static constexpr auto apply(Provider&& p, Handler&& h) ->
-            decltype(p.async_get_connection(std::forward<Handler>(h))) {
-        return p.async_get_connection(std::forward<Handler>(h));
+    template <typename Provider, typename TimeConstraint, typename Handler>
+    static constexpr auto apply(Provider&& p, TimeConstraint t, Handler&& h) ->
+            decltype(p.async_get_connection(t, std::forward<Handler>(h))) {
+        static_assert(ozo::TimeConstraint<TimeConstraint>, "should model TimeConstraint concept");
+        return p.async_get_connection(t, std::forward<Handler>(h));
     }
 };
 
 struct forward_connection {
-    template <typename Conn, typename Handler>
-    static constexpr void apply(Conn&& c, Handler&& h) {
+    template <typename Conn, typename TimeConstraint, typename Handler>
+    static constexpr void apply(Conn&& c, TimeConstraint, Handler&& h) {
+        static_assert(ozo::TimeConstraint<TimeConstraint>, "should model TimeConstraint concept");
         reset_error_context(c);
         auto ex = get_executor(c);
         asio::dispatch(ex, detail::bind(std::forward<Handler>(h), error_code{}, std::forward<Conn>(c)));
@@ -727,41 +730,59 @@ struct forward_connection {
 
 } // namespace detail
 
-template <typename Provider>
+template <typename Provider, typename TimeConstraint>
 struct async_get_connection_impl : std::conditional_t<Connection<Provider>,
     detail::forward_connection,
     detail::call_async_get_connection
 > {};
 
-template <typename, typename = std::void_t<>>
-struct is_connection_source : std::false_type {};
+namespace detail {
 
-template <typename T>
-struct is_connection_source<T, std::void_t<decltype(
-    std::declval<T&>()(
+template <typename Source, typename TimeTraits, typename = std::void_t<>>
+struct connection_source_supports_time_traits : std::false_type {};
+
+template <typename Source, typename TimeTraits>
+struct connection_source_supports_time_traits<Source, TimeTraits, std::void_t<decltype(
+    std::declval<Source&>()(
         std::declval<io_context&>(),
-        std::declval<std::function<void(error_code, connection_type<T>)>>()
+        std::declval<TimeTraits>(),
+        std::declval<std::function<void(error_code, connection_type<Source>)>>()
     )
 )>> : std::true_type {};
+
+template <typename T>
+using connection_source_defined = std::conjunction<
+    typename connection_source_supports_time_traits<T, time_traits::time_point>::type,
+    typename connection_source_supports_time_traits<T, time_traits::duration>::type,
+    typename connection_source_supports_time_traits<T, none_t>::type
+>;
+} // namespace detail
+
+template <typename T>
+using is_connection_source = typename detail::connection_source_defined<T>::type;
+
+template <typename T>
+struct connection_source_traits {
+    using type = connection_source_traits;
+    using connection_type = typename get_connection_type<std::decay_t<T>>::type;
+};
 
 /**
  * @brief ConnectionSource concept
  *
- * @ingroup group-connection-concepts
- *
  * Before all we need to connect to our database server. First of all we need to know
  * how to connect. Since we are smart enough, we know at least two possible ways - make
  * a connection or get a connection from a pool of ones. How to be? It depends on. But
- * we still need to know how to do it. So, the ConnectionSource is what we need! This entity
+ * we still need to know how to do it. So, the `ConnectionSource` is what we need! This entity
  * tell us how to do it. ConnectionSource is a concept of type which can construct and
  * establish connection to a database.
  *
  * ConnectionSource has provide information about #Connection type it constructs. This can
  * be done via `ozo::connection_type` and it's customization.
  *
- * `ConnectionSource` must be a function or a functor with such signature:
+ * `ConnectionSource` should be a callable object with such signature:
  * @code
-    void (io_context io, Handler h, SourceRelatedAdditionalArgs&&...);
+    void (io_context& io, TimeConstarint t, Handler&& h);
  * @endcode
  *
  * `ConnectionSource` must establish #Connection by means of `io_context` specified as first
@@ -776,7 +797,8 @@ struct is_connection_source<T, std::void_t<decltype(
     //...
     ConnectionSource source;
     //...
-    source(io, [](error_code ec, connection_type<ConnectionSource> conn){
+    using std::chrono_literals;
+    source(io, 1s, [](error_code ec, connection_type<ConnectionSource> conn){
     //...
     });
  * @endcode
@@ -796,126 +818,161 @@ struct is_connection_source<T, std::void_t<decltype(
  *
  * @tparam T --- `ConnectionSource` to examine
  * @hideinitializer
+ * @ingroup group-connection-concepts
  */
 template <typename T>
 constexpr auto ConnectionSource = is_connection_source<std::decay_t<T>>::value;
 
-template <typename Provider, typename Handler,
-    typename = Require<detail::IsApplicable<async_get_connection_impl, Provider, Handler>>
->
-constexpr void async_get_connection(Provider&& p, Handler&& h) {
-    detail::apply<async_get_connection_impl>(std::forward<Provider>(p), std::forward<Handler>(h));
+template <typename Provider, typename TimeConstraint, typename Handler>
+constexpr auto async_get_connection(Provider&& p, TimeConstraint t, Handler&& h) ->
+        decltype(async_get_connection_impl<std::decay_t<Provider>, TimeConstraint>::
+            apply(std::forward<Provider>(p), t, std::forward<Handler>(h))) {
+    static_assert(ozo::TimeConstraint<TimeConstraint>, "should model TimeConstraint concept");
+    return async_get_connection_impl<std::decay_t<Provider>, TimeConstraint>::
+            apply(std::forward<Provider>(p), t, std::forward<Handler>(h));
 }
 
-template <typename, typename = std::void_t<>>
-struct is_connection_provider : std::false_type {};
+namespace detail {
+template <typename Provider, typename TimeConstraint, typename = std::void_t<>>
+struct connection_provider_supports_time_constraint : std::false_type {};
 
-template <typename T>
-struct is_connection_provider<T, std::void_t<decltype(
+template <typename Provider, typename TimeConstraint>
+struct connection_provider_supports_time_constraint<Provider, TimeConstraint, std::void_t<decltype(
     async_get_connection(
-        std::declval<T&>(),
-        std::declval<std::function<void(error_code, connection_type<T>)>>()
+        std::declval<Provider&>(),
+        std::declval<TimeConstraint>(),
+        std::declval<std::function<void(error_code, connection_type<Provider>)>>()
     )
 )>> : std::true_type {};
+
+template <typename T>
+using async_get_connection_defined = std::conjunction<
+    typename connection_provider_supports_time_constraint<T, none_t>::type,
+    typename connection_provider_supports_time_constraint<T, time_traits::duration>::type,
+    typename connection_provider_supports_time_constraint<T, time_traits::time_point>::type
+>;
+} // namespace detail
+
+template <typename T>
+using is_connection_provider = typename detail::async_get_connection_defined<T>::type;
+
+template <typename T>
+struct connection_provider_traits {
+    using type = connection_provider_traits;
+    using connection_type = typename get_connection_type<std::decay_t<T>>::type;
+};
 
 /**
  * @brief ConnectionProvider concept
  *
- * @ingroup group-connection-concepts
+ * `ConnectionProvider` is an entity which provides ready-to-use #Connection by means of
+ * `ozo::get_connection()` function call.
  *
- * `ConnectionProvider` is an entity which binds together #ConnectionSource, `io_context`
- * and allow to get connection by means of get_connection call function.
+ * `ConnectionProvider` may provide #Connection via the #ConnectionSource
+ * (see `ozo::connection_provider` as an example of such entity).
+ * In case of #Connection has been provided successful `ConnectionProvider` should dispatch
+ * #Handler with empty error_code as the first argument and the #Connection as the
+ * second one. In case of failure --- `ozo::error_code` with appropriate value and allocated
+ * #Connection with additional error context, but only if it possible. Overwise #Connection
+ * should be in null state
  *
- * `ConnectionProvider` must provide Connection by means of underlying ConnectionSource.
- * In case of connection has been provided successful `ConnectionProvider` must dispatch
- * Handler with empty error_code as the first argument and provided Connection as the
- * second one. In case of failure --- `error_code` with appropriate value and allocated
- * Connection with additional error context if it possible.
+ * @note #Connection is a `ConnectionProvider` itself.
  *
- * Note, #Connection is a `ConnectionProvider` itself and provides self as a #Connection.
+ * ###Customization point
  *
- * **Customization point**
+ * Typically it is enough to customize #ConnectionSource, but sometimes it is more convenient
+ * to make a custom #ConnectionProvider, e.g. a user has a structure is binded to certain
+ * `ozo::io_context`. So in this case these steps should be done.
  *
- * First of all `ConnectionProvider` must deliver information about connection type it provides.
- * It can be implemented in two ways. By defining a `connection_type` nested type or specializing
- * `ozo::get_connection_type` template.
+ * * `ConnectionProvider` should deliver an information about connection type it provides.
+ * It may be implemented via defining a `connection_type` nested type or specializing
+ * `ozo::get_connection_type` template. See `ozo::get_connection_type` for details.
  *
- * By the second `ozo::get_connection()` needs be supported. It can be done in two ways: by implementing
- * `ozo::async_get_connection` member function, or specializing `ozo::async_get_connection_impl` template.
+ * * `ozo::get_connection()` needs to be supported. See `ozo::get_connection()` for details.
  *
- * The `ConnectionProvider::async_get_connection()` member function has to have this signature:
- * @code
-    void async_get_connection(Handler&& h);
- * @endcode
- *
- * See `ozo::connector` class - the default implementation and `ozo::get_connection()` description for more details.
+ * See `ozo::connection_provider` class - the default implementation and `ozo::get_connection()` description for more details.
  * @tparam T - type to examine.
  * @hideinitializer
+ * @ingroup group-connection-concepts
  */
 template <typename T>
 constexpr auto ConnectionProvider = is_connection_provider<std::decay_t<T>>::value;
 
 #ifdef OZO_DOCUMENTATION
 /**
- * @brief Get a connection from provider
+ * @brief Get a #Connection from #ConnectionProvider
  *
- * @ingroup group-connection-functions
+ * Retrives #Connection from #ConnectionProvider. There is built-in customization
+ * for #Connection which provides connection itself and resets it's error context.
  *
- * Function allows to get #Connection from #ConnectionProvider in asynchronous way. There is
- * built-in customization for Connection which provides connection itself and resets it's
- * error context.
+ * @note The function does not particitate in ADL since could be implemented via functional object.
  *
- * **Customization point**
+ * @param provider --- #ConnectionProvider to get connection from.
+ * @param time_constraint --- #TimeConstraint for the operation.
+ * @param token --- operation #CompletionToken.
+ * @return deduced from #CompletionToken.
  *
- * This is a customization point of #ConnectionProvider. By default #ConnectionProvider must have
+ * ###Customization point
+ *
+ * This is a customization point of #ConnectionProvider. By default #ConnectionProvider should have
  * `async_get_connection()` member function with signature:
  * @code
-    void async_get_connection(Handler&& h);
- * @endcode
- *
- * where Handler must be a functor with such or compatible signature:
- *
- * @code
-    void (error_code ec, connection_type<ConnectionProvider> conn);
+    template <typename TimeConstraint>
+    void async_get_connection(TimeConstraint t, Handler&& h);
  * @endcode
  *
  * This behaviour can be customized via `async_get_connection_impl` specialization. E.g. for custom implementation
  * of #Connection customization may looks like this (*exposition only*):
  *
  * @code
-    template <typename ...Ts>
-    struct async_get_connection_impl<MyConnection<Ts...>> {
+    template <typename TimeConstrain, typename ...Ts>
+    struct async_get_connection_impl<MyConnection<Ts...>, TimeConstrain> {
         template <typename Conn, typename Handler>
-        static constexpr void apply(Conn&& c, Handler&& h) {
+        static constexpr void apply(Conn&& c, TimeConstraint t, Handler&& h) {
             c->prepareForNextOp();
-            async_get_connection_impl_default<MyConnection<Ts...>>::apply(
-                std::forward<Conn>(c), std::forward<Handler>(h)
+            async_get_connection_impl_default<MyConnection<Ts...>, TimeConstrain>::apply(
+                std::forward<Conn>(c), t, std::forward<Handler>(h)
             );
         }
     };
  * @endcode
+ * @ingroup group-connection-functions
+ */
+template <typename T, typename TimeConstraint, typename CompletionToken>
+decltype(auto) get_connection(T&& provider, TimeConstraint time_constraint, CompletionToken&& token);
+/**
+ * @brief Get a connection from provider with no time constains
  *
- * @param provider --- #ConnectionProvider to get connection from
- * @param token --- completion token which determines the continuation of operation;
- * it can be a callback, a `boost::asio::yield_context`, a `boost::use_future` and other
- * Boost.Asio compatible tokens.
- * @return completion token depent value like void for callback, connection for the
- * `boost::asio::yield_context`, `std::future<Connection>` for `boost::asio::use_future`, and so on.
+ * This function is time constrain free shortcut to `ozo::get_connection()` function.
+ * Its call is equal to `ozo::get_connection(provider, ozo::none, token)` call.
+ *
+ * @note The function does not particitate in ADL since could be implemented via functional object.
+ *
+ * @param provider --- #ConnectionProvider to get connection from.
+ * @param token --- operation #CompletionToken.
+ * @return deduced from #CompletionToken.
+ * @ingroup group-connection-functions
  */
 template <typename T, typename CompletionToken>
 decltype(auto) get_connection(T&& provider, CompletionToken&& token);
 #else
 struct get_connection_op {
-    template <typename T, typename CompletionToken>
-    decltype(auto) operator() (T&& provider, CompletionToken&& token) const {
+    template <typename T, typename TimeConstraint, typename CompletionToken>
+    decltype(auto) operator() (T&& provider, TimeConstraint t, CompletionToken&& token) const {
         static_assert(ConnectionProvider<T>, "T is not a ConnectionProvider concept");
+        static_assert(ozo::TimeConstraint<TimeConstraint>, "should model TimeConstraint concept");
 
         using signature_t = void (error_code, connection_type<T>);
         async_completion<CompletionToken, signature_t> init(token);
 
-        async_get_connection(std::forward<T>(provider), init.completion_handler);
+        async_get_connection(std::forward<T>(provider), t, init.completion_handler);
 
         return init.result.get();
+    }
+
+    template <typename T, typename CompletionToken>
+    decltype(auto) operator() (T&& provider, CompletionToken&& token) const {
+        return (*this)(std::forward<T>(provider), none, std::forward<CompletionToken>(token));
     }
 };
 
