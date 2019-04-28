@@ -3,6 +3,7 @@
 #include <ozo/impl/connection_pool.h>
 #include <ozo/connection_info.h>
 #include <ozo/asio.h>
+#include <ozo/connector.h>
 
 namespace ozo {
 
@@ -18,6 +19,7 @@ struct connection_pool_config {
     std::size_t capacity = 10; //!< maximum number of stored connections
     std::size_t queue_capacity = 128; //!< maximum number of queued requests to get available connection
     time_traits::duration idle_timeout = std::chrono::seconds(60); //!< time interval to close connection after last usage
+    time_traits::duration queue_timeout = std::chrono::seconds(10); //!<  default time-out to wait for available connection handle in `conneciton_pool`
 };
 
 /**
@@ -74,7 +76,7 @@ public:
      */
     connection_pool(Source source, const connection_pool_config& config)
     : impl_(config.capacity, config.queue_capacity, config.idle_timeout),
-      source_(std::move(source)) {}
+      source_(std::move(source)), queue_timeout_(config.queue_timeout) {}
 
     /**
      * @brief Type of connection depends on connection type of Source
@@ -86,6 +88,9 @@ public:
     /**
      * @brief Provides connection is binded to the given `io_context`
      *
+     * @note This method is deprecated. For time constrain of the operation use
+     * deadline version instead.
+     *
      * In case of success --- the handler will be invoked as operation succeeded.
      * In case of connection fail, queue timeout or queue full --- the handler will be invoked as operation failed.
      *
@@ -94,8 +99,7 @@ public:
      * @param timeouts --- connection acquisition related time-outs
      */
     template <typename Handler>
-    void operator ()(io_context& io, Handler&& handler,
-            const connection_pool_timeouts& timeouts = connection_pool_timeouts {}) {
+    void operator ()(io_context& io, Handler&& handler, const connection_pool_timeouts& timeouts) {
         impl_.get_auto_recycle(
             io,
             impl::wrap_pooled_connection_handler(
@@ -107,13 +111,70 @@ public:
         );
     }
 
+    /**
+     * @brief Provides connection is binded to the given `io_context`
+     *
+     * In case of success --- the handler will be invoked as operation succeeded.
+     * In case of connection fail, queue timeout or queue full --- the handler will be invoked as operation failed.
+     * This operation has no time constrains and could be interrupted manually by
+     * cancelling IO on a #Connection's socket, except of queue wait timeout which
+     * will be equal to `connection_pool_config::queue_timeout`.
+     *
+     * @param io --- `io_context` for the connection IO.
+     * @param handler --- #Handler.
+     */
+    template <typename Handler>
+    void operator ()(io_context& io, Handler&& handler) {
+        impl_.get_auto_recycle(
+            io,
+            impl::wrap_pooled_connection_handler(
+                io,
+                make_connector(source_, io),
+                std::forward<Handler>(handler)
+            ),
+            queue_timeout_
+        );
+    }
+
+    /**
+     * @brief Provides connection is binded to the given `io_context`
+     *
+     * In case of success --- the handler will be invoked as operation succeeded.
+     * In case of connection fail, queue timeout or queue full --- the handler will be invoked as operation failed.
+     * This operation has a deadline time constrain and would be interrupted if the time
+     * constrain expired by cancelling IO on a #Connection's socket or wait operation in
+     * the pool's queue.
+     *
+     * @param io --- `io_context` for the connection IO.
+     * @param at --- operation deadline time constrain.
+     * @param handler --- #Handler.
+     */
+    template <typename Handler>
+    void operator ()(io_context& io, deadline at, Handler&& handler) {
+        impl_.get_auto_recycle(
+            io,
+            impl::wrap_pooled_connection_handler(
+                io,
+                make_connector(source_, io),
+                at,
+                std::forward<Handler>(handler)
+            ),
+            at.time_left()
+        );
+    }
+
     auto stats() const {
         return impl_.stats();
+    }
+
+    auto operator [](io_context& io) {
+        return connection_provider(*this, io);
     }
 
 private:
     impl::connection_pool<Source> impl_;
     Source source_;
+    time_traits::duration queue_timeout_;
 };
 
 static_assert(ConnectionProvider<connector<connection_pool<connection_info<>>>>, "is not a ConnectionProvider");

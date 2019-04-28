@@ -64,11 +64,12 @@ struct is_null_impl<impl::pooled_connection<T>> {
 
 namespace ozo::impl {
 
-template <typename IoContext, typename Provider, typename Handler>
+template <typename IoContext, typename Provider, typename Handler, typename TimeConstrain = no_time_constrain_t>
 struct pooled_connection_wrapper {
     IoContext& io_;
     Provider provider_;
     Handler handler_;
+    TimeConstrain at_;
 
     using connection = pooled_connection<typename Provider::source_type>;
     using connection_ptr = pooled_connection_ptr<typename Provider::source_type>;
@@ -114,7 +115,7 @@ struct pooled_connection_wrapper {
             return handler_(std::move(ec), std::move(conn));
         }
 
-        async_get_connection(provider_, wrapper{std::move(handler_), std::move(conn)});
+        async_get_connection(provider_, at_, wrapper{std::move(handler_), std::move(conn)});
     }
 
     using executor_type = decltype(asio::get_associated_executor(handler_));
@@ -136,7 +137,17 @@ auto wrap_pooled_connection_handler(IoContext& io, P&& provider, Handler&& handl
     static_assert(ConnectionProvider<P>, "is not a ConnectionProvider");
 
     return pooled_connection_wrapper<IoContext, std::decay_t<P>, std::decay_t<Handler>> {
-        io, std::forward<P>(provider), std::forward<Handler>(handler)
+        io, std::forward<P>(provider), std::forward<Handler>(handler), {}
+    };
+}
+
+template <typename P, typename IoContext, typename Handler>
+auto wrap_pooled_connection_handler(IoContext& io, P&& provider, deadline at, Handler&& handler) {
+
+    static_assert(ConnectionProvider<P>, "is not a ConnectionProvider");
+
+    return pooled_connection_wrapper<IoContext, std::decay_t<P>, std::decay_t<Handler>, deadline> {
+        io, std::forward<P>(provider), std::forward<Handler>(handler), at
     };
 }
 
