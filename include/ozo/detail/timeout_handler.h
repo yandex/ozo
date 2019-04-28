@@ -4,6 +4,7 @@
 #include <ozo/error.h>
 #include <ozo/time_traits.h>
 #include <ozo/connection.h>
+#include <ozo/core/none.h>
 #include <boost/asio/bind_executor.hpp>
 
 namespace ozo::detail {
@@ -31,16 +32,24 @@ struct timeout_handler {
     allocator_type get_allocator() const noexcept { return a;}
 };
 
-template <typename T, typename Handler>
-void set_io_timeout(T&& conn, const Handler& h, time_traits::duration t) {
-    get_timer(conn).expires_after(t);
-    get_timer(conn).async_wait(
-        timeout_handler{
-            get_socket(conn),
-            asio::get_associated_executor(h),
-            asio::get_associated_allocator(h)
+template <typename T, typename Handler, typename TimeConstraint>
+void set_io_timeout(T&& conn, const Handler& h, TimeConstraint t) {
+    static_assert(ozo::TimeConstraint<TimeConstraint>, "should model TimeConstraint concept");
+    if constexpr (t != none) {
+        decltype(auto) timer = get_timer(conn);
+        if constexpr (std::is_same_v<TimeConstraint, time_traits::time_point>) {
+            timer.expires_at(t);
+        } else {
+            timer.expires_after(t);
         }
-    );
+        timer.async_wait(
+            timeout_handler{
+                get_socket(conn),
+                asio::get_associated_executor(h),
+                asio::get_associated_allocator(h)
+            }
+        );
+    }
 }
 
 } // namespace ozo::detail
