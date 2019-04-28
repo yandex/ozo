@@ -34,7 +34,7 @@ public:
      *
      * Type is used to model #ConnectionSource
      */
-   using connection_type = std::shared_ptr<connection>;
+    using connection_type = std::shared_ptr<connection>;
 
     /**
      * @brief Construct a new connection information object
@@ -48,7 +48,10 @@ public:
     }
 
     /**
-     * @brief Provides connection is binded to the given `io_context`
+     * @brief [[DEPRECATED]] Provides connection is binded to the given `io_context`
+     *
+     * @note This method is deprecated. For time constrain of the operation use
+     * deadline version instead.
      *
      * In case of success --- the handler will be invoked as operation succeeded.
      * In case of connection fail --- the handler will be invoked as operation failed.
@@ -58,14 +61,64 @@ public:
      * @param timeouts --- connection time-out.
      */
     template <typename Handler>
-    void operator ()(io_context& io, Handler&& handler,
-            time_traits::duration timeout = time_traits::duration::max()) const {
+    void operator ()(io_context& io, Handler&& handler, time_traits::duration timeout) const {
         impl::async_connect(
             conn_str,
             timeout,
             std::make_shared<connection>(io, statistics),
             std::forward<Handler>(handler)
         );
+    }
+
+    /**
+     * @brief Provides connection is binded to the given `io_context`
+     *
+     * In case of success --- the handler will be invoked as operation succeeded.
+     * In case of connection fail --- the handler will be invoked as operation failed.
+     * This operation has no time constrains and could be interrupted manually by
+     * cancelling IO on a #Connection's socket.
+     *
+     * @param io --- `io_context` for the connection IO.
+     * @param handler --- #Handler.
+     */
+    template <typename Handler>
+    void operator ()(io_context& io, Handler&& handler) const {
+        impl::async_connect(
+            conn_str,
+            no_time_constrain,
+            std::make_shared<connection>(io, statistics),
+            std::forward<Handler>(handler)
+        );
+    }
+
+    /**
+     * @brief Provides connection is binded to the given `io_context`
+     *
+     * In case of success --- the handler will be invoked as operation succeeded.
+     * In case of connection fail --- the handler will be invoked as operation failed.
+     * This operation has a deadline time constrain and would be interrupted if the time
+     * constrain expired by cancelling IO on a #Connection's socket.
+     *
+     * @param io --- `io_context` for the connection IO.
+     * @param at --- deadline time for the operation.
+     * @param handler --- #Handler.
+     */
+    template <typename Handler>
+    void operator ()(io_context& io, deadline at, Handler&& handler) const {
+        impl::async_connect(
+            conn_str,
+            at,
+            std::make_shared<connection>(io, statistics),
+            std::forward<Handler>(handler)
+        );
+    }
+
+    auto operator [](io_context& io) const & {
+        return connection_provider(*this, io);
+    }
+
+    auto operator [](io_context& io) && {
+        return connection_provider(std::move(*this), io);
     }
 };
 
