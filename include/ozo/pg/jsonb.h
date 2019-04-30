@@ -11,6 +11,7 @@ namespace ozo::pg {
 class jsonb {
     friend send_impl<jsonb>;
     friend recv_impl<jsonb>;
+    friend size_of_impl<jsonb>;
 
 public:
     jsonb() = default;
@@ -37,7 +38,7 @@ namespace ozo {
 template <>
 struct size_of_impl<pg::jsonb> {
     static auto apply(const pg::jsonb& v) noexcept {
-        return std::size(v.raw_string()) + 1;
+        return std::size(v.value) + 1;
     }
 };
 
