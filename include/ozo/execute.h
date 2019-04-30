@@ -37,26 +37,36 @@ template <typename P, typename Q, typename CompletionToken>
 decltype(auto) execute(P&& provider, Q&& query, CompletionToken&& token);
 #else
 struct execute_op {
-    template <typename P, typename Q, typename CompletionToken>
-    decltype(auto) operator() (P&& provider, Q&& query, const time_traits::duration& timeout, CompletionToken&& token) const {
+    template <typename P, typename Q, typename TimeConstrain, typename CompletionToken>
+    static decltype(auto) perform (P&& provider, Q&& query, TimeConstrain&& time_constrain, CompletionToken&& token) {
         static_assert(ConnectionProvider<P>, "provider should be a ConnectionProvider");
         using signature_t = void (error_code, connection_type<P>);
         async_completion<CompletionToken, signature_t> init(token);
 
-        impl::async_execute(std::forward<P>(provider), std::forward<Q>(query), timeout, init.completion_handler);
+        impl::async_execute(std::forward<P>(provider), std::forward<Q>(query),
+            std::forward<TimeConstrain>(time_constrain), init.completion_handler);
 
         return init.result.get();
     }
 
+
+    template <typename P, typename Q, typename CompletionToken>
+    decltype(auto) operator() (P&& provider, Q&& query,
+            const time_traits::duration& timeout, CompletionToken&& token) const {
+        return perform(std::forward<P>(provider), std::forward<Q>(query),
+                timeout, std::forward<CompletionToken>(token));
+    }
+
+    template <typename P, typename Q, typename CompletionToken>
+    decltype(auto) operator() (P&& provider, Q&& query, deadline time_constrain, CompletionToken&& token) const {
+        return perform(std::forward<P>(provider), std::forward<Q>(query),
+                time_constrain, std::forward<CompletionToken>(token));
+    }
+
     template <typename P, typename Q, typename CompletionToken>
     decltype(auto) operator() (P&& provider, Q&& query, CompletionToken&& token) const {
-        static_assert(ConnectionProvider<P>, "provider should be a ConnectionProvider");
-        return (*this)(
-            std::forward<P>(provider),
-            std::forward<Q>(query),
-            time_traits::duration::max(),
-            std::forward<CompletionToken>(token)
-        );
+        return perform(std::forward<P>(provider), std::forward<Q>(query),
+                no_time_constrain, std::forward<CompletionToken>(token));
     }
 };
 
