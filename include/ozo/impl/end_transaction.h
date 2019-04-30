@@ -4,9 +4,9 @@
 
 namespace ozo::impl {
 
-template <typename T, typename Query, typename CompletionToken>
+template <typename T, typename Query, typename TimeConstrain, typename CompletionToken>
 auto end_transaction(transaction<T>&& transaction, Query&& query,
-        const time_traits::duration& timeout, CompletionToken&& token) {
+        TimeConstrain&& time_constrain, CompletionToken&& token) {
     using signature = void (error_code, T);
 
     async_completion<CompletionToken, signature> init(token);
@@ -14,7 +14,7 @@ auto end_transaction(transaction<T>&& transaction, Query&& query,
     async_end_transaction(
         std::move(transaction),
         std::forward<Query>(query),
-        timeout,
+        std::forward<TimeConstrain>(time_constrain),
         init.completion_handler
     );
 

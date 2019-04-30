@@ -4,10 +4,10 @@
 
 namespace ozo::impl {
 
-template <typename T, typename Query, typename CompletionToken,
-          typename = Require<ConnectionProvider<T>>>
+template <typename T, typename Query, typename TimeConstrain,
+        typename CompletionToken, typename = Require<ConnectionProvider<T>>>
 auto start_transaction(T&& provider, Query&& query,
-        const time_traits::duration& timeout, CompletionToken&& token) {
+        TimeConstrain&& time_constrain, CompletionToken&& token) {
     using signature = void (error_code, transaction<connection_type<T>>);
 
     async_completion<CompletionToken, signature> init(token);
@@ -15,7 +15,7 @@ auto start_transaction(T&& provider, Query&& query,
     async_start_transaction(
         std::forward<T>(provider),
         std::forward<Query>(query),
-        timeout,
+        std::forward<TimeConstrain>(time_constrain),
         init.completion_handler
     );
 
