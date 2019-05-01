@@ -81,19 +81,18 @@ decltype(auto) request (ConnectionProvider&& provider, Query&& query, Out out, C
 
 #else
 
-struct request_op {
+template <typename Initiator>
+struct request_op : base_async_operation <request_op, Initiator> {
+    using base = typename request_op::base;
+    using base::base;
+
     template <typename P, typename Q, typename TimeConstraint, typename Out, typename CompletionToken>
     decltype(auto) operator() (P&& provider, Q&& query, TimeConstraint t,
             Out out, CompletionToken&& token) const {
         static_assert(ConnectionProvider<P>, "provider should be a ConnectionProvider");
         static_assert(ozo::TimeConstraint<TimeConstraint>, "should model TimeConstraint concept");
-        using signature_t = void (error_code, connection_type<P>);
-        async_completion<CompletionToken, signature_t> init(token);
-
-        impl::async_request(std::forward<P>(provider), std::forward<Q>(query),
-                t, std::move(out), init.completion_handler);
-
-        return init.result.get();
+        return async_initiate<CompletionToken, handler_signature<P>>(
+            get_operation_initiator(*this), token, std::forward<P>(provider), t, std::forward<Q>(query), std::move(out));
     }
 
     template <typename P, typename Q, typename Out, typename CompletionToken>
@@ -103,7 +102,16 @@ struct request_op {
     }
 };
 
-constexpr request_op request;
+namespace detail {
+struct initiate_async_request {
+    template <typename Handler, typename P, typename Q, typename TimeConstraint, typename Out>
+    constexpr void operator()(Handler&& h, P&& p, TimeConstraint t, Q&& q, Out out) const {
+        impl::async_request(std::forward<P>(p), std::forward<Q>(q), t, std::move(out), std::forward<Handler>(h));
+    }
+};
+} // namespace detail
+
+constexpr request_op<detail::initiate_async_request> request;
 
 #endif
 

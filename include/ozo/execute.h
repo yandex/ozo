@@ -40,18 +40,18 @@ decltype(auto) execute(ConnectionProvider&& provider, Query&& query, TimeConstra
 template <typename P, typename Q, typename CompletionToken>
 decltype(auto) execute(P&& provider, Q&& query, CompletionToken&& token);
 #else
-struct execute_op {
+
+template <typename Initiator>
+struct execute_op : base_async_operation <execute_op, Initiator> {
+    using base = typename execute_op::base;
+    using base::base;
+
     template <typename P, typename Q, typename TimeConstraint, typename CompletionToken>
     decltype(auto) operator() (P&& provider, Q&& query, TimeConstraint t, CompletionToken&& token) const {
         static_assert(ConnectionProvider<P>, "provider should be a ConnectionProvider");
         static_assert(ozo::TimeConstraint<TimeConstraint>, "should model TimeConstraint concept");
-        using signature_t = void (error_code, connection_type<P>);
-        async_completion<CompletionToken, signature_t> init(token);
-
-        impl::async_execute(std::forward<P>(provider), std::forward<Q>(query),
-            t, init.completion_handler);
-
-        return init.result.get();
+        return async_initiate<CompletionToken, handler_signature<P>>(
+            get_operation_initiator(*this), token, std::forward<P>(provider), t, std::forward<Q>(query));
     }
 
     template <typename P, typename Q, typename CompletionToken>
@@ -61,6 +61,15 @@ struct execute_op {
     }
 };
 
-constexpr execute_op execute;
+namespace detail {
+struct initiate_async_execute {
+    template <typename Handler, typename P, typename Q, typename TimeConstraint>
+    constexpr void operator()(Handler&& h, P&& provider, TimeConstraint t, Q&& query) const {
+        impl::async_execute(std::forward<P>(provider), std::forward<Q>(query), t, std::forward<Handler>(h));
+    }
+};
+} // namespace detail
+
+constexpr execute_op<detail::initiate_async_execute> execute;
 #endif
 } // namespace ozo

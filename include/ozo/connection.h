@@ -707,6 +707,9 @@ struct get_connection_type
 template <typename ConnectionProvider>
 using connection_type = typename get_connection_type<std::decay_t<ConnectionProvider>>::type;
 
+template <typename T>
+using handler_signature = void (error_code, connection_type<T>);
+
 namespace detail {
 
 struct call_async_get_connection {
@@ -746,7 +749,7 @@ struct connection_source_supports_time_traits<Source, TimeTraits, std::void_t<de
     std::declval<Source&>()(
         std::declval<io_context&>(),
         std::declval<TimeTraits>(),
-        std::declval<std::function<void(error_code, connection_type<Source>)>>()
+        std::declval<handler_signature<Source>>()
     )
 )>> : std::true_type {};
 
@@ -841,7 +844,7 @@ struct connection_provider_supports_time_constraint<Provider, TimeConstraint, st
     async_get_connection(
         std::declval<Provider&>(),
         std::declval<TimeConstraint>(),
-        std::declval<std::function<void(error_code, connection_type<Provider>)>>()
+        std::declval<handler_signature<Provider>>()
     )
 )>> : std::true_type {};
 
@@ -851,6 +854,7 @@ using async_get_connection_defined = std::conjunction<
     typename connection_provider_supports_time_constraint<T, time_traits::duration>::type,
     typename connection_provider_supports_time_constraint<T, time_traits::time_point>::type
 >;
+
 } // namespace detail
 
 template <typename T>
@@ -956,18 +960,18 @@ decltype(auto) get_connection(T&& provider, TimeConstraint time_constraint, Comp
 template <typename T, typename CompletionToken>
 decltype(auto) get_connection(T&& provider, CompletionToken&& token);
 #else
-struct get_connection_op {
+template <typename Initiator>
+struct get_connection_op : base_async_operation <get_connection_op, Initiator> {
+    using base = typename get_connection_op::base;
+    using base::base;
+
     template <typename T, typename TimeConstraint, typename CompletionToken>
     decltype(auto) operator() (T&& provider, TimeConstraint t, CompletionToken&& token) const {
         static_assert(ConnectionProvider<T>, "T is not a ConnectionProvider concept");
         static_assert(ozo::TimeConstraint<TimeConstraint>, "should model TimeConstraint concept");
-
-        using signature_t = void (error_code, connection_type<T>);
-        async_completion<CompletionToken, signature_t> init(token);
-
-        async_get_connection(std::forward<T>(provider), t, init.completion_handler);
-
-        return init.result.get();
+        return async_initiate<CompletionToken, handler_signature<T>>(
+            get_operation_initiator(*this), token, std::forward<T>(provider), t
+        );
     }
 
     template <typename T, typename CompletionToken>
@@ -976,7 +980,16 @@ struct get_connection_op {
     }
 };
 
-constexpr get_connection_op get_connection;
+namespace detail {
+struct initiate_async_get_connection {
+    template <typename Provider, typename Handler, typename TimeConstraint>
+    constexpr void operator()(Handler&& h, Provider&& p, TimeConstraint t) const {
+        async_get_connection( std::forward<Provider>(p), t, std::forward<Handler>(h));
+    }
+};
+} // namespace detail
+
+constexpr get_connection_op<detail::initiate_async_get_connection> get_connection;
 #endif
 
 namespace detail {

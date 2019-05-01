@@ -43,4 +43,11 @@ Require<ConnectionProvider<T>> async_end_transaction(T&& provider, Query&& query
         .perform(std::forward<T>(provider), std::forward<Query>(query), t);
 }
 
+struct initiate_async_end_transaction {
+    template <typename Handler, typename ...Args>
+    constexpr void operator()(Handler&& h, Args&& ...args) const {
+        async_end_transaction(std::forward<Args>(args)..., std::forward<Handler>(h));
+    }
+};
+
 } // namespace ozo::impl
