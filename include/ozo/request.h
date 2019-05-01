@@ -91,40 +91,42 @@ template <typename P, typename Q, typename Out, typename CompletionToken>
 decltype(auto) request (P&& provider, Q&& query, Out out, CompletionToken&& token);
 
 #else
+namespace detail {
+
+struct initiate_async_request {
+    template <typename Handler, typename ...Args>
+    constexpr void operator()(Handler&& h, Args&& ...args) const {
+        impl::async_request(std::forward<Args>(args)..., std::forward<Handler>(h));
+    }
+};
+
+} // namespace detail
 
 struct request_op {
-    template <typename P, typename Q, typename Out, typename TimeConstrain, typename CompletionToken>
-    static decltype(auto) perform (P&& provider, Q&& query, TimeConstrain&& time_constrain,
-            Out out, CompletionToken&& token) {
-        static_assert(ConnectionProvider<P>, "provider should be a ConnectionProvider");
-        using signature_t = void (error_code, connection_type<P>);
-        async_completion<CompletionToken, signature_t> init(token);
-
-        impl::async_request(std::forward<P>(provider), std::forward<Q>(query),
-                std::forward<TimeConstrain>(time_constrain), std::move(out),
-                init.completion_handler);
-
-        return init.result.get();
-    }
-
     template <typename P, typename Q, typename Out, typename CompletionToken>
-    decltype(auto) operator() (P&& provider, Q&& query, deadline time_constrain,
+    decltype(auto) operator() (P&& provider, Q&& query, deadline t,
             Out out, CompletionToken&& token) const {
-        return perform(std::forward<P>(provider), std::forward<Q>(query),
-            time_constrain, std::move(out), std::forward<CompletionToken>(token));
+        static_assert(ConnectionProvider<P>, "provider should be a ConnectionProvider");
+        return async_initiate<std::decay_t<CompletionToken>, handler_signature<P>>(
+            detail::initiate_async_request{}, token,
+            std::forward<P>(provider), std::forward<Q>(query), t, std::move(out));
     }
 
     template <typename P, typename Q, typename Out, typename CompletionToken>
     decltype(auto) operator() (P&& provider, Q&& query, const time_traits::duration& timeout,
             Out out, CompletionToken&& token) const {
-        return perform(std::forward<P>(provider), std::forward<Q>(query),
-            timeout, std::move(out), std::forward<CompletionToken>(token));
+        static_assert(ConnectionProvider<P>, "provider should be a ConnectionProvider");
+        return async_initiate<std::decay_t<CompletionToken>, handler_signature<P>>(
+            detail::initiate_async_request{}, token,
+            std::forward<P>(provider), std::forward<Q>(query), timeout, std::move(out));
     }
 
     template <typename P, typename Q, typename Out, typename CompletionToken>
     decltype(auto) operator()(P&& provider, Q&& query, Out out, CompletionToken&& token) const {
-        return perform(std::forward<P>(provider), std::forward<Q>(query),
-            no_time_constrain, std::move(out), std::forward<CompletionToken>(token));
+        static_assert(ConnectionProvider<P>, "provider should be a ConnectionProvider");
+        return async_initiate<std::decay_t<CompletionToken>, handler_signature<P>>(
+            detail::initiate_async_request{}, token,
+            std::forward<P>(provider), std::forward<Q>(query), no_time_constrain, std::move(out));
     }
 };
 

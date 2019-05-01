@@ -10,6 +10,25 @@ namespace asio = boost::asio;
 using asio::async_completion;
 using asio::io_context;
 
+#if BOOST_VERSION < 107000
+
+template <typename CompletionToken, typename Signature,
+    typename Initiation, typename... Args>
+inline decltype(auto) async_initiate(Initiation&& initiation,
+    CompletionToken& token, Args&&... args) {
+  async_completion<CompletionToken, Signature> completion(token);
+
+  initiation(std::move(completion.completion_handler), std::forward<Args>(args)...);
+
+  return completion.result.get();
+}
+
+#else
+
+using asio::async_initiate;
+
+#endif
+
 namespace detail {
 
 template <typename Executor>

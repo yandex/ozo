@@ -707,6 +707,9 @@ struct get_connection_type
 template <typename ConnectionProvider>
 using connection_type = typename get_connection_type<std::decay_t<ConnectionProvider>>::type;
 
+template <typename T>
+using handler_signature = void (error_code, connection_type<T>);
+
 namespace detail {
 
 struct call_async_get_connection {
@@ -752,7 +755,7 @@ template <typename T>
 struct connection_source_supports_no_time_constrain<T, std::void_t<decltype(
     std::declval<T&>()(
         std::declval<io_context&>(),
-        std::declval<std::function<void(error_code, connection_type<T>)>>()
+        std::declval<handler_signature<T>>()
     )
 )>> : std::true_type {};
 
@@ -764,7 +767,7 @@ struct connection_source_supports_deadline<T, std::void_t<decltype(
     std::declval<T&>()(
         std::declval<io_context&>(),
         std::declval<deadline>(),
-        std::declval<std::function<void(error_code, connection_type<T>)>>()
+        std::declval<handler_signature<T>>()
     )
 )>> : std::true_type {};
 
@@ -865,6 +868,13 @@ constexpr void async_get_connection(Provider&& p, no_time_constrain_t, Handler&&
 
 namespace detail {
 
+struct initiate_async_get_connection {
+    template <typename Provider, typename Handler, typename TimeConstrain = no_time_constrain_t>
+    constexpr void operator()(Handler&& h, Provider&& p, TimeConstrain t = no_time_constrain) const {
+        async_get_connection( std::forward<Provider>(p), t, std::forward<Handler>(h));
+    }
+};
+
 template <typename, typename = std::void_t<>>
 struct connection_provider_supports_no_time_constrain : std::false_type {};
 
@@ -872,7 +882,8 @@ template <typename T>
 struct connection_provider_supports_no_time_constrain<T, std::void_t<decltype(
     async_get_connection(
         std::declval<T&>(),
-        std::declval<std::function<void(error_code, connection_type<T>)>>()
+        no_time_constrain,
+        std::declval<handler_signature<T>>()
     )
 )>> : std::true_type {};
 
@@ -885,7 +896,7 @@ struct connection_provider_supports_deadline<T, std::void_t<decltype(
     async_get_connection(
         std::declval<T&>(),
         std::declval<deadline>(),
-        std::declval<std::function<void(error_code, connection_type<T>)>>()
+        std::declval<handler_signature<T>>()
     )
 )>> : std::true_type {};
 
@@ -994,13 +1005,10 @@ constexpr auto ConnectionProvider = is_connection_provider<std::decay_t<T>>::val
 template <typename T, typename CompletionToken>
 inline auto get_connection(T&& provider, CompletionToken&& token) {
     static_assert(ConnectionProvider<T>, "T is not a ConnectionProvider concept");
-
-    using signature_t = void (error_code, connection_type<T>);
-    async_completion<CompletionToken, signature_t> init(token);
-
-    async_get_connection(std::forward<T>(provider), init.completion_handler);
-
-    return init.result.get();
+    return async_initiate<std::decay_t<CompletionToken>, handler_signature<T>>(
+        detail::initiate_async_get_connection{}, token,
+        std::forward<T>(provider)
+    );
 }
 
 /**
@@ -1053,13 +1061,10 @@ inline auto get_connection(T&& provider, CompletionToken&& token) {
 template <typename T, typename CompletionToken>
 inline auto get_connection(T&& provider, deadline at, CompletionToken&& token) {
     static_assert(ConnectionProvider<T>, "T is not a ConnectionProvider concept");
-
-    using signature_t = void (error_code, connection_type<T>);
-    async_completion<CompletionToken, signature_t> init(token);
-
-    async_get_connection(std::forward<T>(provider), at, init.completion_handler);
-
-    return init.result.get();
+    return async_initiate<std::decay_t<CompletionToken>, handler_signature<T>>(
+        detail::initiate_async_get_connection{}, token,
+        std::forward<T>(provider), at
+    );
 }
 
 namespace detail {
