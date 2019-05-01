@@ -4,14 +4,13 @@
 #include <ozo/impl/async_request.h>
 #include <ozo/deadline.h>
 
-namespace ozo {
-namespace impl {
+namespace ozo::impl {
 
 template <typename P, typename Q, typename TimeConstrain, typename Handler>
 inline void async_execute(P&& provider, Q&& query, TimeConstrain time_constrain, Handler&& handler) {
     static_assert(ConnectionProvider<P>, "is not a ConnectionProvider");
     static_assert(Query<Q> || QueryBuilder<Q>, "is neither Query nor QueryBuilder");
-    async_get_connection(std::forward<P>(provider),
+    async_get_connection(std::forward<P>(provider), time_constrain,
         async_request_op {
             std::forward<Q>(query),
             time_constrain,
@@ -21,5 +20,18 @@ inline void async_execute(P&& provider, Q&& query, TimeConstrain time_constrain,
     );
 }
 
-} // namespace impl
-} // namespace ozo
+template <typename P, typename Q, typename Handler>
+inline void async_execute(P&& provider, Q&& query, time_traits::duration timeout, Handler&& handler) {
+    static_assert(ConnectionProvider<P>, "is not a ConnectionProvider");
+    static_assert(Query<Q> || QueryBuilder<Q>, "is neither Query nor QueryBuilder");
+    async_get_connection(std::forward<P>(provider),
+        async_request_op {
+            std::forward<Q>(query),
+            timeout,
+            detail::do_nothing {},
+            std::forward<Handler>(handler)
+        }
+    );
+}
+
+} // namespace ozo::impl
