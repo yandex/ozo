@@ -62,8 +62,8 @@ struct connection_provider {
     using source_type = connection_provider;
 
     template <typename Handler>
-    friend void async_get_connection(connection_provider self, Handler&& h) {
-        self.mock_->async_get_connection(std::forward<Handler>(h));
+    void async_get_connection(Handler&& h) const {
+        mock_->async_get_connection(std::forward<Handler>(h));
     }
 };
 } // namespace ozo::tests
