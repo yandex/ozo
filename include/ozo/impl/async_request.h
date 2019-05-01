@@ -364,14 +364,28 @@ struct async_request_out_handler {
     }
 };
 
-template <typename P, typename Q, typename TimeCostrain, typename Out, typename Handler>
-inline void async_request(P&& provider, Q&& query, TimeCostrain time_constrain, Out&& out, Handler&& handler) {
+template <typename P, typename Q, typename TimeConstrain, typename Out, typename Handler>
+inline void async_request(P&& provider, Q&& query, TimeConstrain time_constrain, Out&& out, Handler&& handler) {
+    static_assert(ConnectionProvider<P>, "is not a ConnectionProvider");
+    static_assert(Query<Q> || QueryBuilder<Q>, "is neither Query nor QueryBuilder");
+    async_get_connection(std::forward<P>(provider), time_constrain,
+        async_request_op{
+            std::forward<Q>(query),
+            time_constrain,
+            async_request_out_handler{std::forward<Out>(out)},
+            std::forward<Handler>(handler)
+        }
+    );
+}
+
+template <typename P, typename Q, typename Out, typename Handler>
+inline void async_request(P&& provider, Q&& query, time_traits::duration timeout, Out&& out, Handler&& handler) {
     static_assert(ConnectionProvider<P>, "is not a ConnectionProvider");
     static_assert(Query<Q> || QueryBuilder<Q>, "is neither Query nor QueryBuilder");
     async_get_connection(std::forward<P>(provider),
         async_request_op{
             std::forward<Q>(query),
-            time_constrain,
+            timeout,
             async_request_out_handler{std::forward<Out>(out)},
             std::forward<Handler>(handler)
         }
