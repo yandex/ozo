@@ -729,6 +729,10 @@ struct forward_connection {
         auto ex = get_executor(c);
         asio::dispatch(ex, detail::bind(std::forward<Handler>(h), error_code{}, std::forward<Conn>(c)));
     }
+    template <typename Conn, typename Handler>
+    static constexpr void apply(Conn&& c, deadline, Handler&& h) {
+        apply(std::forward<Conn>(c), std::forward<Handler>(h));
+    }
 };
 
 } // namespace detail
