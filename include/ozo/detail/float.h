@@ -37,7 +37,7 @@ template <class T>
 using integral_floating_point_t = typename integral_floating_point<T>::type;
 
 template <class T>
-constexpr floating_point_integral_t<T> to_integral(T value) {
+constexpr floating_point_integral_t<T> to_integral(T value) noexcept {
     union {
         T input;
         floating_point_integral_t<T> output;
@@ -46,7 +46,7 @@ constexpr floating_point_integral_t<T> to_integral(T value) {
 }
 
 template <class T>
-constexpr integral_floating_point_t<T> to_floating_point(T value) {
+constexpr integral_floating_point_t<T> to_floating_point(T value) noexcept {
     union {
         T input;
         integral_floating_point_t<T> output;

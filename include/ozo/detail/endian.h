@@ -19,27 +19,27 @@ enum class endian {
 };
 
 template <class T, std::size_t ... N>
-constexpr T byte_order_swap(T value, std::index_sequence<N ...>) {
+constexpr T byte_order_swap(T value, std::index_sequence<N ...>) noexcept {
     return (((value >> N * CHAR_BIT & std::numeric_limits<std::uint8_t>::max()) << (sizeof(T) - 1 - N) * CHAR_BIT) | ...);
 }
 
 template <class T, class U = std::make_unsigned_t<T>>
-constexpr Require<endian::native == endian::little, U> convert_to_big_endian(T value) {
+constexpr Require<endian::native == endian::little, U> convert_to_big_endian(T value) noexcept {
     return byte_order_swap<U>(value, std::make_index_sequence<sizeof(T)> {});
 }
 
 template <class T>
-constexpr Require<endian::native == endian::big, T> convert_to_big_endian(T value) {
+constexpr Require<endian::native == endian::big, T> convert_to_big_endian(T value) noexcept {
     return value;
 }
 
 template <class T, class U = std::make_unsigned_t<T>>
-constexpr Require<endian::native == endian::little, U> convert_from_big_endian(T value) {
+constexpr Require<endian::native == endian::little, U> convert_from_big_endian(T value) noexcept {
     return byte_order_swap<U>(value, std::make_index_sequence<sizeof(T)> {});
 }
 
 template <class T>
-constexpr Require<endian::native == endian::big, T> convert_from_big_endian(T value) {
+constexpr Require<endian::native == endian::big, T> convert_from_big_endian(T value) noexcept {
     return value;
 }
 
