@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ozo/detail/do_nothing.h>
+#include <ozo/core/none.h>
 #include <ozo/impl/async_request.h>
 #include <ozo/time_traits.h>
 
@@ -15,7 +15,7 @@ inline void async_execute(P&& provider, Q&& query, const time_traits::duration& 
         async_request_op {
             std::forward<Q>(query),
             timeout,
-            detail::do_nothing {},
+            none,
             std::forward<Handler>(handler)
         }
     );
