@@ -1,0 +1,47 @@
+#pragma once
+
+#include <ozo/core/concept.h>
+#include <type_traits>
+
+namespace ozo {
+
+/**
+ * @brief None type
+ * @ingroup group-core-types
+ * None type modelling void as ordinary type. This type is collable with return type void.
+ */
+struct none_t {
+    using type = void;
+    template <typename ...Args>
+    constexpr void operator() (Args&& ...) const noexcept {}
+    template <typename ...Args>
+    static constexpr void apply (Args&& ...) noexcept {}
+};
+
+template <typename T>
+using is_none = std::is_same<T, none_t>;
+
+template <typename T>
+constexpr auto IsNone = is_none<T>::value;
+
+template <typename T>
+inline constexpr bool operator == (const none_t&, const T&) { return IsNone<T>;}
+
+template <typename T, typename = Require<!IsNone<T>>>
+inline constexpr bool operator == (const T&, const none_t&) { return false;}
+
+template <typename T>
+inline constexpr bool operator != (const none_t&, const T&) { return !IsNone<T>;}
+
+template <typename T, typename = Require<!IsNone<T>>>
+inline constexpr bool operator != (const T&, const none_t&) { return true;}
+
+/**
+ * @brief None object
+ * @ingroup group-core-types
+ *
+ * Instance of ozo::none_t type.
+ */
+constexpr auto none = none_t{};
+
+} // namespace ozo

@@ -52,6 +52,7 @@ set(SOURCES
     type_traits.cpp
     concept.cpp
     result.cpp
+    none.cpp
     impl/async_send_query_params.cpp
     impl/async_get_result.cpp
     detail/base36.cpp
