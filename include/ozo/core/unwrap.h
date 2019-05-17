@@ -93,7 +93,7 @@ struct get_unwrapped_type {
 #ifdef OZO_DOCUMENTATION
     using type = <unwrapped type>; //!< Unwrapped type
 #else
-    using type = std::decay_t<decltype(unwrap(std::declval<T>()))>;
+    using type = std::decay_t<decltype(ozo::unwrap(std::declval<T>()))>;
 #endif
 };
 
