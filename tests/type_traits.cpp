@@ -85,6 +85,19 @@ TEST(is_null_recursive, should_return_false_for_non_nullable_type) {
     EXPECT_FALSE(ozo::is_null_recursive(int()));
 }
 
+namespace test_unwrap_local {
+struct test_type {};
+
+void unwrap(test_type){}
+}
+
+TEST(unwrap_type, should_unwrap_type_with_no_adl) {
+    using type = test_unwrap_local::test_type;
+    unwrap(type{});
+    const bool is_same = std::is_same_v<ozo::unwrap_type<type>, type>;
+    EXPECT_TRUE(is_same);
+}
+
 TEST(unwrap, should_unwrap_type) {
     boost::optional<int> n(7);
     EXPECT_EQ(ozo::unwrap(n), 7);
