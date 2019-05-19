@@ -2,6 +2,14 @@
 
 Here are some examples of how to use OZO API.
 
+<!-- TOC -->
+- [How to](#how-to)
+  - [How To Make A Very Simple request](#how-to-make-a-very-simple-request)
+  - [How To Handle Error Properly](#how-to-handle-error-properly)
+  - [How Start To Do Not Bother With Types Sequence In Row But Begin To Bother About Column Names](#how-start-to-do-not-bother-with-types-sequence-in-row-but-begin-to-bother-about-column-names)
+  - [How To Determine Which Type Do I Need To Use For The PostgreSQL Type](#how-to-determine-which-type-do-i-need-to-use-for-the-postgresql-type)
+  - [How To Bind One More PostgreSQL Type For C++ Type With Existing Binding](#how-to-bind-one-more-postgresql-type-for-c-type-with-existing-binding)
+
 ## How To Make A Very Simple request
 
 E.g. you have _very_ simple table.
@@ -14,7 +22,7 @@ CREATE TABLE users_info(
 );
 ```
 
-If you want execute just a single query with no custom types or something else then the simplest way for you is:
+If you want to execute a query with no custom types or something else then the simplest way for you is:
 
 ```cpp
 #include <ozo/request.h>
@@ -23,14 +31,14 @@ If you want execute just a single query with no custom types or something else t
 #include <boost/asio.hpp>
 
 int main() {
-    // We need io_context for IO, this is alias on boost::asio::io_context
+    // We need io_context for IO
     boost::asio::io_context io;
 
-    // Rows which accepts integer and nullable string columns in the sequence
-    // It is an alias on std::vector of std::tuple
+    // Container of rows which accepts integer and nullable string columns in the sequence.
+    // (This is an alias on std::vector of std::tuple - see the documentation)
     ozo::rows_of<std::int64_t, std::optional<std::string>> rows;
 
-    // Connection info with host and port to coonect to
+    // Connection info with host and port to connect to
     auto conn_info = ozo::make_connection_info("host=... port=...");
 
     // For _SQL literal
@@ -39,29 +47,29 @@ int main() {
     const auto query = "SELECT id, name FROM users_info WHERE amount>="_SQL + std::int64_t(25);
 
     // Request with connection provider, query and callback.
-    // Provider binds how to get connection with io_context.
     ozo::request(ozo::make_connector(conn_info, io), query, ozo::into(rows),
             [&](ozo::error_code ec, auto conn) {
+        // Here we got an error, so we can get:
         if (ec) {
-            // Here we got an error, so we can get:
-            //           error code's message
-            std::cerr << ec.message()
-            //           error message from underlying libpq
-                    << " | " << error_message(conn)
-            //           and error context from OZO
-                    << " | " << get_error_context(conn);
+            // * Print error code's message
+            std::cerr << ec.message();
+            // * Print error message from underlying libpq
+            std::cerr << " | " << ozo::error_message(conn);
+            // * Print additional error context from OZO
+            if (!ozo::is_null_recursive(conn)) {
+                std::cerr << " | " << ozo::get_error_context(conn);
+            }
             return;
         };
 
-        // Connection must be in good state here,
+        // Connection should be in good state here,
         // typically you do not need to check it manually
         assert(ozo::connection_good(conn));
 
         // We got results, let's handle, e.g. print it out
         std::cout << "id" << '\t' << "name" << std::endl;
         for(auto& row: res) {
-            std::cout << std::get<0>(row) << '\t'
-                    << std::get<1>(row) << std::endl;
+            std::cout << std::get<0>(row) << '\t' << std::get<1>(row) << std::endl;
         }
     });
 
@@ -69,33 +77,33 @@ int main() {
 }
 ```
 
-Let's look a little bit closer on this pretty simple asynchronous code.
+Let's look a little bit closer on this pretty simple but asynchronous code.
 
 ```cpp
 ozo::rows_of<std::int64_t, std::optional<std::string>> rows;
 ```
 
-Here we define result type as we want to see it. Practically `ozo::rows_of` is an alias on `std::vector<std::tuple<...>>`. And `ozo::into` is an alias on `std::back_inserter`. So `request()` function will fill this vector of tuples according to the database response rows.
+Here we define a result type. Practically `ozo::rows_of` is an alias on `std::vector<std::tuple<...>>`. And `ozo::into` is an alias on `std::back_inserter`. So `ozo::request()` function will fill this vector of tuples according to the database response rows. Please read the documentation for more details.
 
 It is _very important_ to preserve the same order of fields in request and types in the tuple (it is a little bit annoying, but there is a way to avoid it via [Boost.Hana](https://www.boost.org/doc/libs/1_66_0/libs/hana/doc/html/index.html#tutorial-introspection-adapting) or [Boost.Fusion](https://www.boost.org/doc/libs/1_66_0/libs/fusion/doc/html/fusion/adapted.html) structure adaptation).
 
-There is `std::optional<std::string>` at the second position of the tuple. This is because `name` field of the table can be _NULL_. Empty optional represens the _NULL_ (learn more about Nullable concept). If you ommit an `std::optional` then in case of _NULL_ value run-time result deserialization error will happend.
+There is `std::optional<std::string>` at the second position of the tuple. This is because `name` field of the table can be _NULL_. Empty optional represents the _NULL_ (you can learn more about Nullable concept from the documentation). If you omit an `std::optional` then in case of _NULL_ value deserialization error could be.
 
-The first argument of the tuple can not be a _NULL_, so here we do not to bother about it and can ommit `std::optional`.
+The first argument of the tuple can not be a _NULL_ due to the schema, so we can omit `std::optional`.
 
-There is no mistake to expect nullable type for non-nullable result, but the opposite leads to run-time error in case of _NULL_ value result from database.
+In other words: there is no mistake to expect nullable type for non-nullable result, but the opposite leads to a run-time error in case of _NULL_ value received from a database.
 
 ```cpp
 auto conn_info = ozo::make_connection_info("host=... port=...");
 ```
 
-Now we need to create a connection information for database to connect to. This is our connection provider which can create a connection for us as it will be needed (see more information about connection provider and how to get connection).
+Now we need to create a connection information for database to connect to. This is our connection source which can create a connection for us as it will be needed (you can learn more about ConnectionSource and ConnectionProvider concepts from the documentation).
 
 ```cpp
 const auto query = "SELECT id, name FROM users_info WHERE amount>="_SQL + std::int64_t(25);
 ```
 
-Here our query for database. There is a text with `_SQL` literal and single parameter `std::int64_t(25)`. Note, what the parameter will be passed as a separate binary parameter but not as a part of query text.
+Here our query for database. There is a text with `_SQL` literal and a parameter `std::int64_t(25)`. Note that the parameter will be passed as a separate binary parameter, but not as part of the query text.
 
 Here is `request()` asynchronous function call.
 
@@ -106,15 +114,48 @@ ozo::request(ozo::make_connector(conn_info, io), query, ozo::into(res),
 });
 ```
 
-`ozo::make_provider(io, conn_info)` - the first parameter is a **Connection Provider** or **Connection**. **Connection Provider** is an entity from which you can get a new (or may be already established) connection. **Connection** is a **Connection Provider** since it can provide itself. So the query request will be performed within connection obtained for the first argument.
+`ozo::make_connector(conn_info, io)` - the first parameter is a **ConnectionProvider** or a **Connection**. **ConnectionProvider** is an entity from which you can get a new (or may be already established) connection. **Connection** is a **ConnectionProvider** since it can provide itself. So the query request will be performed within connection obtained for the first argument.
 
-`query` - the next argument is query which we discussed earler.
+`query` - the next argument is query which we discussed above.
 
-`ozo::into(res)` - the output perameter. In this case out parameter is back inserter iterator to the result vector. Note, what the life time of the output parameter managed by the user. In this case it correctly placed on stack since its lifetime overlaps `io.run()` call. But in more sophisticated code with callbacks it needs to be stored e.g. in shared pointer or something like this. The query output parameter can be iterator on container with appropriated data items, or it can be `ozo::result` which provides access to raw binary data. The second variant is not recommended since user must implement binary protocol parsing by self, but if it needed it can be used.
+`ozo::into(res)` - the output parameter. In this case the out parameter is a back insert iterator to the result vector. Note, that the life time of the output parameter should be managed by a user. In this example it correctly placed on stack since its lifetime overlaps `io.run()` call. The query output parameter can be iterator with appropriated value type, or `ozo::result` object which provides access to raw binary data. The second variant is not recommended since user should implement binary protocol parsing by self.
 
-`[&](ozo::error_code ec, auto conn)` - completion token parameter, in this case is callback lambda. In other cases it can be [boost::asio::use_future](https://www.boost.org/doc/libs/1_67_0/doc/html/boost_asio/reference/use_future.html), [boost::asio::yield_context](https://www.boost.org/doc/libs/1_67_0/doc/html/boost_asio/reference/yield_context.html) or any other [boost::asio::async_result](https://www.boost.org/doc/libs/1_67_0/doc/html/boost_asio/reference/async_result.html) compatible [Completion Token](https://www.boost.org/doc/libs/1_67_0/doc/html/boost_asio/reference/async_completion.html). The arguments of the call back are error code `ec` (which is namely `boost::system::error_code` for now) and the connection `conn` with which the query was made. Even if you got an error it is possible what there is an additional error context in the `conn`. Since there is no rooms to place context depended information about connection error into error code the context depended information provided via `error_message()` and `get_error_context()` functions. The first one returns error message from `libpq`, the second - additional context from `OZO`.
+`[&](ozo::error_code ec, auto conn)` - completion token parameter, in this case is callback lambda. In other cases it can be [boost::asio::use_future](https://www.boost.org/doc/libs/1_67_0/doc/html/boost_asio/reference/use_future.html), [boost::asio::yield_context](https://www.boost.org/doc/libs/1_67_0/doc/html/boost_asio/reference/yield_context.html) or any other [boost::asio::async_result](https://www.boost.org/doc/libs/1_67_0/doc/html/boost_asio/reference/async_result.html) compatible [Completion Token](https://www.boost.org/doc/libs/1_67_0/doc/html/boost_asio/reference/async_completion.html). The arguments of the call back are error code `ec` (which is namely `boost::system::error_code` for now) and the connection `conn` with which the query was made.
 
 `for(auto& row: res)` - so if there is no error we can handle result from the output container.
+
+---
+
+## How To Handle Error Properly
+
+OZO uses `boost::system::error_code` to indicate an error and therefore, like `std::error_code`, it cannot provide any context-dependent information at all. So unfortunately `error_code::message()` returns only a static textual description of the code. But this is not enough, especially for sql errors. That's why the additional error information is needed and can be obtained via these two functions:
+
+* `ozo::error_message()` - provides a `std::string_view` with native error message from libpq,
+* `ozo::get_error_context()` - provides an additional error context from OZO.
+
+Please learn more about these function in the documentation.
+
+**Example**:
+
+```cpp
+void print_error (std::ostream& s, ozo::error_code ec) {
+    s << "Request failed with error: " << ec.message();
+    // Here we should check if the connection is in null state to avoid UB.
+    if (!ozo::is_null_recursive(connection)) {
+        // Let's check libpq native error message and if so - print it out
+        if (auto msg = ozo::error_message(connection); !msg.empty()) {
+            s << ", error message: " << msg;
+        }
+        // Sometimes libpq native error message is not enough, so let's check
+        // the additional error context from OZO
+        if (auto ctx = ozo::get_error_context(connection); !ctx.empty()) {
+            s << ", additional error context: " << ctx;
+        }
+    }
+}
+```
+
+---
 
 ## How Start To Do Not Bother With Types Sequence In Row But Begin To Bother About Column Names
 
@@ -153,9 +194,11 @@ int main() {
 }
 ```
 
-In this case you can change fields' places free. Fields and structure members are bound with thier names.
+In this case you can change fields' places free. Fields and structure members are bound with their names.
 
-## How To Determine Which Type I need To Use For The PostgreSQL Type
+---
+
+## How To Determine Which Type Do I Need To Use For The PostgreSQL Type
 
 It is a good question! Since we are using binary protocol and have serialization/deserialization system we also have a type system. It is easy and extandable. For build-in types you can look at [ozo/type_traits.h](../include/ozo/type_traits.h) for difinitions like:
 
@@ -190,14 +233,16 @@ OZO_PG_DEFINE_TYPE_AND_ARRAY(Stroka, "text", TEXTOID, TEXTARRAYOID, dynamic_size
 
 Now you can get `text` into `Stroka` type, and put `Stroka` object like text in queries.
 
+---
+
 ## How To Bind One More PostgreSQL Type For C++ Type With Existing Binding
 
 This is very common problem. A lot of PostgreSQL types can be represented via the same C++ types. E.g. `text`, `name`, `varchar` can be easily and convenient represented via `std::string`. But it can not be done, due to relation "one to many" between PostgreSQL type and C++ types. You can map `text` to several C++ types but you can not map several PostgreSQL types to a single C++ type. There is a solution for the problem in the library - `OZO_STRONG_TYPEDEF`. This macro allows you to define an alias on a type with strong type definition guarantee.
 
-E.g. alias and definition for `bytea` type looks like this:
+E.g. alias and definition for `bytea` type may looks like this:
 
 ```cpp
-OZO_STRONG_TYPEDEF(std::vector<char>, bytea)
+OZO_STRONG_TYPEDEF(std::string, bytea)
 //...
 OZO_PG_DEFINE_TYPE_AND_ARRAY(bytea, "bytea", BYTEAOID, 1001, dynamic_size)
 ```
