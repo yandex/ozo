@@ -78,7 +78,15 @@ int main(int argc, char **argv) {
             std::cout << "Request failed with error: " << ec.message();
             // Here we should check if the connection is in null state to avoid UB.
             if (!ozo::is_null_recursive(connection)) {
-                std::cout << ", error context: " << ozo::get_error_context(connection);
+                // Let's check libpq native error message and if so - print it out
+                if (auto msg = ozo::error_message(connection); !msg.empty()) {
+                    std::cout << ", error message: " << msg;
+                }
+                // Sometimes libpq native error message is not enough, so let's check
+                // the additional error context from OZO
+                if (auto ctx = ozo::get_error_context(connection); !ctx.empty()) {
+                    std::cout << ", error context: " << ctx;
+                }
             }
             std::cout << std::endl;
             return;
