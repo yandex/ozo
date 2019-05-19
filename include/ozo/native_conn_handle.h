@@ -30,3 +30,4 @@ namespace ozo {
 using native_conn_handle = std::unique_ptr<PGconn>;
 
 } // namespace ozo
+

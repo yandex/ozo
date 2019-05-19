@@ -107,3 +107,4 @@ template <typename T>
 constexpr auto into(basic_result<T>& v) { return std::ref(v);}
 
 } // namespace ozo
+

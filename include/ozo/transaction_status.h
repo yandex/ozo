@@ -43,3 +43,4 @@ inline transaction_status get_transaction_status(Connection&& conn);
 } // namespace ozo
 
 #include <ozo/impl/transaction_status.h>
+

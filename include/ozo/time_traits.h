@@ -29,3 +29,4 @@ template <typename ...Ts>
 struct is_time_constrain<std::chrono::time_point<Ts...>> : std::true_type {};
 
 } // namespace ozo
+

@@ -48,3 +48,4 @@ inline constexpr bool operator != (const T&, const none_t&) { return true;}
 constexpr auto none = none_t{};
 
 } // namespace ozo
+

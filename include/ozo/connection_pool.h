@@ -180,3 +180,4 @@ auto make_connection_pool(Source&& source, const connection_pool_config& config)
 }
 
 } // namespace ozo
+

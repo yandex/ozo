@@ -43,3 +43,4 @@ Require<ConnectionProvider<T>> async_start_transaction(T&& provider, Query&& que
 }
 
 } // namespace ozo::impl
+

@@ -55,3 +55,4 @@ constexpr integral_floating_point_t<T> to_floating_point(T value) {
 }
 
 } // namespace ozo::detail
+

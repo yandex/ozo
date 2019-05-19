@@ -124,3 +124,4 @@ inline auto make_connection_info(std::string conn_str, const OidMap& oid_map = O
 static_assert(ConnectionProvider<decltype(std::declval<connection_info<>>()[std::declval<io_context&>()])>, "is not a ConnectionProvider");
 
 } // namespace ozo
+

@@ -41,3 +41,4 @@ struct is_null_impl<boost::weak_ptr<T>> {
 };
 ///@}
 } // namespace ozo
+

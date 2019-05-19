@@ -134,3 +134,4 @@ inline ostream& send_frame(ostream& out, const oid_map_t<M>& oid_map, const In& 
 }
 
 } // namespace ozo
+

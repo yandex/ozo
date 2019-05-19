@@ -22,3 +22,4 @@ auto end_transaction(transaction<T>&& transaction, Query&& query,
 }
 
 } // namespace ozo::impl
+

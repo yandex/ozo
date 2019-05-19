@@ -96,3 +96,4 @@ inline int ntuples(T&& res) noexcept {
 }
 
 } // namespace ozo::impl
+

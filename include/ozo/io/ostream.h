@@ -14,3 +14,4 @@ inline auto write(ostream& out, const T& in)
 }
 
 } // namespace ozo
+

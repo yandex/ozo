@@ -82,3 +82,4 @@ struct rollback_op {
 constexpr rollback_op rollback;
 
 } // namespace ozo
+

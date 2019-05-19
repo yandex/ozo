@@ -26,3 +26,4 @@ template <typename T>
 struct unwrap_impl<boost::optional<T>> : detail::functional::dereference {};
 ///@}
 } // namespace ozo
+

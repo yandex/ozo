@@ -28,3 +28,4 @@ struct unwrap_impl<__OZO_STD_OPTIONAL<T>> : detail::functional::dereference {};
 #endif
 ///@}
 } // namespace ozo
+

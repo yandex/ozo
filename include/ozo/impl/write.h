@@ -70,3 +70,4 @@ inline Require<HanaStruct<T>, ostream&> write(ostream& out, const T& in) {
 }
 
 } // namespace ozo::impl
+

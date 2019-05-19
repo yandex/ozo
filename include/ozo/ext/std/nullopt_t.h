@@ -40,3 +40,4 @@ struct send_impl<__OZO_NULLOPT_T> {
 } // namespace ozo
 
 OZO_PG_DEFINE_TYPE(__OZO_NULLOPT_T, "null", null_oid, decltype(null_state_size))
+

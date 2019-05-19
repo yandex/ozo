@@ -295,3 +295,4 @@ decltype(auto) get_params(const T& query) {
 } // namespace ozo
 
 #include <ozo/impl/query.h>
+

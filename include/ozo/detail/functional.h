@@ -80,3 +80,4 @@ constexpr result_of<Functional, Ts...> apply(Ts&&... args) noexcept(is_noexcept<
 }
 
 } // namespace ozo::detail
+

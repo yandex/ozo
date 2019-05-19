@@ -44,3 +44,4 @@ constexpr Require<endian::native == endian::big, T> convert_from_big_endian(T va
 }
 
 }
+

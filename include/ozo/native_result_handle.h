@@ -29,3 +29,4 @@ namespace ozo {
 using native_result_handle = std::unique_ptr<PGresult>;
 
 } // namespace ozo
+

@@ -139,3 +139,4 @@ struct recv_impl_dispatcher<T, Require<Composite<T>&&!FusionSequence<T>>> {
 
 } // namespace detail
 } //namespace ozo
+

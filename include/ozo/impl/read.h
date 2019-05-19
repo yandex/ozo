@@ -60,3 +60,4 @@ inline Require<FusionSequence<T>, istream&> read(istream& in, T& out) {
 }
 
 } // namespace ozo::impl
+

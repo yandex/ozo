@@ -14,3 +14,4 @@ inline auto read(istream& in, T& out)
 }
 
 } // namespace ozo
+

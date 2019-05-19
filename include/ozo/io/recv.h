@@ -357,3 +357,4 @@ basic_result<T>& recv_result(basic_result<T>& in, const oid_map_t<M>& oid_map, s
 }
 
 } // namespace ozo
+

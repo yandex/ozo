@@ -224,3 +224,4 @@ inline error_code result_error(T&& res) noexcept {
 }
 
 } // namespace ozo::impl
+

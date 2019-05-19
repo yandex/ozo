@@ -23,3 +23,4 @@ inline const char* get_result_status_name(ExecStatusType status) {
 }
 
 } // namespace ozo::impl
+

@@ -54,3 +54,4 @@ inline auto bind(Handler&& h, Args&& ... args) {
 
 } // namespace detail
 } // namespace ozo
+

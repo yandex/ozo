@@ -186,3 +186,4 @@ constexpr auto operator "" _SQL() {
 
 } // namespace literals
 } // namespace ozo
+

@@ -36,3 +36,4 @@ template <typename T>
 struct unwrap_impl<std::shared_ptr<T>> : detail::functional::dereference {};
 ///@}
 } // namespace ozo
+

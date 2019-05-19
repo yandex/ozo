@@ -162,3 +162,4 @@ binary_query(const Query& q, const OidMap&, const Allocator& = Allocator{}, Requ
     binary_query<decltype(get_query_text(q)), decltype(get_query_params(q)), OidMap, Allocator>;
 
 } // namespace ozo
+

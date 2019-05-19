@@ -36,3 +36,4 @@ struct fit_array_size_impl<std::array<T, S>> {
 };
 ///@}
 } // namespace ozo
+

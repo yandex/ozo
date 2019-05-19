@@ -39,3 +39,4 @@ inline constexpr auto make_query(Text&& text, ParamsT&& ...params) {
 }
 
 } // namespace ozo
+

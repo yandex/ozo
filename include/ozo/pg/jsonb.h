@@ -69,3 +69,4 @@ struct recv_impl<pg::jsonb> {
 } // namespace ozo
 
 OZO_PG_DEFINE_TYPE_AND_ARRAY(ozo::pg::jsonb, "jsonb", JSONBOID, 3807, dynamic_size)
+

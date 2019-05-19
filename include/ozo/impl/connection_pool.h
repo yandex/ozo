@@ -147,3 +147,4 @@ static_assert(ConnectionProvider<pooled_connection_ptr<connection_impl<empty_oid
     "pooled_connection_ptr is not a ConnectionProvider concept");
 
 } // namespace ozo::impl
+

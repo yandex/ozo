@@ -39,3 +39,4 @@ struct send_impl<std::nullptr_t> {
 } // namespace ozo
 
 OZO_PG_DEFINE_TYPE(std::nullptr_t, "null", null_oid, decltype(null_state_size))
+

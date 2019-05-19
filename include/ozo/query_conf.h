@@ -508,3 +508,4 @@ auto make_query_repository(const ForwardIteratorRangeT& range,
 }
 
 } // namespace ozo
+

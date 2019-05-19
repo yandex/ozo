@@ -41,3 +41,4 @@ struct is_null_impl<std::weak_ptr<T>> {
 };
 ///@}
 } // namespace ozo
+

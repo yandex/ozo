@@ -72,3 +72,4 @@ template <typename T>
 struct is_nullable<impl::transaction<T>> : std::true_type {};
 
 } // namespace ozo
+
