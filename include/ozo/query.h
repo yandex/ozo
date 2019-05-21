@@ -10,18 +10,44 @@
  */
 namespace ozo {
 
-template <typename T>
-inline auto to_const_char(const T& v) noexcept -> Require<HanaString<T>, const char*> {
-    return hana::to<const char*>(v);
-}
+template <typename T, typename = hana::when<true>>
+struct to_const_char_impl {};
 
 template <typename T>
-inline auto to_const_char(const T& v) noexcept -> decltype(std::data(v)) {
-    return std::data(v);
-}
+struct to_const_char_impl<T, hana::when<HanaString<T>>> {
+    static constexpr const char* apply(const T& v) noexcept {
+        return hana::to<const char*>(v);
+    }
+};
 
-inline auto to_const_char(const char* v) noexcept {
-    return v;
+template <>
+struct to_const_char_impl<std::string> {
+    static const char* apply(const std::string& v) noexcept {
+        return v.data();
+    }
+};
+
+template <>
+struct to_const_char_impl<std::string_view> {
+    static constexpr const char* apply(std::string_view v) noexcept {
+        return v.data();
+    }
+};
+
+template <>
+struct to_const_char_impl<const char*> {
+    static constexpr const char* apply(const char* v) noexcept {
+        return v;
+    }
+};
+
+template <typename T>
+inline constexpr detail::result_of<to_const_char_impl, T> to_const_char(const T& v) noexcept {
+    static_assert(noexcept(detail::apply<to_const_char_impl>(v)),
+        "to_const_char_impl::apply() should be noexcept");
+    static_assert(std::is_same_v<const char*, detail::result_of<to_const_char_impl, T>>,
+        "to_const_char_impl::apply() should return const char*");
+    return detail::apply<to_const_char_impl>(v);
 }
 
 template <class, class = std::void_t<>>
@@ -29,11 +55,8 @@ struct is_query_text : std::false_type {};
 
 template <class T>
 struct is_query_text<T, std::void_t<
-    decltype(to_const_char(std::declval<const T&>()))
->> : std::integral_constant<bool,
-    std::is_same_v<decltype(to_const_char(std::declval<const T&>())), const char*>
-    && noexcept(to_const_char(std::declval<const T&>()))
-> {};
+    decltype(ozo::to_const_char(std::declval<const T&>()))
+>> : std::true_type {};
 
 template <typename T>
 constexpr auto QueryText = is_query_text<std::decay_t<T>>::value;
@@ -42,7 +65,7 @@ template <typename T>
 struct get_query_text_impl;
 
 template <typename T>
-inline detail::result_of<get_query_text_impl, T> get_query_text(T&& query) {
+inline constexpr detail::result_of<get_query_text_impl, T> get_query_text(T&& query) {
     return detail::apply<get_query_text_impl>(std::forward<T>(query));
 }
 
@@ -50,7 +73,7 @@ template <typename T>
 struct get_query_params_impl;
 
 template <typename T>
-inline detail::result_of<get_query_params_impl, T> get_query_params(T&& query) {
+inline constexpr detail::result_of<get_query_params_impl, T> get_query_params(T&& query) {
     return detail::apply<get_query_params_impl>(std::forward<T>(query));
 }
 
