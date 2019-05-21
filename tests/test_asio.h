@@ -59,6 +59,9 @@ struct execution_context : asio::execution_context {
         executor_type(executor_mock& impl, execution_context& context)
         : impl_(&impl), context_(&context){}
 
+        explicit executor_type(execution_context& context)
+        : context_(&context){}
+
         execution_context& context() const noexcept {
             return *context_;
         }
@@ -69,17 +72,26 @@ struct execution_context : asio::execution_context {
 
         template <typename Function>
         void dispatch(Function&& f, std::allocator<void>) const {
+            assert_has_impl();
             return impl_->dispatch(wrap_shared(std::forward<Function>(f)));
         }
 
         template <typename Function>
         void post(Function&& f, std::allocator<void>) const {
+            assert_has_impl();
             return impl_->post(wrap_shared(std::forward<Function>(f)));
         }
 
         template <typename Function>
         void defer(Function&& f, std::allocator<void>) const {
+            assert_has_impl();
             return impl_->defer(wrap_shared(std::forward<Function>(f)));
+        }
+
+        void assert_has_impl() const {
+            if (!impl_) {
+                throw std::logic_error("ozo::testing::execution_context::executor_type::assert_impl() no executor mock");
+            }
         }
 
         friend bool operator ==(const executor_type& lhs, const executor_type& rhs) {
@@ -100,7 +112,8 @@ struct execution_context : asio::execution_context {
 
     executor_type get_executor() {
         if (!executor_) {
-            throw std::logic_error("ozo::testing::execution_context::get_executor() bad executor mock");
+            // Contstruct with empty implementation, as get_io_context depends on an executor being present
+            return executor_type{*this};
         }
         return {*executor_, *this};
     }

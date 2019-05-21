@@ -434,7 +434,7 @@ inline decltype(auto) get_socket(T&& conn) noexcept {
 template <typename T>
 inline decltype(auto) get_io_context(T& conn) noexcept {
     static_assert(Connection<T>, "T must be a Connection");
-    return get_socket(conn).get_io_context();
+    return get_socket(conn).get_executor().context();
 }
 
 /**
