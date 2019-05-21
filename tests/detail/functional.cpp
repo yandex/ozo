@@ -10,6 +10,11 @@ struct test_functional {
 };
 
 template <typename T>
+struct test_noexcept_functional {
+    static constexpr int apply(const T&, int v) noexcept { return v;}
+};
+
+template <typename T>
 struct test_dispatch {};
 
 template <>
@@ -41,6 +46,14 @@ TEST(apply, should_invoke_functional_and_return_result) {
 TEST(apply, should_dispatch_functional_by_first_argument) {
     const auto res = ozo::detail::apply<test_dispatch>(std::string{}, 42);
     EXPECT_EQ(res, 777);
+}
+
+TEST(apply, should_be_no_noexcept_if_implementation_is_not_noexcept) {
+    EXPECT_FALSE(noexcept(ozo::detail::apply<test_functional>(std::string{}, 42)));
+}
+
+TEST(apply, should_be_noexcept_if_implementation_is_noexcept) {
+    EXPECT_TRUE(noexcept(ozo::detail::apply<test_noexcept_functional>(std::string{}, 42)));
 }
 
 } // namespace

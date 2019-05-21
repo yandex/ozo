@@ -72,7 +72,10 @@ template <template<typename...> typename Functional, typename ...Ts>
 using result_of = decltype(functional_type<Functional, Ts...>::apply(std::declval<Ts>()...));
 
 template <template<typename...> typename Functional, typename ...Ts>
-constexpr result_of<Functional, Ts...> apply(Ts&&... args) {
+constexpr bool is_noexcept = noexcept(functional_type<Functional, Ts...>::apply(std::declval<Ts>()...));
+
+template <template<typename...> typename Functional, typename ...Ts>
+constexpr result_of<Functional, Ts...> apply(Ts&&... args) noexcept(is_noexcept<Functional, Ts...>) {
     return functional_type<Functional, Ts...>::apply(std::forward<Ts>(args)...);
 }
 
