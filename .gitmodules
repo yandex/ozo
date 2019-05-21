@@ -1,3 +1,4 @@
 [submodule "contrib/resource_pool"]
 	path = contrib/resource_pool
 	url = https://github.com/elsid/resource_pool.git
+	branch = master
