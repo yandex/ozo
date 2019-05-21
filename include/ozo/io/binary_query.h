@@ -100,10 +100,6 @@ private:
             result.lengths[field] = value;
         }
 
-        constexpr int stream_pos() noexcept {
-            return int(std::size(result.buffer));
-        }
-
         constexpr auto& stream() noexcept {
             return os;
         }
@@ -127,8 +123,7 @@ private:
             hana::make_range(hana::size_c<0>, hana::size_c<params_count>));
 
         hana::for_each(range, [&] (auto field) {
-            field_proxy<field> proxy(*result, os);
-            write_meta(oid_map, params[field], proxy);
+            write_meta(oid_map, params[field], field_proxy<field>(*result, os));
         });
 
         std::size_t offset = 0;
@@ -146,7 +141,7 @@ private:
     }
 
     template <class T, std::size_t field>
-    static void write_meta(const oid_map_type& oid_map, const T& value, field_proxy<field>& result) {
+    static void write_meta(const oid_map_type& oid_map, const T& value, field_proxy<field> result) {
         using ozo::send;
         using ozo::size_of;
         result.set_type(type_oid(oid_map, value));
