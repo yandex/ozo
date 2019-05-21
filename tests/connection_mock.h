@@ -78,17 +78,29 @@ struct fake_query {
     friend auto make_binary_query(fake_query query, const ozo::oid_map_t<T>&, Allocator) {
         return query;
     }
+};
 
-    template <class ... Ts>
-    friend const char* get_query_text(const fake_query&) {
+} // namespace ozo::tests
+
+namespace ozo {
+
+template <>
+struct get_query_text_impl<tests::fake_query> {
+    static constexpr decltype(auto) apply(const tests::fake_query&) noexcept {
         return "fake query";
     }
+};
 
-    template <class ... Ts>
-    friend const auto& get_query_params(const fake_query& self) {
-        return self.params;
+template <>
+struct get_query_params_impl<tests::fake_query> {
+    static constexpr decltype(auto) apply(const tests::fake_query& q) noexcept {
+        return q.params;
     }
 };
+
+} // namespace ozo
+
+namespace ozo::tests {
 
 static_assert(Query<fake_query>, "fake_query is not a Query");
 

@@ -1,7 +1,8 @@
 #pragma once
 
-#include <ozo/impl/query.h>
+#include <ozo/detail/functional.h>
 #include <ozo/core/concept.h>
+#include <ozo/type_traits.h>
 
 /**
  * @defgroup group-query Queries
@@ -37,6 +38,22 @@ struct is_query_text<T, std::void_t<
 template <typename T>
 constexpr auto QueryText = is_query_text<std::decay_t<T>>::value;
 
+template <typename T>
+struct get_query_text_impl;
+
+template <typename T>
+inline detail::result_of<get_query_text_impl, T> get_query_text(T&& query) {
+    return detail::apply<get_query_text_impl>(std::forward<T>(query));
+}
+
+template <typename T>
+struct get_query_params_impl;
+
+template <typename T>
+inline detail::result_of<get_query_params_impl, T> get_query_params(T&& query) {
+    return detail::apply<get_query_params_impl>(std::forward<T>(query));
+}
+
 template <class, class = std::void_t<>>
 struct is_query : std::false_type {};
 
@@ -44,38 +61,32 @@ template <class T>
 struct is_query<T, std::void_t<
     decltype(get_query_text(std::declval<const T&>())),
     decltype(get_query_params(std::declval<const T&>()))
->> : std::integral_constant<bool,
+>> : std::bool_constant<
     QueryText<decltype(get_query_text(std::declval<const T&>()))>
-    && HanaTuple<decltype(get_query_params(std::declval<const T&>()))>
+    && HanaSequence<decltype(get_query_params(std::declval<const T&>()))>
 > {};
 
 template <typename T>
 constexpr auto Query = is_query<std::decay_t<T>>::value;
 
 template <class Text, class ... ParamsT>
-auto make_query(Text&& text, ParamsT&& ... params) {
-    static_assert(QueryText<Text>, "text must be QueryText concept");
-    using result = impl::query<std::decay_t<Text>, std::decay_t<ParamsT> ...>;
-    return result {std::forward<Text>(text), hana::make_tuple(std::forward<ParamsT>(params) ...)};
-}
+inline constexpr auto make_query(Text&& text, ParamsT&& ... params);
 
 template <class ... ParamsT>
-auto make_query(const char* text, ParamsT&& ... params) {
-    const auto text_view = std::string_view(text);
-    using result = impl::query<std::decay_t<decltype(text_view)>, std::decay_t<ParamsT> ...>;
-    return result {text_view, hana::make_tuple(std::forward<ParamsT>(params) ...)};
+inline constexpr auto make_query(const char* text, ParamsT&& ... params) {
+    return make_query(std::string_view(text), std::forward<ParamsT>(params)...);
 }
 
 template <class T, class = Require<Query<T>>>
 decltype(auto) get_text(const T& query) {
-    using impl::get_query_text;
     return get_query_text(query);
 }
 
 template <class T, class = Require<Query<T>>>
 decltype(auto) get_params(const T& query) {
-    using impl::get_query_params;
     return get_query_params(query);
 }
 
 } // namespace ozo
+
+#include <ozo/impl/query.h>
