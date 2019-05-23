@@ -33,12 +33,17 @@ constexpr auto get_raw_query_name(const QueryT&) noexcept {
 
 template <class QueryT>
 constexpr auto get_raw_query_name() noexcept {
-    return get_raw_query_name(QueryT{});
+    return decltype(get_raw_query_name(std::declval<QueryT>())) {};
 }
 
 template <class QueryT>
-constexpr std::string_view get_query_name(const QueryT& query = QueryT {}) noexcept {
-    return std::string_view(hana::to<const char*>(get_raw_query_name(query)));
+constexpr std::string_view get_query_name(const QueryT& query) noexcept {
+    return hana::to<const char*>(get_raw_query_name(query));
+}
+
+template <class QueryT>
+constexpr std::string_view get_query_name() noexcept {
+    return hana::to<const char*>(get_raw_query_name<QueryT>());
 }
 
 namespace detail {
