@@ -23,25 +23,31 @@
 
 namespace ozo {
 
-template <class TextT, class ParamsT, class OidMapT, class BufferAllocatorT>
+template <class Text, class Params, class OidMap, class Allocator = std::allocator<char>>
 class binary_query {
 public:
-    static_assert(HanaTuple<ParamsT>, "Params must be hana::tuple");
-    static_assert(OidMap<OidMapT>, "OidMapT must be ozo::oid_map_t");
-    static_assert(QueryText<TextT>, "Text must be QueryText concept");
+    static_assert(ozo::HanaSequence<Params>, "Params should be Hana.Sequence");
+    static_assert(ozo::OidMap<OidMap>, "OidMap should model ozo::OidMap");
+    static_assert(ozo::QueryText<Text>, "Text should model ozo::QueryText concept");
 
-    using buffer_allocator_type = std::conditional_t<
-                                    std::is_same_v<typename BufferAllocatorT::value_type, char>,
-                                        BufferAllocatorT,
-                                        typename BufferAllocatorT::template rebind<char>::other>;
-    using oid_map_type = OidMapT;
-    using text_type = TextT;
-    using params_type = ParamsT;
+    using allocator_type = std::conditional_t<
+                                    std::is_same_v<typename Allocator::value_type, char>,
+                                        Allocator,
+                                        typename Allocator::template rebind<char>::other>;
+    using oid_map_type = OidMap;
+    using text_type = std::decay_t<Text>;
+    using params_type = Params;
 
     static constexpr auto params_count = decltype(hana::length(std::declval<params_type>()))::value;
 
-    binary_query(text_type text, const params_type& params, const buffer_allocator_type& buffer_allocator, const oid_map_type& oid_map)
-        : impl(make_impl(std::move(text), params, oid_map, buffer_allocator)) {}
+    binary_query(Text text, const Params& params, const OidMap& oid_map, const Allocator& allocator = Allocator{},
+            Require<ozo::QueryText<Text> && ozo::HanaSequence<Params>>* = nullptr)
+    : impl(make_impl(std::move(text), params, oid_map, allocator)) {}
+
+    template <typename Query>
+    binary_query(const Query& query, const OidMap& oid_map, const Allocator& allocator = Allocator{},
+            Require<ozo::Query<Query>>* = nullptr)
+    : binary_query(get_query_text(query), get_query_params(query), oid_map, allocator) {}
 
     constexpr const char* text() const noexcept {
         return to_const_char(impl->text);
@@ -66,7 +72,7 @@ public:
 private:
     static constexpr auto binary_format = 1;
 
-    using buffer_type = std::vector<char, buffer_allocator_type>;
+    using buffer_type = std::vector<char, allocator_type>;
 
     struct impl_type {
         text_type text;
@@ -76,8 +82,8 @@ private:
         std::array<int, params_count> lengths;
         std::array<const char*, params_count> values;
 
-        impl_type(text_type text, const buffer_allocator_type& buffer_allocator)
-            : text(std::move(text)), buffer(buffer_allocator) {}
+        impl_type(text_type text, const allocator_type& allocator)
+            : text(std::move(text)), buffer(allocator) {}
 
         impl_type(const impl_type&) = delete;
         impl_type(impl_type&&) = delete;
@@ -112,9 +118,9 @@ private:
     std::shared_ptr<impl_type> impl;
 
     static auto make_impl(text_type text, const params_type& params,
-            const oid_map_type& oid_map, const buffer_allocator_type& buffer_allocator) {
+            const oid_map_type& oid_map, const allocator_type& allocator) {
 
-        auto result = std::make_shared<impl_type>(std::move(text), buffer_allocator);
+        auto result = std::make_shared<impl_type>(std::move(text), allocator);
 
         ozo::detail::ostreambuf osbuf(result->buffer);
         ozo::ostream os(&osbuf);
@@ -151,32 +157,8 @@ private:
     }
 };
 
-template <typename T>
-struct is_binary_query : std::false_type {};
-
-template <typename ... Ts>
-struct is_binary_query<binary_query<Ts...>> : std::true_type {};
-
-template <typename T>
-constexpr auto BinaryQuery = is_binary_query<std::decay_t<T>>::value;
-
-template <class Text, class Params, class M = empty_oid_map, class Alloc = std::allocator<char>,
-        class = Require<QueryText<Text> && HanaTuple<Params>>
->
-auto make_binary_query(Text&& text, const Params& params,
-            const M& oid_map = M{}, const Alloc& buffer_allocator = Alloc{}) {
-    using binary_query_type = binary_query<std::decay_t<Text>, Params, M, Alloc>;
-    return binary_query_type(std::forward<Text>(text), params, buffer_allocator, oid_map);
-}
-
-template <class T, class M = empty_oid_map, class Alloc = std::allocator<char>, class = Require<Query<T>>>
-auto make_binary_query(const T& query, const M& oid_map = M{}, const Alloc& buffer_allocator = Alloc{}) {
-    return make_binary_query(get_text(query), get_params(query), oid_map, buffer_allocator);
-}
-
-template <class Q, class M, class A>
-inline Require<BinaryQuery<Q>, Q> make_binary_query(Q query, M&&, A&&) {
-    return std::move(query);
-}
+template <class Query, class OidMap, class Allocator = std::allocator<char>>
+binary_query(const Query& q, const OidMap&, const Allocator& = Allocator{}, Require<ozo::Query<Query>>* = nullptr) ->
+    binary_query<decltype(get_query_text(q)), decltype(get_query_params(q)), OidMap, Allocator>;
 
 } // namespace ozo

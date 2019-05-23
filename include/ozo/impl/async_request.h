@@ -160,8 +160,18 @@ struct async_send_query_params_op {
 };
 
 template <typename T, typename Allocator, typename ...Ts>
-inline decltype(auto) make_binary_query(const query_builder<Ts...>& builder, const oid_map_t<T>& m, Allocator a) {
-    return make_binary_query(builder.build(), m, a);
+inline auto make_binary_query(const query_builder<Ts...>& builder, const oid_map_t<T>& m, Allocator a) {
+    return binary_query(builder.build(), m, a);
+}
+
+template <typename T, typename M, typename Alloc, typename = Require<Query<T>>>
+inline auto make_binary_query(const T& query, const M& oid_map, const Alloc& allocator) {
+    return binary_query(query, oid_map, allocator);
+}
+
+template <typename ...Ts, typename M, typename A>
+inline auto make_binary_query(binary_query<Ts...> query, M&&, A&&) {
+    return std::move(query);
 }
 
 template <typename Context, typename Query>
