@@ -373,6 +373,21 @@ struct is_emplaceable<T, std::void_t<decltype(std::declval<T&>().emplace())>> : 
 template <typename T>
 constexpr auto Emplaceable = is_emplaceable<std::decay_t<T>>::value;
 
+template <typename T>
+struct is_time_constrain : std::false_type {};
+
+/**
+ * @brief Time constrain concept
+ *
+ * `TimeConstraint` is a type which provides information about time restrictions for an operation.
+ * Currently supported constrains:
+ * * `std::chrono::duration` --- operation time-out duration,
+ * * `std::chrono::time_point` --- operation deadline time point,
+ * * `ozo::none` --- operation is not restricted in time.
+ */
+template <typename T>
+constexpr auto TimeConstraint = is_time_constrain<std::decay_t<T>>::value;
+
 /**
  * @brief Completion token concept
  *
