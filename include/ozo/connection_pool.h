@@ -141,13 +141,13 @@ private:
 
 //[[DEPRECATED]] for backward compatibility only
 template <typename ...Ts>
-auto make_connector(connection_pool<Ts...>& source, io_context& io, const connection_pool_timeouts& timeouts) {
+[[deprecated]] auto make_connector(connection_pool<Ts...>& source, io_context& io, const connection_pool_timeouts& timeouts) {
     return bind_get_connection_timeout(source[io], timeouts.connect);
 }
 
 //[[DEPRECATED]] for backward compatibility only
 template <typename ...Ts>
-auto make_connector(connection_pool<Ts...>& source, io_context& io) {
+[[deprecated]] auto make_connector(connection_pool<Ts...>& source, io_context& io) {
     return source[io];
 }
 

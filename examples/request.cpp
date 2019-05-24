@@ -23,33 +23,21 @@ int main(int argc, char **argv) {
     // To make a request we need to make a ConnectionSource. It knows how to connect to database using
     // connection string. See https://www.postgresql.org/docs/9.4/static/libpq-connect.html#LIBPQ-CONNSTRING
     // how to make a connection string.
-    ozo::connection_info<> connection_info(argv[1]);
+    auto conn_info = ozo::connection_info(argv[1]);
 
     const auto coroutine = [&] (asio::yield_context yield) {
-        // The next step is bind asio::io_context with ConnectionSource to setup executor for all
-        // callbacks. Default connection is a ConnectionProvider. If there is some problem with network
-        // or database we don't want to wait endlessly, so we establish connect timeout.
-        const std::chrono::seconds connect_timeout(1);
-        const auto connector = ozo::make_connector(connection_info, io, connect_timeout);
-
         // Request result is always set of rows. Client should take care of output object lifetime.
         ozo::rows_of<int> result;
 
         // Request operation require ConnectionProvider, query, output object for result and CompletionToken.
         // Also we setup request timeout and reference for error code to avoid throwing exceptions.
         // Function returns connection which can be used as ConnectionProvider for futher requests or to
-        // get additional inforation about error through error context.
-        const std::chrono::seconds request_timeout(1);
-        boost::system::error_code ec;
+        // get additional information about error through error context.
+        ozo::error_code ec;
         // This allows to use _SQL literals
         using namespace ozo::literals;
-        const auto connection = ozo::request(
-            connector,
-            "SELECT 1"_SQL,
-            request_timeout,
-            ozo::into(result),
-            yield[ec]
-        );
+        using namespace std::chrono_literals;
+        const auto connection = ozo::request(conn_info[io], "SELECT 1"_SQL, 1s, ozo::into(result), yield[ec]);
 
         // When request is completed we check is there an error. This example should not produce any errors
         // if there are no problems with target database, network or permissions for given user in connection

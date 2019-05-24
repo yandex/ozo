@@ -78,33 +78,33 @@ public:
 
 //[[DEPRECATED]] for backward compatibility only
 template <typename ...Ts>
-auto make_connector(const connection_info<Ts...>& source, io_context& io, time_traits::duration timeout) {
+[[deprecated]] auto make_connector(const connection_info<Ts...>& source, io_context& io, time_traits::duration timeout) {
     return bind_get_connection_timeout(source[io], timeout);
 }
 
 //[[DEPRECATED]] for backward compatibility only
 template <typename ...Ts>
-auto make_connector(connection_info<Ts...>& source, io_context& io, time_traits::duration timeout) {
+[[deprecated]] auto make_connector(connection_info<Ts...>& source, io_context& io, time_traits::duration timeout) {
     return bind_get_connection_timeout(source[io], timeout);
 }
 
 //[[DEPRECATED]] for backward compatibility only
 template <typename ...Ts>
-auto make_connector(connection_info<Ts...>&& source, io_context& io, time_traits::duration timeout) {
+[[deprecated]] auto make_connector(connection_info<Ts...>&& source, io_context& io, time_traits::duration timeout) {
     return bind_get_connection_timeout(source[io], timeout);
 }
 
 //[[DEPRECATED]] for backward compatibility only
 template <typename ...Ts>
-auto make_connector(const connection_info<Ts...>& source, io_context& io) { return source[io];}
+[[deprecated]] auto make_connector(const connection_info<Ts...>& source, io_context& io) { return source[io];}
 
 //[[DEPRECATED]] for backward compatibility only
 template <typename ...Ts>
-auto make_connector(connection_info<Ts...>& source, io_context& io) { return source[io];}
+[[deprecated]] auto make_connector(connection_info<Ts...>& source, io_context& io) { return source[io];}
 
 //[[DEPRECATED]] for backward compatibility only
 template <typename ...Ts>
-auto make_connector(connection_info<Ts...>&& source, io_context& io) { return source[io];}
+[[deprecated]] auto make_connector(connection_info<Ts...>&& source, io_context& io) { return source[io];}
 
 /**
  * @brief Constructs `ozo::connection_info` #ConnectionSource.

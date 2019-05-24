@@ -100,7 +100,7 @@ TEST(request, should_return_error_and_bad_connect_for_invalid_connection_info) {
     ozo::connection_info<> conn_info("invalid connection info");
 
     ozo::result res;
-    ozo::request(ozo::make_connector(conn_info, io), "SELECT 1"_SQL + " + 1"_SQL, std::ref(res),
+    ozo::request(conn_info[io], "SELECT 1"_SQL + " + 1"_SQL, std::ref(res),
             [](ozo::error_code ec, auto conn) {
         EXPECT_TRUE(ec);
         EXPECT_TRUE(ozo::connection_bad(conn));
@@ -118,7 +118,7 @@ TEST(request, should_return_selected_variable) {
 
     ozo::result res;
     const std::string foo = "foo";
-    ozo::request(ozo::make_connector(conn_info, io), "SELECT "_SQL + foo, std::ref(res),
+    ozo::request(conn_info[io], "SELECT "_SQL + foo, std::ref(res),
             [&](ozo::error_code ec, auto conn) {
         ASSERT_REQUEST_OK(ec, conn);
         ASSERT_EQ(1u, res.size());
@@ -140,7 +140,7 @@ TEST(request, should_return_selected_string_array) {
     const std::vector<std::string> foos = {"foo", "buzz", "bar"};
 
     rows_of<std::vector<std::string>> res;
-    ozo::request(ozo::make_connector(conn_info, io), "SELECT "_SQL + foos, std::back_inserter(res),
+    ozo::request(conn_info[io], "SELECT "_SQL + foos, std::back_inserter(res),
             [&](ozo::error_code ec, auto conn) {
         ASSERT_REQUEST_OK(ec, conn);
         ASSERT_EQ(1u, res.size());
@@ -161,7 +161,7 @@ TEST(request, should_return_selected_int_array) {
     const std::vector<int32_t> foos = {1, 22, 333};
 
     rows_of<std::vector<int32_t>> res;
-    ozo::request(ozo::make_connector(conn_info, io), "SELECT "_SQL + foos, std::back_inserter(res),
+    ozo::request(conn_info[io], "SELECT "_SQL + foos, std::back_inserter(res),
             [&](ozo::error_code ec, auto conn) {
         ASSERT_REQUEST_OK(ec, conn);
         ASSERT_EQ(1u, res.size());
@@ -184,11 +184,11 @@ TEST(request, should_fill_oid_map_when_oid_map_is_not_empty) {
     asio::spawn(io, [&] (asio::yield_context yield) {
         ozo::result result;
         ozo::error_code ec{};
-        auto conn = ozo::request(ozo::make_connector(conn_info, io), "DROP TYPE IF EXISTS custom_type"_SQL, std::ref(result), yield[ec]);
+        auto conn = ozo::request(conn_info[io], "DROP TYPE IF EXISTS custom_type"_SQL, std::ref(result), yield[ec]);
         ASSERT_REQUEST_OK(ec, conn);
         ozo::request(conn, "CREATE TYPE custom_type AS ()"_SQL, std::ref(result), yield[ec]);
         ASSERT_REQUEST_OK(ec, conn);
-        auto conn_with_oid_map = ozo::get_connection(ozo::make_connector(conn_info_with_oid_map, io), yield);
+        auto conn_with_oid_map = ozo::get_connection(conn_info_with_oid_map[io], yield);
         EXPECT_NE(ozo::type_oid<custom_type>(ozo::get_oid_map(conn_with_oid_map)), ozo::null_oid);
     });
 
@@ -206,7 +206,7 @@ TEST(request, should_request_with_connection_pool) {
     asio::spawn(io, [&] (asio::yield_context yield) {
         ozo::result result;
         ozo::error_code ec{};
-        auto conn = ozo::request(ozo::make_connector(pool, io), "SELECT 1"_SQL, std::ref(result), yield[ec]);
+        auto conn = ozo::request(pool[io], "SELECT 1"_SQL, std::ref(result), yield[ec]);
         ASSERT_REQUEST_OK(ec, conn);
     });
 
@@ -223,7 +223,7 @@ TEST(request, should_call_handler_with_error_for_zero_timeout) {
 
     ozo::result res;
     std::atomic_flag called {};
-    ozo::request(ozo::make_connector(conn_info, io), "SELECT 1"_SQL, timeout, std::ref(res),
+    ozo::request(conn_info[io], "SELECT 1"_SQL, timeout, std::ref(res),
             [&](ozo::error_code ec, auto conn) {
         EXPECT_FALSE(called.test_and_set());
         EXPECT_EQ(ec, boost::system::error_condition(boost::system::errc::operation_canceled));
@@ -243,7 +243,7 @@ TEST(request, should_return_result_for_max_timeout) {
 
     rows_of<std::int32_t> res;
     std::atomic_flag called {};
-    ozo::request(ozo::make_connector(conn_info, io), "SELECT 1"_SQL, timeout, std::back_inserter(res),
+    ozo::request(conn_info[io], "SELECT 1"_SQL, timeout, std::back_inserter(res),
             [&](ozo::error_code ec, auto conn) {
         EXPECT_FALSE(called.test_and_set());
         ASSERT_REQUEST_OK(ec, conn);
@@ -264,7 +264,7 @@ TEST(request, should_return_custom_composite) {
         [&] {
             const auto conn_info = ozo::make_connection_info(OZO_PG_TEST_CONNINFO);
             ozo::error_code ec{};
-            auto conn = ozo::execute(ozo::make_connector(conn_info, io),
+            auto conn = ozo::execute(conn_info[io],
                 "DROP TYPE IF EXISTS custom_type"_SQL, yield[ec]);
             ASSERT_REQUEST_OK(ec, conn);
             ozo::execute(conn, "CREATE TYPE custom_type AS (number int2, text text)"_SQL, yield[ec]);
@@ -277,7 +277,7 @@ TEST(request, should_return_custom_composite) {
 
         ozo::rows_of<custom_type> out;
         ozo::error_code ec{};
-        auto conn = ozo::request(ozo::make_connector(conn_info, io),
+        auto conn = ozo::request(conn_info[io],
             "SELECT * FROM (VALUES ((1, 'one')::custom_type), ((2, 'two')::custom_type)) AS t (tuple);"_SQL,
             ozo::into(out), yield);
 
@@ -303,7 +303,7 @@ TEST(request, should_send_custom_composite) {
         [&] {
             const auto conn_info = ozo::make_connection_info(OZO_PG_TEST_CONNINFO);
             ozo::error_code ec{};
-            auto conn = ozo::execute(ozo::make_connector(conn_info, io),
+            auto conn = ozo::execute(conn_info[io],
                 "DROP TYPE IF EXISTS custom_type"_SQL, yield[ec]);
             ASSERT_REQUEST_OK(ec, conn);
             ozo::execute(conn, "CREATE TYPE custom_type AS (number int2, text text)"_SQL, yield[ec]);
@@ -316,7 +316,7 @@ TEST(request, should_send_custom_composite) {
 
         ozo::rows_of<custom_type> out;
         ozo::error_code ec{};
-        auto conn = ozo::request(ozo::make_connector(conn_info, io),
+        auto conn = ozo::request(conn_info[io],
             "SELECT * FROM (VALUES ("_SQL + custom_type{1, "one"} +
             "), ("_SQL + custom_type{2, "two"} + ")) AS t (tuple);"_SQL,
             ozo::into(out), yield[ec]);
@@ -344,7 +344,7 @@ TEST(result, should_send_bytea_properly) {
     const std::string foo = "foo";
     auto arr = ozo::pg::bytea({0,1,2,3,4,5,6,7,8,9,0,0});
     EXPECT_EQ(std::size(arr.get())* sizeof(decltype(*arr.get().begin())), ozo::size_of(arr));
-    ozo::request(ozo::make_connector(conn_info, io), "SELECT "_SQL + arr, std::back_inserter(res),
+    ozo::request(conn_info[io], "SELECT "_SQL + arr, std::back_inserter(res),
             [&](ozo::error_code ec, auto conn) {
         ASSERT_FALSE(ec);
         ASSERT_TRUE(conn);
@@ -368,7 +368,7 @@ TEST(request, should_send_empty_optional) {
 
     ozo::rows_of<__OZO_STD_OPTIONAL<std::int32_t>> result;
     std::atomic_flag called {};
-    ozo::request(ozo::make_connector(conn_info, io), "SELECT "_SQL + value + "::integer"_SQL, timeout, ozo::into(result),
+    ozo::request(conn_info[io], "SELECT "_SQL + value + "::integer"_SQL, timeout, ozo::into(result),
             [&](ozo::error_code ec, auto conn) {
         EXPECT_FALSE(called.test_and_set());
         ASSERT_REQUEST_OK(ec, conn);
@@ -392,7 +392,7 @@ TEST(request, should_send_and_receive_empty_optional) {
 
     ozo::rows_of<__OZO_STD_OPTIONAL<std::int32_t>> result;
     std::atomic_flag called {};
-    ozo::request(ozo::make_connector(conn_info, io), "SELECT "_SQL + value + "::integer"_SQL, timeout, ozo::into(result),
+    ozo::request(conn_info[io], "SELECT "_SQL + value + "::integer"_SQL, timeout, ozo::into(result),
             [&](ozo::error_code ec, auto conn) {
         EXPECT_FALSE(called.test_and_set());
         ASSERT_REQUEST_OK(ec, conn);
@@ -413,7 +413,7 @@ TEST(request, should_send_and_receive_composite_with_empty_optional) {
         [&] {
             const auto conn_info = ozo::make_connection_info(OZO_PG_TEST_CONNINFO);
             ozo::error_code ec;
-            auto conn = ozo::execute(ozo::make_connector(conn_info, io),
+            auto conn = ozo::execute(conn_info[io],
                 "DROP TYPE IF EXISTS with_optional"_SQL, yield[ec]);
             ASSERT_REQUEST_OK(ec, conn);
             ozo::execute(conn, "CREATE TYPE with_optional AS (value integer)"_SQL, yield[ec]);
@@ -428,7 +428,7 @@ TEST(request, should_send_and_receive_composite_with_empty_optional) {
         const with_optional value;
         ozo::rows_of<with_optional> result;
         ozo::error_code ec;
-        auto conn = ozo::request(ozo::make_connector(conn_info, io), "SELECT "_SQL + value + "::with_optional"_SQL,
+        auto conn = ozo::request(conn_info[io], "SELECT "_SQL + value + "::with_optional"_SQL,
                                  ozo::into(result), yield[ec]);
 
         ASSERT_REQUEST_OK(ec, conn);
@@ -452,7 +452,7 @@ TEST(request, should_send_and_receive_jsonb) {
 
     ozo::rows_of<ozo::pg::jsonb> result;
     std::atomic_flag called {};
-    ozo::request(ozo::make_connector(conn_info, io), "SELECT "_SQL + value + "::jsonb"_SQL, timeout, ozo::into(result),
+    ozo::request(conn_info[io], "SELECT "_SQL + value + "::jsonb"_SQL, timeout, ozo::into(result),
             [&](ozo::error_code ec, auto conn) {
         EXPECT_FALSE(called.test_and_set());
         ASSERT_REQUEST_OK(ec, conn);
@@ -475,7 +475,7 @@ TEST(request, should_send_and_receive_composite_with_jsonb_field) {
         [&] {
             const auto conn_info = ozo::make_connection_info(OZO_PG_TEST_CONNINFO);
             ozo::error_code ec;
-            auto conn = ozo::execute(ozo::make_connector(conn_info, io),
+            auto conn = ozo::execute(conn_info[io],
                 "DROP TYPE IF EXISTS with_jsonb"_SQL, yield[ec]);
             ASSERT_REQUEST_OK(ec, conn);
             ozo::execute(conn, "CREATE TYPE with_jsonb AS (value jsonb)"_SQL, yield[ec]);
@@ -490,7 +490,7 @@ TEST(request, should_send_and_receive_composite_with_jsonb_field) {
         const with_jsonb value {{R"({"foo": "bar"})"}};
         ozo::rows_of<with_jsonb> result;
         ozo::error_code ec;
-        auto conn = ozo::request(ozo::make_connector(conn_info, io), "SELECT "_SQL + value + "::with_jsonb"_SQL,
+        auto conn = ozo::request(conn_info[io], "SELECT "_SQL + value + "::with_jsonb"_SQL,
                                  ozo::into(result), yield[ec]);
 
         ASSERT_REQUEST_OK(ec, conn);

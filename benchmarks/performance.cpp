@@ -20,7 +20,6 @@ using benchmark_t = ozo::benchmark::time_limit_benchmark<coroutines>;
 
 constexpr const std::chrono::seconds connect_timeout(1);
 constexpr const std::chrono::seconds request_timeout(1);
-constexpr const ozo::connection_pool_timeouts pool_timeouts {std::chrono::seconds(1), std::chrono::seconds(1)};
 
 template <class T>
 void spawn(asio::io_context& io, std::size_t token, T&& coroutine) {
@@ -46,8 +45,7 @@ void reuse_connection_info(const std::string& conn_string, Query query) {
     spawn(io, 0, [&] (asio::yield_context yield) {
         while (true) {
             ozo::result result;
-            const auto provider = ozo::make_connector(connection_info, io, connect_timeout);
-            ozo::request(provider, query, request_timeout, std::ref(result), yield);
+            ozo::request(connection_info[io], query, request_timeout, std::ref(result), yield);
             if (!benchmark.step(result.size())) {
                 break;
             }
@@ -68,8 +66,7 @@ void reuse_connection_info_and_parse_result(const std::string& conn_string, Quer
     spawn(io, 0, [&] (asio::yield_context yield) {
         while (true) {
             std::vector<Result> result;
-            const auto provider = ozo::make_connector(connection_info, io, connect_timeout);
-            ozo::request(provider, query, request_timeout, std::back_inserter(result), yield);
+            ozo::request(connection_info[io], query, request_timeout, std::back_inserter(result), yield);
             if (!benchmark.step(result.size())) {
                 break;
             }
@@ -88,8 +85,7 @@ void reuse_connection(const std::string& conn_string, Query query) {
     ozo::connection_info<> connection_info(conn_string);
 
     spawn(io, 0, [&] (asio::yield_context yield) {
-        const auto provider = ozo::make_connector(connection_info, io, connect_timeout);
-        auto connection = ozo::get_connection(provider, yield);
+        auto connection = ozo::get_connection(connection_info[io], connect_timeout, yield);
         while (true) {
             ozo::result result;
             ozo::request(connection, query, request_timeout, std::ref(result), yield);
@@ -111,8 +107,7 @@ void reuse_connection_and_parse_result(const std::string& conn_string, Query que
     ozo::connection_info<> connection_info(conn_string);
 
     spawn(io, 0, [&] (asio::yield_context yield) {
-        const auto provider = ozo::make_connector(connection_info, io, connect_timeout);
-        auto connection = ozo::get_connection(provider, yield);
+        auto connection = ozo::get_connection(connection_info[io], connect_timeout, yield);
         while (true) {
             std::vector<Result> result;
             ozo::request(connection, query, request_timeout, std::back_inserter(result), yield);
@@ -139,9 +134,8 @@ void use_connection_pool(const std::string& conn_string, Query query) {
 
     spawn(io, 0, [&] (asio::yield_context yield) {
         while (true) {
-            auto provider = ozo::make_connector(pool, io, pool_timeouts);
             ozo::result result;
-            ozo::request(provider, query, request_timeout, std::ref(result), yield);
+            ozo::request(pool[io], query, request_timeout, std::ref(result), yield);
             if (!benchmark.step(result.size())) {
                 break;
             }
@@ -165,9 +159,8 @@ void use_connection_pool_and_parse_result(const std::string& conn_string, Query 
 
     spawn(io, 0, [&] (asio::yield_context yield) {
         while (true) {
-            auto provider = ozo::make_connector(pool, io, pool_timeouts);
             std::vector<Result> result;
-            ozo::request(provider, query, request_timeout, std::back_inserter(result), yield);
+            ozo::request(pool[io], query, request_timeout, std::back_inserter(result), yield);
             if (!benchmark.step(result.size())) {
                 break;
             }
@@ -192,9 +185,8 @@ void use_connection_pool_mult_connection(const std::string& conn_string, Query q
     for (std::size_t token = 0; token < coroutines; ++token) {
         spawn(io, 0, [&, token] (asio::yield_context yield) {
             while (true) {
-                auto provider = ozo::make_connector(pool, io, pool_timeouts);
                 ozo::result result;
-                ozo::request(provider, query, request_timeout, std::ref(result), yield);
+                ozo::request(pool[io], query, request_timeout, std::ref(result), yield);
                 if (!benchmark.step(result.size(), token)) {
                     break;
                 }
@@ -220,9 +212,8 @@ void use_connection_pool_and_parse_result_mult_connection(const std::string& con
     for (std::size_t token = 0; token < coroutines; ++token) {
         spawn(io, token, [&, token] (asio::yield_context yield) {
             while (true) {
-                auto provider = ozo::make_connector(pool, io, pool_timeouts);
                 std::vector<Result> result;
-                ozo::request(provider, query, request_timeout, std::back_inserter(result), yield);
+                ozo::request(pool[io], query, request_timeout, std::back_inserter(result), yield);
                 if (!benchmark.step(result.size(), token)) {
                     break;
                 }
@@ -269,10 +260,9 @@ void use_connection_pool_mult_threads(const std::string& conn_string, Query quer
             const auto token = coroutines * i + j;
             spawn(io, token, [&, token] (asio::yield_context yield) {
                 while (true) {
-                    auto provider = ozo::make_connector(pool, io, pool_timeouts);
                     ozo::result result;
                     boost::system::error_code ec;
-                    ozo::request(provider, query, request_timeout, std::ref(result), yield[ec]);
+                    ozo::request(pool[io], query, request_timeout, std::ref(result), yield[ec]);
                     if (!benchmark.thread_safe_step(result.size(), token)) {
                         break;
                     }

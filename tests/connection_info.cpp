@@ -9,7 +9,7 @@ TEST(connection_info, should_return_error_and_bad_connect_for_invalid_connection
     ozo::io_context io;
     ozo::connection_info<> conn_info("invalid connection info");
 
-    ozo::get_connection(ozo::make_connector(conn_info, io), [](ozo::error_code ec, auto conn){
+    ozo::get_connection(conn_info[io], [](ozo::error_code ec, auto conn){
         EXPECT_TRUE(ec);
         EXPECT_TRUE(!ozo::error_message(conn).empty());
         EXPECT_TRUE(ozo::connection_bad(conn));
