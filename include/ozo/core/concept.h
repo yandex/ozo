@@ -449,7 +449,7 @@ constexpr auto CompletionToken = std::false_type;
  * In case of function it has to have this signature:
  *@code
 template <typename Connection>
-void Handler(ozo::error_code ec, Connection connection) {
+void Handler(ozo::error_code ec, Connection&& connection) {
     //...
 }
  *@endcode
@@ -458,7 +458,7 @@ void Handler(ozo::error_code ec, Connection connection) {
  *@code
 struct Handler {
     template <typename Connection>
-    void operator() (ozo::error_code ec, Connection connection) {
+    void operator() (ozo::error_code ec, Connection&& connection) {
         //...
     }
 };
@@ -476,11 +476,19 @@ auto Handler = [&] (ozo::error_code ec, auto connection) {
  * implementation depends on a numerous of compile-time options but if it is really needed - real type
  * can be obtained with `ozo::connection_type`.
  *
- * `Handler` has to be invoked according to this rules:
- * * **Operation succeeded** --- `ozo::error_code` is empty, #Connection is in good state and can be used for next IO.
- * * **Operation failed** --- `ozo::error_code` contains error, #Connection can be in these states:
- *   * #Connection in null-state --- `ozo::is_null()` returns `true`, object is useless;
- *   * #Connection in bad state --- `ozo::is_null()` returns `false`, object may provide additional error context via
+ * `Handler` has to be invoked according to `ec` state:
+ * * **false** --- operation succeeded, #Connection should be in good state and can be used for an operation.
+ * * **true** --- operation failed and `ec` contains error, #Connection could be in these states:
+ *   * #Connection is in **null-state** --- `ozo::is_null_recursive()` returns `true`, object is useless;
+ *   * #Connection is in **bad state** --- `ozo::is_null_recursive()` returns `false`,
+ *                   `ozo::connection_bad()` returns true or
+ *                   `ozo::get_transaction_status()` returns not `ozo::transaction_status::idle`,
+ *                    object may not be used for further operations but it may provide additional
+ *                    error context via `ozo::error_message()` and `ozo::get_error_context()` functions.
+ *   * #Connection is in **good state** --- `ozo::is_null_recursive()` returns `false`,
+ *                   `ozo::connection_bad()` returns true and
+ *                   `ozo::get_transaction_status()` returns `ozo::transaction_status::idle`,
+ *                    object may be used for further operations and may provide additional error context via
  *                   `ozo::error_message()` and `ozo::get_error_context()` functions.
  * @hideinitializer
  */
