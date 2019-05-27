@@ -176,12 +176,14 @@ struct stream_descriptor {
 struct steady_timer_mock {
     virtual ~steady_timer_mock() = default;
     virtual std::size_t expires_after(const asio::steady_timer::duration& expiry_time) = 0;
+    virtual std::size_t expires_at(const asio::steady_timer::time_point&) = 0;
     virtual void async_wait(std::function<void(error_code)> handler) = 0;
     virtual std::size_t cancel() = 0;
 };
 
 struct steady_timer_gmock : steady_timer_mock {
     MOCK_METHOD1(expires_after, std::size_t (const asio::steady_timer::duration&));
+    MOCK_METHOD1(expires_at, std::size_t (const asio::steady_timer::time_point&));
     MOCK_METHOD1(async_wait, void (std::function<void(error_code)>));
     MOCK_METHOD0(cancel, std::size_t ());
 };
@@ -191,6 +193,10 @@ struct steady_timer {
 
     std::size_t expires_after(const asio::steady_timer::duration& expiry_time) {
         return impl->expires_after(expiry_time);
+    }
+
+    std::size_t expires_at(const asio::steady_timer::time_point& at) {
+        return impl->expires_at(at);
     }
 
     template <typename Handler>

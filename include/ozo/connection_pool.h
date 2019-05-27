@@ -3,6 +3,7 @@
 #include <ozo/impl/connection_pool.h>
 #include <ozo/connection_info.h>
 #include <ozo/asio.h>
+#include <ozo/connector.h>
 
 namespace ozo {
 
@@ -21,14 +22,15 @@ struct connection_pool_config {
 };
 
 /**
- * @brief Timeouts for the ozo::get_connection() operation
+ * @brief [[DEPRECATED]] Timeouts for the ozo::get_connection() operation
  * @ingroup group-connection-types
  *
  * Time restrictions to get connection from the `ozo::connection_pool`
+ * @note This type is deprecated, use time constrained version of ozo::get_connection() or ozo::dedline for operations.
  */
 struct connection_pool_timeouts {
-    time_traits::duration connect = std::chrono::seconds(10); //!< maximum time interval to establish connection with DBMS
-    time_traits::duration queue = std::chrono::seconds(10); //!< maximum time interval to wait for available connection handle in `conneciton_pool`
+    time_traits::duration connect = std::chrono::seconds(10); //!< maximum time interval to establish to or wait for free connection with DBMS
+    time_traits::duration queue = std::chrono::seconds(10); //!< [[IGNORED]]
 };
 
 /**
@@ -88,22 +90,26 @@ public:
      *
      * In case of success --- the handler will be invoked as operation succeeded.
      * In case of connection fail, queue timeout or queue full --- the handler will be invoked as operation failed.
+     * This operation has a time constrain and would be interrupted if the time
+     * constrain expired by cancelling IO on a #Connection's socket or wait operation in
+     * the pool's queue.
      *
      * @param io --- `io_context` for the connection IO.
+     * @param t --- operation time constrain.
      * @param handler --- #Handler.
-     * @param timeouts --- connection acquisition related time-outs
      */
-    template <typename Handler>
-    void operator ()(io_context& io, Handler&& handler,
-            const connection_pool_timeouts& timeouts = connection_pool_timeouts {}) {
+    template <typename TimeConstraint, typename Handler>
+    void operator ()(io_context& io, TimeConstraint t, Handler&& handler) {
+        static_assert(ozo::TimeConstraint<TimeConstraint>, "should model TimeConstraint concept");
         impl_.get_auto_recycle(
             io,
             impl::wrap_pooled_connection_handler(
                 io,
-                make_connector(source_, io, timeouts.connect),
+                source_,
+                t,
                 std::forward<Handler>(handler)
             ),
-            timeouts.queue
+            queue_timeout(t)
         );
     }
 
@@ -111,12 +117,41 @@ public:
         return impl_.stats();
     }
 
+    auto operator [](io_context& io) {
+        return connection_provider(*this, io);
+    }
+
 private:
+
+    auto queue_timeout(time_traits::time_point at) const {
+        return time_left(at);
+    }
+
+    auto queue_timeout(time_traits::duration t) const {
+        return t;
+    }
+
+    auto queue_timeout(none_t) const {
+        return time_traits::duration(0);
+    }
+
     impl::connection_pool<Source> impl_;
     Source source_;
 };
 
-static_assert(ConnectionProvider<connector<connection_pool<connection_info<>>>>, "is not a ConnectionProvider");
+//[[DEPRECATED]] for backward compatibility only
+template <typename ...Ts>
+auto make_connector(connection_pool<Ts...>& source, io_context& io, const connection_pool_timeouts& timeouts) {
+    return bind_get_connection_timeout(source[io], timeouts.connect);
+}
+
+//[[DEPRECATED]] for backward compatibility only
+template <typename ...Ts>
+auto make_connector(connection_pool<Ts...>& source, io_context& io) {
+    return source[io];
+}
+
+static_assert(ConnectionProvider<decltype(std::declval<connection_pool<connection_info<>>>()[std::declval<io_context&>()])>, "is not a ConnectionProvider");
 
 template <typename T>
 struct is_connection_pool : std::false_type {};

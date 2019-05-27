@@ -228,7 +228,6 @@ TEST(request, should_call_handler_with_error_for_zero_timeout) {
         EXPECT_FALSE(called.test_and_set());
         EXPECT_EQ(ec, boost::system::error_condition(boost::system::errc::operation_canceled));
         EXPECT_FALSE(ozo::connection_bad(conn));
-        EXPECT_EQ(ozo::get_error_context(conn), "error while get request result");
     });
 
     io.run();

@@ -53,10 +53,13 @@ set(SOURCES
     concept.cpp
     result.cpp
     none.cpp
+    deadline.cpp
     impl/async_send_query_params.cpp
     impl/async_get_result.cpp
     detail/base36.cpp
     detail/functional.cpp
+    detail/cancel_timer_handler.cpp
+    detail/timeout_handler.cpp
     impl/request_oid_map.cpp
     impl/request_oid_map_handler.cpp
     impl/async_start_transaction.cpp
