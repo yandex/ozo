@@ -69,6 +69,8 @@ set(SOURCES
     transaction_status.cpp
     impl/async_request.cpp
     io/size_of.cpp
+    failover/retry.cpp
+    failover/strategy.cpp
     main.cpp
 )
 
@@ -80,6 +82,7 @@ if(OZO_BUILD_PG_TESTS)
         integration/get_connection_integration.cpp
         integration/execute_integration.cpp
         integration/transaction_integration.cpp
+        integration/retry_integration.cpp
     )
     add_definitions(-DOZO_PG_TEST_CONNINFO="${OZO_PG_TEST_CONNINFO}")
 endif()

@@ -28,6 +28,10 @@ add_executable(ozo_request request.cpp)
 target_compile_features(ozo_request PRIVATE cxx_std_17)
 target_link_libraries(ozo_request ${LIBRARIES})
 
+add_executable(ozo_retry_request retry_request.cpp)
+target_compile_features(ozo_retry_request PRIVATE cxx_std_17)
+target_link_libraries(ozo_retry_request ${LIBRARIES})
+
 add_executable(ozo_connection_pool connection_pool.cpp)
 target_compile_features(ozo_connection_pool PRIVATE cxx_std_17)
 target_link_libraries(ozo_connection_pool ${LIBRARIES})
