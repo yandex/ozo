@@ -46,31 +46,31 @@ struct connection_pool {
     };
 };
 
-struct connection_provider;
-struct connection_provider_mock {
+struct connection_source;
+struct connection_source_mock {
     using connection_type = std::shared_ptr<connection<>>;
     using handler_type = std::function<void(error_code, connection_type)>;
     MOCK_METHOD1(async_get_connection, void(handler_type));
 
-    virtual ~connection_provider_mock() = default;
+    virtual ~connection_source_mock() = default;
 };
 
-struct connection_provider {
-    connection_provider_mock* mock_ = nullptr;
+struct connection_source {
+    connection_source_mock* mock_ = nullptr;
 
     using connection_type = std::shared_ptr<connection<>>;
-    using source_type = connection_provider;
+    using source_type = connection_source;
 
-    template <typename Handler>
-    friend void async_get_connection(connection_provider self, Handler&& h) {
-        self.mock_->async_get_connection(std::forward<Handler>(h));
+    template <typename IoContext, typename TimeConstraint, typename Handler>
+    void operator()(IoContext&, TimeConstraint&&, Handler&& h) const {
+        mock_->async_get_connection(std::forward<Handler>(h));
     }
 };
 } // namespace ozo::tests
 
 namespace ozo::impl {
 template <>
-struct get_connection_pool<ozo::tests::connection_provider> {
+struct get_connection_pool<ozo::tests::connection_source> {
     using type = ozo::tests::connection_pool;
 };
 } // namespace ozo::impl
@@ -84,7 +84,7 @@ struct pooled_connection : Test {
     StrictMock<connection_gmock> connection_mock{};
     StrictMock<pool_handle_mock> handle_mock{};
 
-    using impl = ozo::impl::pooled_connection<connection_provider>;
+    using impl = ozo::impl::pooled_connection<connection_source>;
     auto make_connection() {
         return std::make_shared<connection<>>();
     }
@@ -168,8 +168,8 @@ TEST_F(pooled_connection, should_call_handle_reset_on_reset) {
 }
 
 struct pooled_connection_wrapper : Test {
-    using pooled_connection_ptr = ozo::impl::pooled_connection_ptr<connection_provider>;
-    StrictMock<connection_provider_mock> provider_mock;
+    using pooled_connection_ptr = ozo::impl::pooled_connection_ptr<connection_source>;
+    StrictMock<connection_source_mock> provider_mock;
     StrictMock<callback_gmock<pooled_connection_ptr>> callback_mock;
     StrictMock<connection_gmock> connection_mock{};
     StrictMock<pool_handle_mock> handle_mock{};
@@ -196,7 +196,8 @@ using ozo::error_code;
 TEST_F(pooled_connection_wrapper, should_invoke_handler_with_error_if_error_is_passed) {
     auto h = ozo::impl::wrap_pooled_connection_handler(
             io,
-            connection_provider{&provider_mock},
+            connection_source{&provider_mock},
+            ozo::none,
             wrap(callback_mock)
         );
 
@@ -210,7 +211,8 @@ TEST_F(pooled_connection_wrapper, should_invoke_handler_if_passed_connection_is_
 
     auto h = ozo::impl::wrap_pooled_connection_handler(
             io,
-            connection_provider{&provider_mock},
+            connection_source{&provider_mock},
+            ozo::none,
             wrap(callback_mock)
         );
 
@@ -231,7 +233,8 @@ TEST_F(pooled_connection_wrapper, should_call_async_get_connection_and_invoke_ha
 
     auto h = ozo::impl::wrap_pooled_connection_handler(
             io,
-            connection_provider{&provider_mock},
+            connection_source{&provider_mock},
+            ozo::none,
             wrap(callback_mock)
         );
 
@@ -256,7 +259,8 @@ TEST_F(pooled_connection_wrapper, should_call_async_get_connection_and_invoke_ha
 TEST_F(pooled_connection_wrapper, should_call_async_get_connection_and_invoke_handler_if_handle_is_empty) {
     auto h = ozo::impl::wrap_pooled_connection_handler(
             io,
-            connection_provider{&provider_mock},
+            connection_source{&provider_mock},
+            ozo::none,
             wrap(callback_mock)
         );
 
@@ -276,7 +280,8 @@ TEST_F(pooled_connection_wrapper, should_call_async_get_connection_and_invoke_ha
 TEST_F(pooled_connection_wrapper, should_invoke_callback_with_error_and_provided_connection_if_async_get_connection_fails) {
     auto h = ozo::impl::wrap_pooled_connection_handler(
             io,
-            connection_provider{&provider_mock},
+            connection_source{&provider_mock},
+            ozo::none,
             wrap(callback_mock)
         );
 
@@ -299,7 +304,8 @@ TEST_F(pooled_connection_wrapper, should_invoke_callback_with_error_and_provided
 TEST_F(pooled_connection_wrapper, should_invoke_callback_with_null_pointer_if_async_get_connection_provides_null_pointer) {
     auto h = ozo::impl::wrap_pooled_connection_handler(
             io,
-            connection_provider{&provider_mock},
+            connection_source{&provider_mock},
+            ozo::none,
             wrap(callback_mock)
         );
 

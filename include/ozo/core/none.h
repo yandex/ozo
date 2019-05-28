@@ -18,6 +18,9 @@ struct none_t {
     static constexpr void apply (Args&& ...) noexcept {}
 };
 
+template <>
+struct is_time_constrain<none_t> : std::true_type {};
+
 template <typename T>
 using is_none = std::is_same<T, none_t>;
 

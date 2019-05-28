@@ -6,14 +6,15 @@
 namespace ozo {
 
 struct begin_op {
-    template <typename T, typename CompletionToken>
-    auto operator() (T&& provider, const time_traits::duration& timeout, CompletionToken&& token) const {
+    template <typename T, typename TimeConstraint, typename CompletionToken>
+    auto operator() (T&& provider, TimeConstraint t, CompletionToken&& token) const {
         static_assert(ConnectionProvider<T>, "provider should be a ConnectionProvider");
+        static_assert(ozo::TimeConstraint<TimeConstraint>, "should model TimeConstraint concept");
         using namespace ozo::literals;
         return impl::start_transaction(
             std::forward<T>(provider),
             "BEGIN"_SQL,
-            timeout,
+            t,
             std::forward<CompletionToken>(token)
         );
     }
@@ -22,7 +23,7 @@ struct begin_op {
     auto operator() (T&& provider, CompletionToken&& token) const {
         return (*this)(
             std::forward<T>(provider),
-            time_traits::duration::max(),
+            none,
             std::forward<CompletionToken>(token)
         );
     }
@@ -31,13 +32,14 @@ struct begin_op {
 constexpr begin_op begin;
 
 struct commit_op {
-    template <typename T, typename CompletionToken>
-    auto operator() (impl::transaction<T>&& transaction, const time_traits::duration& timeout, CompletionToken&& token) const {
+    template <typename T, typename TimeConstraint, typename CompletionToken>
+    auto operator() (impl::transaction<T>&& transaction, TimeConstraint t, CompletionToken&& token) const {
+        static_assert(ozo::TimeConstraint<TimeConstraint>, "should model TimeConstraint concept");
         using namespace ozo::literals;
         return impl::end_transaction(
             std::move(transaction),
             "COMMIT"_SQL,
-            timeout,
+            t,
             std::forward<CompletionToken>(token)
         );
     }
@@ -46,7 +48,7 @@ struct commit_op {
     auto operator() (impl::transaction<T>&& transaction, CompletionToken&& token) const {
         return (*this)(
             std::move(transaction),
-            time_traits::duration::max(),
+            none,
             std::forward<CompletionToken>(token)
         );
     }
@@ -55,13 +57,14 @@ struct commit_op {
 constexpr commit_op commit;
 
 struct rollback_op {
-    template <typename T, typename CompletionToken>
-    auto operator() (impl::transaction<T>&& transaction, const time_traits::duration& timeout, CompletionToken&& token) const {
+    template <typename T, typename TimeConstraint, typename CompletionToken>
+    auto operator() (impl::transaction<T>&& transaction, TimeConstraint t, CompletionToken&& token) const {
+        static_assert(ozo::TimeConstraint<TimeConstraint>, "should model TimeConstraint concept");
         using namespace ozo::literals;
         return impl::end_transaction(
             std::move(transaction),
             "ROLLBACK"_SQL,
-            timeout,
+            t,
             std::forward<CompletionToken>(token)
         );
     }
@@ -70,7 +73,7 @@ struct rollback_op {
     auto operator() (impl::transaction<T>&& transaction, CompletionToken&& token) const {
         return (*this)(
             std::move(transaction),
-            time_traits::duration::max(),
+            none,
             std::forward<CompletionToken>(token)
         );
     }

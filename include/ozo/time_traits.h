@@ -1,5 +1,6 @@
 #pragma once
 
+#include <ozo/core/concept.h>
 #include <chrono>
 
 namespace ozo {
@@ -20,5 +21,11 @@ struct time_traits {
         return std::chrono::steady_clock::now();
     }
 };
+
+template <typename ...Ts>
+struct is_time_constrain<std::chrono::duration<Ts...>> : std::true_type {};
+
+template <typename ...Ts>
+struct is_time_constrain<std::chrono::time_point<Ts...>> : std::true_type {};
 
 } // namespace ozo

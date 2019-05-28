@@ -203,7 +203,7 @@ TEST_F(async_get_connection, should_pass_through_the_connection_to_handler) {
     EXPECT_CALL(callback_executor, dispatch(_)).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(cb_mock, call(error_code{}, conn)).WillOnce(Return());
 
-    ozo::async_get_connection(conn, wrap(cb_mock));
+    ozo::async_get_connection(conn, ozo::none, wrap(cb_mock));
 }
 
 TEST_F(async_get_connection, should_reset_connection_error_context) {
@@ -212,7 +212,7 @@ TEST_F(async_get_connection, should_reset_connection_error_context) {
 
     EXPECT_CALL(executor, dispatch(_)).WillOnce(InvokeArgument<0>());
 
-    ozo::async_get_connection(conn, [](error_code, auto conn) {
+    ozo::async_get_connection(conn, ozo::none, [](error_code, auto conn) {
         EXPECT_TRUE(conn->error_context_.empty());
     });
 }
