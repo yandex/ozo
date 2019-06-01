@@ -1,6 +1,10 @@
 #pragma once
 
 #include <ozo/detail/base36.h>
+
+#include <boost/hana/tuple.hpp>
+#include <boost/hana/fold.hpp>
+#include <boost/asio/error.hpp>
 #include <boost/system/system_error.hpp>
 
 /**
@@ -61,11 +65,10 @@ namespace error {
 /**
  * @brief OZO related error codes
  *
- * @ingroup group-errors-errors
- *
  * Enumeration of error codes provided by the OZO library. Mainly it contains errors related
  * to underlying libpq functions errors, data reflection and so on. In most cases the additional context
  * may be acquired with `error_message()` and `get_error_context()` functions.
+ * @ingroup group-errors-errors
  */
 enum code {
     ok, //!< a place holder to do not use error code 0
@@ -93,11 +96,11 @@ enum code {
 
 /**
  * @brief OZO related errors category
- * @ingroup group-errors-errors
  *
  * OZO related errors category object is used to construct error_code.
  *
  * @return `const error_category&` --- reference to the category object
+ * @ingroup group-errors-errors
  */
 const error_category& category() noexcept;
 
@@ -112,20 +115,21 @@ const error_category& category() noexcept;
 namespace sqlstate {
 
 /**
-* @brief SQL state error conditions
-*
-* @ingroup group-errors-sqlstate
+* @brief SQL state error conditions.
 *
 * This is a set of error conditions. It may not be complete, since new versions
 * of PostgreSQL may add another sql state codes and users may create new ones inside
 * a DB logic. So this set may be used to match most of sql states but not all.
+*
+* Here are list of error conditions related to PostgreSQL error classes.
 * A full list of codes can be found in the
-* <a href="https://www.postgresql.org/docs/9.3/static/errcodes-appendix.html">
+* <a href="https://www.postgresql.org/docs/11/errcodes-appendix.html">
 * official documentation for PostgreSQL</a>.
+* @ingroup group-errors-sqlstate
 */
 enum code {
-    successful_completion = 0, // 00000
-    warning = 46656, // 01000
+    successful_completion = 0, //!< Class 00 — Successful Completion
+    warning = 46656, //!< Class 01 — Warning
     dynamic_result_sets_returned = 46668, // 0100C
     implicit_zero_bit_padding = 46664, // 01008
     null_value_eliminated_in_set_function = 46659, // 01003
@@ -133,29 +137,29 @@ enum code {
     privilege_not_revoked = 46662, // 01006
     string_data_right_truncation_warning = 46660, // 01004
     deprecated_feature = 79057, // 01P01
-    no_data = 93312, // 02000
+    no_data = 93312, //!< Class 02 — No Data (this is also a warning class per the SQL standard)
     no_additional_dynamic_result_sets_returned = 93313, // 02001
-    sql_statement_not_yet_complete = 139968, // 03000
-    connection_exception = 373248, // 08000
+    sql_statement_not_yet_complete = 139968, //!< Class 03 — SQL Statement Not Yet Complete
+    connection_exception = 373248, //!< Class 08 — Connection Exception
     connection_does_not_exist = 373251, // 08003
     connection_failure = 373254, // 08006
     sqlclient_unable_to_establish_sqlconnection = 373249, // 08001
     sqlserver_rejected_establishment_of_sqlconnection = 373252, // 08004
     transaction_resolution_unknown = 373255, // 08007
     protocol_violation = 405649, // 08P01
-    triggered_action_exception = 419904, // 09000
-    feature_not_supported = 466560, // 0A000
-    invalid_transaction_initiation = 513216, // 0B000
-    locator_exception = 699840, // 0F000
+    triggered_action_exception = 419904, //!< Class 09 — Triggered Action Exception
+    feature_not_supported = 466560, //!< Class 0A — Feature Not Supported
+    invalid_transaction_initiation = 513216, //!< Class 0B — Invalid Transaction Initiation
+    locator_exception = 699840, //!< Class 0F — Locator Exception
     invalid_locator_specification = 699841, // 0F001
-    invalid_grantor = 979776, // 0L000
+    invalid_grantor = 979776, //!< Class 0L — Invalid Grantor
     invalid_grant_operation = 1012177, // 0LP01
-    invalid_role_specification = 1166400, // 0P000
-    diagnostics_exception = 1632960, // 0Z000
+    invalid_role_specification = 1166400, //!< Class 0P — Invalid Role Specification
+    diagnostics_exception = 1632960, //!< Class 0Z — Diagnostics Exception
     stacked_diagnostics_accessed_without_active_handler = 1632962, // 0Z002
-    case_not_found = 3359232, // 20000
-    cardinality_violation = 3405888, // 21000
-    data_exception = 3452544, // 22000
+    case_not_found = 3359232, //!< Class 20 — Case Not Found
+    cardinality_violation = 3405888, //!< Class 21 — Cardinality Violation
+    data_exception = 3452544, //!< Class 22 — Data Exception
     array_subscript_error = 3452630, // 2202E
     character_not_in_repertoire = 3452617, // 22021
     datetime_field_overflow = 3452552, // 22008
@@ -202,15 +206,15 @@ enum code {
     invalid_xml_content = 3452567, // 2200N
     invalid_xml_comment = 3452572, // 2200S
     invalid_xml_processing_instruction = 3452573, // 2200T
-    integrity_constraint_violation = 3499200, // 23000
+    integrity_constraint_violation = 3499200, //!< Class 23 — Integrity Constraint Violation
     restrict_violation = 3499201, // 23001
     not_null_violation = 3505682, // 23502
     foreign_key_violation = 3505683, // 23503
     unique_violation = 3505685, // 23505
     check_violation = 3505720, // 23514
     exclusion_violation = 3531601, // 23P01
-    invalid_cursor_state = 3545856, // 24000
-    invalid_transaction_state = 3592512, // 25000
+    invalid_cursor_state = 3545856, //!< Class 24 — Invalid Cursor State
+    invalid_transaction_state = 3592512, //!< Class 25 — Invalid Transaction State
     active_sql_transaction = 3592513, // 25001
     branch_transaction_already_active = 3592514, // 25002
     held_cursor_requires_same_isolation_level = 3592520, // 25008
@@ -221,39 +225,39 @@ enum code {
     schema_and_data_statement_mixing_not_supported = 3592519, // 25007
     no_active_sql_transaction = 3624913, // 25P01
     in_failed_sql_transaction = 3624914, // 25P02
-    invalid_sql_statement_name = 3639168, // 26000
-    triggered_data_change_violation = 3685824, // 27000
-    invalid_authorization_specification = 3732480, // 28000
+    invalid_sql_statement_name = 3639168, //!< Class 26 — Invalid SQL Statement Name
+    triggered_data_change_violation = 3685824, //!< Class 27 — Triggered Data Change Violation
+    invalid_authorization_specification = 3732480, //!< Class 28 — Invalid Authorization Specification
     invalid_password = 3764881, // 28P01
-    dependent_privilege_descriptors_still_exist = 3872448, // 2B000
+    dependent_privilege_descriptors_still_exist = 3872448, //!< Class 2B — Dependent Privilege Descriptors Still Exist
     dependent_objects_still_exist = 3904849, // 2BP01
-    invalid_transaction_termination = 3965760, // 2D000
-    sql_routine_exception = 4059072, // 2F000
+    invalid_transaction_termination = 3965760, //!< Class 2D — Invalid Transaction Termination
+    sql_routine_exception = 4059072, //!< Class 2F — SQL Routine Exception
     function_executed_no_return_statement = 4059077, // 2F005
     modifying_sql_data_not_permitted = 4059074, // 2F002
     prohibited_sql_statement_attempted = 4059075, // 2F003
     reading_sql_data_not_permitted = 4059076, // 2F004
-    invalid_cursor_name = 5225472, // 34000
-    external_routine_exception = 5412096, // 38000
+    invalid_cursor_name = 5225472, //!< Class 34 — Invalid Cursor Name
+    external_routine_exception = 5412096, //!< Class 38 — External Routine Exception
     containing_sql_not_permitted = 5412097, // 38001
     modifying_sql_data_not_permitted_external = 5412098, // 38002
     prohibited_sql_statement_attempted_external = 5412099, // 38003
     reading_sql_data_not_permitted_external = 5412100, // 38004
-    external_routine_invocation_exception = 5458752, // 39000
+    external_routine_invocation_exception = 5458752, //!< Class 39 — External Routine Invocation Exception
     invalid_sqlstate_returned = 5458753, // 39001
     null_value_not_allowed_external = 5458756, // 39004
     trigger_protocol_violated = 5491153, // 39P01
     srf_protocol_violated = 5491154, // 39P02
-    savepoint_exception = 5552064, // 3B000
+    savepoint_exception = 5552064, //!< Class 3B — Savepoint Exception
     invalid_savepoint_specification = 5552065, // 3B001
-    invalid_catalog_name = 5645376, // 3D000
-    invalid_schema_name = 5738688, // 3F000
-    transaction_rollback = 6718464, // 40000
+    invalid_catalog_name = 5645376, //!< Class 3D — Invalid Catalog Name
+    invalid_schema_name = 5738688, //!< Class 3F — Invalid Schema Name
+    transaction_rollback = 6718464, //!< Class 40 — Transaction Rollback
     transaction_integrity_constraint_violation = 6718466, // 40002
     serialization_failure = 6718465, // 40001
     statement_completion_unknown = 6718467, // 40003
     deadlock_detected = 6750865, // 40P01
-    syntax_error_or_access_rule_violation = 6811776, // 42000
+    syntax_error_or_access_rule_violation = 6811776, //!< Class 42 — Syntax Error or Access Rule Violation
     syntax_error = 6819553, // 42601
     insufficient_privilege = 6818257, // 42501
     cannot_coerce = 6822294, // 42846
@@ -296,33 +300,34 @@ enum code {
     invalid_schema_definition = 6844217, // 42P15
     invalid_table_definition = 6844218, // 42P16
     invalid_object_definition = 6844219, // 42P17
-    with_check_option_violation = 6905088, // 44000
-    insufficient_resources = 8538048, // 53000
+    with_check_option_violation = 6905088, //!< Class 44 — WITH CHECK OPTION Violation
+    insufficient_resources = 8538048, //!< Class 53 — Insufficient Resources
     disk_full = 8539344, // 53100
     out_of_memory = 8540640, // 53200
     too_many_connections = 8541936, // 53300
     configuration_limit_exceeded = 8543232, // 53400
-    program_limit_exceeded = 8584704, // 54000
+    program_limit_exceeded = 8584704, //!< Class 54 — Program Limit Exceeded
     statement_too_complex = 8584705, // 54001
     too_many_columns = 8584741, // 54011
     too_many_arguments = 8584779, // 54023
-    object_not_in_prerequisite_state = 8631360, // 55000
+    object_not_in_prerequisite_state = 8631360, //!< Class 55 — Object Not In Prerequisite State
     object_in_use = 8631366, // 55006
     cant_change_runtime_param = 8663762, // 55P02
     lock_not_available = 8663763, // 55P03
-    operator_intervention = 8724672, // 57000
+    operator_intervention = 8724672, //!< Class 57 — Operator Intervention
     query_canceled = 8724712, // 57014
     admin_shutdown = 8757073, // 57P01
     crash_shutdown = 8757074, // 57P02
     cannot_connect_now = 8757075, // 57P03
     database_dropped = 8757076, // 57P04
-    system_error = 8771328, // 58000
+    system_error = 8771328, //!< Class 58 — System Error (errors external to PostgreSQL itself)
     io_error = 8771436, // 58030
     undefined_file = 8803729, // 58P01
     duplicate_file = 8803730, // 58P02
-    config_file_error = 25194240, // F0000
+    snapshot_too_old = 11850624, //!< Class 72 — Snapshot Failure
+    config_file_error = 25194240, //!< Class F0 — Configuration File Error
     lock_file_exists = 25194241, // F0001
-    fdw_error = 29999808, // HV000
+    fdw_error = 29999808, //!< Class HV — Foreign Data Wrapper Error (SQL/MED)
     fdw_column_name_not_found = 29999813, // HV005
     fdw_dynamic_parameter_value_needed = 29999810, // HV002
     fdw_function_sequence_error = 29999844, // HV010
@@ -349,30 +354,59 @@ enum code {
     fdw_unable_to_create_execution = 29999829, // HV00L
     fdw_unable_to_create_reply = 29999830, // HV00M
     fdw_unable_to_establish_connection = 29999831, // HV00N
-    plpgsql_error = 41990400, // P0000
+    plpgsql_error = 41990400, //!< Class P0 — PL/pgSQL Error
     raise_exception = 41990401, // P0001
     no_data_found = 41990402, // P0002
     too_many_rows = 41990403, // P0003
-    internal_error = 56966976, // XX000
+    internal_error = 56966976, //!< Class XX — Internal Error
     data_corrupted = 56966977, // XX001
     index_corrupted = 56966978, // XX002
 };
 
+/**
+ * @brief Sql state related errors category.
+ *
+ * @return `const error_category&` --- reference to the category object
+ * @ingroup group-errors-sqlstate
+ */
 const error_category& category() noexcept;
 
 } // namespace sqlstate
 
-// Common error conditions
+/**
+ * @defgroup group-errors-errc errc
+ * @brief Useful error conditions
+ *
+ * @ingroup group-errors
+ */
 namespace errc {
 
+/**
+ * @brief Error conditions of the library
+ *
+ * This useful error conditions incorporate ozo, libpq and Boost.Asio error codes.
+ *
+ * @note Error condition `type_mismatch` for custom types may occur in case of database schema update which may lead to
+ * custom type oid change. For built-in types it signals about mismatching.
+ * @ingroup group-errors-errc
+ */
 enum code {
-    ok,
-    sql_error,
-    connect_error,
-    transport_error,
-    database_readonly,
+    ok, //!< no error placeholder
+    connection_error, //!< connection-related error condition, incorporates ozo, libpq and Boost.Asio connection errors
+    database_readonly, //!< database in read-only state - useful to detect attempt of modify data on replica host
+    introspection_error, //<! errors related to objects serialization/deserialization
+    type_mismatch, //!< result type mismatch, indicates types mismatch between result of query and expected result
+    protocol_error, //!< specific protocol-related errors
 };
 
+/**
+ * @brief Error conditions category
+ *
+ * Error conditions category object is used to construct error_code.
+ *
+ * @return `const error_category&` --- reference to the category object
+ * @ingroup group-errors-errc
+ */
 const error_category& category() noexcept;
 
 } // namespace errc
@@ -479,9 +513,9 @@ namespace impl {
 
 class category : public error_category {
 public:
-    const char* name() const noexcept override { return "ozo::sqlstate::category"; }
+    const char* name() const noexcept override final { return "ozo::sqlstate::category"; }
 
-    std::string message(int value) const override {
+    std::string message(int value) const override final {
         #define __OZO_SQLSTATE_NAME(value) case value: return std::string(#value) + "(" + detail::ltob36(value) + ")";
         switch (value) {
             __OZO_SQLSTATE_NAME(successful_completion)
@@ -720,6 +754,63 @@ public:
     #undef __OZO_SQLSTATE_NAME
         return "sql state " + detail::ltob36(value);
     }
+
+    static constexpr int class_width = 46656; //<! Error code class width 01000 in base 36
+
+    bool equivalent (const error_code& code, int condition) const noexcept override final {
+        if (code.category() == *this) {
+            const auto value_in = [v = code.value()](enum code cond) {
+                return v >= cond && v < cond + class_width;
+            };
+#define __OZO_SQL_STATE_CONDITION(name) case name: return value_in(name)
+            switch(condition) {
+                __OZO_SQL_STATE_CONDITION(warning);
+                __OZO_SQL_STATE_CONDITION(no_data);
+                __OZO_SQL_STATE_CONDITION(sql_statement_not_yet_complete);
+                __OZO_SQL_STATE_CONDITION(connection_exception);
+                __OZO_SQL_STATE_CONDITION(triggered_action_exception);
+                __OZO_SQL_STATE_CONDITION(feature_not_supported);
+                __OZO_SQL_STATE_CONDITION(invalid_transaction_initiation);
+                __OZO_SQL_STATE_CONDITION(locator_exception);
+                __OZO_SQL_STATE_CONDITION(invalid_grantor);
+                __OZO_SQL_STATE_CONDITION(invalid_role_specification);
+                __OZO_SQL_STATE_CONDITION(diagnostics_exception);
+                __OZO_SQL_STATE_CONDITION(case_not_found);
+                __OZO_SQL_STATE_CONDITION(cardinality_violation);
+                __OZO_SQL_STATE_CONDITION(data_exception);
+                __OZO_SQL_STATE_CONDITION(integrity_constraint_violation);
+                __OZO_SQL_STATE_CONDITION(invalid_cursor_state);
+                __OZO_SQL_STATE_CONDITION(invalid_transaction_state);
+                __OZO_SQL_STATE_CONDITION(invalid_sql_statement_name);
+                __OZO_SQL_STATE_CONDITION(triggered_data_change_violation);
+                __OZO_SQL_STATE_CONDITION(invalid_authorization_specification);
+                __OZO_SQL_STATE_CONDITION(dependent_privilege_descriptors_still_exist);
+                __OZO_SQL_STATE_CONDITION(invalid_transaction_termination);
+                __OZO_SQL_STATE_CONDITION(sql_routine_exception);
+                __OZO_SQL_STATE_CONDITION(invalid_cursor_name);
+                __OZO_SQL_STATE_CONDITION(external_routine_exception);
+                __OZO_SQL_STATE_CONDITION(external_routine_invocation_exception);
+                __OZO_SQL_STATE_CONDITION(savepoint_exception);
+                __OZO_SQL_STATE_CONDITION(invalid_catalog_name);
+                __OZO_SQL_STATE_CONDITION(invalid_schema_name);
+                __OZO_SQL_STATE_CONDITION(transaction_rollback);
+                __OZO_SQL_STATE_CONDITION(syntax_error_or_access_rule_violation);
+                __OZO_SQL_STATE_CONDITION(with_check_option_violation);
+                __OZO_SQL_STATE_CONDITION(insufficient_resources);
+                __OZO_SQL_STATE_CONDITION(program_limit_exceeded);
+                __OZO_SQL_STATE_CONDITION(object_not_in_prerequisite_state);
+                __OZO_SQL_STATE_CONDITION(operator_intervention);
+                __OZO_SQL_STATE_CONDITION(system_error);
+                __OZO_SQL_STATE_CONDITION(snapshot_too_old);
+                __OZO_SQL_STATE_CONDITION(config_file_error);
+                __OZO_SQL_STATE_CONDITION(fdw_error);
+                __OZO_SQL_STATE_CONDITION(plpgsql_error);
+                __OZO_SQL_STATE_CONDITION(internal_error);
+            }
+        }
+        return error_category::equivalent(code, condition);
+#undef __OZO_SQL_STATE_CONDITION
+    }
 };
 
 } // namespace impl
@@ -730,5 +821,142 @@ inline const error_category& category() noexcept {
 }
 
 } // namespace sqlstate
+
+namespace errc {
+
+inline auto make_error_condition(const code e) {
+    return error_condition(static_cast<int>(e), category());
+}
+
+namespace impl {
+
+namespace asio = boost::asio;
+namespace hana = boost::hana;
+
+template <code Code>
+struct codes_for_condition;
+
+template <>
+struct codes_for_condition<connection_error> {
+    constexpr static auto value = hana::make_tuple(
+        // SQL state
+        ozo::sqlstate::connection_exception,
+        // Asio errors
+        asio::error::broken_pipe,
+        asio::error::connection_aborted,
+        asio::error::connection_refused,
+        asio::error::connection_reset,
+        asio::error::fault,
+        asio::error::host_unreachable,
+        asio::error::interrupted,
+        asio::error::network_reset,
+        asio::error::not_connected,
+        asio::error::operation_aborted,
+        asio::error::shut_down,
+        asio::error::timed_out,
+        asio::error::try_again,
+        // Asio netdb_category
+        asio::error::host_not_found,
+        asio::error::host_not_found_try_again,
+        asio::error::no_data,
+        asio::error::no_recovery,
+        // System IO-error
+        boost::system::errc::io_error,
+        // OZO libpq-related errors
+        ozo::error::pq_connection_start_failed,
+        ozo::error::pq_socket_failed,
+        ozo::error::pq_connection_status_bad,
+        ozo::error::pq_connect_poll_failed,
+        ozo::error::pg_send_query_params_failed,
+        ozo::error::pg_consume_input_failed,
+        ozo::error::pg_set_nonblocking_failed,
+        ozo::error::pg_flush_failed
+    );
+};
+
+template <>
+struct codes_for_condition<database_readonly> {
+    constexpr static auto value = hana::make_tuple(ozo::sqlstate::read_only_sql_transaction);
+};
+
+template <>
+struct codes_for_condition<introspection_error> {
+    constexpr static auto value = hana::make_tuple(
+        ozo::error::bad_result_process,
+        ozo::error::bad_object_size,
+        ozo::error::bad_array_size,
+        ozo::error::bad_array_dimension,
+        ozo::error::bad_composite_size,
+        ozo::error::unexpected_eof
+    );
+};
+
+template <>
+struct codes_for_condition<type_mismatch> {
+    constexpr static auto value = hana::make_tuple(ozo::error::oid_type_mismatch);
+};
+
+template <>
+struct codes_for_condition<protocol_error> {
+    constexpr static auto value = hana::make_tuple(
+        ozo::error::no_sql_state_found,
+        ozo::error::result_status_unexpected,
+        ozo::error::result_status_empty_query,
+        ozo::error::result_status_bad_response,
+        ozo::error::oid_request_failed
+    );
+};
+
+template<code Code>
+constexpr bool match_code(const error_code& ec) {
+    return hana::fold(codes_for_condition<Code>::value, false,
+        [&ec](bool v, auto errc) { return v || (ec == errc); });
+}
+
+class category : public error_category {
+public:
+    const char* name() const noexcept override final { return "ozo::errc::category"; }
+
+    std::string message(int value) const override {
+        switch (code(value)) {
+            case ok :
+                return "no error";
+            case connection_error :
+                return "communication error";
+            case database_readonly:
+                return "database in read-only state";
+            case introspection_error:
+                return "serialization/deserialization related error";
+            case type_mismatch:
+                return "expected type mismatch received type";
+            case protocol_error:
+                return "protocol-related error";
+        };
+        return "no message for value: " + std::to_string(value);
+    }
+
+    bool equivalent (const error_code& code, int condition) const noexcept override final {
+#define __OZO_ERRC_CONDITION_MATCH(name) case name: return match_code<name>(code);
+        switch (condition) {
+            case ok : return code == error_code{};
+            __OZO_ERRC_CONDITION_MATCH(connection_error);
+            __OZO_ERRC_CONDITION_MATCH(database_readonly);
+            __OZO_ERRC_CONDITION_MATCH(introspection_error);
+            __OZO_ERRC_CONDITION_MATCH(type_mismatch);
+            __OZO_ERRC_CONDITION_MATCH(protocol_error);
+        }
+#undef __OZO_ERRC_CONDITION_MATCH
+        return error_category::equivalent(code, condition);
+    }
+};
+
+} // namespace impl
+
+inline const error_category& category() noexcept {
+    static impl::category instance;
+    return instance;
+}
+
+} // namespace errc
 
 } // namespace ozo
