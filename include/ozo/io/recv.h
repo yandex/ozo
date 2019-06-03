@@ -128,7 +128,7 @@ template <typename T>
 using get_recv_impl = typename recv_impl_dispatcher<unwrap_type<T>>::type;
 
 template <typename M, typename Oid, typename Out>
-inline istream& recv(istream& in, Oid oid, size_type size, const oid_map_t<M>& oids, Out& out) {
+inline istream& recv(istream& in, [[maybe_unused]] Oid oid, size_type size, const oid_map_t<M>& oids, Out& out) {
     static_assert(std::is_same_v<Oid, oid_t>||std::is_same_v<Oid, null_oid_t>,
         "oid must be oid_t or null_oid_t type");
 
@@ -146,8 +146,6 @@ inline istream& recv(istream& in, Oid oid, size_type size, const oid_map_t<M>& o
                 + boost::core::demangle(typeid(unwrap_type<Out>).name()));
         }
     }
-
-    (void)oid; // Dummy GCC
 
     if constexpr (Nullable<Out>) {
         init_nullable(out);
