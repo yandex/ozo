@@ -4,13 +4,13 @@ Here are some examples of how to use OZO API.
 
 <!-- TOC -->
 - [How to](#how-to)
-  - [How To Make A Very Simple request](#how-to-make-a-very-simple-request)
-  - [How To Handle Error Properly](#how-to-handle-error-properly)
-  - [How Start To Do Not Bother With Types Sequence In Row But Begin To Bother About Column Names](#how-start-to-do-not-bother-with-types-sequence-in-row-but-begin-to-bother-about-column-names)
+  - [How To Make A Very Simple Request](#how-to-make-a-very-simple-request)
+  - [How To Handle Errors Properly](#how-to-handle-errors-properly)
+  - [How To Map Column Names to Column Numbers At Compile Time](#how-to-map-column-names-to-column-numbers-at-compile-time)
   - [How To Determine Which Type Do I Need To Use For The PostgreSQL Type](#how-to-determine-which-type-do-i-need-to-use-for-the-postgresql-type)
   - [How To Bind One More PostgreSQL Type For C++ Type With Existing Binding](#how-to-bind-one-more-postgresql-type-for-c-type-with-existing-binding)
 
-## How To Make A Very Simple request
+## How To Make A Very Simple Request
 
 E.g. you have _very_ simple table.
 
@@ -22,7 +22,7 @@ CREATE TABLE users_info(
 );
 ```
 
-If you want to execute a query with no custom types or something else then the simplest way for you is:
+If you want to execute a query with no custom types or other advanced behavior then the simplest way to do this is:
 
 ```cpp
 #include <ozo/request.h>
@@ -31,7 +31,7 @@ If you want to execute a query with no custom types or something else then the s
 #include <boost/asio.hpp>
 
 int main() {
-    // We need io_context for IO
+    // The boost io_context is the central management object for asyncronous operations.
     boost::asio::io_context io;
 
     // Container of rows which accepts integer and nullable string columns in the sequence.
@@ -66,7 +66,7 @@ int main() {
         // typically you do not need to check it manually
         assert(ozo::connection_good(conn));
 
-        // We got results, let's handle, e.g. print it out
+        // We got results, let's do something with them, e.g. print them out
         std::cout << "id" << '\t' << "name" << std::endl;
         for(auto& row: res) {
             std::cout << std::get<0>(row) << '\t' << std::get<1>(row) << std::endl;
@@ -77,35 +77,35 @@ int main() {
 }
 ```
 
-Let's look a little bit closer on this pretty simple but asynchronous code.
+Let's look a little bit closer at this basic asynchronous query example.
 
 ```cpp
 ozo::rows_of<std::int64_t, std::optional<std::string>> rows;
 ```
 
-Here we define a result type. Practically `ozo::rows_of` is an alias on `std::vector<std::tuple<...>>`. And `ozo::into` is an alias on `std::back_inserter`. So `ozo::request()` function will fill this vector of tuples according to the database response rows. Please read the documentation for more details.
+Here we define a result type. `ozo::rows_of` is an alias of `std::vector<std::tuple<...>>`. And `ozo::into` is an alias of `std::back_inserter`. So `ozo::request()` function will fill this vector of tuples by back inserting data from database's response, row by row. Please read the documentation for more details.
 
-It is _very important_ to preserve the same order of fields in request and types in the tuple (it is a little bit annoying, but there is a way to avoid it via [Boost.Hana](https://www.boost.org/doc/libs/1_66_0/libs/hana/doc/html/index.html#tutorial-introspection-adapting) or [Boost.Fusion](https://www.boost.org/doc/libs/1_66_0/libs/fusion/doc/html/fusion/adapted.html) structure adaptation).
+It is _very important_ to preserve the same order of fields in the request and the types in the tuple (it is a little bit annoying, but there is a way to avoid it via [Boost.Hana](https://www.boost.org/doc/libs/1_66_0/libs/hana/doc/html/index.html#tutorial-introspection-adapting) or [Boost.Fusion](https://www.boost.org/doc/libs/1_66_0/libs/fusion/doc/html/fusion/adapted.html) structure adaptation).
 
-There is `std::optional<std::string>` at the second position of the tuple. This is because `name` field of the table can be _NULL_. Empty optional represents the _NULL_ (you can learn more about Nullable concept from the documentation). If you omit an `std::optional` then in case of _NULL_ value deserialization error could be.
+Notice that the second position of the tuple is `std::optional<std::string>`.This is because the `name` field of the table can be _NULL_. Empty optional represents a _NULL_ value (you can learn more about Nullable concept from the documentation). If if a _NULL_ value is retrieved from the database for a type that is not an `std::optional`, then a deserialization error will occur.
 
-The first argument of the tuple can not be a _NULL_ due to the schema, so we can omit `std::optional`.
+Note that in the example, the table is defined with the first (id) and third (amount) columns as _NOT NULL_. This means that for queries retrieving those columns, it's not necessary to use `std::optional` for those fields. However, the second (name) column is _NULL_, and therefore must be an `std::optional` as explained in the paragraph above.
 
-In other words: there is no mistake to expect nullable type for non-nullable result, but the opposite leads to a run-time error in case of _NULL_ value received from a database.
+Note that it's acceptable to provide an `std::optional` for a _NOT NULL_ field, but it is not acceptable to omit the `std::optional` for a field that is not _NOT NULL_, unless you can gaurentee the retrieved data will not be _NULL_. Failure to properly use `std::optional` will lead to a run-time error in case of a _NULL_ value received from a database.
 
 ```cpp
 auto conn_info = ozo::make_connection_info("host=... port=...");
 ```
 
-Now we need to create a connection information for database to connect to. This is our connection source which can create a connection for us as it will be needed (you can learn more about ConnectionSource and ConnectionProvider concepts from the documentation).
+Now we need to create a connection information for database to connect to. This is our connection source which can create a connection for us as it will be needed (you can learn more about ConnectionSource and ConnectionProvider concepts from the documentation). It's also acceptable to provide a connection URI string, instead of the comma seperated version.
 
 ```cpp
 const auto query = "SELECT id, name FROM users_info WHERE amount>="_SQL + std::int64_t(25);
 ```
 
-Here our query for database. There is a text with `_SQL` literal and a parameter `std::int64_t(25)`. Note that the parameter will be passed as a separate binary parameter, but not as part of the query text.
+Here's our database query. The `_SQL` suffix is a user defined literal that converts the string that it is attached to into OZO's query data type. The parameter `std::int64_t(25)` is then added to the query accordingly. Note that the parameter will be passed as a separate binary parameter, but not as part of the query text.
 
-Here is `request()` asynchronous function call.
+Here is the asynchrounous function call `request()`.
 
 ```cpp
 ozo::request(ozo::make_connector(conn_info, io), query, ozo::into(res),
@@ -114,15 +114,17 @@ ozo::request(ozo::make_connector(conn_info, io), query, ozo::into(res),
 });
 ```
 
-`ozo::make_connector(conn_info, io)` - the first parameter is a **ConnectionProvider** or a **Connection**. **ConnectionProvider** is an entity from which you can get a new (or may be already established) connection. **Connection** is a **ConnectionProvider** since it can provide itself. So the query request will be performed within connection obtained for the first argument.
+`ozo::make_connector(conn_info, io)` - the first parameter is a **ConnectionProvider** or a **Connection**. **ConnectionProvider** is an entity from which you can get a new (or already established) connection. **Connection** is a **ConnectionProvider** since it can provide itself. So the query request will be performed within connection obtained for the first argument.
 
 `query` - the next argument is query which we discussed above.
 
-`ozo::into(res)` - the output parameter. In this case the out parameter is a back insert iterator to the result vector. Note, that the life time of the output parameter should be managed by a user. In this example it correctly placed on stack since its lifetime overlaps `io.run()` call. The query output parameter can be iterator with appropriated value type, or `ozo::result` object which provides access to raw binary data. The second variant is not recommended since user should implement binary protocol parsing by self.
+`ozo::into(res)` - the output parameter. In this case the out parameter is a back insert iterator to the result vector. Note, that the life time of the output parameter should be managed by a user. In this example it correctly placed on stack since its lifetime overlaps `io.run()` call. Another way you can do this is to use `std::make_shared`, and then store the resulting shared pointer in your callback function. That way the memory that `ozo::into` is writing into will stay valid until the callback function finishes.
 
-`[&](ozo::error_code ec, auto conn)` - completion token parameter, in this case is callback lambda. In other cases it can be [boost::asio::use_future](https://www.boost.org/doc/libs/1_67_0/doc/html/boost_asio/reference/use_future.html), [boost::asio::yield_context](https://www.boost.org/doc/libs/1_67_0/doc/html/boost_asio/reference/yield_context.html) or any other [boost::asio::async_result](https://www.boost.org/doc/libs/1_67_0/doc/html/boost_asio/reference/async_result.html) compatible [Completion Token](https://www.boost.org/doc/libs/1_67_0/doc/html/boost_asio/reference/async_completion.html). The arguments of the call back are error code `ec` (which is namely `boost::system::error_code` for now) and the connection `conn` with which the query was made.
+The query output parameter can be an iterator with appropriate value type, or an `ozo::result` object which provides access to raw binary data. The second variant is not recommended since user would need to implement binary protocol parsing.
 
-`for(auto& row: res)` - so if there is no error we can handle result from the output container.
+`[&](ozo::error_code ec, auto conn)` - completion function parameter, in this example it is a callback lambda. In other cases it can be [boost::asio::use_future](https://www.boost.org/doc/libs/1_67_0/doc/html/boost_asio/reference/use_future.html), [boost::asio::yield_context](https://www.boost.org/doc/libs/1_67_0/doc/html/boost_asio/reference/yield_context.html) or any other compatible concept, such as: [boost::asio::async_result](https://www.boost.org/doc/libs/1_67_0/doc/html/boost_asio/reference/async_result.html), [Completion Token](https://www.boost.org/doc/libs/1_67_0/doc/html/boost_asio/reference/async_completion.html). The arguments of the call back are an error code `ec` (which is namely `boost::system::error_code` for now) and the connection `conn` with which the query was made.
+
+`for(auto& row: res)` - This portion of the example executes if there is no error, and stands for the operations that you want your code to do when there is no error, such as printing out the contents of the output container.
 
 ---
 
@@ -157,9 +159,9 @@ void print_error (std::ostream& s, ozo::error_code ec) {
 
 ---
 
-## How Start To Do Not Bother With Types Sequence In Row But Begin To Bother About Column Names
+## How To Map Column Names to Column Numbers At Compile Time
 
-In previous story we saw how to do a simple request. But there is a tricky thing with sequence of types in result:
+In in the first example we saw how to do a simple request, but in that example we needed to map data from the database to our container object strictly based on the column order:
 ```cpp
 ozo::rows_of<std::int64_t, std::optional<std::string>> rows;
 
@@ -168,7 +170,7 @@ ozo::rows_of<std::int64_t, std::optional<std::string>> rows;
 const auto query = "SELECT id, name FROM users_info WHERE amount>="_SQL + std::int64_t(25);
 ```
 
-If we interchange `id` and `name` in the query text we will get a run-time error. To be more robust for such changes there is another way - adaptation. E.g. with Boost.Fusion.
+If we interchange `id` and `name` in the query text we will get a run-time error. To be more robust to changes in the ordering of columns returned from the database, we can use Boost.Fusion to map column names to positions.
 
 ```cpp
 BOOST_FUSION_DEFINE_STRUCT((), my_row,
@@ -194,7 +196,7 @@ int main() {
 }
 ```
 
-In this case you can change fields' places free. Fields and structure members are bound with their names.
+In this example, you can change the order of the fields in either `my_row` or your database query freely, as the fields are identified based on their name, and not based on their index in the tuple.
 
 ---
 
