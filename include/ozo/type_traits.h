@@ -16,7 +16,6 @@
 #include <boost/hana/map.hpp>
 #include <boost/hana/pair.hpp>
 #include <boost/hana/type.hpp>
-#include <boost/uuid/uuid.hpp>
 
 #include <memory>
 #include <string>
@@ -447,8 +446,6 @@ OZO_PG_DEFINE_CUSTOM_TYPE(smtp::message, "code.message")
 OZO_PG_DEFINE_TYPE_AND_ARRAY(bool, "bool", BOOLOID, 1000, bytes<1>)
 OZO_PG_DEFINE_TYPE_AND_ARRAY(char, "char", CHAROID, 1002, bytes<1>)
 OZO_PG_DEFINE_TYPE_AND_ARRAY(ozo::pg::bytea, "bytea", BYTEAOID, 1001, dynamic_size)
-
-OZO_PG_DEFINE_TYPE_AND_ARRAY(boost::uuids::uuid, "uuid", UUIDOID, 2951, bytes<16>)
 
 OZO_PG_DEFINE_TYPE_AND_ARRAY(int64_t, "int8", INT8OID, 1016, bytes<8>)
 OZO_PG_DEFINE_TYPE_AND_ARRAY(int32_t, "int4", INT4OID, INT4ARRAYOID, bytes<4>)
