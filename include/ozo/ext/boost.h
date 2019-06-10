@@ -12,3 +12,4 @@
 #include <ozo/ext/boost/scoped_ptr.h>
 #include <ozo/ext/boost/shared_ptr.h>
 #include <ozo/ext/boost/weak_ptr.h>
+#include <ozo/ext/boost/uuid.h>

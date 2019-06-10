@@ -1,6 +1,7 @@
 #include <ozo/io/send.h>
 #include <ozo/io/array.h>
 #include <ozo/ext/std.h>
+#include <ozo/ext/boost/uuid.h>
 
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
@@ -170,6 +171,22 @@ TEST_F(send_frame, should_write_pg_name_as_string) {
     EXPECT_THAT(oid_buffer(), ElementsAreArray({0x00, 0x00, 0x00, 0x13}));
     EXPECT_THAT(size_buffer(), ElementsAreArray({0x00, 0x00, 0x00, 0x04}));
     EXPECT_THAT(data_buffer(), ElementsAre('n', 'a', 'm', 'e'));
+}
+
+TEST_F(send, with_boost_uuid_should_store_it_as_is) {
+    const boost::uuids::uuid uuid = {
+        0x12, 0x34, 0x56, 0x78,
+        0x90, 0xab, 0xcd, 0xef,
+        0x12, 0x34, 0x56, 0x78,
+        0x40, 0xab, 0xcd, 0xef
+     };
+    ozo::send(os, oid_map, uuid);
+    EXPECT_EQ(buffer, std::vector<char>({
+        0x12, 0x34, 0x56, 0x78,
+        char(0x90), char(0xab), char(0xcd), char(0xef),
+        0x12, 0x34, 0x56, 0x78,
+        0x40, char(0xab), char(0xcd), char(0xef)
+    }));
 }
 
 } // namespace

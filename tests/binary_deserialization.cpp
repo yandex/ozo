@@ -3,6 +3,7 @@
 #include <ozo/io/array.h>
 #include <ozo/io/recv.h>
 #include <ozo/ext/std.h>
+#include <ozo/ext/boost/uuid.h>
 
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
@@ -732,6 +733,30 @@ TEST_F(recv_result, send_returns_result_then_result_requested) {
     ozo::recv_result(res, oid_map, got);
     EXPECT_CALL(mock, ntuples()).WillOnce(Return(2));
     EXPECT_EQ(got.size(), 2u);
+}
+
+TEST_F(recv, should_convert_UUIDOID_to_uuid) {
+    const char bytes[] = {
+        0x12, 0x34, 0x56, 0x78,
+        char(0x90), char(0xab), char(0xcd), char(0xef),
+        0x12, 0x34, 0x56, 0x78,
+        0x40, char(0xab), char(0xcd), char(0xef)
+     };
+
+    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(UUIDOID));
+    EXPECT_CALL(mock, get_value(_, _)).WillRepeatedly(Return(bytes));
+    EXPECT_CALL(mock, get_length(_, _)).WillRepeatedly(Return(16));
+    EXPECT_CALL(mock, get_isnull(_, _)).WillRepeatedly(Return(false));
+
+    boost::uuids::uuid result;
+    ozo::recv(value, oid_map, result);
+    const boost::uuids::uuid uuid = {
+        0x12, 0x34, 0x56, 0x78,
+        0x90, 0xab, 0xcd, 0xef,
+        0x12, 0x34, 0x56, 0x78,
+        0x40, 0xab, 0xcd, 0xef
+    };
+    EXPECT_EQ(result, uuid);
 }
 
 } // namespace
