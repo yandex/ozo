@@ -130,7 +130,7 @@ struct is_query_text<T, std::void_t<
 template <typename T>
 constexpr auto QueryText = is_query_text<std::decay_t<T>>::value;
 
-template <typename T>
+template <typename T, typename = hana::when<true>>
 struct get_query_text_impl;
 
 #ifdef OZO_DOCUMENTATION
@@ -173,7 +173,7 @@ inline constexpr detail::result_of<get_query_text_impl, T> get_query_text(T&& qu
 }
 #endif
 
-template <typename T>
+template <typename T, typename = hana::when<true>>
 struct get_query_params_impl;
 
 #ifdef OZO_DOCUMENTATION
