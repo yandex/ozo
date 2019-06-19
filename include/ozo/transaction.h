@@ -6,7 +6,7 @@
 namespace ozo {
 
 template <typename Initiator>
-struct begin_op : base_async_operation <request_op, Initiator> {
+struct begin_op : base_async_operation <begin_op, Initiator> {
     using base = typename begin_op::base;
     using base::base;
     template <typename T, typename TimeConstraint, typename CompletionToken>
