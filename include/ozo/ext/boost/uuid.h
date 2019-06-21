@@ -1,5 +1,6 @@
 #pragma once
 
+#include <ozo/pg/definitions.h>
 #include <ozo/io/send.h>
 #include <ozo/io/recv.h>
 
@@ -39,4 +40,4 @@ struct recv_impl<boost::uuids::uuid> {
 
 }
 
-OZO_PG_DEFINE_TYPE_AND_ARRAY(boost::uuids::uuid, "uuid", UUIDOID, 2951, bytes<16>)
+OZO_PG_BIND_TYPE(boost::uuids::uuid, "uuid")

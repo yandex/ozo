@@ -57,7 +57,7 @@ struct recv : Test {
 TEST_F(recv, should_throw_system_error_if_oid_does_not_match_the_type) {
     const char bytes[] = "text";
     EXPECT_CALL(mock, get_isnull(_, _)).WillRepeatedly(Return(false));
-    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(TEXTOID));
+    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(25));
     EXPECT_CALL(mock, get_value(_, _)).WillRepeatedly(Return(bytes));
     EXPECT_CALL(mock, get_length(_, _)).WillRepeatedly(Return(sizeof(bytes)));
 
@@ -68,7 +68,7 @@ TEST_F(recv, should_throw_system_error_if_oid_does_not_match_the_type) {
 TEST_F(recv, should_convert_BOOLOID_to_bool) {
     const char bytes[] = { true };
 
-    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(BOOLOID));
+    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(16));
     EXPECT_CALL(mock, get_value(_, _)).WillRepeatedly(Return(bytes));
     EXPECT_CALL(mock, get_length(_, _)).WillRepeatedly(Return(sizeof(bytes)));
     EXPECT_CALL(mock, get_isnull(_, _)).WillRepeatedly(Return(false));
@@ -81,7 +81,7 @@ TEST_F(recv, should_convert_BOOLOID_to_bool) {
 TEST_F(recv, should_convert_FLOAT4OID_to_float) {
     const char bytes[] = { 0x42, 0x28, static_cast<char>(0x85), 0x1F };
 
-    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(FLOAT4OID));
+    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(700));
     EXPECT_CALL(mock, get_value(_, _)).WillRepeatedly(Return(bytes));
     EXPECT_CALL(mock, get_length(_, _)).WillRepeatedly(Return(4));
     EXPECT_CALL(mock, get_isnull(_, _)).WillRepeatedly(Return(false));
@@ -94,7 +94,7 @@ TEST_F(recv, should_convert_FLOAT4OID_to_float) {
 TEST_F(recv, should_convert_INT2OID_to_int16_t) {
     const char bytes[] = { 0x00, 0x07 };
 
-    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(INT2OID));
+    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(21));
     EXPECT_CALL(mock, get_value(_, _)).WillRepeatedly(Return(bytes));
     EXPECT_CALL(mock, get_length(_, _)).WillRepeatedly(Return(sizeof(bytes)));
     EXPECT_CALL(mock, get_isnull(_, _)).WillRepeatedly(Return(false));
@@ -107,7 +107,7 @@ TEST_F(recv, should_convert_INT2OID_to_int16_t) {
 TEST_F(recv, should_convert_INT4OID_to_int32_t) {
     const char bytes[] = { 0x00, 0x00, 0x00, 0x07 };
 
-    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(INT4OID));
+    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(23));
     EXPECT_CALL(mock, get_value(_, _)).WillRepeatedly(Return(bytes));
     EXPECT_CALL(mock, get_length(_, _)).WillRepeatedly(Return(sizeof(bytes)));
     EXPECT_CALL(mock, get_isnull(_, _)).WillRepeatedly(Return(false));
@@ -120,7 +120,7 @@ TEST_F(recv, should_convert_INT4OID_to_int32_t) {
 TEST_F(recv, should_convert_INT8OID_to_int64_t) {
     const char bytes[] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x07 };
 
-    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(INT8OID));
+    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(20));
     EXPECT_CALL(mock, get_value(_, _)).WillRepeatedly(Return(bytes));
     EXPECT_CALL(mock, get_length(_, _)).WillRepeatedly(Return(sizeof(bytes)));
     EXPECT_CALL(mock, get_isnull(_, _)).WillRepeatedly(Return(false));
@@ -132,7 +132,7 @@ TEST_F(recv, should_convert_INT8OID_to_int64_t) {
 
 TEST_F(recv, should_convert_BYTEAOID_to_pg_bytea) {
     const char* bytes = "test";
-    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(BYTEAOID));
+    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(17));
     EXPECT_CALL(mock, get_value(_, _)).WillRepeatedly(Return(bytes));
     EXPECT_CALL(mock, get_length(_, _)).WillRepeatedly(Return(4));
     EXPECT_CALL(mock, get_isnull(_, _)).WillRepeatedly(Return(false));
@@ -144,7 +144,7 @@ TEST_F(recv, should_convert_BYTEAOID_to_pg_bytea) {
 
 TEST_F(recv, should_convert_TEXTOID_to_std_string) {
     const char* bytes = "test";
-    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(TEXTOID));
+    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(25));
     EXPECT_CALL(mock, get_value(_, _)).WillRepeatedly(Return(bytes));
     EXPECT_CALL(mock, get_length(_, _)).WillRepeatedly(Return(4));
     EXPECT_CALL(mock, get_isnull(_, _)).WillRepeatedly(Return(false));
@@ -156,7 +156,7 @@ TEST_F(recv, should_convert_TEXTOID_to_std_string) {
 
 TEST_F(recv, should_convert_TEXTOID_to_a_nullable_wrapped_std_string_unwrapping_that_nullable) {
     const char* bytes = "test";
-    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(TEXTOID));
+    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(25));
     EXPECT_CALL(mock, get_value(_, _)).WillRepeatedly(Return(bytes));
     EXPECT_CALL(mock, get_length(_, _)).WillRepeatedly(Return(4));
     EXPECT_CALL(mock, get_isnull(_, _)).WillRepeatedly(Return(false));
@@ -169,7 +169,7 @@ TEST_F(recv, should_convert_TEXTOID_to_a_nullable_wrapped_std_string_unwrapping_
 
 TEST_F(recv, should_set_nullable_to_null_for_a_null_value_of_any_type) {
     EXPECT_CALL(mock, get_length(_, _)).WillRepeatedly(Return(0));
-    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(INT4OID));
+    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(23));
     EXPECT_CALL(mock, get_isnull(_, _)).WillRepeatedly(Return(true));
     EXPECT_CALL(mock, get_value(_, _)).WillRepeatedly(Return(nullptr));
 
@@ -180,7 +180,7 @@ TEST_F(recv, should_set_nullable_to_null_for_a_null_value_of_any_type) {
 
 TEST_F(recv, should_throw_for_a_null_value_if_receiving_type_is_not_nullable) {
     EXPECT_CALL(mock, get_length(_, _)).WillRepeatedly(Return(0));
-    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(TEXTOID));
+    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(25));
     EXPECT_CALL(mock, get_isnull(_, _)).WillRepeatedly(Return(true));
     EXPECT_CALL(mock, get_value(_, _)).WillRepeatedly(Return(nullptr));
 
@@ -202,7 +202,7 @@ TEST_F(recv, should_convert_TEXTARRAYOID_to_std_vector_of_std_string) {
         0x00, 0x00, 0x00, 0x03, // 3rd element size
         'b', 'a', 'r',          // 3rd element
     };
-    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(TEXTARRAYOID));
+    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(1009));
     EXPECT_CALL(mock, get_value(_, _)).WillRepeatedly(Return(bytes));
     EXPECT_CALL(mock, get_length(_, _)).WillRepeatedly(Return(sizeof bytes));
     EXPECT_CALL(mock, get_isnull(_, _)).WillRepeatedly(Return(false));
@@ -226,7 +226,7 @@ TEST_F(recv, should_convert_TEXTARRAYOID_with_matched_size_to_std_array_of_std_s
         0x00, 0x00, 0x00, 0x03, // 3rd element size
         'b', 'a', 'r',          // 3rd element
     };
-    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(TEXTARRAYOID));
+    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(1009));
     EXPECT_CALL(mock, get_value(_, _)).WillRepeatedly(Return(bytes));
     EXPECT_CALL(mock, get_length(_, _)).WillRepeatedly(Return(sizeof bytes));
     EXPECT_CALL(mock, get_isnull(_, _)).WillRepeatedly(Return(false));
@@ -250,7 +250,7 @@ TEST_F(recv, should_throw_exception_on_TEXTARRAYOID_with_greater_size_than_std_a
         0x00, 0x00, 0x00, 0x03, // 3rd element size
         'b', 'a', 'r',          // 3rd element
     };
-    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(TEXTARRAYOID));
+    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(1009));
     EXPECT_CALL(mock, get_value(_, _)).WillRepeatedly(Return(bytes));
     EXPECT_CALL(mock, get_length(_, _)).WillRepeatedly(Return(sizeof bytes));
     EXPECT_CALL(mock, get_isnull(_, _)).WillRepeatedly(Return(false));
@@ -273,7 +273,7 @@ TEST_F(recv, should_throw_exception_on_TEXTARRAYOID_with_less_size_than_std_arra
         0x00, 0x00, 0x00, 0x03, // 3rd element size
         'b', 'a', 'r',          // 3rd element
     };
-    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(TEXTARRAYOID));
+    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(1009));
     EXPECT_CALL(mock, get_value(_, _)).WillRepeatedly(Return(bytes));
     EXPECT_CALL(mock, get_length(_, _)).WillRepeatedly(Return(sizeof bytes));
     EXPECT_CALL(mock, get_isnull(_, _)).WillRepeatedly(Return(false));
@@ -296,7 +296,7 @@ TEST_F(recv, should_throw_on_multidimential_arrays) {
         0x00, 0x00, 0x00, 0x03, // 3rd element size
         'b', 'a', 'r',          // 3rd element
     };
-    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(TEXTARRAYOID));
+    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(1009));
     EXPECT_CALL(mock, get_value(_, _)).WillRepeatedly(Return(bytes));
     EXPECT_CALL(mock, get_length(_, _)).WillRepeatedly(Return(sizeof bytes));
     EXPECT_CALL(mock, get_isnull(_, _)).WillRepeatedly(Return(false));
@@ -319,7 +319,7 @@ TEST_F(recv, should_throw_on_inappropriate_element_oid) {
         0x00, 0x00, 0x00, 0x03, // 3rd element size
         'b', 'a', 'r',          // 3rd element
     };
-    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(TEXTARRAYOID));
+    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(1009));
     EXPECT_CALL(mock, get_value(_, _)).WillRepeatedly(Return(bytes));
     EXPECT_CALL(mock, get_length(_, _)).WillRepeatedly(Return(sizeof bytes));
     EXPECT_CALL(mock, get_isnull(_, _)).WillRepeatedly(Return(false));
@@ -341,7 +341,7 @@ TEST_F(recv, should_throw_on_null_element_for_non_nullable_out_element) {
         0x00, 0x00, 0x00, 0x03, // 3rd element size
         'b', 'a', 'r',          // 3rd element
     };
-    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(TEXTARRAYOID));
+    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(1009));
     EXPECT_CALL(mock, get_value(_, _)).WillRepeatedly(Return(bytes));
     EXPECT_CALL(mock, get_length(_, _)).WillRepeatedly(Return(sizeof bytes));
     EXPECT_CALL(mock, get_isnull(_, _)).WillRepeatedly(Return(false));
@@ -353,7 +353,7 @@ TEST_F(recv, should_throw_on_null_element_for_non_nullable_out_element) {
 TEST_F(recv, should_throw_exception_when_size_of_integral_differs_from_given) {
     const char bytes[] = { true };
 
-    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(BOOLOID));
+    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(16));
     EXPECT_CALL(mock, get_value(_, _)).WillRepeatedly(Return(bytes));
     EXPECT_CALL(mock, get_length(_, _)).WillRepeatedly(Return(sizeof(bytes) + 1));
     EXPECT_CALL(mock, get_isnull(_, _)).WillRepeatedly(Return(false));
@@ -368,7 +368,7 @@ TEST_F(recv, should_read_nothing_when_dimensions_count_is_zero) {
         0x00, 0x00, 0x00, 0x00, // data offset
         0x00, 0x00, 0x00, 0x19, // Oid
     };
-    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(TEXTARRAYOID));
+    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(1009));
     EXPECT_CALL(mock, get_value(_, _)).WillRepeatedly(Return(bytes));
     EXPECT_CALL(mock, get_length(_, _)).WillRepeatedly(Return(sizeof bytes));
     EXPECT_CALL(mock, get_isnull(_, _)).WillRepeatedly(Return(false));
@@ -386,7 +386,7 @@ TEST_F(recv, should_read_nothing_when_dimension_size_is_zero) {
         0x00, 0x00, 0x00, 0x00, // dimension size
         0x00, 0x00, 0x00, 0x01, // dimension index
     };
-    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(TEXTARRAYOID));
+    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(1009));
     EXPECT_CALL(mock, get_value(_, _)).WillRepeatedly(Return(bytes));
     EXPECT_CALL(mock, get_length(_, _)).WillRepeatedly(Return(sizeof bytes));
     EXPECT_CALL(mock, get_isnull(_, _)).WillRepeatedly(Return(false));
@@ -410,7 +410,7 @@ TEST_F(recv, should_convert_TEXTARRAYOID_to_std_vector_of_std_unique_ptr_of_std_
         0x00, 0x00, 0x00, 0x03, // 3rd element size
         'b', 'a', 'r',          // 3rd element
     };
-    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(TEXTARRAYOID));
+    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(1009));
     EXPECT_CALL(mock, get_value(_, _)).WillRepeatedly(Return(bytes));
     EXPECT_CALL(mock, get_length(_, _)).WillRepeatedly(Return(sizeof bytes));
     EXPECT_CALL(mock, get_isnull(_, _)).WillRepeatedly(Return(false));
@@ -437,7 +437,7 @@ TEST_F(recv, should_reset_nullable_on_null_element) {
         0x00, 0x00, 0x00, 0x03, // 3rd element size
         'b', 'a', 'r',          // 3rd element
     };
-    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(TEXTARRAYOID));
+    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(1009));
     EXPECT_CALL(mock, get_value(_, _)).WillRepeatedly(Return(bytes));
     EXPECT_CALL(mock, get_length(_, _)).WillRepeatedly(Return(sizeof bytes));
     EXPECT_CALL(mock, get_isnull(_, _)).WillRepeatedly(Return(false));
@@ -453,7 +453,7 @@ TEST_F(recv, should_reset_nullable_on_null_element) {
 
 TEST_F(recv, should_convert_NAMEOID_to_pg_name) {
     const char* bytes = "test";
-    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(NAMEOID));
+    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(19));
     EXPECT_CALL(mock, get_value(_, _)).WillRepeatedly(Return(bytes));
     EXPECT_CALL(mock, get_length(_, _)).WillRepeatedly(Return(4));
     EXPECT_CALL(mock, get_isnull(_, _)).WillRepeatedly(Return(false));
@@ -482,12 +482,12 @@ TEST_F(recv_row, should_convert_INT4OID_and_TEXTOID_to_std_tuple_int32_t_std_str
 
     EXPECT_CALL(mock, nfields()).WillRepeatedly(Return(2));
 
-    EXPECT_CALL(mock, field_type(0)).WillRepeatedly(Return(INT4OID));
+    EXPECT_CALL(mock, field_type(0)).WillRepeatedly(Return(23));
     EXPECT_CALL(mock, get_value(_, 0)).WillRepeatedly(Return(int32_bytes));
     EXPECT_CALL(mock, get_length(_, 0)).WillRepeatedly(Return(4));
     EXPECT_CALL(mock, get_isnull(_, 0)).WillRepeatedly(Return(false));
 
-    EXPECT_CALL(mock, field_type(1)).WillRepeatedly(Return(TEXTOID));
+    EXPECT_CALL(mock, field_type(1)).WillRepeatedly(Return(25));
     EXPECT_CALL(mock, get_value(_, 1)).WillRepeatedly(Return(string_bytes));
     EXPECT_CALL(mock, get_length(_, 1)).WillRepeatedly(Return(4));
     EXPECT_CALL(mock, get_isnull(_, 1)).WillRepeatedly(Return(false));
@@ -511,13 +511,13 @@ TEST_F(recv_row, should_convert_INT4OID_and_TEXTOID_to_fusion_adapted_structure)
     EXPECT_CALL(mock, nfields()).WillRepeatedly(Return(2));
 
     EXPECT_CALL(mock, field_number(Eq("digit"s))).WillOnce(Return(0));
-    EXPECT_CALL(mock, field_type(0)).WillRepeatedly(Return(INT4OID));
+    EXPECT_CALL(mock, field_type(0)).WillRepeatedly(Return(23));
     EXPECT_CALL(mock, get_value(_, 0)).WillRepeatedly(Return(int32_bytes));
     EXPECT_CALL(mock, get_length(_, 0)).WillRepeatedly(Return(4));
     EXPECT_CALL(mock, get_isnull(_, 0)).WillRepeatedly(Return(false));
 
     EXPECT_CALL(mock, field_number(Eq("text"s))).WillOnce(Return(1));
-    EXPECT_CALL(mock, field_type(1)).WillRepeatedly(Return(TEXTOID));
+    EXPECT_CALL(mock, field_type(1)).WillRepeatedly(Return(25));
     EXPECT_CALL(mock, get_value(_, 1)).WillRepeatedly(Return(string_bytes));
     EXPECT_CALL(mock, get_length(_, 1)).WillRepeatedly(Return(4));
     EXPECT_CALL(mock, get_isnull(_, 1)).WillRepeatedly(Return(false));
@@ -535,13 +535,13 @@ TEST_F(recv_row, should_convert_INT4OID_and_TEXTOID_to_hana_adapted_structure) {
     EXPECT_CALL(mock, nfields()).WillRepeatedly(Return(2));
 
     EXPECT_CALL(mock, field_number(Eq("digit"s))).WillOnce(Return(0));
-    EXPECT_CALL(mock, field_type(0)).WillRepeatedly(Return(INT4OID));
+    EXPECT_CALL(mock, field_type(0)).WillRepeatedly(Return(23));
     EXPECT_CALL(mock, get_value(_, 0)).WillRepeatedly(Return(int32_bytes));
     EXPECT_CALL(mock, get_length(_, 0)).WillRepeatedly(Return(4));
     EXPECT_CALL(mock, get_isnull(_, 0)).WillRepeatedly(Return(false));
 
     EXPECT_CALL(mock, field_number(Eq("text"s))).WillOnce(Return(1));
-    EXPECT_CALL(mock, field_type(1)).WillRepeatedly(Return(TEXTOID));
+    EXPECT_CALL(mock, field_type(1)).WillRepeatedly(Return(25));
     EXPECT_CALL(mock, get_value(_, 1)).WillRepeatedly(Return(string_bytes));
     EXPECT_CALL(mock, get_length(_, 1)).WillRepeatedly(Return(4));
     EXPECT_CALL(mock, get_isnull(_, 1)).WillRepeatedly(Return(false));
@@ -606,13 +606,13 @@ TEST_F(recv_result, send_convert_INT4OID_and_TEXTOID_to_fusion_adapted_structure
     EXPECT_CALL(mock, ntuples()).WillRepeatedly(Return(2));
 
     EXPECT_CALL(mock, field_number(Eq("digit"s))).WillRepeatedly(Return(0));
-    EXPECT_CALL(mock, field_type(0)).WillRepeatedly(Return(INT4OID));
+    EXPECT_CALL(mock, field_type(0)).WillRepeatedly(Return(23));
     EXPECT_CALL(mock, get_value(_, 0)).WillRepeatedly(Return(int32_bytes));
     EXPECT_CALL(mock, get_length(_, 0)).WillRepeatedly(Return(4));
     EXPECT_CALL(mock, get_isnull(_, 0)).WillRepeatedly(Return(false));
 
     EXPECT_CALL(mock, field_number(Eq("text"s))).WillRepeatedly(Return(1));
-    EXPECT_CALL(mock, field_type(1)).WillRepeatedly(Return(TEXTOID));
+    EXPECT_CALL(mock, field_type(1)).WillRepeatedly(Return(25));
     EXPECT_CALL(mock, get_value(_, 1)).WillRepeatedly(Return(string_bytes));
     EXPECT_CALL(mock, get_length(_, 1)).WillRepeatedly(Return(4));
     EXPECT_CALL(mock, get_isnull(_, 1)).WillRepeatedly(Return(false));
@@ -634,13 +634,13 @@ TEST_F(recv_result, send_convert_INT4OID_and_TEXTOID_to_hana_adapted_structures_
     EXPECT_CALL(mock, ntuples()).WillRepeatedly(Return(2));
 
     EXPECT_CALL(mock, field_number(Eq("digit"s))).WillRepeatedly(Return(0));
-    EXPECT_CALL(mock, field_type(0)).WillRepeatedly(Return(INT4OID));
+    EXPECT_CALL(mock, field_type(0)).WillRepeatedly(Return(23));
     EXPECT_CALL(mock, get_value(_, 0)).WillRepeatedly(Return(int32_bytes));
     EXPECT_CALL(mock, get_length(_, 0)).WillRepeatedly(Return(4));
     EXPECT_CALL(mock, get_isnull(_, 0)).WillRepeatedly(Return(false));
 
     EXPECT_CALL(mock, field_number(Eq("text"s))).WillRepeatedly(Return(1));
-    EXPECT_CALL(mock, field_type(1)).WillRepeatedly(Return(TEXTOID));
+    EXPECT_CALL(mock, field_type(1)).WillRepeatedly(Return(25));
     EXPECT_CALL(mock, get_value(_, 1)).WillRepeatedly(Return(string_bytes));
     EXPECT_CALL(mock, get_length(_, 1)).WillRepeatedly(Return(4));
     EXPECT_CALL(mock, get_isnull(_, 1)).WillRepeatedly(Return(false));
@@ -662,13 +662,13 @@ TEST_F(recv_result, send_convert_INT4OID_and_TEXTOID_to_fusion_adapted_structure
     EXPECT_CALL(mock, ntuples()).WillRepeatedly(Return(2));
 
     EXPECT_CALL(mock, field_number(Eq("digit"s))).WillRepeatedly(Return(0));
-    EXPECT_CALL(mock, field_type(0)).WillRepeatedly(Return(INT4OID));
+    EXPECT_CALL(mock, field_type(0)).WillRepeatedly(Return(23));
     EXPECT_CALL(mock, get_value(_, 0)).WillRepeatedly(Return(int32_bytes));
     EXPECT_CALL(mock, get_length(_, 0)).WillRepeatedly(Return(4));
     EXPECT_CALL(mock, get_isnull(_, 0)).WillRepeatedly(Return(false));
 
     EXPECT_CALL(mock, field_number(Eq("text"s))).WillRepeatedly(Return(1));
-    EXPECT_CALL(mock, field_type(1)).WillRepeatedly(Return(TEXTOID));
+    EXPECT_CALL(mock, field_type(1)).WillRepeatedly(Return(25));
     EXPECT_CALL(mock, get_value(_, 1)).WillRepeatedly(Return(string_bytes));
     EXPECT_CALL(mock, get_length(_, 1)).WillRepeatedly(Return(4));
     EXPECT_CALL(mock, get_isnull(_, 1)).WillRepeatedly(Return(false));
@@ -690,13 +690,13 @@ TEST_F(recv_result, send_convert_INT4OID_and_TEXTOID_to_hana_adapted_structures_
     EXPECT_CALL(mock, ntuples()).WillRepeatedly(Return(2));
 
     EXPECT_CALL(mock, field_number(Eq("digit"s))).WillRepeatedly(Return(0));
-    EXPECT_CALL(mock, field_type(0)).WillRepeatedly(Return(INT4OID));
+    EXPECT_CALL(mock, field_type(0)).WillRepeatedly(Return(23));
     EXPECT_CALL(mock, get_value(_, 0)).WillRepeatedly(Return(int32_bytes));
     EXPECT_CALL(mock, get_length(_, 0)).WillRepeatedly(Return(4));
     EXPECT_CALL(mock, get_isnull(_, 0)).WillRepeatedly(Return(false));
 
     EXPECT_CALL(mock, field_number(Eq("text"s))).WillRepeatedly(Return(1));
-    EXPECT_CALL(mock, field_type(1)).WillRepeatedly(Return(TEXTOID));
+    EXPECT_CALL(mock, field_type(1)).WillRepeatedly(Return(25));
     EXPECT_CALL(mock, get_value(_, 1)).WillRepeatedly(Return(string_bytes));
     EXPECT_CALL(mock, get_length(_, 1)).WillRepeatedly(Return(4));
     EXPECT_CALL(mock, get_isnull(_, 1)).WillRepeatedly(Return(false));
@@ -717,7 +717,7 @@ TEST_F(recv_result, send_convert_INT4OID_to_vector_via_iterator) {
     EXPECT_CALL(mock, ntuples()).WillRepeatedly(Return(2));
 
     EXPECT_CALL(mock, field_number(Eq("digit"s))).WillRepeatedly(Return(0));
-    EXPECT_CALL(mock, field_type(0)).WillRepeatedly(Return(INT4OID));
+    EXPECT_CALL(mock, field_type(0)).WillRepeatedly(Return(23));
     EXPECT_CALL(mock, get_value(_, 0)).WillRepeatedly(Return(int32_bytes));
     EXPECT_CALL(mock, get_length(_, 0)).WillRepeatedly(Return(4));
     EXPECT_CALL(mock, get_isnull(_, 0)).WillRepeatedly(Return(false));
@@ -743,7 +743,7 @@ TEST_F(recv, should_convert_UUIDOID_to_uuid) {
         0x40, char(0xab), char(0xcd), char(0xef)
      };
 
-    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(UUIDOID));
+    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(2950));
     EXPECT_CALL(mock, get_value(_, _)).WillRepeatedly(Return(bytes));
     EXPECT_CALL(mock, get_length(_, _)).WillRepeatedly(Return(16));
     EXPECT_CALL(mock, get_isnull(_, _)).WillRepeatedly(Return(false));

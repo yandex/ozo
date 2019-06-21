@@ -59,7 +59,7 @@ constexpr decltype(auto) member_value(Adt&& v, const Index&) {
  * To deserialize complex types like #Array or #Composite special
  * internal implementations are used.
  *
- * @note This functor requires type definition via #OZO_PG_DEFINE_TYPE_AND_ARRAY or
+ * @note This functor requires type definition via #OZO_PG_BIND_TYPE or
  * #OZO_PG_DEFINE_CUSTOM_TYPE.
  *
  * ### Customization point

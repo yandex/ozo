@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ozo/type_traits.h>
+#include <ozo/pg/definitions.h>
 #include <ozo/io/send.h>
 #include <ozo/io/recv.h>
 
@@ -68,4 +68,4 @@ struct recv_impl<pg::jsonb> {
 
 } // namespace ozo
 
-OZO_PG_DEFINE_TYPE_AND_ARRAY(ozo::pg::jsonb, "jsonb", JSONBOID, 3807, dynamic_size)
+OZO_PG_BIND_TYPE(ozo::pg::jsonb, "jsonb")

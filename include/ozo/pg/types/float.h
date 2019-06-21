@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ozo/type_traits.h>
+#include <ozo/pg/definitions.h>
 
 namespace ozo::pg {
 
@@ -11,5 +11,5 @@ using real = float4;
 
 } // namespace ozo::pg
 
-OZO_PG_DEFINE_TYPE_AND_ARRAY(ozo::pg::float8, "float8", FLOAT8OID, 1022, bytes<8>)
-OZO_PG_DEFINE_TYPE_AND_ARRAY(ozo::pg::float4, "float4", FLOAT4OID, FLOAT4ARRAYOID, bytes<4>)
+OZO_PG_BIND_TYPE(ozo::pg::float8, "float8")
+OZO_PG_BIND_TYPE(ozo::pg::float4, "float4")

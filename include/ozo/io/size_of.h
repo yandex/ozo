@@ -99,7 +99,7 @@ using get_size_of_impl = typename size_of_impl_dispatcher<unwrap_type<T>>::type;
  * This function can be customized for the type or concept via `ozo::size_of_impl` structure
  * template specialization.
  *
- * @sa ozo::size_of_impl, OZO_PG_DEFINE_TYPE_AND_ARRAY, OZO_PG_DEFINE_CUSTOM_TYPE
+ * @sa ozo::size_of_impl, OZO_PG_BIND_TYPE, OZO_PG_DEFINE_CUSTOM_TYPE
  */
 template <typename T>
 constexpr size_type size_of(const T& v) {
