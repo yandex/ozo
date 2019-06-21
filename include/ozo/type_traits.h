@@ -304,18 +304,6 @@ constexpr auto type_name() noexcept {
 template <typename T>
 constexpr auto type_name(const T&) noexcept {return type_name<T>();}
 
-
-/**
- * @brief Namespace for PostgreSQL specific types
- */
-namespace pg {
-
-OZO_STRONG_TYPEDEF(std::string, name)
-OZO_STRONG_TYPEDEF(std::vector<char>, bytea)
-
-} // namespace pg
-
-
 namespace detail {
 
 template <typename Name, typename Oid = void, typename Size = dynamic_size>
@@ -438,28 +426,6 @@ OZO_PG_DEFINE_CUSTOM_TYPE(smtp::message, "code.message")
 #define OZO_PG_DEFINE_CUSTOM_TYPE(...)\
     BOOST_PP_OVERLOAD(OZO_PG_DEFINE_CUSTOM_TYPE_IMPL_,__VA_ARGS__)(__VA_ARGS__)
 #endif
-
-/**
- * @brief Bool type mapping
- * @ingroup group-type_system-mapping
- */
-OZO_PG_DEFINE_TYPE_AND_ARRAY(bool, "bool", BOOLOID, 1000, bytes<1>)
-OZO_PG_DEFINE_TYPE_AND_ARRAY(char, "char", CHAROID, 1002, bytes<1>)
-OZO_PG_DEFINE_TYPE_AND_ARRAY(ozo::pg::bytea, "bytea", BYTEAOID, 1001, dynamic_size)
-
-OZO_PG_DEFINE_TYPE_AND_ARRAY(int64_t, "int8", INT8OID, 1016, bytes<8>)
-OZO_PG_DEFINE_TYPE_AND_ARRAY(int32_t, "int4", INT4OID, INT4ARRAYOID, bytes<4>)
-OZO_PG_DEFINE_TYPE_AND_ARRAY(int16_t, "int2", INT2OID, INT2ARRAYOID, bytes<2>)
-
-OZO_PG_DEFINE_TYPE_AND_ARRAY(ozo::oid_t, "oid", OIDOID, OIDARRAYOID, bytes<4>)
-
-OZO_PG_DEFINE_TYPE_AND_ARRAY(double, "float8", FLOAT8OID, 1022, bytes<8>)
-OZO_PG_DEFINE_TYPE_AND_ARRAY(float, "float4", FLOAT4OID, FLOAT4ARRAYOID, bytes<4>)
-
-OZO_PG_DEFINE_TYPE_AND_ARRAY(std::string, "text", TEXTOID, TEXTARRAYOID, dynamic_size)
-OZO_PG_DEFINE_TYPE_AND_ARRAY(std::string_view, "text", TEXTOID, TEXTARRAYOID, dynamic_size)
-
-OZO_PG_DEFINE_TYPE_AND_ARRAY(ozo::pg::name, "name", NAMEOID, 1003, dynamic_size)
 
 namespace ozo {
 

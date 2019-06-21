@@ -1,7 +1,7 @@
 #include <ozo/io/send.h>
 #include <ozo/io/array.h>
 #include <ozo/ext/std.h>
-#include <ozo/ext/boost/uuid.h>
+#include <ozo/pg/types.h>
 
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>

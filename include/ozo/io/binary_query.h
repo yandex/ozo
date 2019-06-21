@@ -9,6 +9,7 @@
 #include <ozo/query.h>
 #include <ozo/type_traits.h>
 #include <ozo/optional.h>
+#include <ozo/pg/types.h>
 
 #include <boost/hana/for_each.hpp>
 #include <boost/hana/tuple.hpp>
