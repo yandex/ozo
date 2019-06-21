@@ -3,12 +3,12 @@
 Here are some examples of how to use OZO API.
 
 <!-- TOC -->
-- [How to](#how-to)
-  - [How To Make A Very Simple Request](#how-to-make-a-very-simple-request)
-  - [How To Handle Errors Properly](#how-to-handle-errors-properly)
-  - [How To Map Column Names to Column Numbers At Compile Time](#how-to-map-column-names-to-column-numbers-at-compile-time)
-  - [How To Determine Which Type Do I Need To Use For The PostgreSQL Type](#how-to-determine-which-type-do-i-need-to-use-for-the-postgresql-type)
-  - [How To Bind One More PostgreSQL Type For C++ Type With Existing Binding](#how-to-bind-one-more-postgresql-type-for-c-type-with-existing-binding)
+- [How to](#How-to)
+  - [How To Make A Very Simple Request](#How-To-Make-A-Very-Simple-Request)
+  - [How To Handle Error Properly](#How-To-Handle-Error-Properly)
+  - [How To Map Column Names to Column Numbers At Compile Time](#How-To-Map-Column-Names-to-Column-Numbers-At-Compile-Time)
+  - [How To Determine Which Type Do I Need To Use For The PostgreSQL Type](#How-To-Determine-Which-Type-Do-I-Need-To-Use-For-The-PostgreSQL-Type)
+  - [How To Bind One More PostgreSQL Type For C++ Type With Existing Binding](#How-To-Bind-One-More-PostgreSQL-Type-For-C-Type-With-Existing-Binding)
 
 ## How To Make A Very Simple Request
 
@@ -202,35 +202,34 @@ In this example, you can change the order of the fields in either `my_row` or yo
 
 ## How To Determine Which Type Do I Need To Use For The PostgreSQL Type
 
-It is a good question! Since we are using binary protocol and have serialization/deserialization system we also have a type system. It is easy and extandable. For build-in types you can look at [ozo/type_traits.h](../include/ozo/type_traits.h) for difinitions like:
+It is a good question! Since we are using binary protocol and have serialization/deserialization system we also have a type system. It is easy and extandable. For build-in types you can look at [ozo/pg/types](../include/ozo/pg/types) for difinitions like:
 
 ```cpp
-OZO_PG_DEFINE_TYPE(std::vector<char>, "bytea", BYTEAOID, dynamic_size)
+#include <ozo/pg/definitions.h>
+#include <string>
 
-OZO_PG_DEFINE_TYPE_AND_ARRAY(boost::uuids::uuid, "uuid", UUIDOID, 2951, bytes<16>)
+OZO_PG_BIND_TYPE(std::string, "text")
 ```
 
-`OZO_PG_DEFINE_TYPE(CPP_TYPE, PG_TYPE, OID, SIZE)` defines a C++ to built-in PostgreSQL type mapping. It's arguments are:
+`OZO_PG_BIND_TYPE(CPP_TYPE, PG_TYPE)` defines a C++ to built-in PostgreSQL type mapping. It's arguments are:
 
 * `CPP_TYPE` - C++ type.
 * `PG_TYPE` - PostgreSQL type name.
-* `OID` - type OID in PostgreSQL.
-* `SIZE` - type size which can be static for N bytes `bytes(N)`, or dynamic `dynamic_size`, like in this case.
 
-`OZO_PG_DEFINE_TYPE_AND_ARRAY(CPP_TYPE, PG_TYPE, OID, ARRAY_OID SIZE)` defines  C++ to built-in PostgreSQL type mapping with it's array. The current array represantation in OZO is std::vector, so for `uuid` type it will be `std::vector<uuid>`.
+It defines C++ to built-in PostgreSQL type mapping with it's array. The current array represantation in OZO are std::vector, std::array, std::list, so for `std::string` type it could be `std::vector<std::string>`, `std::array<std::string, N>`, `std::list<std::string>`.
 
-Since the mapping is ***C++** to **PostgreSQL***, you can extend it with your own types.
+Since the mapping is many **C++** types to one **PostgreSQL** type, you can always map another C++ type as PostgreSQL type.
 
-E.g. we have a `text` type definition like:
+E.g. we have an in-library `text` type definition like:
 
 ```cpp
-OZO_PG_DEFINE_TYPE_AND_ARRAY(std::string, "text", TEXTOID, TEXTARRAYOID, dynamic_size)
+OZO_PG_BIND_TYPE(std::string, "text")
 ```
 
 You have your own brilliant string representation `Stroka` compatible with `const char* data(const Stroka&)` and `const char* size(const Stroka&)` functions (it is needed to use default introspection mechanisms). It can be included in type system and used as `text` representation like this:
 
 ```cpp
-OZO_PG_DEFINE_TYPE_AND_ARRAY(Stroka, "text", TEXTOID, TEXTARRAYOID, dynamic_size)
+OZO_PG_BIND_TYPE(Stroka, "text")
 ```
 
 Now you can get `text` into `Stroka` type, and put `Stroka` object like text in queries.
@@ -246,7 +245,7 @@ E.g. alias and definition for `bytea` type may looks like this:
 ```cpp
 OZO_STRONG_TYPEDEF(std::string, bytea)
 //...
-OZO_PG_DEFINE_TYPE_AND_ARRAY(bytea, "bytea", BYTEAOID, 1001, dynamic_size)
+OZO_PG_BIND_TYPE(bytea, "bytea")
 ```
 
 You can access for the underlying type via conversion operator or `get()` method:

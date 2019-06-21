@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ozo/type_traits.h>
+#include <ozo/pg/definitions.h>
 #include <tuple>
 
 /**
@@ -18,12 +18,10 @@
 namespace ozo::definitions {
 
 template <typename ...Ts>
-struct type<std::tuple<Ts...>> :
-    detail::type_definition<decltype("record"_s), oid_constant<RECORDOID>>{};
+struct type<std::tuple<Ts...>> : pg::type_definition<decltype("record"_s)>{};
 
 template <typename ...Ts>
-struct array<std::tuple<Ts...>> :
-    detail::array_definition<std::tuple<Ts...>, oid_constant<RECORDARRAYOID>>{};
+struct array<std::tuple<Ts...>> : pg::array_definition<decltype("record"_s)>{};
 
 } // namespace ozo::definitions
 

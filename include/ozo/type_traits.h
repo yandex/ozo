@@ -1,6 +1,5 @@
 #pragma once
 
-#include <ozo/detail/pg_type.h>
 #include <ozo/detail/float.h>
 #include <ozo/core/strong_typedef.h>
 #include <ozo/core/nullable.h>
@@ -337,7 +336,6 @@ using array_definition = type_definition<
 } // namespace detail
 } // namespace ozo
 
-
 #define OZO_PG_DEFINE_TYPE_(Type, Name, OidType, Size) \
     namespace ozo::definitions {\
     template <>\
@@ -363,13 +361,14 @@ using array_definition = type_definition<
     OZO_PG_DEFINE_TYPE_ARRAY_(Type, ArrayOidType)
 
 /**
- * @brief Helper macro to define type mapping
- * @ingroup group-type_system-mapping
+ * @brief [[DEPRECATED]] Helper macro to define type mapping
+ *
  * In general type mapping is provided via `ozo::definitions::type` and
  * `ozo::definitions::array` specialization.
  * To reduce the boilerplate code the macro exists.
  *
- * @note This macro can be called in the global namespace only
+ * @note This macro is deprecated, use #OZO_PG_BIND_TYPE instead.
+ * This macro should be called in the global namespace only.
  *
  * @param Type --- C++ type to be mapped to database type
  * @param Name --- string with name of database type
@@ -378,16 +377,7 @@ using array_definition = type_definition<
  * @param Size --- `bytes<N>` for fixed-size type (like integer, bigint and so on),
  * there N - size of the type in database, `dynamic_type` for dynamic size types (like `text`
  * `bytea` and so on)
- *
- * ### Example
- *
- * E.g. a definition of `uuid` type looks like this:
-@code
-OZO_PG_DEFINE_TYPE_AND_ARRAY(boost::uuids::uuid, "uuid", UUIDOID, 2951, bytes<16>)
-@endcode
-
-@sa OZO_PG_DEFINE_CUSTOM_TYPE
-
+ * @ingroup group-type_system-mapping
  */
 #ifdef OZO_DOCUMENTATION
 #define OZO_PG_DEFINE_TYPE_AND_ARRAY(Type, Name, Oid, ArrayOid, Size)
@@ -398,7 +388,7 @@ OZO_PG_DEFINE_TYPE_AND_ARRAY(boost::uuids::uuid, "uuid", UUIDOID, 2951, bytes<16
 
 /**
  * @brief Helper macro to define custom type mapping
- * @ingroup group-type_system-mapping
+ *
  * In general type mapping is provided via `ozo::definitions::type` and
  * `ozo::definitions::array` specialization.
  *
@@ -413,7 +403,7 @@ OZO_PG_DEFINE_TYPE_AND_ARRAY(boost::uuids::uuid, "uuid", UUIDOID, 2951, bytes<16
  * ### Example
  *
  * Definition of user defined composite type may look like this:
-@code
+ * @code
 BOOST_FUSION_DEFINE_STRUCT((smtp), message,
     (std::int64_t, id)
     (std::string, from)
@@ -425,9 +415,9 @@ BOOST_FUSION_DEFINE_STRUCT((smtp), message,
 //...
 
 OZO_PG_DEFINE_CUSTOM_TYPE(smtp::message, "code.message")
-@endcode
-
-@sa OZO_PG_DEFINE_TYPE_AND_ARRAY
+ * @endcode
+ * @sa OZO_PG_BIND_TYPE
+ * @ingroup group-type_system-mapping
  */
 #ifdef OZO_DOCUMENTATION
 #define OZO_PG_DEFINE_CUSTOM_TYPE(Type, Name [, Size])
@@ -527,7 +517,7 @@ struct custom_type;
 //...
 
 // Providing type information and corresponding database type
-OZO_PG_DEFINE_TYPE_AND_ARRAY(custom_type, "code.custom_type", null_oid, null_oid, dynamic_size)
+OZO_PG_DEFINE_CUSTOM_TYPE(custom_type, "code.custom_type")
 
 //...
 // Creating ConnectionSource for futher requests to a database

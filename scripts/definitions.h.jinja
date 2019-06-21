@@ -1,0 +1,116 @@
+#pragma once
+
+//
+// WARNING!!! THIS FILE WAS GENERATED. DO NOT MODIFY IT.
+//
+// This file contains information about embedded PostgreSQL types.
+//     Generated from: "{{src}}".
+//
+
+#include <ozo/type_traits.h>
+
+#include <boost/hana/string.hpp>
+
+/**
+ * @brief Helper macro to define type mapping between C++ type and PostgreSQL type
+ *
+ * In general type mapping is provided via `ozo::definitions::type` and
+ * `ozo::definitions::array` specialization. The library has all the necessary information
+ * (like OID, size and so on) about built-in types of PostgreSQL. To make C++ types binding
+ * easer and reduce a boilerplate code the macro exists.
+ *
+ * @note This macro should be called in the global namespace only
+ *
+ * @param CppType --- C++ type to be mapped to database type
+ * @param PgTypeName --- string with name of database type
+ *
+ * ### Example
+ *
+ * E.g. a definition of `uuid` type looks like this:
+@code
+OZO_PG_BIND_TYPE(boost::uuids::uuid, "uuid")
+@endcode
+ *
+ * @sa OZO_PG_DEFINE_CUSTOM_TYPE
+ * @ingroup group-type_system-mapping
+ */
+#ifdef OZO_DOCUMENTATION
+#define OZO_PG_BIND_TYPE(CppType, PgTypeName)
+#else
+#define OZO_PG_BIND_TYPE(CppType, PgTypeName) \
+    namespace ozo::definitions {\
+    template <>\
+    struct type<CppType> : ozo::pg::type_definition<decltype(PgTypeName##_s)> {\
+        static_assert(std::is_same_v<typename type::size, dynamic_size>\
+            || type::size::value == null_state_size\
+            || static_cast<size_type>(sizeof(CppType)) == type::size::value,\
+            #CppType " type size does not match to declared size");\
+    };\
+    template <>\
+    struct array<CppType> : ozo::pg::array_definition<decltype(PgTypeName##_s)>{};\
+    }
+#endif
+
+namespace ozo::pg {
+
+namespace hana = boost::hana;
+using namespace hana::literals;
+
+template <typename Name>
+struct type_definition {
+    static_assert(std::is_void_v<Name>,
+    "Unknown PostgreSQL built-in type, should be completely defined "
+    "via ozo::definitions::type specialization.");
+};
+
+template <typename Name, typename = hana::when<true>>
+struct array_definition {};
+
+template <typename Name>
+struct array_definition<Name, hana::when<
+        !std::is_void_v<typename type_definition<Name>::array_oid>>> {
+    using oid = typename type_definition<Name>::array_oid;
+    using size = dynamic_size;
+    using name = decltype(typename type_definition<Name>::name{} + "[]"_s);
+    using value_type = typename type_definition<Name>::name;
+};
+
+///! Null type
+template <>
+struct type_definition<decltype("null"_s)> {
+    using oid = null_oid_t;
+    using size = decltype(null_state_size);
+    using name = decltype("null"_s);
+};
+
+{% set dynamic_sizes = ['NAMEDATALEN', '-1', '-2'] %}
+{% set ignore_types = ['pg_ddl_command', 'internal'] %}
+{% for entry in entries.values() %}
+{%    if entry.typname not in ignore_types %}
+{%        if entry.descr %}
+///! {{entry.descr}}
+{%        endif %}
+{%        set is_array = entry.typelem and entries[entry.typelem].typarray == entry.typname %}
+{%        if is_array %}
+{%            set type_definition = 'array_definition' %}
+{%            set typname = entry.typelem %}
+{%        else %}
+{%            set type_definition = 'type_definition' %}
+{%            set typname = entry.typname %}
+{%        endif %}
+template <>
+struct {{type_definition}}<decltype("{{typname}}"_s)> {
+    using oid = oid_constant<{{entry.oid}}>;
+{% if entry.array_type_oid %}
+    using array_oid = oid_constant<{{entry.array_type_oid}}>;
+{% endif %}
+{% if entry.typelem %}
+    using value_type = decltype("{{entry.typelem}}"_s);
+{% endif %}
+    using size = {% if entry.typlen in dynamic_sizes %}dynamic_size{% else %}bytes<{{entry.typlen}}>{% endif %};
+    using name = decltype("{{entry.typname}}"_s);
+};
+
+{%     endif %}
+{% endfor %}
+} // namespace ozo::pg

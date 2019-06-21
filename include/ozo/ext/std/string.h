@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ozo/type_traits.h>
+#include <ozo/pg/definitions.h>
 #include <string>
 
 /**
@@ -15,7 +15,7 @@
  * `std::string` is mapped as `text` PostgreSQL type.
  */
 
-OZO_PG_DEFINE_TYPE_AND_ARRAY(std::string, "text", TEXTOID, TEXTARRAYOID, dynamic_size)
+OZO_PG_BIND_TYPE(std::string, "text")
 
 /**
  * @defgroup group-ext-std-string_view std::string_view
@@ -30,4 +30,4 @@ OZO_PG_DEFINE_TYPE_AND_ARRAY(std::string, "text", TEXTOID, TEXTARRAYOID, dynamic
  * @note It can be used as a query parameter only!
  */
 
-OZO_PG_DEFINE_TYPE_AND_ARRAY(std::string_view, "text", TEXTOID, TEXTARRAYOID, dynamic_size)
+OZO_PG_BIND_TYPE(std::string_view, "text")

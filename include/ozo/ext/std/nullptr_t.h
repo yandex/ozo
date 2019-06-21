@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ozo/type_traits.h>
+#include <ozo/pg/definitions.h>
 #include <ozo/io/send.h>
 #include <ozo/detail/functional.h>
 
@@ -38,4 +38,4 @@ struct send_impl<std::nullptr_t> {
 ///@}
 } // namespace ozo
 
-OZO_PG_DEFINE_TYPE(std::nullptr_t, "null", null_oid, decltype(null_state_size))
+OZO_PG_BIND_TYPE(std::nullptr_t, "null")

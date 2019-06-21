@@ -1,9 +1,9 @@
 #pragma once
 
-#include <ozo/type_traits.h>
+#include <ozo/pg/definitions.h>
 
 namespace ozo::pg {
 using oid = ozo::oid_t;
 }
 
-OZO_PG_DEFINE_TYPE_AND_ARRAY(ozo::pg::oid, "oid", OIDOID, OIDARRAYOID, bytes<4>)
+OZO_PG_BIND_TYPE(ozo::pg::oid, "oid")
