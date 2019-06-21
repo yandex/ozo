@@ -2,6 +2,7 @@
 
 #include <ozo/optional.h>
 #include <ozo/type_traits.h>
+#include <ozo/pg/types.h>
 
 #include <boost/range/algorithm/sort.hpp>
 #include <boost/range/algorithm/transform.hpp>

@@ -1,6 +1,8 @@
 #include "result_mock.h"
 #include <ozo/ext/std/tuple.h>
 #include <ozo/io/composite.h>
+#include <ozo/pg/types/integer.h>
+#include <ozo/pg/types/text.h>
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
