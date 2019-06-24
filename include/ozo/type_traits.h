@@ -143,20 +143,35 @@ struct array;
 
 namespace detail {
 
-template <typename T, typename = std::void_t<>>
-struct get_type_traits { using type = void; };
+template <typename Traits, typename = std::void_t<>>
+struct is_type_traits_defined : std::false_type {};
 
 template <typename T>
-struct get_type_traits<T, std::void_t<typename definitions::type<T>::name>> {
-    using type = definitions::type<T>;
-};
+struct is_type_traits_defined<T, Require<
+    !std::is_void_v<typename T::name>
+>> : std::true_type {};
 
 template <typename T>
-struct get_type_traits<T, Require<Array<T>>> {
-    using type = definitions::array<unwrap_type<typename T::value_type>>;
-};
-
+inline auto get_type_traits(const T&) {
+    using type = unwrap_type<T>;
+    if constexpr (Array<type>) {
+        using value_type = unwrap_type<typename type::value_type>;
+        if constexpr (is_type_traits_defined<definitions::array<value_type>>::value) {
+            return definitions::array<value_type>{};
+        } else {
+            return;
+        }
+    } else {
+        if constexpr (is_type_traits_defined<definitions::type<type>>::value) {
+            return definitions::type<type>{};
+        } else {
+            return;
+        }
+    }
 }
+
+} // namespace detail
+
 /**
  * @brief Type traits template forward declaration.
  * @ingroup group-type_system-types
@@ -180,7 +195,7 @@ struct type_traits {
 #endif
 
 template <typename T>
-using type_traits = typename detail::get_type_traits<unwrap_type<T>>::type;
+using type_traits = decltype(detail::get_type_traits(std::declval<T>()));
 
 /**
  * @brief Condition indicates if type has corresponding type traits for PostgreSQL
