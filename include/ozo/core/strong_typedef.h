@@ -98,6 +98,5 @@ assert(std::addressof(base) == std::addressof(b.get()));
 #define OZO_STRONG_TYPEDEF(base, type)
 #else
 #define OZO_STRONG_TYPEDEF(base, type)\
-    struct type##_strong_typedef_tag;\
-    using type = ozo::strong_typedef_wrapper<base, type##_strong_typedef_tag>;
+    using type = ozo::strong_typedef_wrapper<base, class type##_strong_typedef_tag>;
 #endif
