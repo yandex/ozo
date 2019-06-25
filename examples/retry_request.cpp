@@ -10,6 +10,16 @@
 
 namespace asio = boost::asio;
 
+const auto print_error = [](ozo::error_code ec, const auto& conn) {
+    std::cout << "error code message: \"" << ec.message();
+    // Here we should check if the connection is in null state to avoid UB.
+    if (!ozo::is_null_recursive(conn)) {
+        std::cout << "\", libpq error message: \"" << ozo::error_message(conn)
+            << "\", error context: \"" << ozo::get_error_context(conn);
+    }
+    std::cout << "\"" << std::endl;
+};
+
 int main(int argc, char **argv) {
     std::cout << "OZO request example" << std::endl;
 
@@ -27,25 +37,23 @@ int main(int argc, char **argv) {
         ozo::error_code ec;
         using namespace ozo::literals;
         using namespace std::chrono_literals;
-        // Here we will retry operation no more than 3 times on any error
+        namespace failover = ozo::failover;
+        using retry_options = failover::retry_options;
+        // Here we will retry operation no more than 3 times on connection errors
         // Each try will have its own time constraint
         //   1st try will be limited by 1/3 sec.
         //   2nd try will be limited by  (1 - t(1st try)) / 2 sec, which is not less than 1/3 sec.
         //   3rd try will be limited by  1 - (t(1st try) + t(2nd try)), which is not less than 1/3 sec too.
-        const auto connection = ozo::request[3*ozo::failover::retry(ozo::errc::connection_error)]
-                (conn_info[io], "SELECT 1"_SQL, 1s, ozo::into(result), yield[ec]);
+        auto retry = 3*failover::retry(ozo::errc::connection_error)
+        // We want to print out information about retries
+                        .set(retry_options::on_retry, print_error);
+        // Here a request call with retry fallback strategy
+        auto conn = ozo::request[retry](conn_info[io], "SELECT 1"_SQL, 1s, ozo::into(result), yield[ec]);
 
-        // When request is completed we check is there an error. This example should not produce any errors
-        // if there are no problems with target database, network or permissions for given user in connection
-        // string.
+        // When request is completed we check is there an error.
         if (ec) {
-            std::cout << "Request failed with error: " << ec.message();
-            // Here we should check if the connection is in null state to avoid UB.
-            if (!ozo::is_null_recursive(connection)) {
-                std::cout << ", libpq error message: " << ozo::error_message(connection)
-                    << ", error context: " << ozo::get_error_context(connection);
-            }
-            std::cout << std::endl;
+            std::cout << "Request failed; ";
+            print_error(ec, conn);
             return;
         }
 
