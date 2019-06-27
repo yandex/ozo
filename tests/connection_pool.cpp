@@ -193,6 +193,17 @@ struct pooled_connection_wrapper : Test {
 
 using ozo::error_code;
 
+TEST_F(pooled_connection_wrapper, should_be_copyable_with_non_copyable_handler_for_resource_pool_compatibility) {
+    auto h = ozo::impl::wrap_pooled_connection_handler(
+            io,
+            connection_source{&provider_mock},
+            ozo::none,
+            [&, attr = std::unique_ptr<int>()](error_code ec, auto& conn) mutable { callback_mock.call(ec, conn); }
+        );
+
+    EXPECT_TRUE(std::is_copy_constructible_v<decltype(h)>);
+}
+
 TEST_F(pooled_connection_wrapper, should_invoke_handler_with_error_if_error_is_passed) {
     auto h = ozo::impl::wrap_pooled_connection_handler(
             io,
