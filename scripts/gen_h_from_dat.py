@@ -8,6 +8,7 @@
 import pyparsing as pp
 import sys
 from jinja2 import Template, Environment
+from collections import OrderedDict
 
 # define grammar
 singleLineComment = "#" + pp.restOfLine
@@ -21,5 +22,5 @@ env = Environment(trim_blocks=True)
 tmpl = env.from_string(open(sys.argv[1], "r").read())
 
 entries = [ dict([(x[0], x[1]) for x in entry]) for entry in bnf.parseFile( sys.argv[2] )]
-entries = dict([(x["typname"], x) for x in entries])
+entries = OrderedDict(sorted(dict([(x["typname"], x) for x in entries]).items()))
 print (tmpl.render(src=sys.argv[2], entries=entries))

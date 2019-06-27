@@ -1,4 +1,6 @@
 #pragma once
+{% set dynamic_sizes = ['NAMEDATALEN', '-1', '-2'] %}
+{% set ignore_types = ['pg_ddl_command', 'internal'] %}
 
 //
 // WARNING!!! THIS FILE WAS GENERATED. DO NOT MODIFY IT.
@@ -26,12 +28,27 @@
  *
  * ### Example
  *
- * E.g. a definition of `uuid` type looks like this:
+ * E.g. a definition of `std::string` as PostgreSQL `text` type may look like this:
 @code
-OZO_PG_BIND_TYPE(boost::uuids::uuid, "uuid")
+#include <ozo/pg/definitions.h>
+#include <string>
+
+OZO_PG_BIND_TYPE(std::string, "text")
 @endcode
  *
  * @sa OZO_PG_DEFINE_CUSTOM_TYPE
+ *
+ * ### Known Types
+ *
+ * | Type | Size | Has Array | Short Description |
+ * |------|------|-----------|-------------------|
+ * | null | none | no        | OZO pseudo-type definition for null representation |
+{% for entry in entries.values() %}
+{%    set is_array = entry.typelem and entries[entry.typelem].typarray == entry.typname %}
+{%    if entry.typname not in ignore_types and not is_array %}
+ * | {{entry.typname}} | {% if entry.typlen in dynamic_sizes %}dynamic size{% else %}{{entry.typlen}} bytes{% endif %} | {% if entry.array_type_oid or entry.typarray %}yes{% else %}no{% endif %} | {% if entry.descr %}{{entry.descr}}{% endif %} |
+{%     endif %}
+{% endfor %}
  * @ingroup group-type_system-mapping
  */
 #ifdef OZO_DOCUMENTATION
@@ -75,7 +92,6 @@ struct array_definition<Name, hana::when<
     using value_type = typename type_definition<Name>::name;
 };
 
-///! Null type
 template <>
 struct type_definition<decltype("null"_s)> {
     using oid = null_oid_t;
@@ -83,13 +99,8 @@ struct type_definition<decltype("null"_s)> {
     using name = decltype("null"_s);
 };
 
-{% set dynamic_sizes = ['NAMEDATALEN', '-1', '-2'] %}
-{% set ignore_types = ['pg_ddl_command', 'internal'] %}
 {% for entry in entries.values() %}
 {%    if entry.typname not in ignore_types %}
-{%        if entry.descr %}
-///! {{entry.descr}}
-{%        endif %}
 {%        set is_array = entry.typelem and entries[entry.typelem].typarray == entry.typname %}
 {%        if is_array %}
 {%            set type_definition = 'array_definition' %}
