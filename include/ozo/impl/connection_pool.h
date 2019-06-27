@@ -5,6 +5,7 @@
 #include <yamail/resource_pool/async/pool.hpp>
 #include <ozo/asio.h>
 #include <ozo/ext/std/shared_ptr.h>
+#include <ozo/detail/make_copyable.h>
 
 namespace ozo::impl {
 
@@ -68,7 +69,7 @@ template <typename IoContext, typename Source, typename Handler, typename TimeCo
 struct pooled_connection_wrapper {
     IoContext& io_;
     Source source_;
-    Handler handler_;
+    detail::make_copyable_t<Handler> handler_;
     TimeConstraint time_constrain_;
 
     using connection = pooled_connection<Source>;
