@@ -189,4 +189,13 @@ TEST_F(send, with_boost_uuid_should_store_it_as_is) {
     }));
 }
 
+TEST_F(send, with_std_chrono_time_point_should_store_as_microseconds) {
+    const std::chrono::system_clock::time_point time_point{};
+    ozo::send(os, oid_map, time_point);
+    EXPECT_EQ(buffer, std::vector<char>({
+        char(0xFF), char(0xFC), char(0xA2), char(0xFE),
+        char(0xC4), char(0xC8), char(0x20), char(0x00),
+    }));
+}
+
 } // namespace

@@ -44,6 +44,17 @@ TEST(result, should_convert_into_tuple_integer_and_text) {
     EXPECT_EQ(std::get<1>(r[0]), "2");
 }
 
+TEST(result, should_convert_into_tuple_time_point_and_text) {
+    auto result = execute_query("select '2000-01-01 00:00:00'::timestamp, '2';");
+    auto oid_map = ozo::empty_oid_map();
+    std::vector<std::tuple<std::chrono::system_clock::time_point, std::string>> r;
+    ozo::recv_result(result, oid_map, std::back_inserter(r));
+
+    ASSERT_EQ(r.size(), 1u);
+    EXPECT_EQ(std::get<0>(r[0]), ozo::detail::epoch);
+    EXPECT_EQ(std::get<1>(r[0]), "2");
+}
+
 TEST(result, should_convert_into_tuple_float_and_text) {
     auto result = execute_query("select 42.13::float4, 'text';");
     auto oid_map = ozo::empty_oid_map();
