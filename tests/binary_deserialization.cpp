@@ -759,4 +759,21 @@ TEST_F(recv, should_convert_UUIDOID_to_uuid) {
     EXPECT_EQ(result, uuid);
 }
 
+TEST_F(recv, should_convert_TIMESTAMPOID_to_time_point) {
+    const char bytes[] = {
+        char(0xFF), char(0xFC), char(0xA2), char(0xFE),
+        char(0xC4), char(0xC8), char(0x20), char(0x00),
+    };
+
+    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(1114));
+    EXPECT_CALL(mock, get_value(_, _)).WillRepeatedly(Return(bytes));
+    EXPECT_CALL(mock, get_length(_, _)).WillRepeatedly(Return(16));
+    EXPECT_CALL(mock, get_isnull(_, _)).WillRepeatedly(Return(false));
+
+    std::chrono::system_clock::time_point result{};
+    std::chrono::system_clock::time_point expected{};
+    ozo::recv(value, oid_map, result);
+    EXPECT_EQ(result, expected);
+}
+
 } // namespace

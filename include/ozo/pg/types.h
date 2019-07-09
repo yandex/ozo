@@ -19,3 +19,4 @@
 #include <ozo/pg/types/oid.h>
 #include <ozo/pg/types/text.h>
 #include <ozo/pg/types/uuid.h>
+#include <ozo/pg/types/timestamp.h>
