@@ -36,6 +36,8 @@ enum class transaction_status {
  * @throws std::invalid_argument --- in case of unsupported value returned by libpq
  * function. It is better to use `-Werror` compiler flag to prevent such possability by
  * checking enumeration coverage in the `switch-case` statement.
+ *
+ * @ingroup group-connection-functions
  */
 template <typename Connection>
 inline transaction_status get_transaction_status(Connection&& conn);

@@ -437,7 +437,8 @@ TEST(check_for_duplicates, should_not_throw_for_matching_declarations_and_defini
 
 TEST(query_part_visitor, should_append_text_as_is_forquery_text_part) {
     query_description result;
-    query_part_visitor<query_with_one_parameter> visitor(result);
+    const query_with_one_parameter query;
+    auto visitor = query_part_visitor(query, result);
     visitor(query_text_part {"foo"});
     visitor(query_text_part {"bar"});
     EXPECT_EQ(result.text, "foobar");
@@ -445,40 +446,46 @@ TEST(query_part_visitor, should_append_text_as_is_forquery_text_part) {
 
 TEST(query_part_visitor, should_append_libpq_placeholder_for_query_with_tuple_parameters_according_to_order) {
     query_description result;
-    query_part_visitor<query_with_one_parameter> visitor(result);
+    const query_with_one_parameter query;
+    auto visitor = query_part_visitor(query, result);
     visitor(query_parameter_name {"0"});
     EXPECT_EQ(result.text, "$1");
 }
 
 TEST(query_part_visitor, should_append_libpq_placeholder_for_query_with_struct_parameters_according_to_name) {
     query_description result;
-    query_part_visitor<query_with_struct_parameters> visitor(result);
+    const query_with_struct_parameters query;
+    auto visitor = query_part_visitor(query, result);
     visitor(query_parameter_name {"number"});
     EXPECT_EQ(result.text, "$2");
 }
 
 TEST(query_part_visitor, should_append_libpq_placeholder_for_query_with_non_default_constructible_struct_parameters_according_to_name) {
     query_description result;
-    query_part_visitor<query_with_non_default_constructible_struct_parameters> visitor(result);
+    const query_with_non_default_constructible_struct_parameters query;
+    auto visitor = query_part_visitor(query, result);
     visitor(query_parameter_name {"number"});
     EXPECT_EQ(result.text, "$2");
 }
 
 TEST(query_part_visitor, should_throw_for_greater_than_maximum_numeric_parameter) {
     query_description result;
-    query_part_visitor<query_with_one_parameter> visitor(result);
+    const query_with_one_parameter query;
+    auto visitor = query_part_visitor(query, result);
     EXPECT_THROW(visitor(query_parameter_name {"1"}), std::out_of_range);
 }
 
 TEST(query_part_visitor, should_throw_with_not_numeric_parameter_for_query_with_tuple_parameters) {
     query_description result;
-    query_part_visitor<query_with_one_parameter> visitor(result);
+    const query_with_one_parameter query;
+    auto visitor = query_part_visitor(query, result);
     EXPECT_THROW(visitor(query_parameter_name {"foo"}), std::invalid_argument);
 }
 
 TEST(query_part_visitor, should_throw_with_with_undeclared_named_parameter) {
     query_description result;
-    query_part_visitor<query_with_struct_parameters> visitor(result);
+    query_with_struct_parameters query;
+    auto visitor = query_part_visitor(query, result);
     EXPECT_THROW(visitor(query_parameter_name {"foo"}), std::invalid_argument);
 }
 
@@ -575,12 +582,6 @@ TEST(make_query_conf, should_return_two_descriptions_and_two_queries_for_two_des
             std::make_pair(std::string_view("query without parameters 2"), std::string_view("SELECT 2"))
         )
     );
-}
-
-
-TEST(get_query_name, should_return_std_string_view_of_static_field_name_for_query_type) {
-    EXPECT_EQ(ozo::get_query_name<query_without_parameters>(),
-              std::string_view("query without parameters"));
 }
 
 TEST(query_repository, should_be_default_constructible) {
