@@ -26,24 +26,61 @@
 
 namespace ozo {
 
-template <class QueryT>
-constexpr auto get_raw_query_name(const QueryT&) noexcept {
-    return QueryT::name;
+template <typename T, typename = hana::when<true>>
+struct typed_query_result {
+    using type = void;
+};
+
+template <typename T>
+using typed_query_result_t = typename typed_query_result<T>::type;
+
+template <typename T>
+struct typed_query_result<T, hana::when_valid<typename T::result_type>> {
+    using type = typename T::result_type;
+};
+
+template <typename T, typename = hana::when<true>>
+struct typed_query_name {
+    using type = void;
+};
+
+template <typename T>
+using typed_query_name_t = typename typed_query_name<T>::type;
+
+template <typename T>
+struct typed_query_name<T, hana::when_valid<decltype(T::name)>> {
+    using type = decltype(T::name);
+};
+
+template <typename T>
+struct typed_query_name<T, hana::when_valid<typename T::name_type>> {
+    using type = typename T::name_type;
+};
+
+template <typename T>
+struct typed_query_traits {
+    using name_type = typename typed_query_name<T>::type;
+    using parameters_type = typename T::parameters_type;
+    using result_type = typename typed_query_result<T>::type;
+};
+
+template <typename Query>
+constexpr typed_query_name_t<Query> get_raw_query_name(const Query&) noexcept {
+    static_assert(!std::is_void_v<typed_query_name_t<Query>>, "Query class has no name type");
+    static_assert(HanaString<typed_query_name_t<Query>>, "Query class name type should be boost::hana::string");
+    return {};
 }
 
-template <class QueryT>
-constexpr auto get_raw_query_name() noexcept {
-    return decltype(get_raw_query_name(std::declval<QueryT>())) {};
-}
+template <typename T, typename = hana::when<true>>
+struct get_query_name_impl {
+    constexpr static std::string_view apply (const T& query) noexcept {
+        return hana::to<const char*>(get_raw_query_name(query));
+    }
+};
 
-template <class QueryT>
-constexpr std::string_view get_query_name(const QueryT& query) noexcept {
-    return hana::to<const char*>(get_raw_query_name(query));
-}
-
-template <class QueryT>
-constexpr std::string_view get_query_name() noexcept {
-    return hana::to<const char*>(get_raw_query_name<QueryT>());
+template <class Query>
+constexpr std::string_view get_query_name(const Query& query) {
+    return get_query_name_impl<Query>::apply(query);
 }
 
 namespace detail {
@@ -317,15 +354,15 @@ struct query_description {
 template <class QueryT>
 class query_part_visitor {
 public:
-    query_part_visitor(detail::query_description& query_description)
-        : query_description(query_description) {}
+    query_part_visitor(const QueryT& query, detail::query_description& query_description)
+        : query(query), query_description(query_description) {}
 
     void operator ()(const query_text_part& value) {
         query_description.text += value.value;
     }
 
     void operator ()(const query_parameter_name& value) {
-        using parameters_type = typename QueryT::parameters_type;
+        using parameters_type = typename typed_query_traits<QueryT>::parameters_type;
         std::size_t number = 0;
         if constexpr (HasMembers<parameters_type>) {
             bool found = false;
@@ -338,7 +375,7 @@ public:
             });
             if (!found) {
                 throw std::invalid_argument(
-                    hana::to<const char*>("Parameter is not found in query \""_s + get_raw_query_name<QueryT>() + "\": "_s)
+                    hana::to<const char*>("Parameter is not found in query \""_s + get_raw_query_name(query) + "\": "_s)
                     + value.value
                 );
             }
@@ -346,7 +383,7 @@ public:
             if (!boost::conversion::try_lexical_convert(value.value, number)) {
                 throw std::invalid_argument(
                     hana::to<const char*>("Only valid numeric names supported for not adapted query parameters types,"_s
-                                          " but query \""_s + QueryT::name + "\" has parameter with name: "_s)
+                                          " but query \""_s + get_raw_query_name(query) + "\" has parameter with name: "_s)
                     + value.value
                 );
             }
@@ -361,6 +398,7 @@ public:
     }
 
 private:
+    const QueryT& query;
     detail::query_description& query_description;
 };
 
@@ -369,7 +407,7 @@ query_description make_query_description(const QueryT& query, const parsed_query
     query_description result;
     result.name = parsed.name;
     boost::for_each(parsed.text, [&] (const auto& part) {
-        query_part_visitor<std::decay_t<decltype(query)>> visitor(result);
+        auto visitor = query_part_visitor(query, result);
         boost::apply_visitor(visitor, part);
     });
     boost::trim(result.text);
@@ -443,7 +481,7 @@ public:
 
     template <class QueryT, class ... ParametersT,
         typename = Require<
-            std::is_same_v<typename QueryT::parameters_type,
+            std::is_same_v<typename typed_query_traits<QueryT>::parameters_type,
             std::tuple<std::decay_t<ParametersT> ...>>
         >
     >
@@ -452,9 +490,9 @@ public:
     }
 
     template <class QueryT>
-    auto make_query(const typename QueryT::parameters_type& parameters) const {
+    auto make_query(const typename typed_query_traits<QueryT>::parameters_type& parameters) const {
         const auto description = get_description<QueryT>();
-        if constexpr (detail::HasMembers<typename QueryT::parameters_type>) {
+        if constexpr (detail::HasMembers<typename typed_query_traits<QueryT>::parameters_type>) {
             return hana::unpack(
                 hana::members(parameters),
                 [&] (const auto& ... parameters) { return ozo::make_query(description, parameters ...); }
@@ -468,9 +506,9 @@ public:
     }
 
     template <class QueryT>
-    auto make_query(typename QueryT::parameters_type&& parameters) const {
+    auto make_query(typename typed_query_traits<QueryT>::parameters_type&& parameters) const {
         const auto description = get_description<QueryT>();
-        if constexpr (detail::HasMembers<typename QueryT::parameters_type>) {
+        if constexpr (detail::HasMembers<typename typed_query_traits<QueryT>::parameters_type>) {
             return hana::unpack(
                 hana::members(std::move(parameters)),
                 [&] (auto&& ... parameters) { return ozo::make_query(description, std::move(parameters) ...); }
