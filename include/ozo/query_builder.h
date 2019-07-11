@@ -179,10 +179,14 @@ constexpr auto operator +(query_element<LhsValueT, LhsTagT>&& lhs, RhsValueT&& r
 
 namespace literals {
 
+#ifdef __GNUG__
+
 template <class CharT, CharT ... c>
 constexpr auto operator "" _SQL() {
     return make_query_builder(hana::make_tuple(make_query_text(hana::string<c ...>())));
 }
+
+#endif /* __GNUG__ */
 
 } // namespace literals
 } // namespace ozo
