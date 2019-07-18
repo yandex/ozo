@@ -36,10 +36,12 @@ struct make_copyable {
         return asio::get_associated_allocator(*handler_);
     }
 
-    make_copyable(Handler&& handler) {
-        auto allocator = asio::get_associated_allocator(handler);
-        handler_ = std::allocate_shared<target_type>(allocator, std::move(handler));
-    }
+    make_copyable(Handler&& handler)
+    : make_copyable(std::allocator_arg, asio::get_associated_allocator(handler), std::move(handler)) {}
+
+    template <typename Allocator, typename ...Ts>
+    make_copyable(const std::allocator_arg_t&, const Allocator& alloc, Ts&& ...vs)
+    : handler_(std::allocate_shared<target_type>(alloc, std::forward<Ts>(vs)...)) {}
 
     template <typename ...Args>
     auto operator()(Args&& ...args) & {
