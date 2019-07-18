@@ -73,6 +73,7 @@ set(SOURCES
     failover/retry.cpp
     failover/strategy.cpp
     detail/deadline.cpp
+    detail/call_once.cpp
     main.cpp
 )
 
