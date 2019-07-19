@@ -3,6 +3,7 @@
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/executor.hpp>
 #include <boost/asio/strand.hpp>
+#include <boost/asio/steady_timer.hpp>
 
 namespace ozo {
 
@@ -46,6 +47,36 @@ using strand = typename strand_executor<std::decay_t<Executor>>::type;
 template <typename Executor>
 auto make_strand_executor(const Executor& ex) {
     return strand_executor<Executor>::get(ex);
+}
+
+template <typename ExecutionContext>
+struct operation_timer {
+    static_assert(std::is_same_v<ExecutionContext, operation_timer>,
+        "No operation_timer<> specialization found for specified type");
+};
+
+template <>
+struct operation_timer<asio::io_context> {
+    using type = asio::steady_timer;
+
+    template <typename TimeConstraint>
+    static type get(asio::io_context& io, TimeConstraint t) {
+        return type{io, t};
+    }
+
+    static type get(asio::io_context& io) {
+        return type{io};
+    }
+};
+
+template <typename ExecutionContext, typename TimeConstraint>
+inline auto get_operation_timer(ExecutionContext& ctx, TimeConstraint t) {
+    return operation_timer<ExecutionContext>::get(ctx, t);
+}
+
+template <typename ExecutionContext>
+inline auto get_operation_timer(ExecutionContext& ctx) {
+    return operation_timer<ExecutionContext>::get(ctx);
 }
 
 } // namespace detail

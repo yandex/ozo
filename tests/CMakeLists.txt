@@ -53,6 +53,7 @@ set(SOURCES
     io/size_of.cpp
     failover/retry.cpp
     failover/strategy.cpp
+    detail/deadline.cpp
     main.cpp
 )
 
