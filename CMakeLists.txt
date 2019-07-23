@@ -10,6 +10,12 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/mo
 find_package(Boost COMPONENTS coroutine context system thread atomic REQUIRED)
 find_package(PostgreSQL REQUIRED)
 
+# Try and find provided resource pool (e.g. from conan), default to vendored version otherwise
+find_package(resource_pool 0.1.0)
+if (NOT resource_pool_FOUND)
+    add_subdirectory(contrib)
+endif()
+
 option(OZO_BUILD_TESTS "Enable tests build" OFF)
 option(OZO_COVERAGE "Enable tests coverage" OFF)
 option(OZO_BUILD_EXAMPLES "Enable examples build" OFF)
@@ -25,13 +31,6 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" OR "${CMAKE_CXX_COMPILER_ID}" ST
     target_compile_options(ozo INTERFACE -Wno-gnu-string-literal-operator-template -Wno-gnu-zero-variadic-macro-arguments)
 endif()
 
-# note: this should ideally be using a target to link
-#       to, but resource_pool does not set a target
-#       in its CMakeLists.txt
-target_include_directories(ozo INTERFACE
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/contrib/resource_pool/include>
-    $<INSTALL_INTERFACE:include/yamail>
-)
 
 target_include_directories(ozo INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -43,6 +42,7 @@ target_compile_definitions(ozo INTERFACE -DBOOST_HANA_CONFIG_ENABLE_STRING_UDL)
 
 target_link_libraries(ozo INTERFACE Boost::coroutine)
 target_link_libraries(ozo INTERFACE PostgreSQL::PostgreSQL)
+target_link_libraries(ozo INTERFACE elsid::resource_pool)
 
 install(
     DIRECTORY   include/ozo
@@ -84,8 +84,6 @@ install(
     DESTINATION
         lib/cmake/ozo
 )
-
-add_subdirectory(contrib)
 
 if(OZO_BUILD_TESTS)
     enable_testing()
