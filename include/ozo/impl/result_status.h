@@ -4,7 +4,7 @@
 
 namespace ozo::impl {
 
-inline const char* get_result_status_name(ExecStatusType status) {
+inline const char* get_result_status_name(ExecStatusType status) noexcept {
 #define __OZO_CASE_RETURN(item) case item: return #item;
     switch (status) {
         __OZO_CASE_RETURN(PGRES_SINGLE_TUPLE)
