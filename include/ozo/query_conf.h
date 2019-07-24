@@ -466,11 +466,11 @@ public:
     query_repository(std::shared_ptr<detail::query_conf> query_conf)
         : query_conf(std::move(query_conf)) {}
 
-    bool is_initialized() const {
+    bool is_initialized() const noexcept {
         return query_conf != nullptr;
     }
 
-    operator bool() const {
+    operator bool() const noexcept {
         return is_initialized();
     }
 
