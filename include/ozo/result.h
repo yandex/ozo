@@ -367,11 +367,11 @@ public:
         return (*this)[i];
     }
 
-    handle_type& handle() {
+    handle_type& handle() noexcept {
         return res_;
     }
 
-    const handle_type& handle() const {
+    const handle_type& handle() const noexcept {
         return res_;
     }
 

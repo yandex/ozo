@@ -260,7 +260,7 @@ public:
         }
     }
 
-    std::vector<parsed_query>& get_queries() {
+    std::vector<parsed_query>& get_queries() noexcept {
         return queries;
     }
 
