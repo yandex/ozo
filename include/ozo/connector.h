@@ -35,9 +35,9 @@ public:
         ozo::async_get_connection(std::move(target()), timeout(t), std::forward<Handler>(handler));
     }
 
-    target_type& target() & { return target_; }
-    target_type& target() && { return target_; }
-    const target_type& target() const & { return target_; }
+    target_type& target() & noexcept { return target_; }
+    target_type& target() && noexcept { return target_; }
+    const target_type& target() const & noexcept { return target_; }
     constexpr duration timeout() const {return timeout_;}
     constexpr duration timeout(none_t) const {return timeout_;}
     constexpr duration timeout(time_traits::time_point t) const {return std::min(timeout(), time_left(t));}
