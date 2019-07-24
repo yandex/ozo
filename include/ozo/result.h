@@ -99,7 +99,7 @@ private:
 };
 
 template <typename T, typename Result>
-inline const T* data(const value<Result>& v) {
+inline const T* data(const value<Result>& v) noexcept {
     return reinterpret_cast<const T*>(v.data());
 }
 
