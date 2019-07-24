@@ -65,7 +65,7 @@ TEST_F(request_oid_map_handler, should_request_for_oid_when_oid_map_is_not_empty
 
     EXPECT_CALL(connection, request_oid_map()).WillOnce(Return());
 
-    ozo::impl::make_request_oid_map_handler<decltype(conn)>(wrap(callback))(error_code{}, std::move(conn));
+    ozo::impl::apply_oid_map_request<decltype(conn)>(wrap(callback))(error_code{}, std::move(conn));
 }
 
 TEST_F(request_oid_map_handler, should_not_request_for_oid_when_oid_map_is_not_empty_but_error_occured) {
@@ -75,16 +75,16 @@ TEST_F(request_oid_map_handler, should_not_request_for_oid_when_oid_map_is_not_e
     EXPECT_CALL(callback, call(error_code{error::error}, _))
         .WillOnce(Return());
 
-    ozo::impl::make_request_oid_map_handler<decltype(conn)>(wrap(callback))(error::error, std::move(conn));
+    ozo::impl::apply_oid_map_request<decltype(conn)>(wrap(callback))(error::error, std::move(conn));
 }
 
-TEST_F(request_oid_map_handler, should_not_request_for_oid_when_oid_map_ist_empty) {
+TEST_F(request_oid_map_handler, should_not_request_for_oid_when_oid_map_is_empty) {
     auto conn = make_connection(ozo::register_types<>());
     auto callback = make_callback(conn);
 
     EXPECT_CALL(callback, call(error_code{}, _)).WillOnce(Return());
 
-    ozo::impl::make_request_oid_map_handler<decltype(conn)>(wrap(callback))(error_code{}, std::move(conn));
+    ozo::impl::apply_oid_map_request<decltype(conn)>(wrap(callback))(error_code{}, std::move(conn));
 }
 
 } // namespace

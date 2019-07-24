@@ -52,4 +52,21 @@ void set_io_timeout(T&& conn, const Handler& h, TimeConstraint t) {
     }
 }
 
+template <typename Socket, typename Allocator>
+struct cancel_socket {
+    Socket& socket_;
+    Allocator allocator_;
+
+    cancel_socket(Socket& socket, const Allocator& allocator)
+    : socket_(socket), allocator_(allocator) {}
+
+    void operator() (error_code ec) const {
+        socket_.cancel(ec);
+    }
+
+    using allocator_type = Allocator;
+
+    allocator_type get_allocator() const noexcept { return allocator_;}
+};
+
 } // namespace ozo::detail

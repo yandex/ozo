@@ -30,7 +30,8 @@ struct fixture {
     StrictMock<strand_executor_service_gmock> strand_service{};
     StrictMock<stream_descriptor_gmock> socket{};
     StrictMock<steady_timer_gmock> timer{};
-    io_context io {executor, strand_service};
+    StrictMock<steady_timer_service_mock> timer_service;
+    io_context io {executor, strand_service, timer_service};
     decltype(make_connection(connection, io, socket, timer)) conn =
             make_connection(connection, io, socket, timer);
     StrictMock<executor_gmock> callback_executor{};
@@ -61,11 +62,9 @@ TEST_F(async_connect_op, should_start_connection_assign_socket_and_wait_for_comp
 
     EXPECT_CALL(f.connection, start_connection("conninfo")).WillOnce(Return(error_code{}));
     EXPECT_CALL(f.connection, assign_socket()).WillOnce(Return(error_code{}));
-    EXPECT_CALL(f.timer, expires_after(time_traits::duration(42))).WillOnce(Return(0));
-    EXPECT_CALL(f.timer, async_wait(_)).WillOnce(Return());
     EXPECT_CALL(f.socket, async_write_some(_)).WillOnce(Return());
 
-    ozo::impl::make_async_connect_op(f.context).perform("conninfo", time_traits::duration(42));
+    ozo::impl::make_async_connect_op(f.context).perform("conninfo");
 }
 
 TEST_F(async_connect_op, should_call_handler_with_pq_connection_start_failed_on_error_in_start_connection) {
@@ -80,7 +79,7 @@ TEST_F(async_connect_op, should_call_handler_with_pq_connection_start_failed_on_
     EXPECT_CALL(f.callback, call(error_code{ozo::error::pq_connection_start_failed}, f.conn))
         .WillOnce(Return());
 
-    ozo::impl::make_async_connect_op(f.context).perform("conninfo", time_traits::duration(42));
+    ozo::impl::make_async_connect_op(f.context).perform("conninfo");
 }
 
 TEST_F(async_connect_op, should_call_handler_with_pq_connection_status_bad_if_connection_status_is_bad) {
@@ -94,7 +93,7 @@ TEST_F(async_connect_op, should_call_handler_with_pq_connection_status_bad_if_co
     EXPECT_CALL(f.callback, call(error_code{ozo::error::pq_connection_status_bad}, f.conn))
         .WillOnce(Return());
 
-    ozo::impl::make_async_connect_op(f.context).perform("conninfo", time_traits::duration(42));
+    ozo::impl::make_async_connect_op(f.context).perform("conninfo");
 }
 
 TEST_F(async_connect_op, should_call_handler_with_error_if_assign_socket_returns_error) {
@@ -108,7 +107,7 @@ TEST_F(async_connect_op, should_call_handler_with_error_if_assign_socket_returns
 
     EXPECT_CALL(f.callback, call(error_code{error::error}, f.conn)).WillOnce(Return());
 
-    ozo::impl::make_async_connect_op(f.context).perform("conninfo", time_traits::duration(42));
+    ozo::impl::make_async_connect_op(f.context).perform("conninfo");
 }
 
 TEST_F(async_connect_op, should_wait_for_write_complete_if_connect_poll_returns_PGRES_POLLING_WRITING) {
@@ -120,8 +119,6 @@ TEST_F(async_connect_op, should_wait_for_write_complete_if_connect_poll_returns_
     EXPECT_CALL(f.connection, start_connection("conninfo")).WillOnce(Return(error_code{}));
     EXPECT_CALL(f.connection, assign_socket()).WillOnce(Return(error_code{}));
 
-    EXPECT_CALL(f.timer, expires_after(time_traits::duration(42))).WillOnce(Return(0));
-    EXPECT_CALL(f.timer, async_wait(_)).WillOnce(Return());
     EXPECT_CALL(f.socket, async_write_some(_)).WillOnce(InvokeArgument<0>(error_code{}));
 
     EXPECT_CALL(f.strand, post(_)).WillOnce(InvokeArgument<0>());
@@ -129,7 +126,7 @@ TEST_F(async_connect_op, should_wait_for_write_complete_if_connect_poll_returns_
 
     EXPECT_CALL(f.socket, async_write_some(_)).WillOnce(Return());
 
-    ozo::impl::make_async_connect_op(f.context).perform("conninfo", time_traits::duration(42));
+    ozo::impl::make_async_connect_op(f.context).perform("conninfo");
 }
 
 TEST_F(async_connect_op, should_wait_for_read_complete_if_connect_poll_returns_PGRES_POLLING_READING) {
@@ -140,8 +137,6 @@ TEST_F(async_connect_op, should_wait_for_read_complete_if_connect_poll_returns_P
 
     EXPECT_CALL(f.connection, start_connection("conninfo")).WillOnce(Return(error_code{}));
     EXPECT_CALL(f.connection, assign_socket()).WillOnce(Return(error_code{}));
-    EXPECT_CALL(f.timer, expires_after(time_traits::duration(42))).WillOnce(Return(0));
-    EXPECT_CALL(f.timer, async_wait(_)).WillOnce(Return());
 
     EXPECT_CALL(f.socket, async_write_some(_)).WillOnce(InvokeArgument<0>(error_code{}));
 
@@ -151,7 +146,7 @@ TEST_F(async_connect_op, should_wait_for_read_complete_if_connect_poll_returns_P
 
     EXPECT_CALL(f.socket, async_read_some(_)).WillOnce(Return());
 
-    ozo::impl::make_async_connect_op(f.context).perform("conninfo", time_traits::duration(42));
+    ozo::impl::make_async_connect_op(f.context).perform("conninfo");
 }
 
 TEST_F(async_connect_op, should_call_handler_with_no_error_if_connect_poll_returns_PGRES_POLLING_OK) {
@@ -162,8 +157,6 @@ TEST_F(async_connect_op, should_call_handler_with_no_error_if_connect_poll_retur
 
     EXPECT_CALL(f.connection, start_connection("conninfo")).WillOnce(Return(error_code{}));
     EXPECT_CALL(f.connection, assign_socket()).WillOnce(Return(error_code{}));
-    EXPECT_CALL(f.timer, expires_after(time_traits::duration(42))).WillOnce(Return(0));
-    EXPECT_CALL(f.timer, async_wait(_)).WillOnce(Return());
 
     EXPECT_CALL(f.socket, async_write_some(_)).WillOnce(InvokeArgument<0>(error_code{}));
 
@@ -173,7 +166,7 @@ TEST_F(async_connect_op, should_call_handler_with_no_error_if_connect_poll_retur
 
     EXPECT_CALL(f.callback, call(error_code{}, f.conn)).WillOnce(Return());
 
-    ozo::impl::make_async_connect_op(f.context).perform("conninfo", time_traits::duration(42));
+    ozo::impl::make_async_connect_op(f.context).perform("conninfo");
 }
 
 TEST_F(async_connect_op, should_call_handler_with_pq_connect_poll_failed_if_connect_poll_returns_PGRES_POLLING_FAILED) {
@@ -184,8 +177,6 @@ TEST_F(async_connect_op, should_call_handler_with_pq_connect_poll_failed_if_conn
 
     EXPECT_CALL(f.connection, start_connection("conninfo")).WillOnce(Return(error_code{}));
     EXPECT_CALL(f.connection, assign_socket()).WillOnce(Return(error_code{}));
-    EXPECT_CALL(f.timer, expires_after(time_traits::duration(42))).WillOnce(Return(0));
-    EXPECT_CALL(f.timer, async_wait(_)).WillOnce(Return());
 
     EXPECT_CALL(f.socket, async_write_some(_)).WillOnce(InvokeArgument<0>(error_code{}));
 
@@ -195,7 +186,7 @@ TEST_F(async_connect_op, should_call_handler_with_pq_connect_poll_failed_if_conn
     EXPECT_CALL(f.callback, call(error_code{ozo::error::pq_connect_poll_failed}, f.conn))
         .WillOnce(Return());
 
-    ozo::impl::make_async_connect_op(f.context).perform("conninfo", time_traits::duration(42));
+    ozo::impl::make_async_connect_op(f.context).perform("conninfo");
 }
 
 TEST_F(async_connect_op, should_call_handler_with_pq_connect_poll_failed_if_connect_poll_returns_PGRES_POLLING_ACTIVE) {
@@ -206,8 +197,6 @@ TEST_F(async_connect_op, should_call_handler_with_pq_connect_poll_failed_if_conn
 
     EXPECT_CALL(f.connection, start_connection("conninfo")).WillOnce(Return(error_code{}));
     EXPECT_CALL(f.connection, assign_socket()).WillOnce(Return(error_code{}));
-    EXPECT_CALL(f.timer, expires_after(time_traits::duration(42))).WillOnce(Return(0));
-    EXPECT_CALL(f.timer, async_wait(_)).WillOnce(Return());
 
     EXPECT_CALL(f.socket, async_write_some(_)).WillOnce(InvokeArgument<0>(error_code{}));
 
@@ -218,7 +207,7 @@ TEST_F(async_connect_op, should_call_handler_with_pq_connect_poll_failed_if_conn
     EXPECT_CALL(f.callback, call(error_code{ozo::error::pq_connect_poll_failed}, f.conn))
         .WillOnce(Return());
 
-    ozo::impl::make_async_connect_op(f.context).perform("conninfo", time_traits::duration(42));
+    ozo::impl::make_async_connect_op(f.context).perform("conninfo");
 }
 
 TEST_F(async_connect_op, should_call_handler_with_the_error_if_polling_operation_invokes_callback_with_it) {
@@ -229,8 +218,6 @@ TEST_F(async_connect_op, should_call_handler_with_the_error_if_polling_operation
 
     EXPECT_CALL(f.connection, start_connection("conninfo")).WillOnce(Return(error_code{}));
     EXPECT_CALL(f.connection, assign_socket()).WillOnce(Return(error_code{}));
-    EXPECT_CALL(f.timer, expires_after(time_traits::duration(42))).WillOnce(Return(0));
-    EXPECT_CALL(f.timer, async_wait(_)).WillOnce(Return());
 
     EXPECT_CALL(f.socket, async_write_some(_)).WillOnce(InvokeArgument<0>(error::error));
 
@@ -239,59 +226,7 @@ TEST_F(async_connect_op, should_call_handler_with_the_error_if_polling_operation
     EXPECT_CALL(f.callback, call(error_code{error::error}, f.conn))
         .WillOnce(Return());
 
-    ozo::impl::make_async_connect_op(f.context).perform("conninfo", time_traits::duration(42));
-}
-
-TEST_F(async_connect_op, should_cancel_socket_on_timeout) {
-    fixture f;
-    *(f.conn->handle_) = native_handle::good;
-
-    std::function<void (error_code)> on_timeout;
-
-    const InSequence s;
-
-    EXPECT_CALL(f.connection, start_connection("conninfo")).WillOnce(Return(error_code{}));
-    EXPECT_CALL(f.connection, assign_socket()).WillOnce(Return(error_code{}));
-    EXPECT_CALL(f.timer, expires_after(time_traits::duration(42))).WillOnce(Return(0));
-
-    EXPECT_CALL(f.timer, async_wait(_)).WillOnce(SaveArg<0>(&on_timeout));
-
-    EXPECT_CALL(f.socket, async_write_some(_)).WillOnce(Return());
-
-    ozo::impl::make_async_connect_op(f.context).perform("conninfo", time_traits::duration(42));
-
-    EXPECT_CALL(f.strand, post(_)).WillOnce(InvokeArgument<0>());
-    EXPECT_CALL(f.socket, cancel(_)).WillOnce(Return());
-
-    on_timeout(error_code {});
-}
-
-TEST_F(async_connect_op, should_not_cancel_socket_for_aborted_timer_async_wait) {
-    fixture f;
-    *(f.conn->handle_) = native_handle::good;
-
-    std::function<void (error_code)> on_timeout;
-
-    const InSequence s;
-
-    EXPECT_CALL(f.connection, start_connection("conninfo")).WillOnce(Return(error_code{}));
-    EXPECT_CALL(f.connection, assign_socket()).WillOnce(Return(error_code{}));
-    EXPECT_CALL(f.timer, expires_after(time_traits::duration(42))).WillOnce(Return(0));
-    EXPECT_CALL(f.timer, async_wait(_)).WillOnce(SaveArg<0>(&on_timeout));
-
-    EXPECT_CALL(f.socket, async_write_some(_)).WillOnce(InvokeArgument<0>(error_code{}));
-
-    EXPECT_CALL(f.strand, post(_)).WillOnce(InvokeArgument<0>());
-
-    EXPECT_CALL(f.connection, connect_poll()).WillOnce(Return(PGRES_POLLING_OK));
-
-    EXPECT_CALL(f.callback, call(error_code{}, f.conn)).WillOnce(Return());
-
-    ozo::impl::make_async_connect_op(f.context).perform("conninfo", time_traits::duration(42));
-
-    EXPECT_CALL(f.strand, post(_)).WillOnce(InvokeArgument<0>());
-
-    on_timeout(error_code {boost::asio::error::operation_aborted});
+    ozo::impl::make_async_connect_op(f.context).perform("conninfo");
 }
 
 struct async_connect_op_call : Test {};
@@ -330,13 +265,14 @@ TEST_F(async_connect, should_cancel_timer_when_operation_is_done_before_timeout)
     execution_context cb_io {f.callback_executor};
     EXPECT_CALL(callback, get_executor()).WillRepeatedly(Return(cb_io.get_executor()));
     EXPECT_CALL(f.strand_service, get_executor()).WillRepeatedly(ReturnRef(f.strand));
+    EXPECT_CALL(f.timer_service, timer(time_traits::duration(42))).WillRepeatedly(ReturnRef(f.timer));
+    EXPECT_CALL(f.timer, async_wait(_)).WillOnce(Return());
 
     Sequence s;
 
     EXPECT_CALL(f.connection, start_connection("conninfo")).InSequence(s).WillOnce(Return(error_code{}));
     EXPECT_CALL(f.connection, assign_socket()).InSequence(s).WillOnce(Return(error_code{}));
-    EXPECT_CALL(f.timer, expires_after(time_traits::duration(42))).InSequence(s).WillOnce(Return(0));
-    EXPECT_CALL(f.timer, async_wait(_)).InSequence(s).WillOnce(Return());
+
 
     EXPECT_CALL(f.socket, async_write_some(_)).InSequence(s).WillOnce(InvokeArgument<0>(error_code{}));
 
@@ -346,11 +282,33 @@ TEST_F(async_connect, should_cancel_timer_when_operation_is_done_before_timeout)
 
     EXPECT_CALL(f.timer, cancel()).InSequence(s).WillOnce(Return(0));
 
-    EXPECT_CALL(f.executor, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(f.callback_executor, dispatch(_)).InSequence(s).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(callback, call(error_code{}, f.conn)).InSequence(s).WillOnce(Return());
 
     ozo::impl::async_connect("conninfo", time_traits::duration(42), f.conn, wrap(callback));
+}
+
+TEST_F(async_connect, should_cancel_socket_on_timeout) {
+    *f.conn->handle_ = native_handle::good;
+
+    StrictMock<callback_gmock<decltype(f.conn)>> callback{};
+    execution_context cb_io {f.callback_executor};
+    std::function<void (error_code)> on_timeout;
+    EXPECT_CALL(callback, get_executor()).WillRepeatedly(Return(cb_io.get_executor()));
+    EXPECT_CALL(f.strand_service, get_executor()).WillRepeatedly(ReturnRef(f.strand));
+    EXPECT_CALL(f.timer_service, timer(time_traits::duration(42))).WillRepeatedly(ReturnRef(f.timer));
+    EXPECT_CALL(f.timer, async_wait(_)).WillOnce(SaveArg<0>(&on_timeout));
+
+    Sequence s;
+
+    EXPECT_CALL(f.connection, start_connection("conninfo")).InSequence(s).WillOnce(Return(error_code{}));
+    EXPECT_CALL(f.connection, assign_socket()).InSequence(s).WillOnce(Return(error_code{}));
+    EXPECT_CALL(f.socket, async_write_some(_)).InSequence(s).WillOnce(Return());
+    EXPECT_CALL(f.strand, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(f.socket, cancel(_)).InSequence(s).WillOnce(Return());
+
+    ozo::impl::async_connect("conninfo", time_traits::duration(42), f.conn, wrap(callback));
+    on_timeout(error_code {});
 }
 
 TEST_F(async_connect, should_request_oid_map_when_oid_map_is_not_empty) {
@@ -362,13 +320,13 @@ TEST_F(async_connect, should_request_oid_map_when_oid_map_is_not_empty) {
     execution_context cb_io {f.callback_executor};
     EXPECT_CALL(callback, get_executor()).WillRepeatedly(Return(cb_io.get_executor()));
     EXPECT_CALL(f.strand_service, get_executor()).WillRepeatedly(ReturnRef(f.strand));
+    EXPECT_CALL(f.timer_service, timer(time_traits::duration(42))).WillRepeatedly(ReturnRef(f.timer));
+    EXPECT_CALL(f.timer, async_wait(_)).WillOnce(Return());
 
     Sequence s;
 
     EXPECT_CALL(f.connection, start_connection("conninfo")).InSequence(s).WillOnce(Return(error_code{}));
     EXPECT_CALL(f.connection, assign_socket()).InSequence(s).WillOnce(Return(error_code{}));
-    EXPECT_CALL(f.timer, expires_after(time_traits::duration(42))).InSequence(s).WillOnce(Return(0));
-    EXPECT_CALL(f.timer, async_wait(_)).InSequence(s).WillOnce(Return());
 
     EXPECT_CALL(f.socket, async_write_some(_)).InSequence(s).WillOnce(InvokeArgument<0>(error_code{}));
 
