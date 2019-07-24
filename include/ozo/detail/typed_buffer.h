@@ -13,13 +13,13 @@ union typed_buffer {
 };
 
 template <typename T>
-constexpr char* data(typed_buffer<T>& buf) { return buf.raw;}
+constexpr char* data(typed_buffer<T>& buf) noexcept { return buf.raw;}
 
 template <typename T>
-constexpr const char* data(const typed_buffer<T>& buf) { return buf.raw;}
+constexpr const char* data(const typed_buffer<T>& buf) noexcept { return buf.raw;}
 
 template <typename T>
-constexpr auto size(const typed_buffer<T>& buf) { return buf.size;}
+constexpr auto size(const typed_buffer<T>& buf) noexcept { return buf.size;}
 } // namespace detail
 
 } // namespace ozo
