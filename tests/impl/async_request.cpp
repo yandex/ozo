@@ -29,7 +29,8 @@ struct async_request_op : Test {
     StrictMock<strand_executor_service_gmock> strand_service {};
     StrictMock<stream_descriptor_gmock> socket {};
     StrictMock<steady_timer_gmock> timer {};
-    io_context io {executor, strand_service};
+    StrictMock<steady_timer_service_mock> timer_service;
+    io_context io {executor, strand_service, timer_service};
     execution_context cb_io {callback_executor};
     decltype(make_connection(connection, io, socket, timer)) conn =
             make_connection(connection, io, socket, timer);
@@ -38,13 +39,13 @@ struct async_request_op : Test {
 
 TEST_F(async_request_op, should_set_timer_and_send_query_params_and_get_result_and_call_handler) {
 
-    EXPECT_CALL(strand_service, get_executor()).WillRepeatedly(ReturnRef(strand));
+    EXPECT_CALL(strand_service, get_executor()).WillOnce(ReturnRef(strand));
     EXPECT_CALL(callback, get_executor()).WillRepeatedly(Return(cb_io.get_executor()));
+    EXPECT_CALL(timer_service, timer(time_traits::duration(42))).WillRepeatedly(ReturnRef(timer));
 
     Sequence s;
 
     // Set timer
-    EXPECT_CALL(timer, expires_after(time_traits::duration(42))).InSequence(s).WillOnce(Return(0));
     EXPECT_CALL(timer, async_wait(_)).InSequence(s).WillOnce(Return());
 
     // Send query params
@@ -61,11 +62,34 @@ TEST_F(async_request_op, should_set_timer_and_send_query_params_and_get_result_a
     EXPECT_CALL(timer, cancel()).InSequence(s).WillOnce(Return(1));
 
     // Call client handler
-    EXPECT_CALL(executor, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(callback_executor, dispatch(_)).InSequence(s).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(callback, call(error_code {}, _)).InSequence(s).WillOnce(Return());
 
     ozo::impl::async_request_op{fake_query {}, timeout, [] (auto, auto) {}, wrap(callback)}(error_code {}, conn);
+}
+
+TEST_F(async_request_op, should_send_query_params_and_get_result_and_call_handler_whith_no_time_constraint) {
+
+    EXPECT_CALL(strand_service, get_executor()).WillOnce(ReturnRef(strand));
+    EXPECT_CALL(callback, get_executor()).WillRepeatedly(Return(cb_io.get_executor()));
+
+    Sequence s;
+
+    // Send query params
+    EXPECT_CALL(connection, set_nonblocking()).InSequence(s).WillOnce(Return(0));
+    EXPECT_CALL(connection, send_query_params()).InSequence(s).WillOnce(Return(1));
+
+    EXPECT_CALL(connection, flush_output()).InSequence(s).WillOnce(Return(ozo::impl::query_state::send_finish));
+
+    // Get result
+    EXPECT_CALL(connection, is_busy()).InSequence(s).WillOnce(Return(false));
+    EXPECT_CALL(connection, get_result()).InSequence(s).WillOnce(Return(boost::none));
+
+    // Call client handler
+    EXPECT_CALL(callback_executor, dispatch(_)).InSequence(s).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(callback, call(error_code {}, _)).InSequence(s).WillOnce(Return());
+
+    ozo::impl::async_request_op{fake_query {}, ozo::none, [] (auto, auto) {}, wrap(callback)}(error_code {}, conn);
 }
 
 TEST_F(async_request_op, should_cancel_socket_on_timeout) {
@@ -74,7 +98,7 @@ TEST_F(async_request_op, should_cancel_socket_on_timeout) {
     EXPECT_CALL(strand_service, get_executor()).InSequence(s).WillOnce(ReturnRef(strand));
 
     // Set timer
-    EXPECT_CALL(timer, expires_after(time_traits::duration(42))).InSequence(s).WillOnce(Return(0));
+    EXPECT_CALL(timer_service, timer(time_traits::duration(42))).WillRepeatedly(ReturnRef(timer));
     EXPECT_CALL(timer, async_wait(_)).InSequence(s).WillOnce(InvokeArgument<0>(error_code {}));
 
     EXPECT_CALL(strand, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());

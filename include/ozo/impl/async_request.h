@@ -1,8 +1,8 @@
 #pragma once
 
-#include <ozo/detail/cancel_timer_handler.h>
-#include <ozo/detail/post_handler.h>
+#include <ozo/detail/deadline.h>
 #include <ozo/detail/timeout_handler.h>
+#include <ozo/detail/wrap_executor.h>
 #include <ozo/impl/io.h>
 #include <ozo/io/binary_query.h>
 #include <ozo/connection.h>
@@ -119,7 +119,7 @@ struct async_send_query_params_op {
 
     void operator () (error_code ec = error_code{}, std::size_t = 0) {
         // if data has been flushed or error has been set by
-        // read operation no write opertion handling is needed
+        // read operation no write operation handling is needed
         // anymore.
         if (get_query_state(ctx_) != query_state::send_in_progress) {
             return;
@@ -322,11 +322,26 @@ template <typename OutHandler, typename Query, typename TimeConstraint, typename
 struct async_request_op {
     OutHandler out_;
     Query query_;
-    TimeConstraint time_constrain_;
+    TimeConstraint time_constraint_;
     Handler handler_;
 
     async_request_op(Query query, TimeConstraint time_constrain, OutHandler out, Handler handler)
-    : out_(std::move(out)), query_(std::move(query)), time_constrain_(time_constrain), handler_(std::move(handler)) {}
+    : out_(std::move(out)), query_(std::move(query)), time_constraint_(time_constrain), handler_(std::move(handler)) {}
+
+    template <typename Connection>
+    auto apply_time_constaint_or_strand (Connection& conn, Handler handler) const {
+        if constexpr (IsNone<TimeConstraint>) {
+            return detail::wrap_executor {
+                detail::make_strand_executor(ozo::get_executor(conn)),
+                std::move(handler)
+            };
+        } else {
+            return detail::deadline_handler {
+                ozo::get_executor(conn), time_constraint_, std::move(handler),
+                detail::cancel_socket(get_socket(conn), get_allocator())
+            };
+        }
+    }
 
     template <typename Connection>
     void operator() (error_code ec, Connection conn) {
@@ -334,15 +349,8 @@ struct async_request_op {
             return handler_(ec, std::move(conn));
         }
 
-        auto strand = ozo::detail::make_strand_executor(ozo::get_executor(conn));
-
-        auto ctx = make_request_operation_context(
-            std::move(conn),
-            asio::bind_executor(strand, detail::bind_cancel_timer<std::decay_t<TimeConstraint>>(
-                detail::post_handler(std::move(handler_))
-            ))
-        );
-        detail::set_io_timeout(get_connection(ctx), get_handler(ctx), time_constrain_);
+        auto handler = apply_time_constaint_or_strand(conn, std::move(handler_));
+        auto ctx = make_request_operation_context(std::move(conn), std::move(handler));
 
         async_send_query_params(ctx, std::move(query_));
         async_get_result(std::move(ctx), std::move(out_));

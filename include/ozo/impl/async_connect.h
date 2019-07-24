@@ -1,8 +1,8 @@
 #pragma once
 
-#include <ozo/detail/cancel_timer_handler.h>
-#include <ozo/detail/post_handler.h>
+#include <ozo/detail/wrap_executor.h>
 #include <ozo/detail/timeout_handler.h>
+#include <ozo/detail/deadline.h>
 #include <ozo/impl/io.h>
 #include <ozo/impl/request_oid_map.h>
 #include <ozo/time_traits.h>
@@ -58,8 +58,7 @@ template <typename Context>
 struct async_connect_op {
     Context context;
 
-    template <typename TimeConstraint>
-    void perform(const std::string& conninfo, const TimeConstraint& time_constrain) {
+    void perform(const std::string& conninfo) {
         if (error_code ec = start_connection(get_connection(context), conninfo)) {
             return done(ec);
         }
@@ -72,9 +71,7 @@ struct async_connect_op {
             return done(ec);
         }
 
-        detail::set_io_timeout(get_connection(context), get_handler(context), time_constrain);
-
-        return write_poll(get_connection(context), *this);
+        return write_poll(get_connection(context), std::move(*this));
     }
 
     void operator () (error_code ec, std::size_t = 0) {
@@ -90,10 +87,10 @@ struct async_connect_op {
                 return done();
 
             case PGRES_POLLING_WRITING:
-                return write_poll(get_connection(context), *this);
+                return write_poll(get_connection(context), std::move(*this));
 
             case PGRES_POLLING_READING:
-                return read_poll(get_connection(context), *this);
+                return read_poll(get_connection(context), std::move(*this));
 
             case PGRES_POLLING_FAILED:
             case PGRES_POLLING_ACTIVE:
@@ -104,16 +101,18 @@ struct async_connect_op {
     }
 
     void done(error_code ec = error_code {}) {
-        std::move(get_handler(context))(std::move(ec), std::move(get_connection(context)));
+        get_handler(context)(std::move(ec), std::move(get_connection(context)));
     }
 
-    using executor_type = std::decay_t<decltype(asio::get_associated_executor(get_handler(context)))>;
+    using handler_type = std::decay_t<decltype(get_handler(context))>;
+
+    using executor_type = asio::associated_executor_t<handler_type>;
 
     executor_type get_executor() const noexcept {
         return asio::get_associated_executor(get_handler(context));
     }
 
-    using allocator_type = std::decay_t<decltype(asio::get_associated_allocator(get_handler(context)))>;
+    using allocator_type = asio::associated_allocator_t<handler_type>;
 
     allocator_type get_allocator() const noexcept {
         return asio::get_associated_allocator(get_handler(context));
@@ -135,6 +134,8 @@ template <typename Handler>
 struct request_oid_map_handler {
     Handler handler_;
 
+    request_oid_map_handler(Handler handler) : handler_(std::move(handler)) {}
+
     template <typename Connection>
     void operator() (error_code ec, Connection&& conn) {
         if (ec) {
@@ -144,13 +145,13 @@ struct request_oid_map_handler {
         }
     }
 
-    using executor_type = decltype(asio::get_associated_executor(handler_));
+    using executor_type = asio::associated_executor_t<Handler>;
 
     executor_type get_executor() const noexcept {
         return asio::get_associated_executor(handler_);
     }
 
-    using allocator_type = decltype(asio::get_associated_allocator(handler_));
+    using allocator_type = asio::associated_allocator_t<Handler>;
 
     allocator_type get_allocator() const noexcept {
         return asio::get_associated_allocator(handler_);
@@ -164,30 +165,38 @@ constexpr bool OidMapEmpty = std::is_same_v<
 >;
 
 template <typename Conn, typename Handler>
-constexpr auto make_request_oid_map_handler(Handler&& handler, Require<!OidMapEmpty<Conn>>* = nullptr) {
-    return request_oid_map_handler<std::decay_t<Handler>> {std::forward<Handler>(handler)};
+constexpr auto apply_oid_map_request(Handler&& handler) {
+    if constexpr (!OidMapEmpty<Conn>) {
+        return request_oid_map_handler{std::forward<Handler>(handler)};
+    } else {
+        return std::forward<Handler>(handler);
+    }
 }
 
-template <typename Conn, typename Handler>
-constexpr decltype(auto) make_request_oid_map_handler(Handler&& handler, Require<OidMapEmpty<Conn>>* = nullptr) {
-    return std::forward<Handler>(handler);
+template <typename TimeConstraint, typename Connection, typename Handler>
+inline auto apply_time_constaint(const TimeConstraint& t, [[maybe_unused]] Connection& conn, Handler&& handler) {
+    if constexpr (IsNone<TimeConstraint>) {
+        return detail::wrap_executor {get_executor(conn), std::forward<Handler>(handler)};
+    } else {
+        auto on_deadline = detail::cancel_socket(get_socket(conn), asio::get_associated_allocator(handler));
+        return detail::deadline_handler {
+            ozo::get_executor(conn), t, std::forward<Handler>(handler), std::move(on_deadline)
+        };
+    }
 }
 
-template <typename C, typename TimeConstraint, typename Handler>
-inline void async_connect(std::string conninfo, const TimeConstraint& time_constrain,
-        C&& connection, Handler&& handler) {
-    static_assert(Connection<C>, "C should model Connection concept");
-    auto strand = ozo::detail::make_strand_executor(get_executor(connection));
+template <typename Connection, typename TimeConstraint, typename Handler>
+inline void async_connect(std::string conninfo, const TimeConstraint& t,
+        Connection&& conn, Handler&& handler) {
+    static_assert(ozo::Connection<Connection>, "conn should model Connection concept");
     make_async_connect_op(
         make_connect_operation_context(
-            std::forward<C>(connection),
-            make_request_oid_map_handler<C>(
-                asio::bind_executor(strand, detail::bind_cancel_timer<std::decay_t<TimeConstraint>>(
-                    detail::post_handler(std::forward<Handler>(handler))
-                ))
+            std::forward<Connection>(conn),
+            apply_oid_map_request<Connection>(
+                apply_time_constaint(t, conn, std::forward<Handler>(handler))
             )
         )
-    ).perform(conninfo, time_constrain);
+    ).perform(conninfo);
 }
 
 } // namespace impl
