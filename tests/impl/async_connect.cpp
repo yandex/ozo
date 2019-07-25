@@ -32,8 +32,8 @@ struct fixture {
     StrictMock<steady_timer_gmock> timer{};
     StrictMock<steady_timer_service_mock> timer_service;
     io_context io {executor, strand_service, timer_service};
-    decltype(make_connection(connection, io, socket, timer)) conn =
-            make_connection(connection, io, socket, timer);
+    decltype(make_connection(connection, io, socket)) conn =
+            make_connection(connection, io, socket);
     StrictMock<executor_gmock> callback_executor{};
     StrictMock<callback_gmock<decltype(conn)>> callback{};
 
@@ -312,7 +312,7 @@ TEST_F(async_connect, should_cancel_socket_on_timeout) {
 }
 
 TEST_F(async_connect, should_request_oid_map_when_oid_map_is_not_empty) {
-    auto conn = make_connection(f.connection, f.io, f.socket, f.timer, ozo::register_types<custom_type>());
+    auto conn = make_connection(f.connection, f.io, f.socket, ozo::register_types<custom_type>());
     StrictMock<callback_gmock<decltype(conn)>> callback {};
 
     *conn->handle_ = native_handle::good;

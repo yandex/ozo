@@ -77,12 +77,11 @@ struct connection {
     socket_mock socket_;
     OidMap oid_map_;
     std::string error_context_;
-    timer_mock timer_;
     io_context* io_;
 
     auto get_executor() const { return io_->get_executor(); }
 
-    explicit connection(io_context& io) : socket_(io), timer_(io), io_(&io) {}
+    explicit connection(io_context& io) : socket_(io), io_(&io) {}
 };
 
 template <typename ...Ts>

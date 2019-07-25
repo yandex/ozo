@@ -21,9 +21,8 @@ struct async_start_transaction : Test {
     StrictMock<executor_gmock> strand {};
     StrictMock<strand_executor_service_gmock> strand_service {};
     StrictMock<stream_descriptor_gmock> socket {};
-    StrictMock<steady_timer_gmock> timer {};
     io_context io {executor, strand_service};
-    decltype(make_connection(connection, io, socket, timer)) conn = make_connection(connection, io, socket, timer);
+    decltype(make_connection(connection, io, socket)) conn = make_connection(connection, io, socket);
     time_traits::duration timeout {42};
 };
 

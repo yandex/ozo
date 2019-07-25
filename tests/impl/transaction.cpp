@@ -15,9 +15,8 @@ struct impl_transaction : Test {
     StrictMock<executor_gmock> executor {};
     StrictMock<strand_executor_service_gmock> strand_service {};
     StrictMock<stream_descriptor_gmock> socket {};
-    StrictMock<steady_timer_gmock> timer {};
     io_context io {executor, strand_service};
-    decltype(make_connection(connection, io, socket, timer)) conn = make_connection(connection, io, socket, timer);
+    decltype(make_connection(connection, io, socket)) conn = make_connection(connection, io, socket);
 };
 
 TEST_F(impl_transaction, should_be_able_to_construct_default) {

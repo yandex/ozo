@@ -176,6 +176,12 @@ template <typename T, typename = hana::when<true>>
 struct get_connection_executor_impl;
 #endif
 
+template <typename T, typename = std::void_t<>>
+struct get_connection_timer_impl;
+
+template <typename T>
+asio::steady_timer& get_connection_timer(T&&);
+
 template <typename T>
 struct get_connection_executor_impl<T,
     hana::when_valid<decltype(std::declval<const T&>().get_executor())>
@@ -311,54 +317,6 @@ constexpr detail::result_of<get_connection_error_context_impl, T> get_connection
 }
 #endif
 
-template <typename T, typename = std::void_t<>>
-struct get_connection_timer_impl {
-    template <typename Conn>
-    constexpr static auto apply(Conn&& c) -> decltype((c.timer_)) {
-        return c.timer_;
-    }
-};
-
-/**
- * @ingroup group-connection-functions
- * @brief Get the connection timer object
- *
- * OZO is all about IO. IO can be for a long time, so almost every user sooner or later
- * needs a timeout for an IO. This library provides such functionality of time-outs. For a time-out
- * implementation the library needs a timer. So this is it. Originally the library expects
- * <a href="https://www.boost.org/doc/libs/1_66_0/doc/html/boost_asio/reference/basic_waitable_timer.html">boost::asio::basic_waitable_timer</a>
- * as a timer interface and uses <a href="https://www.boost.org/doc/libs/1_66_0/doc/html/boost_asio/reference/steady_timer.html">
- * boost::asio::steady_timer</a> as the default implementation. But this place can be customized.
- *
- * **Customization Point**
- *
- * This is customization point for #Connection concept implementation. To customize it please
- * specialize `ozo::get_connection_timer_impl` template. Default specialization may look like this
- * (`for exposition only`):
- * @code
-    template <typename T, typename = std::void_t<>>
-    struct get_connection_timer_impl {
-        template <typename Conn>
-        constexpr static auto apply(Conn&& c) -> decltype((c.timer_)) {
-            return c.timer_;
-        }
-    };
- * @endcode
- * Function overload works as well, but it is safer to specialize the template.
- *
- * @param conn --- #Connection object
- * @return timer for the #Connection
- */
-#ifdef OZO_DOCUMENTATION
-template <typename T>
-constexpr auto get_connection_timer(T&& conn);
-#else
-template <typename T>
-constexpr detail::result_of<get_connection_timer_impl, T> get_connection_timer(T&& conn) {
-    return detail::apply<get_connection_timer_impl>(std::forward<T>(conn));
-}
-#endif
-
 template <typename, typename = std::void_t<>>
 struct is_connection : std::false_type {};
 template <typename T>
@@ -367,12 +325,10 @@ struct is_connection<T, std::void_t<
     decltype(get_connection_socket(unwrap_connection(std::declval<T&>()))),
     decltype(get_connection_handle(unwrap_connection(std::declval<T&>()))),
     decltype(get_connection_error_context(unwrap_connection(std::declval<T&>()))),
-    decltype(get_connection_timer(unwrap_connection(std::declval<T&>()))),
     decltype(get_connection_oid_map(unwrap_connection(std::declval<const T&>()))),
     decltype(get_connection_socket(unwrap_connection(std::declval<const T&>()))),
     decltype(get_connection_handle(unwrap_connection(std::declval<const T&>()))),
     decltype(get_connection_error_context(unwrap_connection(std::declval<const T&>()))),
-    decltype(get_connection_timer(unwrap_connection(std::declval<const T&>()))),
     decltype(get_connection_executor(unwrap_connection(std::declval<const T&>())))
 >> : std::true_type {};
 
@@ -408,13 +364,7 @@ decltype(auto) socket = get_connection_socket(unwrap_connection(conn));
 * @code
 decltype(auto) handle = get_connection_handle(unwrap_connection(conn));
 * @endcode
-* Must return reference or proxy for native_conn_handle object
-*
-* @code
-decltype(auto) timer = get_connection_timer(unwrap_connection(conn));
-* @endcode
-* Must return reference or proxy for timer to plan operations cancel by timeout.
-* Should provide <a href="https://www.boost.org/doc/libs/1_66_0/doc/html/boost_asio/reference/basic_waitable_timer.html">boost::asio::basic_waitable_timer</a> like interface.
+* Must return reference or proxy for native_conn_handle object.
 *
 *
 * @code
@@ -431,8 +381,7 @@ decltype(auto) ex = get_connection_executor(unwrap_connection(conn));
 ozo::get_connection_oid_map(),
 ozo::get_connection_socket(),
 ozo::get_connection_handle(),
-ozo::get_connection_timer(),
-ozo::get_connection_error_context()
+ozo::get_connection_error_context(),
 ozo::get_connection_executor()
 * @hideinitializer
 */
@@ -652,30 +601,6 @@ template <typename T>
 inline decltype(auto) get_statistics(T&& conn) noexcept {
     static_assert(Connection<T>, "T must be a Connection");
     return get_connection_statistics(unwrap_connection(std::forward<T>(conn)));
-}
-
-/**
- * @brief Access to a timer for connection operations.
- *
- * This function is dedicated to a timer access. Since our API provides time-outs for
- * IO operations it needs a timer. After weeks of experiments we decide to keep timer in the
- * Connection. So this function should provide entity with
- * <a href="https://www.boost.org/doc/libs/1_66_0/doc/html/boost_asio/reference/basic_waitable_timer.html">
- * boost::asio::basic_waitable_timer</a>
- * compatible interface (in common cases it is a reference to
- * <a href="https://www.boost.org/doc/libs/1_66_0/doc/html/boost_asio/reference/steady_timer.html">
- * boost::asio::steady_timer</a>).
- *
- * Please be sure that the connection  is not in the null state via
- * `ozo::is_null_recursive()` function.
- *
- * @param conn --- #Connection to access statistics of, should not be in null state
- * @return a reference or proxy for a timer
- */
-template <typename T>
-inline decltype(auto) get_timer(T&& conn) noexcept {
-    static_assert(Connection<T>, "T must be a Connection");
-    return get_connection_timer(unwrap_connection(std::forward<T>(conn)));
 }
 
 ///@}
