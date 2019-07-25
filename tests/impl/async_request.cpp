@@ -32,8 +32,8 @@ struct async_request_op : Test {
     StrictMock<steady_timer_service_mock> timer_service;
     io_context io {executor, strand_service, timer_service};
     execution_context cb_io {callback_executor};
-    decltype(make_connection(connection, io, socket, timer)) conn =
-            make_connection(connection, io, socket, timer);
+    decltype(make_connection(connection, io, socket)) conn =
+            make_connection(connection, io, socket);
     time_traits::duration timeout {42};
 };
 

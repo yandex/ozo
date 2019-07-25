@@ -17,7 +17,7 @@ namespace impl {
 template <typename OidMap, typename Statistics>
 struct connection_impl {
     connection_impl(io_context& io, Statistics statistics)
-        : io_(std::addressof(io)), socket_(*io_), statistics_(std::move(statistics)), timer_(*io_) {}
+        : io_(std::addressof(io)), socket_(*io_), statistics_(std::move(statistics)) {}
 
     native_conn_handle handle_;
     io_context* io_;
@@ -25,7 +25,6 @@ struct connection_impl {
     OidMap oid_map_;
     Statistics statistics_; // statistics metatypes to be defined - counter, duration, whatever?
     std::string error_context_;
-    asio::steady_timer timer_;
 
     auto get_executor() const { return io_->get_executor(); }
 };
@@ -58,7 +57,6 @@ inline error_code bind_connection_executor(Connection& conn, const Executor& ex)
         }
         socket.release();
         socket = std::move(s);
-        get_timer(conn) = std::decay_t<decltype(get_timer(conn))>{*(conn.io_)};
         conn.io_ = std::addressof(ex.context());
     }
     return {};

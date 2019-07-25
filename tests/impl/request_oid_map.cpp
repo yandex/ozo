@@ -70,8 +70,6 @@ struct connection {
     friend const std::string& get_connection_error_context(const connection& self) {
         return self.error_context;
     }
-    friend void get_connection_timer(connection&) {}
-    friend void get_connection_timer(const connection&) {}
 };
 
 }

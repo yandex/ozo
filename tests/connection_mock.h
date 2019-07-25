@@ -116,7 +116,6 @@ struct connection {
     OidMap oid_map_;
     connection_mock* mock_ = nullptr;
     std::string error_context_;
-    steady_timer<executor> timer_;
     io_context* io_;
 
     auto get_executor() const { return io_->get_executor(); }
@@ -204,14 +203,13 @@ static_assert(ozo::Connection<connection_ptr<>>,
 
 template <typename OidMap = empty_oid_map>
 inline auto make_connection(connection_mock& mock, io_context& io,
-        stream_descriptor_mock& socket_mock, steady_timer_mock& timer, OidMap oid_map = OidMap{}) {
+        stream_descriptor_mock& socket_mock, OidMap oid_map = OidMap{}) {
     return std::make_shared<connection<OidMap>>(connection<OidMap>{
             std::make_unique<native_handle>(native_handle::bad),
             stream_descriptor{io, socket_mock},
             oid_map,
             std::addressof(mock),
             "",
-            steady_timer<executor> {&timer, executor{}},
             std::addressof(io)
         });
 }
