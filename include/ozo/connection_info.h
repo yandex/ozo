@@ -62,7 +62,8 @@ public:
     template <typename TimeConstraint, typename Handler>
     void operator ()(io_context& io, TimeConstraint t, Handler&& handler) const {
         static_assert(ozo::TimeConstraint<TimeConstraint>, "should model TimeConstraint concept");
-        impl::async_connect(conn_str, t, std::make_shared<connection>(io, statistics),
+        auto allocator = asio::get_associated_allocator(handler);
+        impl::async_connect(conn_str, t, std::allocate_shared<connection>(allocator, io, statistics),
             std::forward<Handler>(handler));
     }
 
