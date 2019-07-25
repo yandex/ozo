@@ -40,7 +40,6 @@ set(SOURCES
     impl/async_get_result.cpp
     detail/base36.cpp
     detail/functional.cpp
-    detail/cancel_timer_handler.cpp
     detail/timeout_handler.cpp
     detail/make_copyable.cpp
     impl/request_oid_map.cpp
