@@ -34,7 +34,7 @@ auto execute_query(const char* query_text, int binary = 1) {
 }
 
 TEST(result, should_convert_into_tuple_integer_and_text) {
-    auto result = execute_query("select 1::int4, '2';");
+    auto result = execute_query("select 1::int4, '2'::text;");
     auto oid_map = ozo::empty_oid_map();
     std::vector<std::tuple<int32_t, std::string>> r;
     ozo::recv_result(result, oid_map, std::back_inserter(r));
@@ -45,7 +45,7 @@ TEST(result, should_convert_into_tuple_integer_and_text) {
 }
 
 TEST(result, should_convert_into_tuple_time_point_and_text) {
-    auto result = execute_query("select '2000-01-01 00:00:00'::timestamp, '2';");
+    auto result = execute_query("select '2000-01-01 00:00:00'::timestamp, '2'::text;");
     auto oid_map = ozo::empty_oid_map();
     std::vector<std::tuple<std::chrono::system_clock::time_point, std::string>> r;
     ozo::recv_result(result, oid_map, std::back_inserter(r));
@@ -56,7 +56,7 @@ TEST(result, should_convert_into_tuple_time_point_and_text) {
 }
 
 TEST(result, should_convert_into_tuple_float_and_text) {
-    auto result = execute_query("select 42.13::float4, 'text';");
+    auto result = execute_query("select 42.13::float4, 'text'::text;");
     auto oid_map = ozo::empty_oid_map();
     std::vector<std::tuple<float, std::string>> r;
     ozo::recv_result(result, oid_map, std::back_inserter(r));
@@ -83,7 +83,7 @@ TEST(result, should_convert_into_tuple_with_nulls_from_nullables) {
         boost::shared_ptr<std::vector<char>>,
         std::shared_ptr<std::string>
     >;
-    auto result = execute_query("select 7::int4, 42.13::float4, 'text', null, null;");
+    auto result = execute_query("select 7::int4, 42.13::float4, 'text'::text, null, null;");
     auto oid_map = ozo::empty_oid_map();
     std::vector<row> r;
     ozo::recv_result(result, oid_map, std::back_inserter(r));
