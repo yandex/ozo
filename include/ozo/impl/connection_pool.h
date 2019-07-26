@@ -112,7 +112,7 @@ struct pooled_connection_wrapper {
 
         auto conn = std::allocate_shared<connection>(get_allocator(), std::forward<Handle>(handle));
         if (connection_good(conn)) {
-            ec = rebind_io_context(conn, io_);
+            ec = bind_executor(conn, io_.get_executor());
             return handler_(std::move(ec), std::move(conn));
         }
 

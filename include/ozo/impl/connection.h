@@ -17,14 +17,17 @@ namespace impl {
 template <typename OidMap, typename Statistics>
 struct connection_impl {
     connection_impl(io_context& io, Statistics statistics)
-        : socket_(io), statistics_(std::move(statistics)), timer_(io) {}
+        : io_(std::addressof(io)), socket_(*io_), statistics_(std::move(statistics)), timer_(*io_) {}
 
     native_conn_handle handle_;
+    io_context* io_;
     asio::posix::stream_descriptor socket_;
     OidMap oid_map_;
     Statistics statistics_; // statistics metatypes to be defined - counter, duration, whatever?
     std::string error_context_;
     asio::steady_timer timer_;
+
+    auto get_executor() const { return io_->get_executor(); }
 };
 
 inline bool connection_status_bad(PGconn* handle) noexcept {
@@ -43,11 +46,11 @@ inline auto connection_error_message(NativeHandleType handle) {
     return v;
 }
 
-template <typename Connection, typename IoContext>
-inline error_code rebind_connection_io_context(Connection& conn, IoContext& io) {
-    if (std::addressof(get_io_context(conn)) != std::addressof(io)) {
+template <typename Connection, typename Executor>
+inline error_code bind_connection_executor(Connection& conn, const Executor& ex) {
+    if (get_executor(conn) != ex) {
         decltype(auto) socket = get_socket(conn);
-        std::decay_t<decltype(socket)> s{io};
+        std::decay_t<decltype(socket)> s{ex.context()};
         error_code ec;
         s.assign(socket.native_handle(), ec);
         if (ec) {
@@ -55,7 +58,8 @@ inline error_code rebind_connection_io_context(Connection& conn, IoContext& io) 
         }
         socket.release();
         socket = std::move(s);
-        get_timer(conn) = std::decay_t<decltype(get_timer(conn))>{io};
+        get_timer(conn) = std::decay_t<decltype(get_timer(conn))>{*(conn.io_)};
+        conn.io_ = std::addressof(ex.context());
     }
     return {};
 }

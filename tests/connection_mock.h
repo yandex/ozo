@@ -68,7 +68,7 @@ struct connection_mock {
     MOCK_METHOD0(async_request, void());
     MOCK_METHOD0(async_execute, void());
     MOCK_METHOD0(request_oid_map, void());
-    MOCK_METHOD0(rebind_io_context, ozo::error_code());
+    MOCK_METHOD0(bind_executor, ozo::error_code());
     MOCK_METHOD0(get_cancel_handle, cancel_handle_mock*());
 };
 
@@ -116,7 +116,10 @@ struct connection {
     OidMap oid_map_;
     connection_mock* mock_ = nullptr;
     std::string error_context_;
-    steady_timer timer_;
+    steady_timer<executor> timer_;
+    io_context* io_;
+
+    auto get_executor() const { return io_->get_executor(); }
 
     friend int pq_set_nonblocking(connection& c) {
         return c.mock_->set_nonblocking();
@@ -183,9 +186,9 @@ struct connection {
         connection->mock_->async_execute();
     }
 
-    template <typename IoContext>
-    friend ozo::error_code rebind_connection_io_context(connection& c, IoContext&) {
-        return c.mock_->rebind_io_context();
+    template <typename Executor>
+    friend ozo::error_code bind_connection_executor(connection& c, const Executor&) {
+        return c.mock_->bind_executor();
     }
 };
 
@@ -208,7 +211,8 @@ inline auto make_connection(connection_mock& mock, io_context& io,
             oid_map,
             std::addressof(mock),
             "",
-            steady_timer {&timer}
+            steady_timer<executor> {&timer, executor{}},
+            std::addressof(io)
         });
 }
 

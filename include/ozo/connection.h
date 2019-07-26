@@ -163,6 +163,64 @@ constexpr detail::result_of<get_connection_socket_impl, T> get_connection_socket
 }
 #endif
 
+#if BOOST_VERSION < 107000
+template <typename T, typename = hana::when<true>>
+struct get_connection_executor_impl {
+    template <typename Conn>
+    constexpr static auto apply(Conn&& c) -> decltype(get_connection_socket(c)) {
+        return get_connection_socket(c).get_executor();
+    }
+};
+#else
+template <typename T, typename = hana::when<true>>
+struct get_connection_executor_impl;
+#endif
+
+template <typename T>
+struct get_connection_executor_impl<T,
+    hana::when_valid<decltype(std::declval<const T&>().get_executor())>
+> {
+    constexpr static auto apply(const T& c) {
+        return c.get_executor();
+    }
+};
+
+/**
+ * @ingroup group-connection-functions
+ * @brief Get the connection associated executor object
+ *
+ * #Connection should provide an executor for IO and timer operations. In general it should return
+ * [boost::asio::io_context::executor_type](https://www.boost.org/doc/libs/1_66_0/doc/html/boost_asio/reference/io_context__executor_type.html) object.
+ *
+ * **Customization Point**
+ *
+ * This is customization point for #Connection concept implementation. To customize it please
+ * specialize `ozo::get_connection_executor_impl` template. Default specialization may look like this
+ * (`for exposition only`):
+ * @code
+    template <typename T, typename = std::void_t<>>
+    struct get_connection_socket_impl {
+        template <typename Conn>
+        constexpr static auto apply(Conn&& c) -> decltype((c.socket_)) {
+            return c.socket_;
+        }
+    };
+ * @endcode
+ * Function overload works as well, but it is safer to specialize the template.
+ *
+ * @param conn --- #Connection object
+ * @return reference or proxy to the socket object
+ */
+#ifdef OZO_DOCUMENTATION
+template <typename T>
+constexpr auto get_connection_executor(T&& conn);
+#else
+template <typename T>
+constexpr detail::result_of<get_connection_executor_impl, T> get_connection_executor(T&& conn) {
+    return detail::apply<get_connection_executor_impl>(std::forward<T>(conn));
+}
+#endif
+
 template <typename T, typename = std::void_t<>>
 struct get_connection_handle_impl {
     template <typename Conn>
@@ -314,7 +372,8 @@ struct is_connection<T, std::void_t<
     decltype(get_connection_socket(unwrap_connection(std::declval<const T&>()))),
     decltype(get_connection_handle(unwrap_connection(std::declval<const T&>()))),
     decltype(get_connection_error_context(unwrap_connection(std::declval<const T&>()))),
-    decltype(get_connection_timer(unwrap_connection(std::declval<const T&>())))
+    decltype(get_connection_timer(unwrap_connection(std::declval<const T&>()))),
+    decltype(get_connection_executor(unwrap_connection(std::declval<const T&>())))
 >> : std::true_type {};
 
 
@@ -362,12 +421,19 @@ decltype(auto) timer = get_connection_timer(unwrap_connection(conn));
 decltype(auto) error_ctx = get_connection_error_context(unwrap_connection(conn));
 * @endcode
 * Must return reference or proxy for an additional error context.
+*
+*
+* @code
+decltype(auto) ex = get_connection_executor(unwrap_connection(conn));
+* @endcode
+* Should return IO operations executor associated with connection.
 * @sa ozo::unwrap_connection(),
 ozo::get_connection_oid_map(),
 ozo::get_connection_socket(),
 ozo::get_connection_handle(),
 ozo::get_connection_timer(),
 ozo::get_connection_error_context()
+ozo::get_connection_executor()
 * @hideinitializer
 */
 template <typename T>
@@ -428,18 +494,6 @@ inline decltype(auto) get_socket(T&& conn) noexcept {
 }
 
 /**
- * @brief IO context for a connection is bound to
- *
- * @param conn --- #Connection object
- * @return `io_context` of socket stream object of the connection
- */
-template <typename T>
-inline decltype(auto) get_io_context(T& conn) noexcept {
-    static_assert(Connection<T>, "T must be a Connection");
-    return get_socket(conn).get_executor().context();
-}
-
-/**
  * @brief Executor for connection related asynchronous operations
  *
  * This executor must be used to schedule all the asynchronous operations
@@ -452,21 +506,21 @@ inline decltype(auto) get_io_context(T& conn) noexcept {
 template <typename T>
 inline auto get_executor(T& conn) noexcept {
     static_assert(Connection<T>, "T must be a Connection");
-    return get_socket(conn).get_executor();
+    return get_connection_executor(unwrap_connection(conn));
 }
 
 /**
- * @brief Rebinds `io_context` for the connection
+ * @brief Binds executor for the connection
  *
  * @param conn --- #Connection which must be rebound
- * @param io --- `io_context` to which conn must be bound
+ * @param ex --- Executor whish should be used for IO and timers
  * @return `error_code` in case of error has been
  */
-template <typename T, typename IoContext>
-inline error_code rebind_io_context(T& conn, IoContext& io) {
+template <typename T, typename Executor>
+inline error_code bind_executor(T& conn, const Executor& ex) {
     static_assert(Connection<T>, "T must be a Connection");
-    using impl::rebind_connection_io_context;
-    return rebind_connection_io_context(unwrap_connection(conn), io);
+    using impl::bind_connection_executor;
+    return bind_connection_executor(unwrap_connection(conn), ex);
 }
 
 /**

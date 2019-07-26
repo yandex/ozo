@@ -12,7 +12,7 @@ struct get_transaction_status : testing::Test {
         using namespace ozo::tests;
         return std::make_shared<connection<>>(connection<>{
             std::make_unique<native_handle>(native_handle::good),
-            {}, {}, nullptr, "", {}
+            {}, {}, nullptr, "", {}, nullptr
         });
     }
 };
