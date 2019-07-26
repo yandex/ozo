@@ -39,12 +39,8 @@ struct socket_mock {
 
     socket_mock(io_context& io) : io_(std::addressof(io)) {}
 
-    io_context& get_io_context() {
-        return *io_;
-    }
-
     auto get_executor() {
-        return get_io_context().get_executor();
+        return io_->get_executor();
     }
 
     void assign(std::shared_ptr<native_handle_mock> handle, ozo::error_code& ec) {
@@ -82,8 +78,11 @@ struct connection {
     OidMap oid_map_;
     std::string error_context_;
     timer_mock timer_;
+    io_context* io_;
 
-    explicit connection(io_context& io) : socket_(io), timer_(io) {}
+    auto get_executor() const { return io_->get_executor(); }
+
+    explicit connection(io_context& io) : socket_(io), timer_(io), io_(&io) {}
 };
 
 template <typename ...Ts>
@@ -217,14 +216,14 @@ TEST_F(async_get_connection, should_reset_connection_error_context) {
     });
 }
 
-TEST(rebind_connection_io_context, should_leave_same_io_context_and_socket_when_address_of_new_io_is_equal_to_old) {
+TEST(bind_connection_executor, should_leave_same_io_context_and_socket_when_address_of_new_io_is_equal_to_old) {
     io_context io;
     connection<> conn(io);
-    EXPECT_EQ(ozo::impl::rebind_connection_io_context(conn, io), error_code());
-    EXPECT_EQ(std::addressof(ozo::get_io_context(conn)), std::addressof(io));
+    EXPECT_EQ(ozo::impl::bind_connection_executor(conn, io.get_executor()), error_code());
+    EXPECT_EQ(ozo::get_executor(conn), io.get_executor());
 }
 
-TEST(rebind_connection_io_context, should_change_socket_when_address_of_new_io_is_not_equal_to_old) {
+TEST(bind_connection_executor, should_change_socket_when_address_of_new_io_is_not_equal_to_old) {
     io_context old_io;
     connection<> conn(old_io);
     io_context new_io;
@@ -232,11 +231,11 @@ TEST(rebind_connection_io_context, should_change_socket_when_address_of_new_io_i
     EXPECT_CALL(*ozo::get_socket(conn).native_handle(), assign(_)).WillOnce(Return());
     EXPECT_CALL(*ozo::get_socket(conn).native_handle(), release()).WillOnce(Return());
 
-    EXPECT_EQ(ozo::impl::rebind_connection_io_context(conn, new_io), error_code());
-    EXPECT_EQ(std::addressof(ozo::get_io_context(conn)), std::addressof(new_io));
+    EXPECT_EQ(ozo::impl::bind_connection_executor(conn, new_io.get_executor()), error_code());
+    EXPECT_EQ(ozo::get_executor(conn), new_io.get_executor());
 }
 
-TEST(rebind_connection_io_context, should_return_error_when_socket_assign_fails_with_error) {
+TEST(bind_connection_executor, should_return_error_when_socket_assign_fails_with_error) {
     io_context old_io;
     connection<> conn(old_io);
     io_context new_io;
@@ -244,7 +243,7 @@ TEST(rebind_connection_io_context, should_return_error_when_socket_assign_fails_
     EXPECT_CALL(*ozo::get_socket(conn).native_handle(), assign(_))
         .WillOnce(SetArgReferee<0>(error_code(error::code::error)));
 
-    EXPECT_EQ(ozo::impl::rebind_connection_io_context(conn, new_io), error_code(error::code::error));
+    EXPECT_EQ(ozo::impl::bind_connection_executor(conn, new_io.get_executor()), error_code(error::code::error));
 }
 
 struct fake_native_pq_handle {

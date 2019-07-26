@@ -89,7 +89,7 @@ struct initiate_async_cancel {
         shared_handler_t shared_handler(std::allocator_arg, allocator, std::forward<CompletionHandler>(h));
         asio::post(cancel_op{
             std::forward<Handle>(cancel_handle),
-            detail::deadline_handler(io, t, shared_handler, on_cancel_op_timer{shared_handler})
+            detail::deadline_handler(io.get_executor(), t, shared_handler, on_cancel_op_timer{shared_handler})
         });
     }
 

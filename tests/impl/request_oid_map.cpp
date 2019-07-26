@@ -64,10 +64,6 @@ struct connection {
     friend const OidMap& get_connection_oid_map(const connection& self) {
         return self.oid_map;
     }
-    friend void get_connection_socket(connection&) {}
-    friend void get_connection_socket(const connection&) {}
-    friend void get_connection_handle(connection&) {}
-    friend void get_connection_handle(const connection&) {}
     friend std::string& get_connection_error_context(connection& self) {
         return self.error_context;
     }
@@ -78,6 +74,14 @@ struct connection {
     friend void get_connection_timer(const connection&) {}
 };
 
+}
+
+namespace ozo {
+template <class OidMap>
+struct is_connection<::connection<OidMap>> : std::true_type {};
+} // namespace ozo
+
+namespace {
 TEST(request_oid_map_op, should_call_handler_with_oid_request_failed_error_when_oid_map_length_differs_from_result_length) {
     StrictMock<callback_gmock<connection<>>> cb_mock {};
     auto operation = ozo::impl::request_oid_map_op{wrap(cb_mock)};

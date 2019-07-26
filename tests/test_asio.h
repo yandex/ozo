@@ -51,6 +51,50 @@ struct strand_executor_service_gmock : strand_executor_service_mock {
     MOCK_METHOD0(get_executor, executor_mock& ());
 };
 
+struct steady_timer_mock  {
+    MOCK_METHOD1(expires_after, std::size_t (const asio::steady_timer::duration&));
+    MOCK_METHOD1(expires_at, std::size_t (const asio::steady_timer::time_point&));
+    MOCK_METHOD1(async_wait, void (std::function<void(error_code)>));
+    MOCK_METHOD0(cancel, std::size_t ());
+};
+
+struct steady_timer_service_mock {
+    MOCK_METHOD0(timer, steady_timer_mock& ());
+    MOCK_METHOD1(timer, steady_timer_mock& (asio::steady_timer::duration));
+    MOCK_METHOD1(timer, steady_timer_mock& (asio::steady_timer::time_point));
+};
+
+using steady_timer_gmock = steady_timer_mock;
+
+template <typename Executor>
+struct steady_timer {
+    steady_timer_mock* impl = nullptr;
+    Executor executor_;
+
+    std::size_t expires_after(const asio::steady_timer::duration& expiry_time) {
+        return impl->expires_after(expiry_time);
+    }
+
+    std::size_t expires_at(const asio::steady_timer::time_point& at) {
+        return impl->expires_at(at);
+    }
+
+    template <typename Handler>
+    void async_wait(Handler&& handler) {
+        return impl->async_wait([h = std::forward<Handler>(handler)] (auto e) {
+            asio::post(ozo::detail::bind(std::move(h), std::move(e)));
+        });
+    }
+
+    std::size_t cancel() {
+        return impl->cancel();
+    }
+
+    using executor_type = Executor;
+
+    executor_type get_executor() const { return executor_; }
+};
+
 struct execution_context : asio::execution_context {
     struct executor_type {
         executor_mock* impl_ = nullptr;
@@ -102,10 +146,15 @@ struct execution_context : asio::execution_context {
         friend bool operator ==(const executor_type& lhs, const executor_type& rhs) {
             return lhs.context_ == rhs.context_ && lhs.impl_ == rhs.impl_;
         }
+
+        friend bool operator !=(const executor_type& lhs, const executor_type& rhs) {
+            return !(lhs == rhs);
+        }
     };
 
     executor_mock* executor_ = nullptr;
     strand_executor_service_mock* strand_service_ = nullptr;
+    steady_timer_service_mock* timer_service_ = nullptr;
 
     execution_context() = default;
 
@@ -114,6 +163,9 @@ struct execution_context : asio::execution_context {
 
     execution_context(executor_mock& executor, strand_executor_service_mock& strand_service)
         : executor_ {&executor}, strand_service_(&strand_service) {}
+
+    execution_context(executor_mock& executor, strand_executor_service_mock& strand_service, steady_timer_service_mock& timer_service)
+        : executor_ {&executor}, strand_service_(&strand_service), timer_service_(&timer_service) {}
 
     executor_type get_executor() {
         if (!executor_) {
@@ -171,48 +223,10 @@ struct stream_descriptor {
         mock_->close(ec);
     }
 
-    io_context& get_io_context() { return *io_;}
+    using executor_type = boost::asio::executor;
 
-    auto get_executor() {
-        return get_io_context().get_executor();
-    }
-};
-
-struct steady_timer_mock {
-    virtual ~steady_timer_mock() = default;
-    virtual std::size_t expires_after(const asio::steady_timer::duration& expiry_time) = 0;
-    virtual std::size_t expires_at(const asio::steady_timer::time_point&) = 0;
-    virtual void async_wait(std::function<void(error_code)> handler) = 0;
-    virtual std::size_t cancel() = 0;
-};
-
-struct steady_timer_gmock : steady_timer_mock {
-    MOCK_METHOD1(expires_after, std::size_t (const asio::steady_timer::duration&));
-    MOCK_METHOD1(expires_at, std::size_t (const asio::steady_timer::time_point&));
-    MOCK_METHOD1(async_wait, void (std::function<void(error_code)>));
-    MOCK_METHOD0(cancel, std::size_t ());
-};
-
-struct steady_timer {
-    steady_timer_mock* impl = nullptr;
-
-    std::size_t expires_after(const asio::steady_timer::duration& expiry_time) {
-        return impl->expires_after(expiry_time);
-    }
-
-    std::size_t expires_at(const asio::steady_timer::time_point& at) {
-        return impl->expires_at(at);
-    }
-
-    template <typename Handler>
-    void async_wait(Handler&& handler) {
-        return impl->async_wait([h = std::forward<Handler>(handler)] (auto e) {
-            asio::post(ozo::detail::bind(std::move(h), std::move(e)));
-        });
-    }
-
-    std::size_t cancel() {
-        return impl->cancel();
+    executor_type get_executor() const {
+        return io_->get_executor();
     }
 };
 
@@ -226,6 +240,27 @@ struct strand_executor<ozo::tests::executor> {
 
     static auto get(const tests::executor& ex) {
         return type{ex.context().strand_service_->get_executor(), ex.context()};
+    }
+};
+
+template <>
+struct operation_timer<ozo::tests::executor> {
+    using type = ozo::tests::steady_timer<ozo::tests::executor>;
+
+    template <typename TimeConstraint>
+    static type get(const ozo::tests::executor& ex, TimeConstraint t) {
+        if (!ex.context_->timer_service_) {
+            throw std::logic_error("timer_service is nullptr");
+        }
+        return type{std::addressof(ex.context_->timer_service_->timer(t)), ex};
+    }
+
+    template <typename TimeConstraint>
+    static type get(const ozo::tests::executor& ex) {
+        if (!ex.context_->timer_service_) {
+            throw std::logic_error("timer_service is nullptr");
+        }
+        return type{std::addressof(ex.context_->timer_service_->timer()), ex};
     }
 };
 

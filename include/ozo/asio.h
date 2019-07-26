@@ -55,28 +55,44 @@ struct operation_timer {
         "No operation_timer<> specialization found for specified type");
 };
 
+#if BOOST_VERSION < 107000
 template <>
-struct operation_timer<asio::io_context> {
+struct operation_timer<asio::io_context::executor_type> {
     using type = asio::steady_timer;
 
     template <typename TimeConstraint>
-    static type get(asio::io_context& io, TimeConstraint t) {
-        return type{io, t};
+    static type get(const asio::io_context::executor_type& ex, TimeConstraint t) {
+        return type{ex.context(), t};
     }
 
-    static type get(asio::io_context& io) {
-        return type{io};
+    static type get(const asio::io_context::executor_type& ex) {
+        return type{ex.context()};
     }
 };
+#else
+template <>
+struct operation_timer<asio::io_context::executor_type> {
+    using type = asio::steady_timer;
 
-template <typename ExecutionContext, typename TimeConstraint>
-inline auto get_operation_timer(ExecutionContext& ctx, TimeConstraint t) {
-    return operation_timer<ExecutionContext>::get(ctx, t);
+    template <typename TimeConstraint>
+    static type get(const asio::io_context::executor_type& ex, TimeConstraint t) {
+        return type{ex, t};
+    }
+
+    static type get(const asio::io_context::executor_type& ex) {
+        return type{ex};
+    }
+};
+#endif
+
+template <typename Executior, typename TimeConstraint>
+inline auto get_operation_timer(const Executior& ex, TimeConstraint t) {
+    return operation_timer<Executior>::get(ex, t);
 }
 
-template <typename ExecutionContext>
-inline auto get_operation_timer(ExecutionContext& ctx) {
-    return operation_timer<ExecutionContext>::get(ctx);
+template <typename Executor>
+inline auto get_operation_timer(const Executor& ex) {
+    return operation_timer<Executor>::get(ex);
 }
 
 } // namespace detail

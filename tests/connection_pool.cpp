@@ -229,7 +229,7 @@ TEST_F(pooled_connection_wrapper, should_invoke_handler_if_passed_connection_is_
 
     EXPECT_CALL(handle_mock, value()).WillRepeatedly(ReturnRef(conn));
     EXPECT_CALL(handle_mock, empty()).WillRepeatedly(Return(false));
-    EXPECT_CALL(connection_mock, rebind_io_context()).WillRepeatedly(Return(ozo::error_code{}));
+    EXPECT_CALL(connection_mock, bind_executor()).WillRepeatedly(Return(ozo::error_code{}));
 
     EXPECT_CALL(callback_mock, call(_, _)).WillOnce(Return());
 

@@ -9,33 +9,6 @@
 
 namespace {
 
-struct io_context_mock : ozo::tests::execution_context {
-    ozo::tests::steady_timer_gmock* timer_;
-    io_context_mock(ozo::tests::executor_mock& executor,
-        ozo::tests::strand_executor_service_mock& strand_service,
-        ozo::tests::steady_timer_gmock& timer
-    ) : ozo::tests::execution_context(executor, strand_service), timer_(std::addressof(timer)) {}
-    MOCK_METHOD1(get_operation_timer, void(ozo::time_traits::time_point));
-};
-
-} // namespace
-
-namespace ozo::detail {
-
-template <>
-struct operation_timer<io_context_mock> {
-    using type = ozo::tests::steady_timer;
-
-    template <typename TimeConstraint>
-    static type get(io_context_mock& io, TimeConstraint t) {
-        io.get_operation_timer(t);
-        return type{io.timer_};
-    }
-};
-
-} // namespace ozo::detail
-namespace {
-
 using namespace std::literals;
 using namespace ::testing;
 
@@ -108,16 +81,12 @@ struct cancel_handle {
 };
 
 struct initiate_async_cancel : Test {
-    struct strand_service : ozo::tests::strand_executor_service_mock {
-        ozo::tests::executor_gmock executor;
-        ozo::tests::executor_mock& get_executor() {
-            return executor;
-        }
-    } strand;
-
     StrictMock<ozo::tests::executor_gmock> executor;
     StrictMock<ozo::tests::steady_timer_gmock> timer;
-    io_context_mock io{executor, strand, timer};
+    StrictMock<ozo::tests::steady_timer_service_mock> timer_service;
+    StrictMock<ozo::tests::executor_gmock> strand;
+    ozo::tests::strand_executor_service_gmock strand_service;
+    ozo::tests::execution_context io{executor, strand_service, timer_service};
     StrictMock<cancel_handle_mock> cancel_handle_;
     StrictMock<ozo::tests::executor_gmock> handle_executor;
     StrictMock<ozo::tests::callback_gmock<std::string>> callback;
@@ -132,7 +101,8 @@ TEST_F(initiate_async_cancel, should_post_cancel_op_into_cancel_handle_attached_
 
 
 TEST_F(initiate_async_cancel, should_post_cancel_op_with_time_constraint_into_cancel_handle_attached_executor_and_wait_for_timer) {
-    EXPECT_CALL(io, get_operation_timer(_));
+    EXPECT_CALL(timer_service, timer(An<ozo::time_traits::time_point>())).WillOnce(ReturnRef(timer));
+    EXPECT_CALL(strand_service, get_executor()).WillOnce(ReturnRef(strand));
     EXPECT_CALL(handle_executor, post(_));
     EXPECT_CALL(timer, async_wait(_));
     initiate_async_cancel_(ozo::tests::wrap(callback), cancel_handle(cancel_handle_, handle_executor), io, ozo::time_traits::time_point{});
