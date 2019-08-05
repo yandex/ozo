@@ -99,10 +99,7 @@ TEST_F(get_try_time_constraint, should_return_zero_time_left_for_try_count_less_
 template <typename Errcs, typename Ctx>
 static auto make_basic_try(int n_tries, Errcs errcs, Ctx ctx) {
     using op = ozo::failover::retry_options;
-    auto options = hana::make_map(
-        hana::make_pair(op::tries, n_tries),
-        hana::make_pair(op::conditions, errcs)
-    );
+    auto options = ozo::make_options(op::tries = n_tries, op::conditions = errcs);
     return ozo::failover::basic_try(std::move(options), std::move(ctx));
 }
 
@@ -133,9 +130,9 @@ TEST_F(basic_try__get_next_try, should_return_next_try_for_matching_error_if_cer
 
 TEST_F(basic_try__get_next_try, should_call_on_retry_handler_for_retry) {
     using op = ozo::failover::retry_options;
-    auto options = hana::make_map(
-        hana::make_pair(op::tries, 3),
-        hana::make_pair(op::on_retry, [&](ozo::error_code ec, auto& conn) mutable {handler(ec, conn);})
+    auto options = ozo::make_options(
+        op::tries = 3,
+        op::on_retry = [&](ozo::error_code ec, auto& conn) mutable {handler(ec, conn);}
     );
     auto basic_try =  ozo::failover::basic_try(std::move(options), ctx());
     EXPECT_CALL(handler, call(ozo::error_code{ozo::tests::error::another_error}, null_conn));
@@ -144,9 +141,9 @@ TEST_F(basic_try__get_next_try, should_call_on_retry_handler_for_retry) {
 
 TEST_F(basic_try__get_next_try, should_not_call_on_retry_handler_if_no_retry_may_be) {
     using op = ozo::failover::retry_options;
-    auto options = hana::make_map(
-        hana::make_pair(op::tries, 0),
-        hana::make_pair(op::on_retry, [&](ozo::error_code ec, auto& conn) mutable {handler(ec, conn);})
+    auto options = ozo::make_options(
+        op::tries = 0,
+        op::on_retry = [&](ozo::error_code ec, auto& conn) mutable {handler(ec, conn);}
     );
     auto basic_try = ozo::failover::basic_try(std::move(options), ctx());
     basic_try.get_next_try(ozo::tests::error::another_error, null_conn);
@@ -171,10 +168,7 @@ TEST_F(basic_try__get_next_try, should_close_connection_on_retry_if_option_is_om
 
 TEST_F(basic_try__get_next_try, should_close_connection_on_retry_if_option_is_true) {
     using op = ozo::failover::retry_options;
-    auto options = hana::make_map(
-        hana::make_pair(op::tries, 3),
-        hana::make_pair(op::close_connection, true)
-    );
+    auto options = ozo::make_options(op::tries=3, op::close_connection=true);
     auto basic_try =  ozo::failover::basic_try(std::move(options), ctx());
     EXPECT_CALL(conn, close_connection());
     basic_try.get_next_try(ozo::tests::error::error, std::addressof(conn));
@@ -182,10 +176,7 @@ TEST_F(basic_try__get_next_try, should_close_connection_on_retry_if_option_is_tr
 
 TEST_F(basic_try__get_next_try, should_not_close_connection_on_retry_if_option_is_false) {
     using op = ozo::failover::retry_options;
-    auto options = hana::make_map(
-        hana::make_pair(op::tries, 3),
-        hana::make_pair(op::close_connection, false)
-    );
+    auto options = ozo::make_options(op::tries = 3, op::close_connection = false);
     auto basic_try =  ozo::failover::basic_try(std::move(options), ctx());
     basic_try.get_next_try(ozo::tests::error::error, std::addressof(conn));
 }
@@ -198,10 +189,10 @@ TEST_F(basic_try__get_next_try, should_close_connection_on_no_retry_if_option_is
 
 TEST_F(basic_try__get_next_try, should_close_connection_on_no_retry_if_option_is_true) {
     using op = ozo::failover::retry_options;
-    auto options = hana::make_map(
-        hana::make_pair(op::tries, 3),
-        hana::make_pair(op::conditions, hana::make_tuple(ozo::tests::errc::error)),
-        hana::make_pair(op::close_connection, true)
+    auto options = ozo::make_options(
+        op::tries = 3,
+        op::conditions = hana::make_tuple(ozo::tests::errc::error),
+        op::close_connection = true
     );
     auto basic_try =  ozo::failover::basic_try(std::move(options), ctx());
     EXPECT_CALL(conn, close_connection());
@@ -210,10 +201,10 @@ TEST_F(basic_try__get_next_try, should_close_connection_on_no_retry_if_option_is
 
 TEST_F(basic_try__get_next_try, should_not_close_connection_on_no_retry_if_option_is_false) {
     using op = ozo::failover::retry_options;
-    auto options = hana::make_map(
-        hana::make_pair(op::tries, 3),
-        hana::make_pair(op::conditions, hana::make_tuple(ozo::tests::errc::error)),
-        hana::make_pair(op::close_connection, false)
+    auto options = ozo::make_options(
+        op::tries = 3,
+        op::conditions = hana::make_tuple(ozo::tests::errc::error),
+        op::close_connection = false
     );
     auto basic_try =  ozo::failover::basic_try(std::move(options), ctx());
     basic_try.get_next_try(ozo::tests::error::ok, std::addressof(conn));

@@ -46,7 +46,7 @@ int main(int argc, char **argv) {
         //   3rd try will be limited by  1 - (t(1st try) + t(2nd try)), which is not less than 1/3 sec too.
         auto retry = 3*failover::retry(ozo::errc::connection_error)
         // We want to print out information about retries
-                        .set(retry_options::on_retry, print_error);
+                        .set(retry_options::on_retry = print_error);
         // Here a request call with retry fallback strategy
         auto conn = ozo::request[retry](conn_info[io], "SELECT 1"_SQL, 1s, ozo::into(result), yield[ec]);
 

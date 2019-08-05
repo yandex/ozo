@@ -1,10 +1,7 @@
 #pragma once
 
 #include <ozo/failover/strategy.h>
-#include <boost/hana/is_empty.hpp>
-#include <boost/hana/tuple.hpp>
-#include <boost/hana/fold.hpp>
-#include <boost/hana/concat.hpp>
+#include <ozo/core/options.h>
 
 /**
  * @defgroup group-failover-retry Retry
@@ -46,10 +43,10 @@ struct retry_options {
     class tries_tag;
     class conditions_tag;
 
-    constexpr static hana::type<on_retry_tag> on_retry{}; //!< Set handler for retry event, may be useful for logging.
-    constexpr static hana::type<close_connection_tag> close_connection{}; //!< Set close connection policy on retry, possible values `true`(default), `false`.
-    constexpr static hana::type<tries_tag> tries{}; //!< Set number of tries, see `ozo::retry_strategy::tries()` for more information.
-    constexpr static hana::type<conditions_tag> conditions{}; //!< Set error conditions to retry
+    constexpr static option<on_retry_tag> on_retry{}; //!< Set handler for retry event, may be useful for logging.
+    constexpr static option<close_connection_tag> close_connection{}; //!< Set close connection policy on retry, possible values `true`(default), `false`.
+    constexpr static option<tries_tag> tries{}; //!< Set number of tries, see `ozo::retry_strategy::tries()` for more information.
+    constexpr static option<conditions_tag> conditions{}; //!< Set error conditions to retry
 };
 
 /**
@@ -58,14 +55,14 @@ struct retry_options {
  * Controls current try state incluiding number of tries remain, context of operation call for
  * current try.
  *
- * @tparam Options --- map of `ozo::failover::retry_options`.
+ * @tparam Options --- map of `ozo::options`.
  * @tparam Context --- operation call context, literally operation arguments except #CompletionToken.
  * @ingroup group-failover-retry
  */
 template <typename Options, typename Context>
 class basic_try {
     Context ctx_;
-    std::decay_t<Options> options_;
+    Options options_;
     using op = retry_options;
 
 public:
@@ -77,77 +74,15 @@ public:
      */
     constexpr basic_try(Options options, Context ctx)
     : ctx_(std::move(ctx)), options_(std::move(options)) {
+        static_assert(decltype(hana::is_a<hana::map_tag>(options))::value, "Options should be boost::hana::map");
     }
     constexpr basic_try(const basic_try&) = delete;
     constexpr basic_try(basic_try&&) = default;
     constexpr basic_try& operator = (const basic_try&) = delete;
     constexpr basic_try& operator = (basic_try&&) = default;
 
-    /**
-     * @brief Update an option
-     *
-     * @param key --- one of `ozo::failover::retry_options`.
-     * @param v --- value to set the option in
-     */
-    template <typename Key, typename T>
-    void update_option(const Key& key, T&& v) {
-        static_assert(decltype(has_option(key))::value, "option has not been found");
-        options_[key] = std::forward<T>(v);
-    }
-
-    /**
-     * @brief Get option value
-     *
-     * To get a value option should exist.
-     * @param key --- one of `ozo::failover::retry_options` to get value of.
-     * @return value of the option.
-     */
-    template <typename Key>
-    constexpr decltype(auto) option(const Key& key) const {
-        static_assert(decltype(has_option(key))::value, "option has not been found");
-        return options_[key];
-    }
-    template <typename Key>
-    constexpr decltype(auto) option(const Key& key) {
-        static_assert(decltype(has_option(key))::value, "option has not been found");
-        return options_[key];
-    }
-
-    /**
-     * @brief Get option value or default value if option is not found
-     *
-     * @param key --- one of `ozo::failover::retry_options` to get value of.
-     * @param default_ --- value to return if option has not been found.
-     * @return value of the option or default value.
-     */
-    template <typename Key, typename T>
-    constexpr decltype(auto) option(const Key& key, const T& default_) const {
-        if constexpr (decltype(has_option(key))::value) {
-            return options_[key];
-        } else {
-            return default_;
-        }
-    }
-    template <typename Key, typename T>
-    constexpr decltype(auto) option(const Key& key, const T& default_) {
-        if constexpr (decltype(has_option(key))::value) {
-            return options_[key];
-        } else {
-            return default_;
-        }
-    }
-
-    /**
-     * @brief Indicates option is exists
-     *
-     * @param key --- one of `ozo::failover::retry_options` to check if it exists.
-     * @return `boost::hana::true_` --- option exists.
-     * @return `boost::hana::false_` --- option does not exist.
-     */
-    template <typename Key>
-    constexpr auto has_option(const Key& key) const {
-        return hana::contains(options_, key);
-    }
+    constexpr const Options& options() const { return options_;}
+    constexpr Options& options() { return options_;}
 
     /**
      * @brief Get the operation context.
@@ -177,10 +112,10 @@ public:
     template <typename Connection>
     std::optional<basic_try> get_next_try(ozo::error_code ec, Connection&& conn) {
         std::optional<basic_try> retval;
-        const auto should_close_connection = option(op::close_connection, true);
+        const auto should_close_connection = get_option(options(), op::close_connection, true);
         adjust_tries_remain();
         if (can_retry(ec)) {
-            option(op::on_retry, [](auto&&...){})(ec, conn);
+            get_option(options(), op::on_retry, [](auto&&...){})(ec, conn);
             retval.emplace(basic_try{std::move(options_), std::move(ctx_)});
         }
 
@@ -198,7 +133,7 @@ public:
      *
      * @return int --- number of tries remains to execute an operation, not less than 0.
      */
-    constexpr int tries_remain() const { return option(op::tries);}
+    constexpr int tries_remain() const { return get_option(options(), op::tries);}
 
     /**
      * @brief Retry conditions for the try
@@ -207,16 +142,16 @@ public:
      *                             chance to be solved by a retry.
      */
     constexpr decltype(auto) get_conditions() const {
-        return option(op::conditions, no_conditions_);
-    }
-
-private:
-    void adjust_tries_remain() {
-        update_option(op::tries, std::max(0, tries_remain() - 1));
+        return get_option(options(), op::conditions, no_conditions_);
     }
 
     auto time_constraint() const {
         return detail::get_try_time_constraint(unwrap(ctx_).time_constraint, tries_remain());
+    }
+
+private:
+    void adjust_tries_remain() {
+        options_[op::tries] = std::max(0, tries_remain() - 1);
     }
 
     bool can_retry([[maybe_unused]] error_code ec) const {
@@ -237,19 +172,20 @@ private:
 /**
  * @brief Retry strategy
  *
- * Retry strategy is a factory for `ozo::fallback::basic_try` object.
+ * Retry strategy is a factory for `ozo::fallback::basic_try` object. This class is
+ * an options' factory (see `ozo::options_factory_base`).
  *
- * @tparam ErrorConditions --- #HanaSequence of retry conditions,
- *                             see `ozo::failover::retry` for details.
  * @ingroup group-failover-retry
  */
 template <typename Options = decltype(hana::make_map())>
-class retry_strategy {
-    std::decay_t<Options> options_;
+class retry_strategy : public ozo::options_factory_base<retry_strategy<Options>, Options> {
     using op = retry_options;
 
+    friend class ozo::options_factory_base<retry_strategy<Options>, Options>;
+    using base = ozo::options_factory_base<retry_strategy<Options>, Options>;
+
     template <typename OtherOptions>
-    constexpr static auto rebind(OtherOptions&& options) {
+    constexpr static auto rebind_options(OtherOptions&& options) {
         return retry_strategy<std::decay_t<OtherOptions>>(std::forward<OtherOptions>(options));
     }
 
@@ -259,7 +195,9 @@ public:
      *
      * @param options --- `boost::hana::map` of `ozo::failover::retry_options` and values.
      */
-    retry_strategy(Options options = Options{}) : options_(std::move(options)) {}
+    retry_strategy(Options options = Options{}) : base(std::move(options)) {
+        static_assert(decltype(hana::is_a<hana::map_tag>(options))::value, "Options should be boost::hana::map");
+    }
 
     /**
      * @brief Get the first try object
@@ -276,10 +214,10 @@ public:
     auto get_first_try(const Operation&, const Allocator&,
             ConnectionProvider&& provider, TimeConstraint t, Args&& ...args) const {
 
-        static_assert(decltype(has(op::tries))::value, "number of tries should be specified");
+        static_assert(decltype(this->has(op::tries))::value, "number of tries should be specified");
 
         return basic_try {
-            std::move(options_),
+            this->options(),
             basic_context{
                 std::forward<ConnectionProvider>(provider),
                 ozo::deadline(t),
@@ -319,7 +257,7 @@ public:
     ozo::request[retry*3](pool, query, .5s, out, yield);
      * @endcode
      */
-    constexpr decltype(auto) tries(int n) const & { return set(op::tries, n);}
+    constexpr decltype(auto) tries(int n) const & { return this->set(op::tries, n);}
     constexpr decltype(auto) tries(int n) && { return std::move(*this).set(op::tries, n);}
 
     /**
@@ -327,65 +265,14 @@ public:
      *
      * @return int --- number of operation tries
      */
-    constexpr int get_tries() const { return get(op::tries); }
+    constexpr int get_tries() const { return this->get(op::tries); }
 
     /**
      * @brief Retry error conditions of the strategy
      *
      * @return `boost::hana::tuple` --- tuple of retryable error conditions setted for this strategy.
      */
-    constexpr auto get_conditions() const { return get(op::conditions); }
-
-    /**
-     * @brief Set option for the strategy
-     *
-     * Insert or update option with given value.
-     *
-     * @param key --- one of `ozo::failover::retry_options`.
-     * @param value --- value of the option to set option in.
-     * @return `retry_strategy` object.
-     */
-    template <typename Option, typename T>
-    constexpr decltype(auto) set(const Option& key, T&& value) && {
-        if constexpr (decltype(has(key))::value) {
-            options_[key] = std::forward<T>(value);
-            return std::move(*this);
-        } else {
-            auto options = hana::insert(std::move(options_), hana::make_pair(key, std::forward<T>(value)));
-            return rebind(std::move(options));
-        }
-    }
-
-    template <typename Option, typename T>
-    constexpr decltype(auto) set(const Option& key, T&& value) const & {
-        retry_strategy copy = *this;
-        return static_cast<retry_strategy&&>(copy).set(key, std::forward<T>(value));
-    }
-
-    /**
-     * @brief Indicates option has been set
-     *
-     * @param key --- one of `ozo::failover::retry_options` to check.
-     * @return `boost::hana::true_` --- option has been set.
-     * @return `boost::hana::false_` --- option has not been set.
-     */
-    template <typename Option>
-    constexpr auto has(const Option& key) const {
-        return hana::contains(options_, key);
-    }
-
-    /**
-     * @brief Get option value
-     *
-     * To get a value option should be set first.
-     * @param key --- one of `ozo::failover::retry_options` to get value of.
-     * @return value of the option.
-     */
-    template <typename Option>
-    constexpr decltype(auto) get(const Option& key) const {
-        static_assert(decltype(has(key))::value, "the option has not been set");
-        return options_[key];
-    }
+    constexpr auto get_conditions() const { return this->get(op::conditions); }
 
     /**
      * @brief Sintactic sugar for `ozo::retry_strategy::tries()`
@@ -425,7 +312,7 @@ ozo::request[retry](pool, query, .5s, out, yield);
 template <typename ...ErrorConditions>
 constexpr auto retry(ErrorConditions ...ec) {
     if constexpr (sizeof...(ec) != 0) {
-        return retry_strategy{}.set(retry_options::conditions, hana::make_tuple(ec...));
+        return retry_strategy{}.set(retry_options::conditions=hana::make_tuple(ec...));
     } else {
         return retry_strategy{};
     }
