@@ -2,30 +2,17 @@
 
 #include <libpq-fe.h>
 #include <memory>
-namespace std {
-
-/**
- * @brief Default deleter for PGresult
- *
- * There are two ways to specify deleter for std::unique_ptr
- * 1. By template parameter
- * 2. By "std::default_delete" template specialization
- *
- * In the first case we lose the default constructor for the pointer.
- * That's why the second way was chosen.
- */
-template <>
-struct default_delete<PGresult> {
-    void operator() (PGresult *ptr) const { PQclear(ptr); }
-};
-
-} // namespace std
 
 namespace ozo {
+
+struct native_result_handle_deleter {
+    void operator() (::PGresult *ptr) const { ::PQclear(ptr); }
+};
+
 /**
  * @brief libpq PGresult safe RAII representation.
  * libpq PGresult safe RAII representation.
  */
-using native_result_handle = std::unique_ptr<PGresult>;
+using native_result_handle = std::unique_ptr<::PGresult, native_result_handle_deleter>;
 
 } // namespace ozo
