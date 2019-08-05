@@ -420,12 +420,11 @@ inline decltype(auto) get_handle(T&& conn) noexcept {
  * you really need. In other cases this is not the function what you are looking for.
  *
  * @param conn --- #Connection object
- * @return PQConn* --- native handle
+ * @return native handle
  */
-template <typename T>
-inline decltype(auto) get_native_handle(T&& conn) noexcept {
-    static_assert(Connection<T>, "T must be a Connection");
-    return get_handle(std::forward<T>(conn)).get();
+template <typename Connection>
+inline auto get_native_handle(const Connection& conn) noexcept {
+    return get_handle(conn).get();
 }
 
 /**
