@@ -167,7 +167,7 @@ constexpr detail::result_of<get_connection_socket_impl, T> get_connection_socket
 template <typename T, typename = hana::when<true>>
 struct get_connection_executor_impl {
     template <typename Conn>
-    constexpr static auto apply(Conn&& c) -> decltype(get_connection_socket(c)) {
+    constexpr static auto apply(Conn&& c) -> decltype(get_connection_socket(c).get_executor()) {
         return get_connection_socket(c).get_executor();
     }
 };
