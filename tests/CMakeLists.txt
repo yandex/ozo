@@ -52,6 +52,7 @@ set(SOURCES
     io/size_of.cpp
     failover/retry.cpp
     failover/strategy.cpp
+    failover/role_based.cpp
     detail/deadline.cpp
     detail/call_once.cpp
     impl/cancel.cpp
@@ -68,6 +69,7 @@ if(OZO_BUILD_PG_TESTS)
         integration/transaction_integration.cpp
         integration/retry_integration.cpp
         integration/cancel_integration.cpp
+        integration/role_based_integration.cpp
     )
     add_definitions(-DOZO_PG_TEST_CONNINFO="${OZO_PG_TEST_CONNINFO}")
 endif()
