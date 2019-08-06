@@ -111,18 +111,13 @@ public:
      */
     template <typename Connection>
     std::optional<basic_try> get_next_try(ozo::error_code ec, Connection&& conn) {
+        auto guard = defer_close_connection(get_option(options(), op::close_connection, true) ? std::addressof(conn) : nullptr);
+
         std::optional<basic_try> retval;
-        const auto should_close_connection = get_option(options(), op::close_connection, true);
         adjust_tries_remain();
         if (can_retry(ec)) {
             get_option(options(), op::on_retry, [](auto&&...){})(ec, conn);
             retval.emplace(basic_try{std::move(options_), std::move(ctx_)});
-        }
-
-        if (should_close_connection) {
-            if (!is_null_recursive(conn)) {
-                close_connection(conn);
-            }
         }
 
         return retval;

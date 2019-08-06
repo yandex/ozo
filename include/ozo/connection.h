@@ -1001,6 +1001,40 @@ inline void close_connection(T&& conn) {
     get_handle(std::forward<T>(conn)).reset();
 }
 
+/**
+ * @brief Close connection to the database when leaving the scope
+ *
+ * This function creates RAII guard object which calls `ozo::close_connection()`
+ * at the end of its scope. If nullptr is passed as argument or connection is
+ * null recursive no `ozo::close_connection()` would be made.
+ *
+ * @param conn --- pointer on a #Connection to be closed.
+ *
+ * ###Example
+ *
+ * @code
+{
+    auto guard = defer_close_connection(should_be_closed ? std::addressof(conn) : nullptr);
+
+    // Process the connection
+}
+ * @endcode
+ *
+ * @ingroup group-connection-functions
+ */
+template <typename Connection>
+inline auto defer_close_connection(Connection* conn) {
+    static_assert(ozo::Connection<Connection>, "argument should model Connection");
+
+    auto do_close = [] (auto conn_ptr) {
+        if (!is_null_recursive(*conn_ptr)) {
+            close_connection(*conn_ptr);
+        }
+    };
+
+    return std::unique_ptr<Connection, decltype(do_close)>{conn, do_close};
+}
+
 ///@}
 
 } // namespace ozo
