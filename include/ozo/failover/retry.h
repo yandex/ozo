@@ -41,10 +41,15 @@ constexpr auto make_errcs_tuple(ErrorConditions ...errcs) {
  * @ingroup group-failover-retry
  */
 struct retry_options {
-    constexpr static hana::type<class on_retry_opt_tag> on_retry{}; //!< Set handler for retry event, may be useful for logging.
-    constexpr static hana::type<class close_connection_opt_tag> close_connection{}; //!< Set close connection policy on retry, possible values `true`(default), `false`.
-    constexpr static hana::type<class tries_opt_tag> tries{}; //!< Set number of tries, see `ozo::retry_strategy::tries()` for more information.
-    constexpr static hana::type<class conditions_opt_tag> conditions{}; //!< Set error conditions to retry
+    class on_retry_tag;
+    class close_connection_tag;
+    class tries_tag;
+    class conditions_tag;
+
+    constexpr static hana::type<on_retry_tag> on_retry{}; //!< Set handler for retry event, may be useful for logging.
+    constexpr static hana::type<close_connection_tag> close_connection{}; //!< Set close connection policy on retry, possible values `true`(default), `false`.
+    constexpr static hana::type<tries_tag> tries{}; //!< Set number of tries, see `ozo::retry_strategy::tries()` for more information.
+    constexpr static hana::type<conditions_tag> conditions{}; //!< Set error conditions to retry
 };
 
 /**
