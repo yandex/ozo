@@ -27,6 +27,17 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     target_compile_options(ozo_retry_request PRIVATE -Wno-ignored-optimization-argument)
 endif()
 
+add_executable(ozo_role_based_request role_based_request.cpp)
+target_link_libraries(ozo_role_based_request ozo)
+
+# enable a bunch of warnings and make them errors
+target_compile_options(ozo_role_based_request PRIVATE -Wall -Wextra -Wsign-compare -pedantic -Werror)
+
+# ignore specific errors for clang
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+    target_compile_options(ozo_role_based_request PRIVATE -Wno-ignored-optimization-argument)
+endif()
+
 add_executable(ozo_connection_pool connection_pool.cpp)
 target_link_libraries(ozo_connection_pool ozo)
 
