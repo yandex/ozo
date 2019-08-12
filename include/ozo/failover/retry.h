@@ -227,8 +227,7 @@ private:
         if constexpr (decltype(hana::is_empty(get_conditions()))::value) {
             return true;
         } else {
-            const auto f = [ec](bool v, auto errc) { return v || (ec == errc); };
-            return boost::hana::fold(get_conditions(), false, f);
+            return errc::match_code(get_conditions(), ec);
         }
     }
     constexpr static const auto no_conditions_ = hana::make_tuple();

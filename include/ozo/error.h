@@ -13,6 +13,8 @@
  */
 namespace ozo {
 
+namespace hana = ::boost::hana;
+
 /**
  * @ingroup group-errors
  * @brief Error code representation of the library.
@@ -834,6 +836,12 @@ inline auto make_error_condition(const code e) {
     return error_condition(static_cast<int>(e), category());
 }
 
+template<typename Conditions>
+constexpr bool match_code(const Conditions& conditions, const error_code& ec) {
+    return hana::fold(conditions, false,
+        [&ec](bool v, auto errc) { return v || (ec == errc); });
+}
+
 namespace impl {
 
 namespace asio = boost::asio;
@@ -915,8 +923,7 @@ struct codes_for_condition<protocol_error> {
 
 template<code Code>
 constexpr bool match_code(const error_code& ec) {
-    return hana::fold(codes_for_condition<Code>::value, false,
-        [&ec](bool v, auto errc) { return v || (ec == errc); });
+    return ozo::errc::match_code(codes_for_condition<Code>::value, ec);
 }
 
 class category : public error_category {
