@@ -69,7 +69,7 @@ public:
     /**
      * Source type according to #ConnectionProvider requirements
      */
-    using source_type = Source;
+    using source_type = std::decay_t<Source>;
     /**
      * #Connection implementation type according to #ConnectionProvider requirements.
      * Specifies the #Connection implementation type which can be obtained from this provider.
@@ -106,7 +106,7 @@ public:
     }
 
 private:
-    source_type source_;
+    Source source_;
     io_context& io_;
 };
 
