@@ -14,7 +14,7 @@ Since the project is on early state of development it lacks of documentation. We
 
 * look at our brand new [HOW TO](docs/howto.md),
 * try our [generated from sources documentation](https://yandex.github.io/ozo/) - it is under construction but readable,
-* learn more about main use-cases from [unit tests](tests/request_integration.cpp),
+* learn more about main use-cases from [unit tests](tests/integration/request_integration.cpp),
 * See our [C++Now'18 talk about OZO](https://youtu.be/-1zbaxuUsMA) with [presentation](https://github.com/boostcon/cppnow_presentations_2018/blob/master/05-09-2018_wednesday/design_and_implementation_of_dbms_asynchronous_client_library__roman_siromakha__cppnow_05092018.pdf).
 
 ## Dependencies
