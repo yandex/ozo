@@ -139,7 +139,7 @@ public:
      * Set number of options with values.
      *
      * This method updates or inserts option with a value specified.
-     * If option exists - it will be updated, in this case value should be at least implicitely
+     * If option exists - it will be updated, in this case value should be at least implicitly
      * convertible to the existant option value type. If option does not exist - it will be added.
      *
      * @param options --- pairs of option and its value
