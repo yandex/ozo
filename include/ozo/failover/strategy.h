@@ -269,7 +269,8 @@ struct get_next_try_impl {
  *
  * Return #FailoverTry for next failover try if it possible. By default it calls
  * `a_try.get_next_try(ec, conn)`. This behavior customisable via `ozo::failover::get_next_try_impl`
- * specialization.
+ * specialization. It will be used by default if no `ozo::failover::initiate_next_try`
+ * customization had been made.
  *
  * @param a_try --- current #FailoverTry object.
  * @param ec --- current try error code.
@@ -302,9 +303,63 @@ struct get_next_try_impl<my_strategy_try> {
  * @ingroup group-failover-strategy
  */
 template <typename Try, typename Connection>
-inline auto get_next_try(Try& a_try, error_code ec, Connection&& conn) {
-    return detail::apply<get_next_try_impl>(unwrap(a_try), std::move(ec),
-        std::forward<Connection>(conn));
+inline auto get_next_try(Try& a_try, const error_code& ec, Connection& conn) {
+    return detail::apply<get_next_try_impl>(unwrap(a_try), ec, conn);
+}
+
+template <typename Try>
+struct initiate_next_try_impl {
+    template <typename Connection, typename Initiator>
+    static auto apply(Try& a_try, const error_code& ec, Connection& conn, Initiator init) {
+        if (auto next = get_next_try(a_try, ec, conn); !is_null(next)) {
+            init(std::move(next));
+        }
+    }
+};
+
+/**
+ * @brief Initiates the next try of an operation execution
+ *
+ * This mechanism supports static polymorphism of tries depended on error conditions.
+ * Unlike `ozo::failover::get_next_try()` it allows to use different types of
+ * try-objects for different error conditions.
+ *
+ * Function implementation should call initiator in case of operation with given error
+ * condition may be recovered by try-object is given to initiator. Or should not call
+ * initiator in case of an unrecoverable error condition.
+ *
+ * @note Initiator object should be called only once and should not be called out of the
+ * function scope since it contains references on stack-allocated objects.
+ *
+ * @param a_try --- current #FailoverTry object.
+ * @param ec --- current try error code.
+ * @param conn --- current #connection object.
+ * @param init --- initiator of an operation execution, functional object with signature `void(auto try)`
+ *
+ * ### Customization Point
+ *
+ * This function may be customized for a #FailoverTry via specialization
+ * of `ozo::failover::initiate_next_try_impl`. E.g. default implementation may look like this:
+ * @code
+namespace ozo::failover {
+
+template <typename Try>
+struct initiate_next_try_impl {
+    template <typename Connection, typename Initiator>
+    static auto apply(Try& a_try, const error_code& ec, Connection& conn, Initiator init) {
+        if (auto next = get_next_try(a_try, ec, conn); !is_null(next)) {
+            init(std::move(next));
+        }
+    }
+};
+
+} // namespace ozo::failover
+ * @endcode
+ * @ingroup group-failover-strategy
+ */
+template <typename Try, typename Connection, typename Initiator>
+inline auto initiate_next_try(Try& a_try, const error_code& ec, Connection& conn, Initiator&& init) {
+    return detail::apply<initiate_next_try_impl>(unwrap(a_try), ec, conn, std::forward<Initiator>(init));
 }
 
 namespace detail {
@@ -331,9 +386,14 @@ struct continuation {
     void operator() (error_code ec, Connection&& conn) {
         static_assert(ozo::Connection<Connection>, "conn should model Connection concept");
         if (ec) {
-            auto next_try = get_next_try(try_, std::move(ec), std::forward<Connection>(conn));
-            if (!is_null(next_try)) {
+            bool initiated = false;
+
+            initiate_next_try(try_, ec, conn, [&] (auto next_try) {
                 initiate_operation(op_, std::move(next_try), std::move(handler_));
+                initiated = true;
+            });
+
+            if (initiated) {
                 return;
             }
         }
