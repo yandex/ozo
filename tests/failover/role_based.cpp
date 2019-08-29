@@ -24,9 +24,13 @@ struct connection_mock {
         }
         self->close_connection();
     };
+    friend void close_connection(connection_mock& self) {
+        self.close_connection();
+    }
 };
 
 static constexpr ozo::failover::role<class test_role_tag> test_role;
+static constexpr ozo::failover::role<class another_test_role_tag> another_test_role;
 
 struct role_based_connection_source_mock {
     MOCK_CONST_METHOD1(call, void(std::function<void(ozo::error_code, connection_mock*)>));
@@ -76,6 +80,8 @@ namespace ozo {
 // at all.
 template <>
 struct is_connection<connection_mock*> : std::true_type {};
+template <>
+struct is_connection<connection_mock> : std::true_type {};
 
 template <>
 struct is_nullable<connection_mock*> : std::true_type {};
@@ -137,7 +143,7 @@ TEST(role_based_connection_provider__rebind, should_move_source_call_source_rebi
 
 using namespace std::literals;
 
-struct role_based_try__get_next_try : Test {
+struct role_based_try__initiate_next_try : Test {
     StrictMock<connection_mock> conn;
     role_based_connection_source_mock source;
     boost::asio::io_service io;
@@ -157,15 +163,25 @@ struct role_based_try__get_next_try : Test {
         }
     };
 
+    struct initiator_mock {
+        MOCK_CONST_METHOD0(call, void());
+        template <typename Try>
+        void operator()(Try) const { call();}
+    };
+
     auto ctx() {
         return ozo::failover::basic_context(provider(), ozo::none);
     }
 
-    connection_mock* connection() { return std::addressof(conn);}
+    connection_mock& connection() { return conn;}
 
     static constexpr connection_mock* null_conn = nullptr;
 
     StrictMock<handler_mock> handler;
+
+    StrictMock<initiator_mock> initiator;
+
+    using opt = ozo::failover::role_based_options;
 };
 
 } // namespace
@@ -177,129 +193,136 @@ struct can_recover_impl<std::decay_t<decltype(::test_role)>> {
         return ozo::tests::error::error == ec;
     }
 };
+
+template <>
+struct can_recover_impl<std::decay_t<decltype(::another_test_role)>> {
+    static auto apply(decltype(::another_test_role), const error_code& ec) {
+        return ozo::tests::error::another_error == ec;
+    }
+};
 } // namespace ozo::failover
 
 namespace {
 
-TEST_F(role_based_try__get_next_try, should_return_next_try_for_matching_error) {
-    using op = ozo::failover::role_based_options;
+TEST_F(role_based_try__initiate_next_try, should_call_initiator_with_next_try_for_matching_error) {
     auto role_based_try = ozo::failover::role_based_try(
         ozo::make_options(
-            op::roles=hana::make_tuple(test_role, test_role)
+            opt::roles=hana::make_tuple(test_role, test_role)
         ), ctx()
     );
-    EXPECT_FALSE(ozo::is_null(role_based_try.get_next_try(ozo::tests::error::error, null_conn)));
+    EXPECT_CALL(initiator, call());
+    role_based_try.initiate_next_try(ozo::tests::error::error, null_conn, std::cref(initiator));
 }
 
-TEST_F(role_based_try__get_next_try, should_return_null_try_for_non_matching_error) {
-    using op = ozo::failover::role_based_options;
+TEST_F(role_based_try__initiate_next_try, should_call_initiator_with_next_matched_try_for_matching_error) {
     auto role_based_try = ozo::failover::role_based_try(
         ozo::make_options(
-            op::roles=hana::make_tuple(test_role, test_role)
+            opt::roles=hana::make_tuple(test_role, test_role, another_test_role)
         ), ctx()
     );
-    EXPECT_TRUE(ozo::is_null(role_based_try.get_next_try(ozo::tests::error::another_error, null_conn)));
+    EXPECT_CALL(initiator, call());
+    role_based_try.initiate_next_try(ozo::tests::error::another_error, null_conn, std::cref(initiator));
 }
 
-TEST_F(role_based_try__get_next_try, should_return_null_try_for_no_roles_left) {
-    using op = ozo::failover::role_based_options;
+TEST_F(role_based_try__initiate_next_try, should_not_call_initiator_for_non_matching_error) {
     auto role_based_try = ozo::failover::role_based_try(
         ozo::make_options(
-            op::roles=hana::make_tuple(test_role)
+            opt::roles=hana::make_tuple(test_role, test_role)
         ), ctx()
     );
-    EXPECT_TRUE(ozo::is_null(role_based_try.get_next_try(ozo::tests::error::error, null_conn)));
+    role_based_try.initiate_next_try(ozo::tests::error::another_error, null_conn, std::cref(initiator));
 }
 
-TEST_F(role_based_try__get_next_try, should_call_on_fallback_handler_for_matching_error_and_fallback) {
-    using op = ozo::failover::role_based_options;
+TEST_F(role_based_try__initiate_next_try, should_not_call_initiator_for_no_roles_left) {
     auto role_based_try = ozo::failover::role_based_try(
         ozo::make_options(
-            op::roles=hana::make_tuple(test_role, test_role),
-            op::on_fallback=std::ref(handler)
+            opt::roles=hana::make_tuple(test_role)
+        ), ctx()
+    );
+    role_based_try.initiate_next_try(ozo::tests::error::error, null_conn, std::cref(initiator));
+}
+
+TEST_F(role_based_try__initiate_next_try, should_call_on_fallback_handler_for_matching_error_and_fallback) {
+    auto role_based_try = ozo::failover::role_based_try(
+        ozo::make_options(
+            opt::roles=hana::make_tuple(test_role, test_role),
+            opt::on_fallback=std::ref(handler)
         ), ctx()
     );
     EXPECT_CALL(handler, call(ozo::error_code{ozo::tests::error::error}, null_conn));
-    role_based_try.get_next_try(ozo::tests::error::error, null_conn);
+    role_based_try.initiate_next_try(ozo::tests::error::error, null_conn, ozo::none);
 }
 
-TEST_F(role_based_try__get_next_try, should_not_call_on_fallback_handler_for_non_matching_error) {
-    using op = ozo::failover::role_based_options;
+TEST_F(role_based_try__initiate_next_try, should_not_call_on_fallback_handler_for_non_matching_error) {
     auto role_based_try = ozo::failover::role_based_try(
         ozo::make_options(
-            op::roles=hana::make_tuple(test_role, test_role),
-            op::on_fallback=std::ref(handler)
+            opt::roles=hana::make_tuple(test_role, test_role),
+            opt::on_fallback=std::ref(handler)
         ), ctx()
     );
-    role_based_try.get_next_try(ozo::tests::error::another_error, null_conn);
+    role_based_try.initiate_next_try(ozo::tests::error::another_error, null_conn, ozo::none);
 }
 
-TEST_F(role_based_try__get_next_try, should_close_connection_on_retry_if_option_is_omitted) {
+TEST_F(role_based_try__initiate_next_try, should_close_connection_on_retry_if_option_is_omitted) {
     EXPECT_CALL(conn, close_connection());
-    using op = ozo::failover::role_based_options;
     auto role_based_try = ozo::failover::role_based_try(
         ozo::make_options(
-            op::roles=hana::make_tuple(test_role, test_role)
+            opt::roles=hana::make_tuple(test_role, test_role)
         ), ctx()
     );
-    role_based_try.get_next_try(ozo::tests::error::error, connection());
+    role_based_try.initiate_next_try(ozo::tests::error::error, connection(), ozo::none);
 }
 
-TEST_F(role_based_try__get_next_try, should_close_connection_on_retry_if_option_is_true) {
+TEST_F(role_based_try__initiate_next_try, should_close_connection_on_retry_if_option_is_true) {
     EXPECT_CALL(conn, close_connection());
-    using op = ozo::failover::role_based_options;
     auto role_based_try = ozo::failover::role_based_try(
         ozo::make_options(
-            op::roles=hana::make_tuple(test_role, test_role),
-            op::close_connection=true
+            opt::roles=hana::make_tuple(test_role, test_role),
+            opt::close_connection=true
         ), ctx()
     );
-    role_based_try.get_next_try(ozo::tests::error::error, connection());
+    role_based_try.initiate_next_try(ozo::tests::error::error, connection(), ozo::none);
 }
 
-TEST_F(role_based_try__get_next_try, should_not_close_connection_on_retry_if_option_is_false) {
-    using op = ozo::failover::role_based_options;
+TEST_F(role_based_try__initiate_next_try, should_not_close_connection_on_retry_if_option_is_false) {
     auto role_based_try = ozo::failover::role_based_try(
         ozo::make_options(
-            op::roles=hana::make_tuple(test_role, test_role),
-            op::close_connection=false
+            opt::roles=hana::make_tuple(test_role, test_role),
+            opt::close_connection=false
         ), ctx()
     );
-    role_based_try.get_next_try(ozo::tests::error::error, connection());
+    role_based_try.initiate_next_try(ozo::tests::error::error, connection(), ozo::none);
 }
 
-TEST_F(role_based_try__get_next_try, should_close_connection_on_no_retry_if_option_is_omitted) {
+TEST_F(role_based_try__initiate_next_try, should_close_connection_on_no_retry_if_option_is_omitted) {
     EXPECT_CALL(conn, close_connection());
-    using op = ozo::failover::role_based_options;
     auto role_based_try = ozo::failover::role_based_try(
         ozo::make_options(
-            op::roles=hana::make_tuple(test_role)
+            opt::roles=hana::make_tuple(test_role)
         ), ctx()
     );
-    role_based_try.get_next_try(ozo::tests::error::error, connection());
+    role_based_try.initiate_next_try(ozo::tests::error::error, connection(), ozo::none);
 }
 
-TEST_F(role_based_try__get_next_try, should_close_connection_on_no_retry_if_option_is_true) {
+TEST_F(role_based_try__initiate_next_try, should_close_connection_on_no_retry_if_option_is_true) {
     EXPECT_CALL(conn, close_connection());
-    using op = ozo::failover::role_based_options;
     auto role_based_try = ozo::failover::role_based_try(
         ozo::make_options(
-            op::roles=hana::make_tuple(test_role),
-            op::close_connection=true
+            opt::roles=hana::make_tuple(test_role),
+            opt::close_connection=true
         ), ctx()
     );
-    role_based_try.get_next_try(ozo::tests::error::error, connection());
+    role_based_try.initiate_next_try(ozo::tests::error::error, connection(), ozo::none);
 }
 
-TEST_F(role_based_try__get_next_try, should_not_close_connection_on_no_retry_if_option_is_false) {
-    using op = ozo::failover::role_based_options;
+TEST_F(role_based_try__initiate_next_try, should_not_close_connection_on_no_retry_if_option_is_false) {
     auto role_based_try = ozo::failover::role_based_try(
         ozo::make_options(
-            op::roles=hana::make_tuple(test_role),
-            op::close_connection=false
+            opt::roles=hana::make_tuple(test_role),
+            opt::close_connection=false
         ), ctx()
     );
-    role_based_try.get_next_try(ozo::tests::error::error, connection());
+    role_based_try.initiate_next_try(ozo::tests::error::error, connection(), ozo::none);
 }
 
 
@@ -313,22 +336,17 @@ struct role_based_try__get_context : Test {
             io
         };
     }
-    auto ctx() {
-        return ozo::failover::basic_context(provider(), ozo::none);
-    }
 
-    static constexpr connection_mock* null_conn = nullptr;
+    using opt = ozo::failover::role_based_options;
 };
 
 TEST_F(role_based_try__get_context, should_return_rebound_provider_form_context) {
-
-    using op = ozo::failover::role_based_options;
     auto role_based_try = ozo::failover::role_based_try(
         ozo::make_options(
-            op::roles=hana::make_tuple(test_role, test_role)
-        ), ctx()
+            opt::roles=hana::make_tuple(test_role, test_role)
+        ),
+        ozo::failover::basic_context(provider(), ozo::none)
     );
-    role_based_try.get_next_try(ozo::tests::error::error, null_conn);
     EXPECT_CALL(source, rebind_role(An<std::decay_t<decltype(test_role)>>()));
     auto new_provider = role_based_try.get_context()[hana::size_c<0>];
 
@@ -340,10 +358,9 @@ TEST_F(role_based_try__get_context, should_return_rebound_provider_form_context)
 }
 
 TEST_F(role_based_try__get_context, should_return_calculated_time_out_as_divided_for_two_tries_form_context) {
-    using op = ozo::failover::role_based_options;
     auto role_based_try = ozo::failover::role_based_try(
         ozo::make_options(
-            op::roles=hana::make_tuple(test_role, test_role)
+            opt::roles=hana::make_tuple(test_role, test_role)
         ),
         ozo::failover::basic_context(provider(), 4s)
     );
@@ -352,10 +369,9 @@ TEST_F(role_based_try__get_context, should_return_calculated_time_out_as_divided
 }
 
 TEST_F(role_based_try__get_context, should_return_whole_time_out_for_two_single_try_form_context) {
-    using op = ozo::failover::role_based_options;
     auto role_based_try = ozo::failover::role_based_try(
         ozo::make_options(
-            op::roles=hana::make_tuple(test_role)
+            opt::roles=hana::make_tuple(test_role)
         ),
         ozo::failover::basic_context(provider(), 4s)
     );

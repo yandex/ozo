@@ -11,6 +11,7 @@
 #include <boost/hana/size.hpp>
 #include <boost/hana/minus.hpp>
 #include <boost/hana/not_equal.hpp>
+#include <boost/hana/greater.hpp>
 
 /**
  * @defgroup group-failover-role_based Role-Based Execution & Fallback
@@ -515,23 +516,31 @@ public:
      * @return `std::nullopt` --- retry is not possible due to `ec` value or tries remain
      *                            count.
      */
-    template <typename Connection>
-    auto get_next_try([[maybe_unused]] ozo::error_code ec, Connection&& conn) const {
+    template <typename Connection, typename Initiator>
+    void initiate_next_try([[maybe_unused]] ozo::error_code ec, Connection& conn, [[maybe_unused]] Initiator&& init) const {
         auto guard = defer_close_connection(get_option(options(), opt::close_connection, true) ? std::addressof(conn) : nullptr);
 
-        if constexpr (decltype(tries_left() == hana::size_c<1>)::value) {
-            return std::optional<role_based_try>{};
-        } else {
+        if constexpr (decltype(tries_left() > hana::size_c<1>)::value) {
             using fallback_try = role_based_try<Options, Context, decltype(role_index() + hana::size_c<1>)>;
-            std::optional<fallback_try> fallback{fallback_try{std::move(options_), std::move(ctx_)}};
+            fallback_try fallback{std::move(options_), std::move(ctx_)};
 
-            if (can_recover(fallback->role(), ec)) {
-                get_option(fallback->options(), opt::on_fallback, [](auto&&...){})(ec, conn, std::as_const(*fallback));
+            if (can_recover(fallback.role(), ec)) {
+                get_option(fallback.options(), opt::on_fallback, [](auto&&...){})(ec, conn, std::as_const(fallback));
+                init(std::move(fallback));
             } else {
-                fallback = std::nullopt;
+                guard.release();
+                fallback.initiate_next_try(ec, conn, std::move(init));
             }
-            return fallback;
         }
+    }
+};
+
+template <typename Options, typename Context, typename RoleIdx>
+struct initiate_next_try_impl<role_based_try<Options, Context, RoleIdx>> {
+    template <typename Connection, typename Initiator>
+    static void apply(role_based_try<Options, Context, RoleIdx>& a_try,
+            const error_code& ec, Connection& conn, Initiator&& init) {
+        a_try.initiate_next_try(ec, conn, std::forward<Initiator>(init));
     }
 };
 
@@ -564,16 +573,6 @@ public:
         static_assert(decltype(hana::is_a<hana::map_tag>(options))::value, "Options should be boost::hana::map");
     }
 
-    /**
-     * @brief Get the first try object
-     *
-     * Default implementation for `ozo::fallback::get_first_try()` failover
-     * strategy interface function.
-     *
-     * @param alloc --- allocator which should be used for try context.
-     * @param args --- operation arguments.
-     * @return role_based_try --- first try object.
-     */
     template <typename Operation, typename Allocator, typename Source,
             typename TimeConstraint, typename ...Args>
     auto get_first_try(const Operation&, const Allocator&,
@@ -591,13 +590,19 @@ public:
 
 /**
  * Try to perform an operation on first role with fallback to next items of
- * specified sequence in case of recoverable error.
+ * specified sequence which should recover an error.
+ * E.g., in case of sequence consists of <i>role1</i>, <i>role2</i>, <i>role3</i> and <i>role4</i>.
+ * If <i>role1</i> cause an error which could be recovered with <i>role3</i> and can not be
+ * recovered with <i>role2</i> then the <i>role2</i> will be skipped and operation failover
+ * continues from fallback <i>role3</i>.
  *
  * @param roles --- variadic of roles to try operation on.
  * @return `ozo::failover::role_based_strategy` specialization.
  *
  * @note This strategy works only with `ozo::failover::role_based_connection_provider`
  * #ConnectionProvider implementation.
+ *
+ * ### Time Constraint
  *
  * Operation time constraint interval will be divided between tries as follow.
  *
@@ -616,7 +621,7 @@ public:
  * - <i>t<small>i</small></i> --- actual time of <i>i<small>th</small></i> try,
  * - <i>n</i> - total number of roles.
  *
- * ###Example
+ * ### Example
  *
  * Try to perform the request on master once and then twice on replica if
  * error code is recoverable.
