@@ -569,7 +569,7 @@ public:
      *
      * @param options --- `boost::hana::map` of `ozo::failover::role_based_options` and values.
      */
-    role_based_strategy(Options options = Options{}) : base(std::move(options)) {
+    constexpr role_based_strategy(Options options = Options{}) : base(std::move(options)) {
         static_assert(decltype(hana::is_a<hana::map_tag>(options))::value, "Options should be boost::hana::map");
     }
 

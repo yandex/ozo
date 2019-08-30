@@ -131,7 +131,7 @@ public:
      *
      * @param v --- default options
      */
-    options_factory_base(Options v) : v_(std::move(v)) {
+    constexpr options_factory_base(Options v) : v_(std::move(v)) {
         static_assert(decltype(hana::is_a<hana::map_tag>(v))::value, "Options should be boost::hana::map");
     }
 
@@ -281,7 +281,7 @@ public:
      *
      * @param options --- `boost::hana::map` with default options, default value is empty map.
      */
-    options_factory(Options options = Options{}) : base(std::move(options)) {
+    constexpr options_factory(Options options = Options{}) : base(std::move(options)) {
         options_factory(decltype(hana::is_a<hana::map_tag>(options))::value, "Options should be boost::hana::map");
     }
 };
