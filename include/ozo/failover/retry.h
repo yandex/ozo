@@ -190,7 +190,7 @@ public:
      *
      * @param options --- `boost::hana::map` of `ozo::failover::retry_options` and values.
      */
-    retry_strategy(Options options = Options{}) : base(std::move(options)) {
+    constexpr retry_strategy(Options options = Options{}) : base(std::move(options)) {
         static_assert(decltype(hana::is_a<hana::map_tag>(options))::value, "Options should be boost::hana::map");
     }
 
