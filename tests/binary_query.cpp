@@ -92,9 +92,9 @@ TEST_F(binary_query_lengths, for_std_string_should_be_equal_to_std_string_length
     EXPECT_EQ(query.lengths()[0], 11);
 }
 
-TEST_F(binary_query_lengths, for_empty_optional_should_be_minus_one) {
+TEST_F(binary_query_lengths, for_empty_optional_should_be_zero) {
     const auto query = make_binary_query("", hana::make_tuple(__OZO_STD_OPTIONAL<int>()));
-    EXPECT_EQ(query.lengths()[0], -1);
+    EXPECT_EQ(query.lengths()[0], 0);
 }
 
 struct binary_query_values : Test {};
