@@ -12,7 +12,10 @@
 #include <ozo/pg/types.h>
 
 #include <boost/hana/for_each.hpp>
+#include <boost/hana/fold.hpp>
 #include <boost/hana/tuple.hpp>
+#include <boost/hana/plus.hpp>
+#include <boost/hana/ext/std/array.hpp>
 
 #include <libpq-fe.h>
 
@@ -43,7 +46,7 @@ public:
 
     binary_query(Text text, const Params& params, const OidMap& oid_map, const Allocator& allocator = Allocator{},
             Require<ozo::QueryText<Text> && ozo::HanaSequence<Params>>* = nullptr)
-    : impl(make_impl(std::move(text), params, oid_map, allocator)) {}
+    : impl{std::allocate_shared<impl_type>(allocator, std::move(text), params, oid_map, allocator)} {}
 
     template <typename Query>
     binary_query(const Query& query, const OidMap& oid_map, const Allocator& allocator = Allocator{},
@@ -83,79 +86,36 @@ private:
         std::array<int, params_count> lengths;
         std::array<const char*, params_count> values;
 
-        impl_type(text_type text, const allocator_type& allocator)
-            : text(std::move(text)), buffer(allocator) {}
+        impl_type(text_type text, const params_type& params,
+            const oid_map_type& oid_map, const allocator_type& allocator)
+        : text(std::move(text)), buffer(allocator) {
+            formats.fill(binary_format);
+
+            const auto range = hana::to_tuple(hana::make_range(hana::size_c<0>, hana::size_c<params_count>));
+
+            hana::for_each(range, [&] (auto i) {
+                lengths[i] = std::max(0, size_of(params[i]));
+                types[i] = type_oid(oid_map, params[i]);
+            });
+
+            buffer.reserve(hana::fold(lengths, 0, hana::plus));
+
+            ozo::detail::ostreambuf osbuf(buffer);
+            ozo::ostream os(&osbuf);
+
+            hana::for_each(params, [&] (auto& param) { send(os, oid_map, param);});
+
+            hana::fold(range, 0, [&] (std::size_t offset, auto i) {
+                values[i] = lengths[i] ? std::data(buffer) + offset : nullptr;
+                return offset + lengths[i];
+            });
+        }
 
         impl_type(const impl_type&) = delete;
         impl_type(impl_type&&) = delete;
     };
 
-    template <std::size_t field>
-    class field_proxy {
-    public:
-        field_proxy(impl_type& result, ostream& os) : result(result), os(os) {}
-
-        constexpr void set_type(::Oid value) noexcept {
-            result.types[field] = value;
-        }
-
-        constexpr void set_format(int value) noexcept {
-            result.formats[field] = value;
-        }
-
-        constexpr void set_length(int value) noexcept {
-            result.lengths[field] = value;
-        }
-
-        constexpr auto& stream() noexcept {
-            return os;
-        }
-
-    private:
-        impl_type& result;
-        ozo::ostream& os;
-    };
-
-    std::shared_ptr<impl_type> impl;
-
-    static auto make_impl(text_type text, const params_type& params,
-            const oid_map_type& oid_map, const allocator_type& allocator) {
-
-        auto result = std::make_shared<impl_type>(std::move(text), allocator);
-
-        ozo::detail::ostreambuf osbuf(result->buffer);
-        ozo::ostream os(&osbuf);
-
-        const auto range = hana::to<hana::tuple_tag>(
-            hana::make_range(hana::size_c<0>, hana::size_c<params_count>));
-
-        hana::for_each(range, [&] (auto field) {
-            write_meta(oid_map, params[field], field_proxy<field>(*result, os));
-        });
-
-        std::size_t offset = 0;
-        hana::for_each(range, [&] (auto field) {
-                const auto size = result->lengths[field];
-                if (size && size != null_state_size) {
-                    result->values[field] = std::data(result->buffer) + offset;
-                    offset += size;
-                } else {
-                    result->values[field] = nullptr;
-                }
-            }
-        );
-        return result;
-    }
-
-    template <class T, std::size_t field>
-    static void write_meta(const oid_map_type& oid_map, const T& value, field_proxy<field> result) {
-        using ozo::send;
-        using ozo::size_of;
-        result.set_type(type_oid(oid_map, value));
-        result.set_format(binary_format);
-        send(result.stream(), oid_map, value);
-        result.set_length(size_of(value));
-    }
+    std::shared_ptr<const impl_type> impl;
 };
 
 template <class Query, class OidMap, class Allocator = std::allocator<char>>
