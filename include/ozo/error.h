@@ -398,7 +398,7 @@ enum code {
     ok, //!< no error placeholder
     connection_error, //!< connection-related error condition, incorporates ozo, libpq and Boost.Asio connection errors
     database_readonly, //!< database in read-only state - useful to detect attempt of modify data on replica host
-    introspection_error, //<! errors related to objects serialization/deserialization
+    introspection_error, //!< errors related to objects serialization/deserialization
     type_mismatch, //!< result type mismatch, indicates types mismatch between result of query and expected result
     protocol_error, //!< specific protocol-related errors
 };
