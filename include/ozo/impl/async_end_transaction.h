@@ -17,8 +17,8 @@ struct async_end_transaction_op {
         async_execute(std::forward<T>(provider), std::forward<Query>(query), t, std::move(*this));
     }
 
-    template <typename Connection>
-    void operator ()(error_code ec, impl::transaction<Connection> transaction) {
+    template <typename Connection, typename Options>
+    void operator ()(error_code ec, impl::transaction<Connection, Options> transaction) {
         Connection connection;
         transaction.take_connection(connection);
         asio::dispatch(

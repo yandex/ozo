@@ -82,7 +82,7 @@ decltype(auto) request (ConnectionProvider&& provider, Query&& query, Out out, C
 #else
 
 template <typename Initiator>
-struct request_op : base_async_operation <request_op, Initiator> {
+struct request_op : base_async_operation <request_op<Initiator>, Initiator> {
     using base = typename request_op::base;
     using base::base;
 
@@ -99,6 +99,11 @@ struct request_op : base_async_operation <request_op, Initiator> {
     decltype(auto) operator()(P&& provider, Q&& query, Out out, CompletionToken&& token) const {
         return (*this)(std::forward<P>(provider), std::forward<Q>(query), none, std::move(out),
             std::forward<CompletionToken>(token));
+    }
+
+    template <typename OtherInitiator>
+    constexpr static auto rebind_initiator(const OtherInitiator& other) {
+        return request_op<OtherInitiator>{other};
     }
 };
 

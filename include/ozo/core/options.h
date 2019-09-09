@@ -4,8 +4,11 @@
 #include <boost/hana/tuple.hpp>
 #include <boost/hana/fold.hpp>
 #include <boost/hana/concat.hpp>
+#include <boost/hana/map.hpp>
 
 namespace ozo {
+
+namespace hana = boost::hana;
 
 /**
  * @brief Option class
@@ -33,8 +36,6 @@ struct option : hana::type<Key> {
         return hana::make_pair(*this, std::forward<T>(v));
     }
 };
-
-namespace hana = boost::hana;
 
 /**
  * @brief Get the option object from Hana.Map
