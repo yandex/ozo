@@ -1,5 +1,6 @@
 #include "connection_mock.h"
 
+#include <ozo/core/options.h>
 #include <ozo/impl/async_end_transaction.h>
 
 #include <gtest/gtest.h>
@@ -23,13 +24,14 @@ struct async_end_transaction : Test {
     StrictMock<stream_descriptor_gmock> socket {};
     io_context io {executor, strand_service};
     decltype(make_connection(connection, io, socket)) conn = make_connection(connection, io, socket);
+    decltype(ozo::make_options()) options = ozo::make_options();
     time_traits::duration timeout {42};
 };
 
 TEST_F(async_end_transaction, should_call_async_execute) {
     *conn->handle_ = native_handle::good;
 
-    auto transaction = ozo::impl::transaction<decltype(conn)>(std::move(conn));
+    auto transaction = ozo::impl::transaction<decltype(conn), decltype(options)>(std::move(conn), options);
 
     const InSequence s;
 

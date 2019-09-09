@@ -39,6 +39,7 @@ set(SOURCES
     impl/async_send_query_params.cpp
     impl/async_get_result.cpp
     detail/base36.cpp
+    detail/begin_statement_builder.cpp
     detail/functional.cpp
     detail/timeout_handler.cpp
     detail/make_copyable.cpp

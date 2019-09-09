@@ -6,9 +6,10 @@
 
 namespace ozo::impl {
 
-template <typename Handler>
+template <typename Handler, typename Options>
 struct async_start_transaction_op {
     Handler handler;
+    Options options;
 
     template <typename T, typename Query, typename TimeConstraint>
     void perform(T&& provider, Query&& query, TimeConstraint t) {
@@ -24,21 +25,21 @@ struct async_start_transaction_op {
             detail::bind(
                 std::move(handler),
                 std::move(ec),
-                make_transaction(std::forward<Connection>(connection))
+                make_transaction(std::forward<Connection>(connection), std::move(options))
             )
         );
     }
 };
 
-template <typename Handler>
-auto make_async_start_transaction_op(Handler&& handler) {
-    return async_start_transaction_op<std::decay_t<Handler>> {std::forward<Handler>(handler)};
+template <typename Handler, typename Options>
+auto make_async_start_transaction_op(Handler&& handler, Options&& options) {
+    return async_start_transaction_op<std::decay_t<Handler>, std::decay_t<Options>> {std::forward<Handler>(handler), std::forward<Options>(options)};
 }
 
-template <typename T, typename Query, typename TimeConstraint, typename Handler>
-Require<ConnectionProvider<T>> async_start_transaction(T&& provider, Query&& query,
+template <typename T, typename Options, typename Query, typename TimeConstraint, typename Handler>
+Require<ConnectionProvider<T>> async_start_transaction(T&& provider, Options&& options, Query&& query,
         TimeConstraint t, Handler&& handler) {
-    make_async_start_transaction_op(std::forward<Handler>(handler))
+    make_async_start_transaction_op(std::forward<Handler>(handler), std::forward<Options>(options))
         .perform(std::forward<T>(provider), std::forward<Query>(query), t);
 }
 

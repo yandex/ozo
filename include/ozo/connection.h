@@ -978,7 +978,7 @@ template <typename T, typename CompletionToken>
 decltype(auto) get_connection(T&& provider, CompletionToken&& token);
 #else
 template <typename Initiator>
-struct get_connection_op : base_async_operation <get_connection_op, Initiator> {
+struct get_connection_op : base_async_operation <get_connection_op<Initiator>, Initiator> {
     using base = typename get_connection_op::base;
     using base::base;
 
@@ -994,6 +994,11 @@ struct get_connection_op : base_async_operation <get_connection_op, Initiator> {
     template <typename T, typename CompletionToken>
     decltype(auto) operator() (T&& provider, CompletionToken&& token) const {
         return (*this)(std::forward<T>(provider), none, std::forward<CompletionToken>(token));
+    }
+
+    template <typename OtherInitiator>
+    constexpr static auto rebind_initiator(const OtherInitiator& other) {
+        return get_connection_op<OtherInitiator>{other};
     }
 };
 

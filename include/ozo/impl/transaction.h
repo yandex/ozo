@@ -1,10 +1,11 @@
 #pragma once
 
 #include <ozo/connection.h>
+#include <ozo/transaction_options.h>
 
 namespace ozo::impl {
 
-template <typename T>
+template <typename T, typename Options>
 class transaction {
     friend unwrap_impl<transaction>;
 
@@ -13,8 +14,8 @@ public:
 
     transaction() = default;
 
-    transaction(T connection)
-            : impl(is_null(connection) ? nullptr : std::make_shared<impl_type>(std::move(connection))) {}
+    transaction(T connection, Options options)
+            : impl(is_null(connection) ? nullptr : std::make_shared<impl_type>(std::move(connection))), options_(std::move(options)) {}
 
     ~transaction() {
         const auto c = std::move(impl);
@@ -37,6 +38,9 @@ public:
         return has_connection();
     }
 
+    constexpr Options& options() { return options_; }
+    constexpr const Options& options() const { return options_; }
+
 private:
     struct impl_type {
         __OZO_STD_OPTIONAL<T> connection;
@@ -49,26 +53,27 @@ private:
     };
 
     std::shared_ptr<impl_type> impl;
+    std::decay_t<Options> options_;
 };
 
-template <typename T, typename = Require<Connection<T>>>
-auto make_transaction(T&& conn) {
-    return transaction<std::decay_t<T>> {std::forward<T>(conn)};
+template <typename T, typename Options, typename = Require<Connection<T>>>
+auto make_transaction(T&& conn, Options&& options) {
+    return transaction<std::decay_t<T>, std::decay_t<Options>> {std::forward<T>(conn), std::forward<Options>(options)};
 }
 
 } // namespace ozo::impl
 
 namespace ozo {
 
-template <typename T>
-struct unwrap_impl<impl::transaction<T>> {
+template <typename... Ts>
+struct unwrap_impl<impl::transaction<Ts...>> {
     template <typename Transaction>
     static constexpr decltype(auto) apply(Transaction&& self) noexcept {
         return unwrap(*self.impl->connection);
     }
 };
 
-template <typename T>
-struct is_nullable<impl::transaction<T>> : std::true_type {};
+template <typename... Ts>
+struct is_nullable<impl::transaction<Ts...>> : std::true_type {};
 
 } // namespace ozo

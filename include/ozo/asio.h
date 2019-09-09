@@ -201,7 +201,7 @@ constexpr execute_op<impl::initiate_async_execute> execute;
  * @endcode
  * @ingroup group-core-types
  */
-template <template<typename...> typename Operation, typename Initiator>
+template <typename Operation, typename Initiator>
 struct base_async_operation {
     using initiator_type = Initiator;
     using base = base_async_operation;
@@ -211,14 +211,10 @@ struct base_async_operation {
 
     constexpr initiator_type get_initiator() const { return initiator_;}
 
-    template <typename OtherInitiator>
-    constexpr static auto rebind_initiator(const OtherInitiator& other) {
-        return Operation<OtherInitiator>{other};
-    }
-
     template <typename InitiatorFactory>
     constexpr auto operator[] (InitiatorFactory&& f) const {
-        return rebind_initiator(construct_initiator(std::forward<InitiatorFactory>(f), *this));
+        const auto& op = static_cast<const Operation&>(*this);
+        return op.rebind_initiator(construct_initiator(std::forward<InitiatorFactory>(f), *this));
     }
 };
 
