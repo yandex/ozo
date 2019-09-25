@@ -1,8 +1,5 @@
 #pragma once
 
-#include <ozo/native_conn_handle.h>
-#include <ozo/asio.h>
-
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/asio/steady_timer.hpp>
 #include <boost/asio/posix/stream_descriptor.hpp>
@@ -63,4 +60,28 @@ inline error_code bind_connection_executor(Connection& conn, const Executor& ex)
 }
 
 } // namespace impl
+
+template <typename T>
+inline std::string_view error_message(T&& conn) {
+    static_assert(Connection<T>, "T must be a Connection");
+    if (is_null_recursive(conn)) {
+        return {};
+    }
+    return impl::connection_error_message(get_native_handle(conn));
+}
+
+template <typename T, typename Executor>
+inline error_code bind_executor(T& conn, const Executor& ex) {
+    static_assert(Connection<T>, "T must be a Connection");
+    using impl::bind_connection_executor;
+    return bind_connection_executor(unwrap_connection(conn), ex);
+}
+
+template <typename T>
+inline bool connection_bad(const T& conn) noexcept {
+    static_assert(Connection<T>, "T must be a Connection");
+    using impl::connection_status_bad;
+    return is_null_recursive(conn) ? true : connection_status_bad(get_native_handle(conn));
+}
+
 } // namespace ozo

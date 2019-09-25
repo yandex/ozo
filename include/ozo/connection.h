@@ -7,10 +7,10 @@
 #include <ozo/core/recursive.h>
 #include <ozo/core/none.h>
 #include <ozo/deadline.h>
+#include <ozo/native_conn_handle.h>
 
 #include <ozo/detail/bind.h>
 #include <ozo/detail/functional.h>
-#include <ozo/impl/connection.h>
 
 #include <boost/asio/dispatch.hpp>
 
@@ -449,11 +449,7 @@ inline auto get_executor(T& conn) noexcept {
  * @return `error_code` in case of error has been
  */
 template <typename T, typename Executor>
-inline error_code bind_executor(T& conn, const Executor& ex) {
-    static_assert(Connection<T>, "T must be a Connection");
-    using impl::bind_connection_executor;
-    return bind_connection_executor(unwrap_connection(conn), ex);
-}
+inline error_code bind_executor(T& conn, const Executor& ex);
 
 /**
  * @brief Indicates if connection state is bad
@@ -463,11 +459,7 @@ inline error_code bind_executor(T& conn, const Executor& ex) {
  * @return `true` if connection is in bad or null state, `false` - otherwise.
  */
 template <typename T>
-inline bool connection_bad(const T& conn) noexcept {
-    static_assert(Connection<T>, "T must be a Connection");
-    using impl::connection_status_bad;
-    return is_null_recursive(conn) ? true : connection_status_bad(get_native_handle(conn));
-}
+inline bool connection_bad(const T& conn) noexcept;
 
 /**
  * @brief Indicates if connection state is not bad.
@@ -493,13 +485,7 @@ inline bool connection_good(const T& conn) noexcept {
  * @return `std::string_view` contains a message
  */
 template <typename T>
-inline std::string_view error_message(T&& conn) {
-    static_assert(Connection<T>, "T must be a Connection");
-    if (is_null_recursive(conn)) {
-        return {};
-    }
-    return impl::connection_error_message(get_native_handle(conn));
-}
+inline std::string_view error_message(T&& conn);
 
 /**
  * @brief Additional error context getter
@@ -1022,3 +1008,5 @@ inline auto defer_close_connection(Connection* conn) {
 ///@}
 
 } // namespace ozo
+
+#include <ozo/impl/connection.h>
