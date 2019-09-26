@@ -288,4 +288,49 @@ TEST(ConnectionProvider, should_return_false_for_non_connection_provider_type){
     EXPECT_FALSE(ozo::ConnectionProvider<int>);
 }
 
+static const char* PQdb(const native_handle*) {
+    return "PQdb";
+}
+
+TEST(get_database, should_return_PQdb_call_result){
+    io_context io;
+    EXPECT_EQ(std::string(ozo::get_database(connection<>{io})), "PQdb");
+}
+
+static const char* PQhost(const native_handle*) {
+    return "PQhost";
+}
+
+TEST(get_host, should_return_PQhost_call_result){
+    io_context io;
+    EXPECT_EQ(std::string(ozo::get_host(connection<>{io})), "PQhost");
+}
+
+static const char* PQport(const native_handle*) {
+    return "PQport";
+}
+
+TEST(get_port, should_return_PQport_call_result){
+    io_context io;
+    EXPECT_EQ(std::string(ozo::get_port(connection<>{io})), "PQport");
+}
+
+static const char* PQuser(const native_handle*) {
+    return "PQuser";
+}
+
+TEST(get_user, should_return_PQport_call_result){
+    io_context io;
+    EXPECT_EQ(std::string(ozo::get_user(connection<>{io})), "PQuser");
+}
+
+static const char* PQpass(const native_handle*) {
+    return "PQpass";
+}
+
+TEST(get_password, should_return_PQport_call_result){
+    io_context io;
+    EXPECT_EQ(std::string(ozo::get_password(connection<>{io})), "PQpass");
+}
+
 } //namespace

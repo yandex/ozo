@@ -84,4 +84,34 @@ inline bool connection_bad(const T& conn) noexcept {
     return is_null_recursive(conn) ? true : connection_status_bad(get_native_handle(conn));
 }
 
+template <typename Connection>
+inline std::string_view get_database(const Connection& conn) {
+    static_assert(ozo::Connection<Connection>, "conn should model Connection");
+    return PQdb(get_native_handle(conn));
+}
+
+template <typename Connection>
+inline std::string_view get_host(const Connection& conn) {
+    static_assert(ozo::Connection<Connection>, "conn should model Connection");
+    return PQhost(get_native_handle(conn));
+}
+
+template <typename Connection>
+inline std::string_view get_port(const Connection& conn) {
+    static_assert(ozo::Connection<Connection>, "conn should model Connection");
+    return PQport(get_native_handle(conn));
+}
+
+template <typename Connection>
+inline std::string_view get_user(const Connection& conn) {
+    static_assert(ozo::Connection<Connection>, "conn should model Connection");
+    return PQuser(get_native_handle(conn));
+}
+
+template <typename Connection>
+inline std::string_view get_password(const Connection& conn) {
+    static_assert(ozo::Connection<Connection>, "conn should model Connection");
+    return PQpass(get_native_handle(conn));
+}
+
 } // namespace ozo
