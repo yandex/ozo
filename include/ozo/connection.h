@@ -163,24 +163,8 @@ constexpr detail::result_of<get_connection_socket_impl, T> get_connection_socket
 }
 #endif
 
-#if BOOST_VERSION < 107000
-template <typename T, typename = hana::when<true>>
-struct get_connection_executor_impl {
-    template <typename Conn>
-    constexpr static auto apply(Conn&& c) -> decltype(get_connection_socket(c).get_executor()) {
-        return get_connection_socket(c).get_executor();
-    }
-};
-#else
 template <typename T, typename = hana::when<true>>
 struct get_connection_executor_impl;
-#endif
-
-template <typename T, typename = std::void_t<>>
-struct get_connection_timer_impl;
-
-template <typename T>
-asio::steady_timer& get_connection_timer(T&&);
 
 template <typename T>
 struct get_connection_executor_impl<T,
