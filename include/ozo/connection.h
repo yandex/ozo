@@ -572,6 +572,75 @@ inline decltype(auto) get_statistics(T&& conn) noexcept {
     return get_connection_statistics(unwrap_connection(std::forward<T>(conn)));
 }
 
+/**
+ * @brief Get the database name of the active connection
+ *
+ * See documentation for the underlying [PQdb](https://www.postgresql.org/docs/current/libpq-status.html)
+ * function for additional information.
+ *
+ * @note Connection should not be is null recursive.
+ *
+ * @param conn --- active connection to a database.
+ * @return std::string_view --- string view with database name.
+ */
+template <typename Connection>
+inline std::string_view get_database(const Connection& conn);
+
+/**
+ * @brief Get the host connected of the active connection
+ *
+ * See documentation for the underlying [PQhost](https://www.postgresql.org/docs/current/libpq-status.html)
+ * function for additional information.
+ *
+ * @note Connection should not be is null recursive.
+ *
+ * @param conn --- active connection to a database.
+ * @return std::string_view --- string view with host.
+ */
+template <typename Connection>
+inline std::string_view get_host(const Connection& conn);
+
+/**
+ * @brief Get the port connected of the active connection
+ *
+ * See documentation for the underlying [PQport](https://www.postgresql.org/docs/current/libpq-status.html)
+ * function for additional information.
+ *
+ * @note Connection should not be is null recursive.
+ *
+ * @param conn --- active connection to a database.
+ * @return std::string_view --- string view with port.
+ */
+template <typename Connection>
+inline std::string_view get_port(const Connection& conn);
+
+/**
+ * @brief Get the user name of the active connection
+ *
+ * See documentation for the underlying [PQuser](https://www.postgresql.org/docs/current/libpq-status.html)
+ * function for additional information.
+ *
+ * @note Connection should not be is null recursive.
+ *
+ * @param conn --- active connection to a database.
+ * @return std::string_view --- string view with user name.
+ */
+template <typename Connection>
+inline std::string_view get_user(const Connection& conn) ;
+
+/**
+ * @brief Get the password of the active connection
+ *
+ * See documentation for the underlying [PQpass](https://www.postgresql.org/docs/current/libpq-status.html)
+ * function for additional information.
+ *
+ * @note Connection should not be is null recursive.
+ *
+ * @param conn --- active connection to a database.
+ * @return std::string_view --- string view with password.
+ */
+template <typename Connection>
+inline std::string_view get_password(const Connection& conn);
 ///@}
 /**
  * @defgroup group-connection-types Types
