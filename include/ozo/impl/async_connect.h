@@ -43,7 +43,7 @@ auto make_connect_operation_context(Connection&& connection, Handler&& handler) 
 
 template <typename ... Ts>
 auto& get_connection(const connect_operation_context_ptr<Ts ...>& context) noexcept {
-    return context->connection;
+    return unwrap_connection(context->connection);
 }
 
 template <typename ... Ts>
@@ -71,7 +71,7 @@ struct async_connect_op {
             return done(ec);
         }
 
-        return write_poll(get_connection(context), std::move(*this));
+        return get_connection(context).async_wait_write(std::move(*this));
     }
 
     void operator () (error_code ec, std::size_t = 0) {
@@ -87,10 +87,10 @@ struct async_connect_op {
                 return done();
 
             case PGRES_POLLING_WRITING:
-                return write_poll(get_connection(context), std::move(*this));
+                return get_connection(context).async_wait_write(std::move(*this));
 
             case PGRES_POLLING_READING:
-                return read_poll(get_connection(context), std::move(*this));
+                return get_connection(context).async_wait_read(std::move(*this));
 
             case PGRES_POLLING_FAILED:
             case PGRES_POLLING_ACTIVE:
@@ -101,7 +101,7 @@ struct async_connect_op {
     }
 
     void done(error_code ec = error_code {}) {
-        get_handler(context)(std::move(ec), std::move(get_connection(context)));
+        get_handler(context)(std::move(ec), std::move(context->connection));
     }
 
     using handler_type = std::decay_t<decltype(get_handler(context))>;

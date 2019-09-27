@@ -65,7 +65,7 @@ TEST_F(async_request_op, should_set_timer_and_send_query_params_and_get_result_a
     EXPECT_CALL(callback_executor, dispatch(_)).InSequence(s).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(callback, call(error_code {}, _)).InSequence(s).WillOnce(Return());
 
-    ozo::impl::async_request_op{fake_query {}, timeout, [] (auto, auto) {}, wrap(callback)}(error_code {}, conn);
+    ozo::impl::async_request_op{fake_query {}, timeout, ozo::none, wrap(callback)}(error_code {}, conn);
 }
 
 TEST_F(async_request_op, should_send_query_params_and_get_result_and_call_handler_whith_no_time_constraint) {
@@ -89,7 +89,7 @@ TEST_F(async_request_op, should_send_query_params_and_get_result_and_call_handle
     EXPECT_CALL(callback_executor, dispatch(_)).InSequence(s).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(callback, call(error_code {}, _)).InSequence(s).WillOnce(Return());
 
-    ozo::impl::async_request_op{fake_query {}, ozo::none, [] (auto, auto) {}, wrap(callback)}(error_code {}, conn);
+    ozo::impl::async_request_op{fake_query {}, ozo::none, ozo::none, wrap(callback)}(error_code {}, conn);
 }
 
 TEST_F(async_request_op, should_cancel_socket_on_timeout) {
@@ -114,7 +114,7 @@ TEST_F(async_request_op, should_cancel_socket_on_timeout) {
     EXPECT_CALL(socket, async_read_some(_)).InSequence(s).WillOnce(InvokeArgument<0>(error_code {}));
     EXPECT_CALL(strand, post(_)).InSequence(s).WillOnce(Return());
 
-    ozo::impl::async_request_op{fake_query {}, timeout, [] (auto, auto) {}, wrap(callback)}(error_code {}, conn);
+    ozo::impl::async_request_op{fake_query {}, timeout, ozo::none, wrap(callback)}(error_code {}, conn);
 }
 
 } // namespace

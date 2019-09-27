@@ -51,7 +51,7 @@ struct async_get_result_op_call : async_get_result_op,
 
 TEST_P(async_get_result_op_call, when_query_state_is_error_should_exit_and_preserve_state){
     m.ctx->state = ozo::impl::query_state::error;
-    ozo::impl::async_get_result_op{m.ctx, [](auto, auto){}}(GetParam());
+    ozo::impl::async_get_result_op{m.ctx, ozo::none}(GetParam());
     EXPECT_EQ(m.ctx->state, query_state::error);
 }
 
@@ -73,7 +73,7 @@ TEST_P(async_get_result_op_call_with_error, should_call_callback_with_given_erro
     EXPECT_CALL(m.socket, cancel(_)).WillOnce(Return());
     EXPECT_CALL(m.callback, call(error_code{error::error}, _)).WillOnce(Return());
 
-    ozo::impl::async_get_result_op{m.ctx, [](auto, auto){}}(error::error);
+    ozo::impl::async_get_result_op{m.ctx, ozo::none}(error::error);
 }
 
 TEST_P(async_get_result_op_call_with_error, should_post_callback_with_operation_aborted_if_called_with_bad_descriptor) {
@@ -84,7 +84,7 @@ TEST_P(async_get_result_op_call_with_error, should_post_callback_with_operation_
     EXPECT_CALL(m.socket, cancel(_)).WillOnce(Return());
     EXPECT_CALL(m.callback, call(error_code{boost::asio::error::operation_aborted}, _)).WillOnce(Return());
 
-    ozo::impl::async_get_result_op{m.ctx, [](auto, auto){}}(boost::asio::error::bad_descriptor);
+    ozo::impl::async_get_result_op{m.ctx, ozo::none}(boost::asio::error::bad_descriptor);
 }
 
 TEST_P(async_get_result_op_call_with_error, should_set_query_state_in_error) {
@@ -95,7 +95,7 @@ TEST_P(async_get_result_op_call_with_error, should_set_query_state_in_error) {
     EXPECT_CALL(m.socket, cancel(_)).WillOnce(Return());
     EXPECT_CALL(m.callback, call(error_code{error::error}, _)).WillOnce(Return());
 
-    ozo::impl::async_get_result_op{m.ctx, [](auto, auto){}}(error::error);
+    ozo::impl::async_get_result_op{m.ctx, ozo::none}(error::error);
 
     EXPECT_EQ(m.ctx->state, query_state::error);
 }
@@ -108,7 +108,7 @@ TEST_P(async_get_result_op_call_with_error, should_replace_empty_connection_erro
     EXPECT_CALL(m.socket, cancel(_)).WillOnce(Return());
     EXPECT_CALL(m.callback, call(error_code{error::error}, _)).WillOnce(Return());
 
-    ozo::impl::async_get_result_op{m.ctx, [](auto, auto){}}(error::error);
+    ozo::impl::async_get_result_op{m.ctx, ozo::none}(error::error);
 
     EXPECT_EQ(m.conn->error_context_, "error while get request result");
 }
@@ -122,7 +122,7 @@ TEST_P(async_get_result_op_call_with_error, should_preserve_not_empty_connection
     EXPECT_CALL(m.socket, cancel(_)).WillOnce(Return());
     EXPECT_CALL(m.callback, call(error_code{error::error}, _)).WillOnce(Return());
 
-    ozo::impl::async_get_result_op{m.ctx, [](auto, auto){}}(error::error);
+    ozo::impl::async_get_result_op{m.ctx, ozo::none}(error::error);
 
     EXPECT_EQ(m.conn->error_context_, "my error");
 }
