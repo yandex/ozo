@@ -63,8 +63,8 @@ struct connection_mock {
     MOCK_METHOD0(get_result, boost::optional<pg_result>());
 
     MOCK_CONST_METHOD0(connect_poll, int());
-    MOCK_METHOD1(start_connection, ozo::error_code(const std::string&));
-    MOCK_METHOD0(assign_socket, ozo::error_code());
+    MOCK_METHOD1(start_connection, std::shared_ptr<native_handle>(const std::string&));
+    MOCK_METHOD0(assign, ozo::error_code());
     MOCK_METHOD0(async_request, void());
     MOCK_METHOD0(async_execute, void());
     MOCK_METHOD0(request_oid_map, void());
@@ -109,7 +109,7 @@ static_assert(Query<fake_query>, "fake_query is not a Query");
 
 template <typename OidMap = empty_oid_map>
 struct connection {
-    using handle_type = std::unique_ptr<native_handle>;
+    using handle_type = std::shared_ptr<native_handle>;
 
     handle_type handle_;
     stream_descriptor socket_;
@@ -149,13 +149,17 @@ struct connection {
         return c.mock_->connect_poll();
     }
 
-    friend ozo::error_code pq_start_connection(
+    friend handle_type pq_start_connection(
             connection& c, const std::string& conninfo) {
         return c.mock_->start_connection(conninfo);
     }
 
-    friend ozo::error_code pq_assign_socket(connection& c) {
-        return c.mock_->assign_socket();
+    ozo::error_code assign(handle_type&& handle) {
+        ozo::error_code ec = mock_->assign();
+        if (!ec) {
+            handle_ = std::move(handle);
+        }
+        return ec;
     }
 
     friend decltype(auto) get_cancel_handle(connection& c) {
