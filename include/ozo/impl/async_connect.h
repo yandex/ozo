@@ -59,15 +59,16 @@ struct async_connect_op {
     Context context;
 
     void perform(const std::string& conninfo) {
-        if (error_code ec = start_connection(get_connection(context), conninfo)) {
-            return done(ec);
+        auto handle = start_connection(get_connection(context), conninfo);
+        if (!handle) {
+            return done(error::pq_connection_start_failed);
         }
 
-        if (connection_bad(get_connection(context))) {
+        if (connection_status_bad(handle.get())) {
             return done(error::pq_connection_status_bad);
         }
 
-        if (error_code ec = assign_socket(get_connection(context))) {
+        if (error_code ec = get_connection(context).assign(std::move(handle)); ec) {
             return done(ec);
         }
 
