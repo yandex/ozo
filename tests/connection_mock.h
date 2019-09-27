@@ -186,8 +186,18 @@ struct connection {
     }
 
     template <typename Executor>
-    friend ozo::error_code bind_connection_executor(connection& c, const Executor&) {
-        return c.mock_->bind_executor();
+    ozo::error_code bind_executor(const Executor&) {
+        return mock_->bind_executor();
+    }
+
+    template <typename WaitHandler>
+    void async_wait_write(WaitHandler&& h) {
+        socket_.async_write_some(asio::null_buffers(), std::forward<WaitHandler>(h));
+    }
+
+    template <typename WaitHandler>
+    void async_wait_read(WaitHandler&& h) {
+        socket_.async_read_some(asio::null_buffers(), std::forward<WaitHandler>(h));
     }
 };
 

@@ -1036,14 +1036,8 @@ struct get_connection_type_default<T, Require<Connection<T>>> {
  *
  * @param conn --- #Connection to be closed
  */
-template <typename T>
-inline void close_connection(T&& conn) {
-    static_assert(Connection<T>, "T is not a Connection concept");
-
-    error_code ec;
-    get_socket(conn).close(ec);
-    get_handle(std::forward<T>(conn)).reset();
-}
+template <typename Connection>
+inline error_code close_connection(Connection&& conn);
 
 /**
  * @brief Close connection to the database when leaving the scope
