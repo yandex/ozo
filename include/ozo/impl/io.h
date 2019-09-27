@@ -34,37 +34,9 @@ inline decltype(auto) pq_connect_poll(T& conn) {
 }
 
 template <typename T>
-inline error_code pq_start_connection(T& conn, const std::string& conninfo) {
+inline native_conn_handle pq_start_connection(const T&, const std::string& conninfo) {
     static_assert(Connection<T>, "T must be a Connection");
-    native_conn_handle handle(PQconnectStart(conninfo.c_str()));
-    if (!handle) {
-        return make_error_code(error::pq_connection_start_failed);
-    }
-    get_handle(conn) = std::move(handle);
-    return {};
-}
-
-template <typename T>
-inline error_code pq_assign_socket(T& conn) {
-    static_assert(Connection<T>, "T must be a Connection");
-    int fd = PQsocket(get_native_handle(conn));
-    if (fd == -1) {
-        return error::pq_socket_failed;
-    }
-
-    int new_fd = dup(fd);
-    if (new_fd == -1) {
-        set_error_context(conn, "error while dup(fd) for socket stream");
-        return error_code{errno, boost::system::generic_category()};
-    }
-
-    error_code ec;
-    get_socket(conn).assign(new_fd, ec);
-
-    if (ec) {
-        set_error_context(conn, "assign socket failed");
-    }
-    return ec;
+    return native_conn_handle(PQconnectStart(conninfo.c_str()));
 }
 
 template <typename T, typename ...Ts>
@@ -125,29 +97,10 @@ inline error_code pq_result_error(const PGresult& res) noexcept {
 } // namespace pq
 
 template <typename T>
-inline error_code start_connection(T& conn, const std::string& conninfo) {
+inline auto start_connection(T& conn, const std::string& conninfo) {
     static_assert(Connection<T>, "T must be a Connection");
     using pq::pq_start_connection;
     return pq_start_connection(unwrap_connection(conn), conninfo);
-}
-
-template <typename T>
-inline error_code assign_socket(T& conn) {
-    static_assert(Connection<T>, "T must be a Connection");
-    using pq::pq_assign_socket;
-    return pq_assign_socket(unwrap_connection(conn));
-}
-
-template <typename T, typename Handler, typename = Require<Connection<T>>>
-inline void write_poll(T& conn, Handler&& h) {
-    get_socket(unwrap_connection(conn)).async_write_some(
-            asio::null_buffers(), std::forward<Handler>(h));
-}
-
-template <typename T, typename Handler, typename = Require<Connection<T>>>
-inline void read_poll(T& conn, Handler&& h) {
-    get_socket(unwrap_connection(conn)).async_read_some(
-            asio::null_buffers(), std::forward<Handler>(h));
 }
 
 template <typename T>
