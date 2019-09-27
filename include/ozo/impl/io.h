@@ -138,18 +138,6 @@ inline error_code assign_socket(T& conn) {
     return pq_assign_socket(unwrap_connection(conn));
 }
 
-template <typename T, typename Handler, typename = Require<Connection<T>>>
-inline void write_poll(T& conn, Handler&& h) {
-    get_socket(unwrap_connection(conn)).async_write_some(
-            asio::null_buffers(), std::forward<Handler>(h));
-}
-
-template <typename T, typename Handler, typename = Require<Connection<T>>>
-inline void read_poll(T& conn, Handler&& h) {
-    get_socket(unwrap_connection(conn)).async_read_some(
-            asio::null_buffers(), std::forward<Handler>(h));
-}
-
 // Shortcut for post operation with connection associated executor
 template <typename T, typename Oper, typename = Require<Connection<T>>>
 inline void post(T& conn, Oper&& op) {
