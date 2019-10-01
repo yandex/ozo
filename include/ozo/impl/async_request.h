@@ -326,7 +326,7 @@ struct async_request_op {
         } else {
             return detail::deadline_handler {
                 ozo::get_executor(conn), time_constraint_, std::move(handler),
-                detail::cancel_socket(unwrap_connection(conn), get_allocator())
+                detail::cancel_io(unwrap_connection(conn), get_allocator())
             };
         }
     }
