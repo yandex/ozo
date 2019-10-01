@@ -179,7 +179,7 @@ inline auto apply_time_constaint(const TimeConstraint& t, [[maybe_unused]] Conne
     if constexpr (IsNone<TimeConstraint>) {
         return detail::wrap_executor {get_executor(conn), std::forward<Handler>(handler)};
     } else {
-        auto on_deadline = detail::cancel_socket(unwrap_connection(conn), asio::get_associated_allocator(handler));
+        auto on_deadline = detail::cancel_io(unwrap_connection(conn), asio::get_associated_allocator(handler));
         return detail::deadline_handler {
             ozo::get_executor(conn), t, std::forward<Handler>(handler), std::move(on_deadline)
         };

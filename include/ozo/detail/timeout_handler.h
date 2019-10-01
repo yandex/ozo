@@ -6,11 +6,11 @@
 namespace ozo::detail {
 
 template <typename Connection, typename Allocator>
-struct cancel_socket {
+struct cancel_io {
     Connection conn_;
     Allocator allocator_;
 
-    cancel_socket(Connection&& conn, const Allocator& allocator)
+    cancel_io(Connection&& conn, const Allocator& allocator)
     : conn_(conn), allocator_(allocator) {}
 
     void operator() (error_code) const {
@@ -23,6 +23,6 @@ struct cancel_socket {
 };
 
 template <typename Connection, typename Allocator>
-cancel_socket(Connection&& conn, const Allocator& allocator) -> cancel_socket<Connection, Allocator>;
+cancel_io(Connection&& conn, const Allocator& allocator) -> cancel_io<Connection, Allocator>;
 
 } // namespace ozo::detail
