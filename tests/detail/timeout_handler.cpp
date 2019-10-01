@@ -8,10 +8,14 @@ namespace {
 
 using namespace testing;
 
+struct connection_mock {
+    MOCK_METHOD0(cancel, void());
+};
+
 TEST(cancel_socket, should_cancel_socket_io) {
-    ozo::tests::stream_descriptor_gmock socket;
-    ozo::detail::cancel_socket cancel_socket_handler{socket, std::allocator<char>{}};
-    EXPECT_CALL(socket, cancel(_)).WillOnce(Return());
+    connection_mock conn;
+    ozo::detail::cancel_socket cancel_socket_handler{conn, std::allocator<char>{}};
+    EXPECT_CALL(conn, cancel()).WillOnce(Return());
     cancel_socket_handler(ozo::error_code{});
 }
 
