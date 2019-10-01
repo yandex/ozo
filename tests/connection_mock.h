@@ -162,6 +162,11 @@ struct connection {
         return ec;
     }
 
+    void cancel() {
+        ozo::error_code _;
+        socket_.cancel(_);
+    }
+
     friend decltype(auto) get_cancel_handle(connection& c) {
         return c.mock_->get_cancel_handle();
     }

@@ -75,10 +75,8 @@ auto& get_handler(const request_operation_context_ptr<Ts ...>& context) noexcept
 template <typename ...Ts>
 inline void done(const request_operation_context_ptr<Ts...>& ctx, error_code ec) {
     set_query_state(ctx, query_state::error);
-    decltype(auto) conn = ctx->conn;
-    error_code _;
-    get_socket(conn).cancel(_);
-    std::move(get_handler(ctx))(std::move(ec), conn);
+    get_connection(ctx).cancel();
+    std::move(get_handler(ctx))(std::move(ec), ctx->conn);
 }
 
 template <typename ...Ts>
@@ -328,7 +326,7 @@ struct async_request_op {
         } else {
             return detail::deadline_handler {
                 ozo::get_executor(conn), time_constraint_, std::move(handler),
-                detail::cancel_socket(get_socket(conn), get_allocator())
+                detail::cancel_socket(unwrap_connection(conn), get_allocator())
             };
         }
     }
