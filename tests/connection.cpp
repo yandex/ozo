@@ -73,6 +73,7 @@ template <typename OidMap = empty_oid_map>
 struct connection {
     using handle_type = std::unique_ptr<::native_handle>;
     using stream_type = socket_mock;
+    using error_context = std::string;
 
     handle_type handle_ = std::make_unique<::native_handle>();
     socket_mock socket_;
@@ -82,6 +83,8 @@ struct connection {
 
     auto get_executor() const { return io_->get_executor(); }
     auto native_handle() const noexcept { return handle_.get(); }
+    const error_context& get_error_context() const noexcept { return error_context_; }
+    void set_error_context(error_context v = error_context{}) { error_context_ = std::move(v); }
 
     explicit connection(io_context& io) : socket_(io), io_(&io) {}
 };
