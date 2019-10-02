@@ -412,20 +412,6 @@ inline auto get_native_handle(const Connection& conn) noexcept {
 }
 
 /**
- * @brief Socket stream object of the connection
- *
- * See underlying `ozo::get_connection_socket` for details.
- *
- * @param conn --- #Connection object
- * @return socket stream object of the connection
- */
-template <typename T>
-inline decltype(auto) get_socket(T&& conn) noexcept {
-    static_assert(Connection<T>, "T must be a Connection");
-    return get_connection_socket(unwrap_connection(std::forward<T>(conn)));
-}
-
-/**
  * @brief Executor for connection related asynchronous operations
  *
  * This executor must be used to schedule all the asynchronous operations
