@@ -162,6 +162,13 @@ struct connection {
         return ec;
     }
 
+    ozo::error_code close() {
+        error_code ec;
+        socket_.close(ec);
+        handle_.reset();
+        return ec;
+    }
+
     void cancel() {
         ozo::error_code _;
         socket_.cancel(_);
