@@ -72,6 +72,7 @@ struct timer_mock {
 template <typename OidMap = empty_oid_map>
 struct connection {
     using handle_type = std::unique_ptr<native_handle>;
+    using stream_type = socket_mock;
 
     handle_type handle_ = std::make_unique<native_handle>();
     socket_mock socket_;
