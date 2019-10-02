@@ -71,16 +71,17 @@ struct timer_mock {
 
 template <typename OidMap = empty_oid_map>
 struct connection {
-    using handle_type = std::unique_ptr<native_handle>;
+    using handle_type = std::unique_ptr<::native_handle>;
     using stream_type = socket_mock;
 
-    handle_type handle_ = std::make_unique<native_handle>();
+    handle_type handle_ = std::make_unique<::native_handle>();
     socket_mock socket_;
     OidMap oid_map_;
     std::string error_context_;
     io_context* io_;
 
     auto get_executor() const { return io_->get_executor(); }
+    auto native_handle() const noexcept { return handle_.get(); }
 
     explicit connection(io_context& io) : socket_(io), io_(&io) {}
 };
