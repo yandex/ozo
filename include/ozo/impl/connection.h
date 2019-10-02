@@ -13,6 +13,22 @@ namespace ozo {
 
 namespace impl {
 
+template <typename Connection, typename Executor>
+inline error_code bind_connection_executor(Connection& conn, const Executor& ex) {
+    if (conn.get_executor() != ex) {
+        typename Connection::stream_type s{ex.context()};
+        error_code ec;
+        s.assign(conn.socket_.native_handle(), ec);
+        if (ec) {
+            return ec;
+        }
+        conn.socket_.release();
+        conn.socket_ = std::move(s);
+        conn.io_ = std::addressof(ex.context());
+    }
+    return {};
+}
+
 template <typename OidMap, typename Statistics>
 struct connection_impl {
     connection_impl(io_context& io, Statistics statistics)
@@ -43,18 +59,7 @@ struct connection_impl {
 
     template <typename Executor>
     error_code bind_executor(const Executor& ex) {
-        if (get_executor() != ex) {
-            stream_type s{ex.context()};
-            error_code ec;
-            s.assign(stream().native_handle(), ec);
-            if (ec) {
-                return ec;
-            }
-            stream().release();
-            stream() = std::move(s);
-            io_ = std::addressof(ex.context());
-        }
-        return {};
+        return ozo::impl::bind_connection_executor(*this, ex);
     }
 
     error_code assign(native_conn_handle&& handle) {
@@ -70,7 +75,7 @@ struct connection_impl {
         }
 
         error_code ec;
-        stream().assign(new_fd, ec);
+        socket_.assign(new_fd, ec);
 
         if (ec) {
             set_error_context("assign socket failed");
@@ -83,26 +88,24 @@ struct connection_impl {
 
     template <typename WaitHandler>
     void async_wait_write(WaitHandler&& h) {
-        stream().async_write_some(asio::null_buffers(), std::forward<WaitHandler>(h));
+        socket_.async_write_some(asio::null_buffers(), std::forward<WaitHandler>(h));
     }
 
     template <typename WaitHandler>
     void async_wait_read(WaitHandler&& h) {
-        stream().async_read_some(asio::null_buffers(), std::forward<WaitHandler>(h));
+        socket_.async_read_some(asio::null_buffers(), std::forward<WaitHandler>(h));
     }
 
     error_code close() noexcept {
         error_code ec;
-        stream().close(ec);
+        socket_.close(ec);
         handle_.reset();
         return ec;
     }
 
-    stream_type& stream() noexcept { return socket_; }
-
     void cancel() noexcept {
         error_code _;
-        stream().cancel(_);
+        socket_.cancel(_);
     }
 };
 
@@ -120,23 +123,6 @@ inline auto connection_error_message(NativeHandleType handle) {
         v.remove_suffix(v.size() - trim_pos - 1);
     }
     return v;
-}
-
-template <typename Connection, typename Executor>
-inline error_code bind_connection_executor(Connection& conn, const Executor& ex) {
-    if (get_executor(conn) != ex) {
-        decltype(auto) socket = get_socket(conn);
-        std::decay_t<decltype(socket)> s{ex.context()};
-        error_code ec;
-        s.assign(socket.native_handle(), ec);
-        if (ec) {
-            return ec;
-        }
-        socket.release();
-        socket = std::move(s);
-        conn.io_ = std::addressof(ex.context());
-    }
-    return {};
 }
 
 } // namespace impl
