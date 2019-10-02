@@ -156,6 +156,12 @@ inline bool connection_bad(const T& conn) noexcept {
 }
 
 template <typename Connection>
+inline auto get_native_handle(const Connection& conn) noexcept {
+    static_assert(ozo::Connection<Connection>, "conn should model Connection");
+    return unwrap_connection(conn).native_handle();
+}
+
+template <typename Connection>
 inline std::string_view get_database(const Connection& conn) {
     static_assert(ozo::Connection<Connection>, "conn should model Connection");
     return PQdb(get_native_handle(conn));

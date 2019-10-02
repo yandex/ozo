@@ -120,6 +120,8 @@ struct connection {
 
     auto get_executor() const { return io_->get_executor(); }
 
+    auto native_handle() const noexcept { return handle_.get(); }
+
     friend int pq_set_nonblocking(connection& c) {
         return c.mock_->set_nonblocking();
     }

@@ -378,22 +378,6 @@ constexpr auto Connection = is_connection<std::decay_t<T>>::value;
  * @brief Connection related functions
  */
 ///@{
-/**
- * @brief PostgreSQL connection handle
- *
- * PostgreSQL native connection handle wrapped with RAII smart pointer.
- * In common cases you do not need this function. It's purpose is to support
- * extention and customization of the library. See get_native_handle for details.
- *
- * @param conn --- #Connection object
- * @return refernce to a wrapped PostgreSQL connection handle
- */
-template <typename T>
-inline decltype(auto) get_handle(T&& conn) noexcept {
-    static_assert(Connection<T>, "T must be a Connection");
-    return get_connection_handle(
-        unwrap_connection(std::forward<T>(conn)));
-}
 
 /**
  * @brief PostgreSQL native connection handle
@@ -407,9 +391,7 @@ inline decltype(auto) get_handle(T&& conn) noexcept {
  * @return native handle
  */
 template <typename Connection>
-inline auto get_native_handle(const Connection& conn) noexcept {
-    return get_handle(conn).get();
-}
+inline auto get_native_handle(const Connection& conn) noexcept;
 
 /**
  * @brief Executor for connection related asynchronous operations
