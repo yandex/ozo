@@ -159,10 +159,7 @@ inline error_code bind_executor(Connection& conn, const Executor& ex) {
 template <typename Connection>
 inline error_code close_connection(Connection&& conn) {
     static_assert(ozo::Connection<Connection>, "conn should model Connection");
-    error_code ec;
-    get_socket(conn).close(ec);
-    get_handle(conn).reset();
-    return ec;
+    return unwrap_connection(conn).close();
 }
 
 template <typename T>

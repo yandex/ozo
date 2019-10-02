@@ -227,8 +227,8 @@ TEST(bind_connection_executor, should_change_socket_when_address_of_new_io_is_no
     connection<> conn(old_io);
     io_context new_io;
 
-    EXPECT_CALL(*ozo::get_socket(conn).native_handle(), assign(_)).WillOnce(Return());
-    EXPECT_CALL(*ozo::get_socket(conn).native_handle(), release()).WillOnce(Return());
+    EXPECT_CALL(*conn.socket_.native_handle(), assign(_)).WillOnce(Return());
+    EXPECT_CALL(*conn.socket_.native_handle(), release()).WillOnce(Return());
 
     EXPECT_EQ(ozo::impl::bind_connection_executor(conn, new_io.get_executor()), error_code());
     EXPECT_EQ(ozo::get_executor(conn), new_io.get_executor());
@@ -239,7 +239,7 @@ TEST(bind_connection_executor, should_return_error_when_socket_assign_fails_with
     connection<> conn(old_io);
     io_context new_io;
 
-    EXPECT_CALL(*ozo::get_socket(conn).native_handle(), assign(_))
+    EXPECT_CALL(*conn.socket_.native_handle(), assign(_))
         .WillOnce(SetArgReferee<0>(error_code(error::code::error)));
 
     EXPECT_EQ(ozo::impl::bind_connection_executor(conn, new_io.get_executor()), error_code(error::code::error));
