@@ -467,10 +467,7 @@ inline std::string_view error_message(T&& conn);
  * @return `std::string` contains a context
  */
 template <typename T>
-inline const auto& get_error_context(const T& conn) {
-    static_assert(Connection<T>, "T must be a Connection");
-    return get_connection_error_context(unwrap_connection(conn));
-}
+inline const auto& get_error_context(const T& conn);
 
 /**
  * @brief Additional error context setter
@@ -484,10 +481,7 @@ inline const auto& get_error_context(const T& conn) {
  * @param ctx --- context to set, now only `std::string` is supported
  */
 template <typename T, typename Ctx>
-inline void set_error_context(T& conn, Ctx&& ctx) {
-    static_assert(Connection<T>, "T must be a Connection");
-    get_connection_error_context(unwrap_connection(conn)) = std::forward<Ctx>(ctx);
-}
+inline void set_error_context(T& conn, Ctx&& ctx);
 
 /**
  * @brief Reset additional error context
@@ -500,11 +494,7 @@ inline void set_error_context(T& conn, Ctx&& ctx) {
  * @param conn --- #Connection to reset context, should not be in null state
  */
 template <typename T>
-inline void reset_error_context(T& conn) {
-    static_assert(Connection<T>, "T must be a Connection");
-    using ctx_type = std::decay_t<decltype(get_error_context(conn))>;
-    set_error_context(conn, ctx_type{});
-}
+inline void reset_error_context(T& conn);
 
 /**
  * @brief Access to a connection OID map

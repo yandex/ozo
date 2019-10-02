@@ -53,7 +53,7 @@ struct connection_impl {
     const oid_map_type& oid_map() const noexcept { return oid_map_;}
 
     const error_context& get_error_context() const noexcept { return error_context_; }
-    void set_error_context(error_context v) { error_context_ = std::move(v); }
+    void set_error_context(error_context v = error_context{}) { error_context_ = std::move(v); }
 
     executor_type get_executor() const noexcept { return io_->get_executor(); }
 
@@ -159,6 +159,24 @@ template <typename Connection>
 inline auto get_native_handle(const Connection& conn) noexcept {
     static_assert(ozo::Connection<Connection>, "conn should model Connection");
     return unwrap_connection(conn).native_handle();
+}
+
+template <typename Connection>
+inline const auto& get_error_context(const Connection& conn) {
+    static_assert(ozo::Connection<Connection>, "conn should model Connection");
+    return unwrap_connection(conn).get_error_context();
+}
+
+template <typename Connection, typename Ctx>
+inline void set_error_context(Connection& conn, Ctx&& ctx) {
+    static_assert(ozo::Connection<Connection>, "conn should model Connection");
+    unwrap_connection(conn).set_error_context(std::forward<Ctx>(ctx));
+}
+
+template <typename Connection>
+inline void reset_error_context(Connection& conn) {
+    static_assert(ozo::Connection<Connection>, "conn should model Connection");
+    unwrap_connection(conn).set_error_context();
 }
 
 template <typename Connection>
