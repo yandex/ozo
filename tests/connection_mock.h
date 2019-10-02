@@ -110,17 +110,22 @@ static_assert(Query<fake_query>, "fake_query is not a Query");
 template <typename OidMap = empty_oid_map>
 struct connection {
     using handle_type = std::shared_ptr<ozo::tests::native_handle>;
+    using error_context = std::string;
 
     handle_type handle_;
     stream_descriptor socket_;
     OidMap oid_map_;
     connection_mock* mock_ = nullptr;
-    std::string error_context_;
+    error_context error_context_;
     io_context* io_;
 
     auto get_executor() const { return io_->get_executor(); }
 
     auto native_handle() const noexcept { return handle_.get(); }
+
+    const error_context& get_error_context() const noexcept { return error_context_; }
+
+    void set_error_context(error_context v = error_context{}) { error_context_ = std::move(v); }
 
     friend int pq_set_nonblocking(connection& c) {
         return c.mock_->set_nonblocking();
