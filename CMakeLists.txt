@@ -23,6 +23,7 @@ option(OZO_BUILD_EXAMPLES "Enable examples build" OFF)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_library(ozo INTERFACE)
+add_library(yandex::ozo ALIAS ozo)
 
 target_compile_features(ozo INTERFACE cxx_std_17)
 
@@ -34,7 +35,7 @@ endif()
 
 target_include_directories(ozo INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    $<INSTALL_INTERFACE:include/ozo>
+    $<INSTALL_INTERFACE:include>
 )
 
 target_compile_definitions(ozo INTERFACE -DBOOST_COROUTINES_NO_DEPRECATION_WARNING)
@@ -57,6 +58,7 @@ install(
 
 install(
     EXPORT      ozo-targets
+    NAMESPACE   yandex::
     DESTINATION lib/cmake/ozo
 )
 
@@ -70,6 +72,7 @@ write_basic_package_version_file(
 export(
     EXPORT ozo-targets
     FILE "${CMAKE_CURRENT_BINARY_DIR}/ozo/ozo-targets.cmake"
+    NAMESPACE yandex::
 )
 
 configure_file(cmake/ozo-config.cmake
@@ -80,6 +83,7 @@ configure_file(cmake/ozo-config.cmake
 install(
     FILES
         cmake/ozo-config.cmake
+        cmake/modules/FindPostgreSQL.cmake
         "${CMAKE_CURRENT_BINARY_DIR}/ozo/ozo-config-version.cmake"
     DESTINATION
         lib/cmake/ozo

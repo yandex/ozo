@@ -51,6 +51,11 @@ build_gcc() {
             CMAKE_BUILD_TYPE=RelWithDebInfo
             build
         ;;
+        test_external_project)
+            CMAKE_BUILD_TYPE=Release
+            OZO_TEST_EXTERNAL_PROJECT=ON
+            build
+        ;;
         coverage)
             CMAKE_BUILD_TYPE=Debug
             OZO_COVERAGE=ON
@@ -89,6 +94,7 @@ build_all() {
     $0 gcc debug
     $0 gcc release
     $0 gcc coverage
+    $0 gcc test_external_project
     $0 clang debug
     $0 clang release
     $0 clang asan
@@ -125,6 +131,28 @@ build() {
     ctest -V
     if [[ ${OZO_COVERAGE} == "ON" ]]; then
         make ozo_coverage
+    fi
+    if [[ ${OZO_TEST_EXTERNAL_PROJECT} == "ON" ]]; then
+        INSTALL_DIR="${BUILD_DIR}/ozo_install"
+        mkdir -p ${INSTALL_DIR}
+        make DESTDIR=${INSTALL_DIR} install
+
+        PREVIOUS_DIR="$(pwd)"
+        cd ${INSTALL_DIR}
+        OZO_ROOT_DIR="$(pwd)/usr/local"
+        cd ${PREVIOUS_DIR}
+
+
+        EXT_BUILD_DIR="${BUILD_DIR}_external_project"
+        mkdir -p ${EXT_BUILD_DIR}
+        cd ${EXT_BUILD_DIR}
+        cmake \
+            -DCMAKE_C_COMPILER="${CC_COMPILER}" \
+            -DCMAKE_CXX_COMPILER="${CXX_COMPILER}" \
+            -DCMAKE_CXX_FLAGS="$CMAKE_CXX_FLAGS" \
+            -Dozo_ROOT="${OZO_ROOT_DIR}" \
+            ${SOURCE_DIR}/tests/external_project
+        make
     fi
 }
 
