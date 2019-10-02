@@ -28,7 +28,7 @@ struct connection_pool_config {
  * Time restrictions to get connection from the `ozo::connection_pool`
  * @note This type is deprecated, use time constrained version of ozo::get_connection() or ozo::dedline for operations.
  */
-struct connection_pool_timeouts {
+struct /*[[deprecated]]*/ connection_pool_timeouts {
     time_traits::duration connect = std::chrono::seconds(10); //!< maximum time interval to establish to or wait for free connection with DBMS
     time_traits::duration queue = std::chrono::seconds(10); //!< [[IGNORED]]
 };
@@ -141,13 +141,13 @@ private:
 
 //[[DEPRECATED]] for backward compatibility only
 template <typename ...Ts>
-auto make_connector(connection_pool<Ts...>& source, io_context& io, const connection_pool_timeouts& timeouts) {
+[[deprecated]] auto make_connector(connection_pool<Ts...>& source, io_context& io, const connection_pool_timeouts& timeouts) {
     return bind_get_connection_timeout(source[io], timeouts.connect);
 }
 
 //[[DEPRECATED]] for backward compatibility only
 template <typename ...Ts>
-auto make_connector(connection_pool<Ts...>& source, io_context& io) {
+[[deprecated]] auto make_connector(connection_pool<Ts...>& source, io_context& io) {
     return source[io];
 }
 

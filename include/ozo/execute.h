@@ -42,7 +42,7 @@ decltype(auto) execute(P&& provider, Q&& query, CompletionToken&& token);
 #else
 
 template <typename Initiator>
-struct execute_op : base_async_operation <execute_op, Initiator> {
+struct execute_op : base_async_operation <execute_op<Initiator>, Initiator> {
     using base = typename execute_op::base;
     using base::base;
 
@@ -58,6 +58,11 @@ struct execute_op : base_async_operation <execute_op, Initiator> {
     decltype(auto) operator() (P&& provider, Q&& query, CompletionToken&& token) const {
         return (*this)(std::forward<P>(provider), std::forward<Q>(query), none,
             std::forward<CompletionToken>(token));
+    }
+
+    template <typename OtherInitiator>
+    constexpr static auto rebind_initiator(const OtherInitiator& other) {
+        return execute_op<OtherInitiator>{other};
     }
 };
 

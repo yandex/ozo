@@ -7,10 +7,10 @@
 #include <ozo/core/recursive.h>
 #include <ozo/core/none.h>
 #include <ozo/deadline.h>
+#include <ozo/native_conn_handle.h>
 
 #include <ozo/detail/bind.h>
 #include <ozo/detail/functional.h>
-#include <ozo/impl/connection.h>
 
 #include <boost/asio/dispatch.hpp>
 
@@ -163,24 +163,8 @@ constexpr detail::result_of<get_connection_socket_impl, T> get_connection_socket
 }
 #endif
 
-#if BOOST_VERSION < 107000
-template <typename T, typename = hana::when<true>>
-struct get_connection_executor_impl {
-    template <typename Conn>
-    constexpr static auto apply(Conn&& c) -> decltype(get_connection_socket(c).get_executor()) {
-        return get_connection_socket(c).get_executor();
-    }
-};
-#else
 template <typename T, typename = hana::when<true>>
 struct get_connection_executor_impl;
-#endif
-
-template <typename T, typename = std::void_t<>>
-struct get_connection_timer_impl;
-
-template <typename T>
-asio::steady_timer& get_connection_timer(T&&);
 
 template <typename T>
 struct get_connection_executor_impl<T,
@@ -465,11 +449,7 @@ inline auto get_executor(T& conn) noexcept {
  * @return `error_code` in case of error has been
  */
 template <typename T, typename Executor>
-inline error_code bind_executor(T& conn, const Executor& ex) {
-    static_assert(Connection<T>, "T must be a Connection");
-    using impl::bind_connection_executor;
-    return bind_connection_executor(unwrap_connection(conn), ex);
-}
+inline error_code bind_executor(T& conn, const Executor& ex);
 
 /**
  * @brief Indicates if connection state is bad
@@ -479,11 +459,7 @@ inline error_code bind_executor(T& conn, const Executor& ex) {
  * @return `true` if connection is in bad or null state, `false` - otherwise.
  */
 template <typename T>
-inline bool connection_bad(const T& conn) noexcept {
-    static_assert(Connection<T>, "T must be a Connection");
-    using impl::connection_status_bad;
-    return is_null_recursive(conn) ? true : connection_status_bad(get_native_handle(conn));
-}
+inline bool connection_bad(const T& conn) noexcept;
 
 /**
  * @brief Indicates if connection state is not bad.
@@ -509,13 +485,7 @@ inline bool connection_good(const T& conn) noexcept {
  * @return `std::string_view` contains a message
  */
 template <typename T>
-inline std::string_view error_message(T&& conn) {
-    static_assert(Connection<T>, "T must be a Connection");
-    if (is_null_recursive(conn)) {
-        return {};
-    }
-    return impl::connection_error_message(get_native_handle(conn));
-}
+inline std::string_view error_message(T&& conn);
 
 /**
  * @brief Additional error context getter
@@ -602,6 +572,75 @@ inline decltype(auto) get_statistics(T&& conn) noexcept {
     return get_connection_statistics(unwrap_connection(std::forward<T>(conn)));
 }
 
+/**
+ * @brief Get the database name of the active connection
+ *
+ * See documentation for the underlying [PQdb](https://www.postgresql.org/docs/current/libpq-status.html)
+ * function for additional information.
+ *
+ * @note Connection should not be is null recursive.
+ *
+ * @param conn --- active connection to a database.
+ * @return std::string_view --- string view with database name.
+ */
+template <typename Connection>
+inline std::string_view get_database(const Connection& conn);
+
+/**
+ * @brief Get the host connected of the active connection
+ *
+ * See documentation for the underlying [PQhost](https://www.postgresql.org/docs/current/libpq-status.html)
+ * function for additional information.
+ *
+ * @note Connection should not be is null recursive.
+ *
+ * @param conn --- active connection to a database.
+ * @return std::string_view --- string view with host.
+ */
+template <typename Connection>
+inline std::string_view get_host(const Connection& conn);
+
+/**
+ * @brief Get the port connected of the active connection
+ *
+ * See documentation for the underlying [PQport](https://www.postgresql.org/docs/current/libpq-status.html)
+ * function for additional information.
+ *
+ * @note Connection should not be is null recursive.
+ *
+ * @param conn --- active connection to a database.
+ * @return std::string_view --- string view with port.
+ */
+template <typename Connection>
+inline std::string_view get_port(const Connection& conn);
+
+/**
+ * @brief Get the user name of the active connection
+ *
+ * See documentation for the underlying [PQuser](https://www.postgresql.org/docs/current/libpq-status.html)
+ * function for additional information.
+ *
+ * @note Connection should not be is null recursive.
+ *
+ * @param conn --- active connection to a database.
+ * @return std::string_view --- string view with user name.
+ */
+template <typename Connection>
+inline std::string_view get_user(const Connection& conn) ;
+
+/**
+ * @brief Get the password of the active connection
+ *
+ * See documentation for the underlying [PQpass](https://www.postgresql.org/docs/current/libpq-status.html)
+ * function for additional information.
+ *
+ * @note Connection should not be is null recursive.
+ *
+ * @param conn --- active connection to a database.
+ * @return std::string_view --- string view with password.
+ */
+template <typename Connection>
+inline std::string_view get_password(const Connection& conn);
 ///@}
 /**
  * @defgroup group-connection-types Types
@@ -939,7 +978,7 @@ template <typename T, typename CompletionToken>
 decltype(auto) get_connection(T&& provider, CompletionToken&& token);
 #else
 template <typename Initiator>
-struct get_connection_op : base_async_operation <get_connection_op, Initiator> {
+struct get_connection_op : base_async_operation <get_connection_op<Initiator>, Initiator> {
     using base = typename get_connection_op::base;
     using base::base;
 
@@ -955,6 +994,11 @@ struct get_connection_op : base_async_operation <get_connection_op, Initiator> {
     template <typename T, typename CompletionToken>
     decltype(auto) operator() (T&& provider, CompletionToken&& token) const {
         return (*this)(std::forward<T>(provider), none, std::forward<CompletionToken>(token));
+    }
+
+    template <typename OtherInitiator>
+    constexpr static auto rebind_initiator(const OtherInitiator& other) {
+        return get_connection_op<OtherInitiator>{other};
     }
 };
 
@@ -1038,3 +1082,5 @@ inline auto defer_close_connection(Connection* conn) {
 ///@}
 
 } // namespace ozo
+
+#include <ozo/impl/connection.h>

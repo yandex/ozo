@@ -14,7 +14,7 @@ TEST(execute, should_perform_operation_without_result) {
     ozo::io_context io;
     ozo::connection_info<> conn_info(OZO_PG_TEST_CONNINFO);
 
-    ozo::execute(ozo::make_connector(conn_info, io), "BEGIN"_SQL,
+    ozo::execute(conn_info[io], "BEGIN"_SQL,
         [&](ozo::error_code ec, auto conn) {
             ASSERT_FALSE(ec) << ec.message() << " | " << error_message(conn) << " | " << get_error_context(conn);
             EXPECT_FALSE(ozo::connection_bad(conn));

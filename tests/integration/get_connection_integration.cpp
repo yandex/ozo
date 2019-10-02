@@ -11,7 +11,7 @@ TEST(get_connection, should_return_timeout_error_for_zero_connect_timeout) {
     const std::chrono::seconds timeout(0);
 
     std::atomic_flag called {};
-    ozo::get_connection(ozo::make_connector(conn_info, io, timeout), [&] (ozo::error_code ec, auto conn) {
+    ozo::get_connection(conn_info[io], timeout, [&] (ozo::error_code ec, auto conn) {
         EXPECT_FALSE(called.test_and_set());
         EXPECT_EQ(ec, boost::system::error_condition(boost::system::errc::operation_canceled));
         EXPECT_FALSE(ozo::connection_bad(conn));
@@ -27,7 +27,7 @@ TEST(get_connection, should_return_connection_for_max_connect_timeout) {
     const auto timeout = ozo::time_traits::duration::max();
 
     std::atomic_flag called {};
-    ozo::get_connection(ozo::make_connector(conn_info, io, timeout), [&] (ozo::error_code ec, auto conn) {
+    ozo::get_connection(conn_info[io], timeout, [&] (ozo::error_code ec, auto conn) {
         EXPECT_FALSE(called.test_and_set());
         EXPECT_FALSE(ec);
         EXPECT_FALSE(ozo::connection_bad(conn));
