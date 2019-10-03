@@ -68,7 +68,7 @@ struct connection_mock {
     MOCK_METHOD0(async_request, void());
     MOCK_METHOD0(async_execute, void());
     MOCK_METHOD0(request_oid_map, void());
-    MOCK_METHOD0(bind_executor, ozo::error_code());
+    MOCK_METHOD0(set_executor, ozo::error_code());
     MOCK_METHOD0(get_cancel_handle, cancel_handle_mock*());
 };
 
@@ -214,8 +214,8 @@ struct connection {
     }
 
     template <typename Executor>
-    ozo::error_code bind_executor(const Executor&) {
-        return mock_->bind_executor();
+    ozo::error_code set_executor(const Executor&) {
+        return mock_->set_executor();
     }
 
     template <typename WaitHandler>
@@ -228,6 +228,17 @@ struct connection {
         socket_.async_read_some(asio::null_buffers(), std::forward<WaitHandler>(h));
     }
 };
+
+} // namespace ozo::tests
+
+namespace ozo {
+
+template <typename OidMap>
+struct is_connection<tests::connection<OidMap>> : std::true_type {};
+
+} // namespace ozo
+
+namespace ozo::tests {
 
 template <typename ...Ts>
 using connection_ptr = std::shared_ptr<connection<Ts...>>;

@@ -89,6 +89,16 @@ struct connection {
     explicit connection(io_context& io) : socket_(io), io_(&io) {}
 };
 
+} // namespace
+
+namespace ozo {
+
+template <typename OidMap>
+struct is_connection<::connection<OidMap>> : std::true_type {};
+
+} // namespace ozo
+
+namespace {
 template <typename ...Ts>
 using connection_ptr = std::shared_ptr<connection<Ts...>>;
 
@@ -223,7 +233,7 @@ TEST_F(async_get_connection, should_reset_connection_error_context) {
 TEST(bind_connection_executor, should_leave_same_io_context_and_socket_when_address_of_new_io_is_equal_to_old) {
     io_context io;
     connection<> conn(io);
-    EXPECT_EQ(ozo::impl::bind_connection_executor(conn, io.get_executor()), error_code());
+    EXPECT_EQ(ozo::detail::bind_connection_executor(conn, io.get_executor()), error_code());
     EXPECT_EQ(ozo::get_executor(conn), io.get_executor());
 }
 
@@ -235,7 +245,7 @@ TEST(bind_connection_executor, should_change_socket_when_address_of_new_io_is_no
     EXPECT_CALL(*conn.socket_.native_handle(), assign(_)).WillOnce(Return());
     EXPECT_CALL(*conn.socket_.native_handle(), release()).WillOnce(Return());
 
-    EXPECT_EQ(ozo::impl::bind_connection_executor(conn, new_io.get_executor()), error_code());
+    EXPECT_EQ(ozo::detail::bind_connection_executor(conn, new_io.get_executor()), error_code());
     EXPECT_EQ(ozo::get_executor(conn), new_io.get_executor());
 }
 
@@ -247,7 +257,7 @@ TEST(bind_connection_executor, should_return_error_when_socket_assign_fails_with
     EXPECT_CALL(*conn.socket_.native_handle(), assign(_))
         .WillOnce(SetArgReferee<0>(error_code(error::code::error)));
 
-    EXPECT_EQ(ozo::impl::bind_connection_executor(conn, new_io.get_executor()), error_code(error::code::error));
+    EXPECT_EQ(ozo::detail::bind_connection_executor(conn, new_io.get_executor()), error_code(error::code::error));
 }
 
 struct fake_native_pq_handle {
@@ -259,25 +269,25 @@ struct fake_native_pq_handle {
 
 TEST(connection_error_message, should_trim_trailing_soaces){
     fake_native_pq_handle handle{"error message with trailing spaces   "};
-    EXPECT_EQ(std::string(ozo::impl::connection_error_message(handle)),
+    EXPECT_EQ(std::string(ozo::detail::connection_error_message(handle)),
         "error message with trailing spaces");
 }
 
 TEST(connection_error_message, should_preserve_string_without_trailing_spaces){
     fake_native_pq_handle handle{"error message without trailing spaces"};
-    EXPECT_EQ(std::string(ozo::impl::connection_error_message(handle)),
+    EXPECT_EQ(std::string(ozo::detail::connection_error_message(handle)),
         "error message without trailing spaces");
 }
 
 TEST(connection_error_message, should_preserve_empty_string){
     fake_native_pq_handle handle{""};
-    EXPECT_EQ(std::string(ozo::impl::connection_error_message(handle)),
+    EXPECT_EQ(std::string(ozo::detail::connection_error_message(handle)),
         "");
 }
 
 TEST(connection_error_message, should_return_empty_string_for_string_of_spaces){
     fake_native_pq_handle handle{"    "};
-    EXPECT_EQ(std::string(ozo::impl::connection_error_message(handle)),
+    EXPECT_EQ(std::string(ozo::detail::connection_error_message(handle)),
         "");
 }
 

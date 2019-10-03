@@ -64,6 +64,7 @@ struct async_connect_op {
             return done(error::pq_connection_start_failed);
         }
 
+        using detail::connection_status_bad;
         if (connection_status_bad(handle.get())) {
             return done(error::pq_connection_status_bad);
         }
