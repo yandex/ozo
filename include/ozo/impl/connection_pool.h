@@ -112,7 +112,7 @@ struct pooled_connection_wrapper {
 
         auto conn = std::allocate_shared<connection>(get_allocator(), std::forward<Handle>(handle));
         if (connection_good(conn)) {
-            ec = bind_executor(conn, io_.get_executor());
+            ec = unwrap_connection(conn).set_executor(io_.get_executor());
             return handler_(std::move(ec), std::move(conn));
         }
 
@@ -141,10 +141,10 @@ auto wrap_pooled_connection_handler(IoContext& io, Source&& source, TimeConstrai
     };
 }
 
-static_assert(Connection<pooled_connection_ptr<connection_impl<empty_oid_map, no_statistics>>>,
+static_assert(Connection<pooled_connection_ptr<connection<empty_oid_map, no_statistics>>>,
     "pooled_connection_ptr is not a Connection concept");
 
-static_assert(ConnectionProvider<pooled_connection_ptr<connection_impl<empty_oid_map, no_statistics>>>,
+static_assert(ConnectionProvider<pooled_connection_ptr<connection<empty_oid_map, no_statistics>>>,
     "pooled_connection_ptr is not a ConnectionProvider concept");
 
 } // namespace ozo::impl
