@@ -8,6 +8,8 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
+#include <boost/range/adaptor/transformed.hpp>
+
 BOOST_FUSION_DEFINE_STRUCT((),
     fusion_adapted_test_result,
     (std::string, text)
@@ -775,5 +777,75 @@ TEST_F(recv, should_convert_TIMESTAMPOID_to_time_point) {
     ozo::recv(value, oid_map, result);
     EXPECT_EQ(result, expected);
 }
+
+TEST_F(recv, should_convert_INTERVALOID_to_chrono_microseconds) {
+    const char bytes[] = {
+        char(0x00), char(0x00), char(0x00), char(0x08), char(0x89), char(0xD2), char(0x82), char(0xD6), // microseconds
+        char(0x00), char(0x00), char(0x00), char(0x09), // days
+        char(0x00), char(0x00), char(0x00), char(0x5C)  // months
+    };
+
+    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(1186));
+    EXPECT_CALL(mock, get_value(_, _)).WillRepeatedly(Return(bytes));
+    EXPECT_CALL(mock, get_length(_, _)).WillRepeatedly(Return(16));
+    EXPECT_CALL(mock, get_isnull(_, _)).WillRepeatedly(Return(false));
+
+    std::chrono::microseconds expected{239278272013014LL}; // 7y 8m 9d 10h 11m 12s 13ms 14us
+    std::chrono::microseconds result;
+    ozo::recv(value, oid_map, result);
+
+    EXPECT_EQ(result, expected);
+}
+
+struct to_duration : TestWithParam<std::tuple<ozo::detail::pg_interval, std::chrono::microseconds>> {
+};
+
+TEST_P(to_duration, should_convert_pg_interval_to_chrono_microseconds) {
+    const auto [interval, expected] = GetParam();
+
+    const auto result = ozo::detail::to_chrono_duration(interval);
+    EXPECT_EQ(result, expected);
+}
+
+INSTANTIATE_TEST_CASE_P(convert_success, to_duration, Values(
+    std::make_tuple(ozo::detail::pg_interval{       36672013014LL,         9,          92}, 239278272013014us),
+    std::make_tuple(ozo::detail::pg_interval{      -49727986986LL,       -20,          93}, 239278272013014us),
+    std::make_tuple(ozo::detail::pg_interval{   239278272013014LL,         0,           0}, 239278272013014us),
+
+    std::make_tuple(ozo::detail::pg_interval{  3333333333333333LL,          0,          0},  3333333333333333us),
+    std::make_tuple(ozo::detail::pg_interval{                 0LL,     200000,          0}, 17280000000000000us),
+    std::make_tuple(ozo::detail::pg_interval{                 0LL,          0,       5555}, 14398560000000000us),
+
+    std::make_tuple(ozo::detail::pg_interval{      -14454775808LL,  -106751991,         0}, std::chrono::microseconds::min()),
+    std::make_tuple(ozo::detail::pg_interval{        71945224192LL, -106751992,         0}, std::chrono::microseconds::min()),
+    std::make_tuple(ozo::detail::pg_interval{      -532854775808LL, -555555555,  14960119}, std::chrono::microseconds::min()),
+
+    std::make_tuple(ozo::detail::pg_interval{        14454775807LL,  106751991,         0}, std::chrono::microseconds::max()),
+    std::make_tuple(ozo::detail::pg_interval{       -71945224193LL,  106751992,         0}, std::chrono::microseconds::max()),
+    std::make_tuple(ozo::detail::pg_interval{9223370740854775807LL,  555555555, -18518518}, std::chrono::microseconds::max())
+));
+
+INSTANTIATE_TEST_CASE_P(convert_success_with_overflow, to_duration, Values(
+    std::make_tuple(ozo::detail::pg_interval{-14454775809LL, -106751991, 0}, std::chrono::microseconds::min()),
+    std::make_tuple(ozo::detail::pg_interval{ 14454775808LL,  106751991, 0}, std::chrono::microseconds::max()),
+
+    std::make_tuple(
+        ozo::detail::pg_interval{
+            std::numeric_limits<decltype(ozo::detail::pg_interval::microseconds)>::min(),
+            std::numeric_limits<decltype(ozo::detail::pg_interval::days)>::min(),
+            std::numeric_limits<decltype(ozo::detail::pg_interval::months)>::min()
+        },
+        std::chrono::microseconds::min()
+    ),
+
+    std::make_tuple(
+        ozo::detail::pg_interval{
+            std::numeric_limits<decltype(ozo::detail::pg_interval::microseconds)>::max(),
+            std::numeric_limits<decltype(ozo::detail::pg_interval::days)>::max(),
+            std::numeric_limits<decltype(ozo::detail::pg_interval::months)>::max()
+        },
+        std::chrono::microseconds::max()
+    )
+));
 
 } // namespace

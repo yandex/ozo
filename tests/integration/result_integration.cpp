@@ -55,6 +55,18 @@ TEST(result, should_convert_into_tuple_time_point_and_text) {
     EXPECT_EQ(std::get<1>(r[0]), "2");
 }
 
+TEST(result, should_convert_into_tuple_microseconds) {
+    auto result = execute_query(
+        "SELECT '7 years 8 months 9 days 10 hours 11 minutes 12 seconds 13 milliseconds 14 microseconds'::interval"
+    );
+    auto oid_map = ozo::empty_oid_map();
+    ozo::rows_of<std::chrono::microseconds> rows;
+    ozo::recv_result(result, oid_map, std::back_inserter(rows));
+
+    ASSERT_EQ(rows.size(), 1u);
+    EXPECT_EQ(std::get<0>(rows[0]), std::chrono::microseconds(239278272013014LL));
+}
+
 TEST(result, should_convert_into_tuple_float_and_text) {
     auto result = execute_query("select 42.13::float4, 'text'::text;");
     auto oid_map = ozo::empty_oid_map();
