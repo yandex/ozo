@@ -4,14 +4,13 @@
 #include <ozo/native_conn_handle.h>
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/asio/steady_timer.hpp>
-#include <boost/asio/posix/stream_descriptor.hpp>
 
 #include <string>
 #include <sstream>
 
 namespace ozo {
 
-namespace impl {
+namespace detail {
 
 template <typename Connection, typename Executor>
 inline error_code bind_connection_executor(Connection& conn, const Executor& ex) {
@@ -29,89 +28,6 @@ inline error_code bind_connection_executor(Connection& conn, const Executor& ex)
     return {};
 }
 
-template <typename OidMap, typename Statistics>
-struct connection_impl {
-    connection_impl(io_context& io, Statistics statistics)
-        : io_(std::addressof(io)), socket_(*io_), statistics_(std::move(statistics)) {}
-
-    using stream_type = asio::posix::stream_descriptor;
-    using native_handle_type = native_conn_handle::pointer;
-    using oid_map_type = OidMap;
-    using error_context = std::string;
-    using executor_type = io_context::executor_type;
-
-    native_conn_handle handle_;
-    io_context* io_;
-    stream_type socket_;
-    oid_map_type oid_map_;
-    Statistics statistics_; // statistics metatypes to be defined - counter, duration, whatever?
-    error_context error_context_;
-
-    native_handle_type native_handle() const noexcept { return handle_.get(); }
-
-    oid_map_type& oid_map() noexcept { return oid_map_;}
-    const oid_map_type& oid_map() const noexcept { return oid_map_;}
-
-    Statistics& statistics() noexcept { return statistics_;}
-    const Statistics& statistics() const noexcept { return statistics_;}
-
-    const error_context& get_error_context() const noexcept { return error_context_; }
-    void set_error_context(error_context v = error_context{}) { error_context_ = std::move(v); }
-
-    executor_type get_executor() const noexcept { return io_->get_executor(); }
-
-    template <typename Executor>
-    error_code bind_executor(const Executor& ex) {
-        return ozo::impl::bind_connection_executor(*this, ex);
-    }
-
-    error_code assign(native_conn_handle&& handle) {
-        int fd = PQsocket(handle.get());
-        if (fd == -1) {
-            return error::pq_socket_failed;
-        }
-
-        int new_fd = dup(fd);
-        if (new_fd == -1) {
-            set_error_context("error while dup(fd) for socket stream");
-            return error_code{errno, boost::system::generic_category()};
-        }
-
-        error_code ec;
-        socket_.assign(new_fd, ec);
-
-        if (ec) {
-            set_error_context("assign socket failed");
-            return ec;
-        }
-
-        handle_ = std::move(handle);
-        return ec;
-    }
-
-    template <typename WaitHandler>
-    void async_wait_write(WaitHandler&& h) {
-        socket_.async_write_some(asio::null_buffers(), std::forward<WaitHandler>(h));
-    }
-
-    template <typename WaitHandler>
-    void async_wait_read(WaitHandler&& h) {
-        socket_.async_read_some(asio::null_buffers(), std::forward<WaitHandler>(h));
-    }
-
-    error_code close() noexcept {
-        error_code ec;
-        socket_.close(ec);
-        handle_.reset();
-        return ec;
-    }
-
-    void cancel() noexcept {
-        error_code _;
-        socket_.cancel(_);
-    }
-};
-
 inline bool connection_status_bad(PGconn* handle) noexcept {
     return !handle || PQstatus(handle) == CONNECTION_BAD;
 }
@@ -128,24 +44,75 @@ inline auto connection_error_message(NativeHandleType handle) {
     return v;
 }
 
-} // namespace impl
+} // namespace detail
 
-template <typename ...Ts>
-struct is_connection<impl::connection_impl<Ts...>> : std::true_type {};
+template <typename OidMap, typename Statistics>
+connection<OidMap, Statistics>::connection(io_context& io, Statistics statistics)
+: io_(std::addressof(io)), socket_(*io_), statistics_(std::move(statistics)) {}
 
-template <typename T>
-inline std::string_view error_message(T&& conn) {
-    static_assert(Connection<T>, "T must be a Connection");
+template <typename OidMap, typename Statistics>
+error_code connection<OidMap, Statistics>::set_executor(const executor_type& ex) {
+    return ozo::detail::bind_connection_executor(*this, ex);
+}
+
+template <typename OidMap, typename Statistics>
+error_code connection<OidMap, Statistics>::assign(native_conn_handle&& handle) {
+    int fd = PQsocket(handle.get());
+    if (fd == -1) {
+        return error::pq_socket_failed;
+    }
+
+    int new_fd = dup(fd);
+    if (new_fd == -1) {
+        set_error_context("error while dup(fd) for socket stream");
+        return error_code{errno, boost::system::generic_category()};
+    }
+
+    error_code ec;
+    socket_.assign(new_fd, ec);
+
+    if (ec) {
+        set_error_context("assign socket failed");
+        return ec;
+    }
+
+    handle_ = std::move(handle);
+    return ec;
+}
+
+template <typename OidMap, typename Statistics>
+template <typename WaitHandler>
+void connection<OidMap, Statistics>::async_wait_write(WaitHandler&& h) {
+    socket_.async_write_some(asio::null_buffers(), std::forward<WaitHandler>(h));
+}
+
+template <typename OidMap, typename Statistics>
+template <typename WaitHandler>
+void connection<OidMap, Statistics>::async_wait_read(WaitHandler&& h) {
+    socket_.async_read_some(asio::null_buffers(), std::forward<WaitHandler>(h));
+}
+
+template <typename OidMap, typename Statistics>
+error_code connection<OidMap, Statistics>::close() noexcept {
+    error_code ec;
+    socket_.close(ec);
+    handle_.reset();
+    return ec;
+}
+
+template <typename OidMap, typename Statistics>
+void connection<OidMap, Statistics>::cancel() noexcept {
+    error_code _;
+    socket_.cancel(_);
+}
+
+template <typename Connection>
+inline std::string_view error_message(const Connection& conn) {
+    static_assert(ozo::Connection<Connection>, "conn should model Connection");
     if (is_null_recursive(conn)) {
         return {};
     }
-    return impl::connection_error_message(get_native_handle(conn));
-}
-
-template <typename Connection, typename Executor>
-inline error_code bind_executor(Connection& conn, const Executor& ex) {
-    static_assert(ozo::Connection<Connection>, "conn should model Connection");
-    return unwrap_connection(conn).bind_executor(ex);
+    return detail::connection_error_message(get_native_handle(conn));
 }
 
 template <typename Connection>
@@ -154,10 +121,10 @@ inline error_code close_connection(Connection&& conn) {
     return unwrap_connection(conn).close();
 }
 
-template <typename T>
-inline bool connection_bad(const T& conn) noexcept {
-    static_assert(Connection<T>, "T must be a Connection");
-    using impl::connection_status_bad;
+template <typename Connection>
+inline bool connection_bad(const Connection& conn) noexcept {
+    static_assert(ozo::Connection<Connection>, "conn should model Connection");
+    using detail::connection_status_bad;
     return is_null_recursive(conn) ? true : connection_status_bad(get_native_handle(conn));
 }
 

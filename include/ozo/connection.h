@@ -13,6 +13,7 @@
 #include <ozo/detail/functional.h>
 
 #include <boost/asio/dispatch.hpp>
+#include <boost/asio/posix/stream_descriptor.hpp>
 
 namespace ozo {
 
@@ -75,8 +76,67 @@ inline constexpr decltype(auto) unwrap_connection(T&& conn) noexcept {
     return detail::apply<unwrap_connection_impl>(std::forward<T>(conn));
 }
 
+namespace detail {
+template <typename Connection, typename Executor>
+inline error_code bind_connection_executor(Connection&, const Executor&);
+}
+
+template <typename OidMap, typename Statistics>
+class connection {
+public:
+    using native_handle_type = native_conn_handle::pointer;
+    using oid_map_type = OidMap;
+    using error_context = std::string;
+    using executor_type = io_context::executor_type;
+
+    connection(io_context& io, Statistics statistics);
+
+    native_handle_type native_handle() const noexcept { return handle_.get(); }
+
+    oid_map_type& oid_map() noexcept { return oid_map_;}
+    const oid_map_type& oid_map() const noexcept { return oid_map_;}
+
+    Statistics& statistics() noexcept { return statistics_;}
+    const Statistics& statistics() const noexcept { return statistics_;}
+
+    const error_context& get_error_context() const noexcept { return error_context_; }
+    void set_error_context(error_context v = error_context{}) { error_context_ = std::move(v); }
+
+    executor_type get_executor() const noexcept { return io_->get_executor(); }
+
+    error_code set_executor(const executor_type& ex);
+
+    error_code assign(native_conn_handle&& handle);
+
+    template <typename WaitHandler>
+    void async_wait_write(WaitHandler&& h);
+
+    template <typename WaitHandler>
+    void async_wait_read(WaitHandler&& h);
+
+    error_code close() noexcept;
+
+    void cancel() noexcept;
+
+private:
+    using stream_type = asio::posix::stream_descriptor;
+
+    template <typename Connection, typename Executor>
+    friend error_code ozo::detail::bind_connection_executor(Connection&, const Executor&);
+
+    native_conn_handle handle_;
+    io_context* io_ = nullptr;
+    stream_type socket_;
+    oid_map_type oid_map_;
+    Statistics statistics_;
+    error_context error_context_;
+};
+
 template <typename, typename = std::void_t<>>
 struct is_connection : std::false_type {};
+
+template <typename ...Ts>
+struct is_connection<connection<Ts...>> : std::true_type {};
 
 /**
 * @ingroup group-connection-concepts
@@ -164,18 +224,8 @@ inline auto get_native_handle(const Connection& conn) noexcept;
  * @param conn --- #Connection object
  * @return `executor` of socket stream object of the connection
  */
-template <typename T>
-inline auto get_executor(T& conn) noexcept;
-
-/**
- * @brief Binds executor for the connection
- *
- * @param conn --- #Connection which must be rebound
- * @param ex --- Executor whish should be used for IO and timers
- * @return `error_code` in case of error has been
- */
-template <typename T, typename Executor>
-inline error_code bind_executor(T& conn, const Executor& ex);
+template <typename Connection>
+inline auto get_executor(const Connection& conn) noexcept;
 
 /**
  * @brief Indicates if connection state is bad
@@ -210,8 +260,8 @@ inline bool connection_good(const T& conn) noexcept {
  * @param conn --- #Connection to get message from
  * @return `std::string_view` contains a message
  */
-template <typename T>
-inline std::string_view error_message(T&& conn);
+template <typename Connection>
+inline std::string_view error_message(const Connection& conn);
 
 /**
  * @brief Additional error context getter

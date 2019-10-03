@@ -26,7 +26,7 @@ class connection_info {
     Statistics statistics;
 
 public:
-    using connection = impl::connection_impl<OidMap, Statistics>;
+    using connection = ozo::connection<OidMap, Statistics>;
 
      /**
      * @brief Type of connection depends on built-in implementation
