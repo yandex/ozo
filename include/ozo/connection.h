@@ -404,10 +404,7 @@ inline auto get_native_handle(const Connection& conn) noexcept;
  * @return `executor` of socket stream object of the connection
  */
 template <typename T>
-inline auto get_executor(T& conn) noexcept {
-    static_assert(Connection<T>, "T must be a Connection");
-    return get_connection_executor(unwrap_connection(conn));
-}
+inline auto get_executor(T& conn) noexcept;
 
 /**
  * @brief Binds executor for the connection
@@ -508,10 +505,7 @@ inline void reset_error_context(T& conn);
  * @return OID map of the Connection
  */
 template <typename T>
-inline decltype(auto) get_oid_map(T&& conn) noexcept {
-    static_assert(Connection<T>, "T must be a Connection");
-    return get_connection_oid_map(unwrap_connection(std::forward<T>(conn)));
-}
+inline decltype(auto) get_oid_map(T&& conn) noexcept;
 
 /**
  * @brief Access to a Connection statistics
@@ -525,10 +519,7 @@ inline decltype(auto) get_oid_map(T&& conn) noexcept {
  * @return statistics of the Connection
  */
 template <typename T>
-inline decltype(auto) get_statistics(T&& conn) noexcept {
-    static_assert(Connection<T>, "T must be a Connection");
-    return get_connection_statistics(unwrap_connection(std::forward<T>(conn)));
-}
+inline decltype(auto) get_statistics(T&& conn) noexcept;
 
 /**
  * @brief Get the database name of the active connection
