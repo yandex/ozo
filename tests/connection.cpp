@@ -89,6 +89,14 @@ struct connection {
     explicit connection(io_context& io) : socket_(io), io_(&io) {}
 };
 
+} // namespace
+
+namespace ozo {
+template <typename ...Ts>
+struct is_connection<::connection<Ts...>> : std::true_type {};
+}
+
+namespace {
 template <typename ...Ts>
 using connection_ptr = std::shared_ptr<connection<Ts...>>;
 

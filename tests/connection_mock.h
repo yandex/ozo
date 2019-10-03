@@ -229,11 +229,18 @@ struct connection {
     }
 };
 
+} // namespace ozo::tests
+
+namespace ozo {
+template <typename ...Ts>
+struct is_connection<ozo::tests::connection<Ts...>> : std::true_type {};
+} // namespace ozo
+
+namespace ozo::tests {
+
 template <typename ...Ts>
 using connection_ptr = std::shared_ptr<connection<Ts...>>;
 
-static_assert(ozo::Connection<connection<>>,
-    "connection does not meet Connection requirements");
 static_assert(ozo::Connection<connection<>>,
     "connection does not meet Connection requirements");
 static_assert(ozo::Connection<connection_ptr<>>,

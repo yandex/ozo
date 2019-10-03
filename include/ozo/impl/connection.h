@@ -52,6 +52,9 @@ struct connection_impl {
     oid_map_type& oid_map() noexcept { return oid_map_;}
     const oid_map_type& oid_map() const noexcept { return oid_map_;}
 
+    Statistics& statistics() noexcept { return statistics_;}
+    const Statistics& statistics() const noexcept { return statistics_;}
+
     const error_context& get_error_context() const noexcept { return error_context_; }
     void set_error_context(error_context v = error_context{}) { error_context_ = std::move(v); }
 
@@ -126,6 +129,9 @@ inline auto connection_error_message(NativeHandleType handle) {
 }
 
 } // namespace impl
+
+template <typename ...Ts>
+struct is_connection<impl::connection_impl<Ts...>> : std::true_type {};
 
 template <typename T>
 inline std::string_view error_message(T&& conn) {
