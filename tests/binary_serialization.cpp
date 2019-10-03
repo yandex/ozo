@@ -198,4 +198,14 @@ TEST_F(send, with_std_chrono_time_point_should_store_as_microseconds) {
     }));
 }
 
+TEST_F(send, with_std_chrono_microseconds_should_store_as_days_and_microseconds) {
+    const auto microseconds = 239278272013014LL;
+    ozo::send(os, oid_map, std::chrono::microseconds(microseconds));
+    EXPECT_EQ(buffer, std::vector<char>({
+        char(0x00), char(0x00), char(0x00), char(0x08), char(0x89), char(0xD2), char(0x82), char(0xD6), // microseconds
+        char(0x00), char(0x00), char(0x0A), char(0xD1), // days
+        char(0x00), char(0x00), char(0x00), char(0x00), // months
+    }));
+}
+
 } // namespace

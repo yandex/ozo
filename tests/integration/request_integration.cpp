@@ -403,6 +403,25 @@ TEST(request, should_send_and_receive_empty_optional) {
     io.run();
 }
 
+TEST(request, should_send_and_receive_interval) {
+    using namespace ozo::literals;
+
+    const auto interval = ozo::pg::interval(239278272013014LL);
+
+    ozo::io_context io;
+    const ozo::connection_info<> conn_info(OZO_PG_TEST_CONNINFO);
+
+    ozo::rows_of<ozo::pg::interval> result;
+    auto query = "SELECT '2769 days 10 hours 11 minutes 12 seconds 13014 microseconds'::interval + "_SQL + interval;
+    ozo::request(conn_info[io], query, ozo::into(result), [&](ozo::error_code ec, auto conn) {
+        ASSERT_REQUEST_OK(ec, conn);
+        ASSERT_EQ(result.size(), 1u);
+        EXPECT_EQ(std::get<0>(result[0]), ozo::pg::interval(478556544026028LL));
+    });
+
+    io.run();
+}
+
 TEST(request, should_send_and_receive_composite_with_empty_optional) {
     using namespace ozo::literals;
     namespace asio = boost::asio;
