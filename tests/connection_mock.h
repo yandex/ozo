@@ -111,6 +111,7 @@ template <typename OidMap = empty_oid_map>
 struct connection {
     using handle_type = std::shared_ptr<ozo::tests::native_handle>;
     using error_context = std::string;
+    using oid_map_type = OidMap;
 
     handle_type handle_;
     stream_descriptor socket_;
@@ -126,6 +127,10 @@ struct connection {
     const error_context& get_error_context() const noexcept { return error_context_; }
 
     void set_error_context(error_context v = error_context{}) { error_context_ = std::move(v); }
+
+    oid_map_type& oid_map() noexcept { return oid_map_;}
+
+    const oid_map_type& oid_map() const noexcept { return oid_map_;}
 
     friend int pq_set_nonblocking(connection& c) {
         return c.mock_->set_nonblocking();

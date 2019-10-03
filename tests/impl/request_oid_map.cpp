@@ -55,18 +55,18 @@ TEST(set_oid_map, should_throw_on_null_oid_in_oids_result) {
 
 template <class OidMap = ozo::empty_oid_map>
 struct connection {
-    OidMap oid_map;
+    OidMap oid_map_;
     std::string error_context_;
     using error_context = std::string;
 
     const error_context& get_error_context() const noexcept { return error_context_; }
     void set_error_context(error_context v = error_context{}) { error_context_ = std::move(v); }
 
-    friend OidMap& get_connection_oid_map(connection& self) {
-        return self.oid_map;
+    OidMap& oid_map() noexcept {
+        return oid_map_;
     }
-    friend const OidMap& get_connection_oid_map(const connection& self) {
-        return self.oid_map;
+    const OidMap& oid_map() const noexcept {
+        return oid_map_;
     }
 };
 

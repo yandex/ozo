@@ -180,6 +180,24 @@ inline void reset_error_context(Connection& conn) {
 }
 
 template <typename Connection>
+inline decltype(auto) get_oid_map(Connection&& conn) noexcept {
+    static_assert(ozo::Connection<Connection>, "conn should model Connection");
+    return unwrap_connection(std::forward<Connection>(conn)).oid_map();
+}
+
+template <typename Connection>
+inline decltype(auto) get_statistics(Connection&& conn) noexcept {
+    static_assert(ozo::Connection<Connection>, "conn should model Connection");
+    return unwrap_connection(std::forward<Connection>(conn)).statistics();
+}
+
+template <typename Connection>
+inline auto get_executor(const Connection& conn) noexcept {
+    static_assert(ozo::Connection<Connection>, "conn should model Connection");
+    return unwrap_connection(conn).get_executor();
+}
+
+template <typename Connection>
 inline std::string_view get_database(const Connection& conn) {
     static_assert(ozo::Connection<Connection>, "conn should model Connection");
     return PQdb(get_native_handle(conn));
