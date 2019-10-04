@@ -88,7 +88,7 @@ void reuse_connection(const std::string& conn_string, Query query) {
         auto connection = ozo::get_connection(connection_info[io], connect_timeout, yield);
         while (true) {
             ozo::result result;
-            ozo::request(connection, query, request_timeout, std::ref(result), yield);
+            ozo::request(ozo::ref(connection), query, request_timeout, std::ref(result), yield);
             if (!benchmark.step(result.size())) {
                 break;
             }
@@ -110,7 +110,7 @@ void reuse_connection_and_parse_result(const std::string& conn_string, Query que
         auto connection = ozo::get_connection(connection_info[io], connect_timeout, yield);
         while (true) {
             std::vector<Result> result;
-            ozo::request(connection, query, request_timeout, std::back_inserter(result), yield);
+            ozo::request(ozo::ref(connection), query, request_timeout, std::back_inserter(result), yield);
             if (!benchmark.step(result.size())) {
                 break;
             }

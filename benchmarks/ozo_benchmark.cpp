@@ -35,7 +35,7 @@ int main(int argc, char *argv[]) {
                 benchmark.start();
                 while (true) {
                     ozo::result result;
-                    ozo::request(connection, query, std::ref(result), yield);
+                    ozo::request(ozo::ref(connection), query, std::ref(result), yield);
                     if (!benchmark.step(result.size())) {
                         break;
                     }

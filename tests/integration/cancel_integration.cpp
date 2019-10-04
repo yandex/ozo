@@ -44,7 +44,7 @@ TEST(cancel, should_cancel_operation) {
                 ozo::cancel(std::move(handle), io, 5s, yield[ec]);
             }
         });
-        ozo::execute(conn, "SELECT pg_sleep(1000000)"_SQL, yield[ec]);
+        ozo::execute(ozo::ref(conn), "SELECT pg_sleep(1000000)"_SQL, yield[ec]);
         EXPECT_EQ(ec, ozo::sqlstate::query_canceled);
     });
 
@@ -78,7 +78,7 @@ TEST(cancel, should_stop_cancel_operation_on_zero_timeout) {
                 EXPECT_EQ(ec, boost::asio::error::timed_out);
             }
         });
-        ozo::execute(conn, "SELECT pg_sleep(1000000)"_SQL, 2s, yield[ec]);
+        ozo::execute(ozo::ref(conn), "SELECT pg_sleep(1000000)"_SQL, 2s, yield[ec]);
         EXPECT_EQ(ec, boost::asio::error::operation_aborted);
     });
 

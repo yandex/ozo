@@ -33,8 +33,7 @@ public:
      *
      * Type is used to model #ConnectionSource
      */
-    using connection_type = std::shared_ptr<connection>;
-
+    using connection_type = std::unique_ptr<connection>;
     /**
      * @brief Construct a new connection information object
      *
@@ -62,8 +61,7 @@ public:
     template <typename TimeConstraint, typename Handler>
     void operator ()(io_context& io, TimeConstraint t, Handler&& handler) const {
         static_assert(ozo::TimeConstraint<TimeConstraint>, "should model TimeConstraint concept");
-        auto allocator = asio::get_associated_allocator(handler);
-        impl::async_connect(conn_str, t, std::allocate_shared<connection>(allocator, io, statistics),
+        impl::async_connect(conn_str, t, std::make_unique<connection>(io, statistics),
             std::forward<Handler>(handler));
     }
 

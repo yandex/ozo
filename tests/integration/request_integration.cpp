@@ -186,7 +186,7 @@ TEST(request, should_fill_oid_map_when_oid_map_is_not_empty) {
         ozo::error_code ec{};
         auto conn = ozo::request(conn_info[io], "DROP TYPE IF EXISTS custom_type"_SQL, std::ref(result), yield[ec]);
         ASSERT_REQUEST_OK(ec, conn);
-        ozo::request(conn, "CREATE TYPE custom_type AS ()"_SQL, std::ref(result), yield[ec]);
+        ozo::request(ozo::ref(conn), "CREATE TYPE custom_type AS ()"_SQL, std::ref(result), yield[ec]);
         ASSERT_REQUEST_OK(ec, conn);
         auto conn_with_oid_map = ozo::get_connection(conn_info_with_oid_map[io], yield);
         EXPECT_NE(ozo::type_oid<custom_type>(ozo::get_oid_map(conn_with_oid_map)), ozo::null_oid);
@@ -267,7 +267,7 @@ TEST(request, should_return_custom_composite) {
             auto conn = ozo::execute(conn_info[io],
                 "DROP TYPE IF EXISTS custom_type"_SQL, yield[ec]);
             ASSERT_REQUEST_OK(ec, conn);
-            ozo::execute(conn, "CREATE TYPE custom_type AS (number int2, text text)"_SQL, yield[ec]);
+            ozo::execute(ozo::ref(conn), "CREATE TYPE custom_type AS (number int2, text text)"_SQL, yield[ec]);
             ASSERT_REQUEST_OK(ec, conn);
         }();
 
@@ -306,7 +306,7 @@ TEST(request, should_send_custom_composite) {
             auto conn = ozo::execute(conn_info[io],
                 "DROP TYPE IF EXISTS custom_type"_SQL, yield[ec]);
             ASSERT_REQUEST_OK(ec, conn);
-            ozo::execute(conn, "CREATE TYPE custom_type AS (number int2, text text)"_SQL, yield[ec]);
+            ozo::execute(ozo::ref(conn), "CREATE TYPE custom_type AS (number int2, text text)"_SQL, yield[ec]);
             ASSERT_REQUEST_OK(ec, conn);
         }();
 
@@ -416,7 +416,7 @@ TEST(request, should_send_and_receive_composite_with_empty_optional) {
             auto conn = ozo::execute(conn_info[io],
                 "DROP TYPE IF EXISTS with_optional"_SQL, yield[ec]);
             ASSERT_REQUEST_OK(ec, conn);
-            ozo::execute(conn, "CREATE TYPE with_optional AS (value integer)"_SQL, yield[ec]);
+            ozo::execute(ozo::ref(conn), "CREATE TYPE with_optional AS (value integer)"_SQL, yield[ec]);
             ASSERT_REQUEST_OK(ec, conn);
         } ();
 
@@ -478,7 +478,7 @@ TEST(request, should_send_and_receive_composite_with_jsonb_field) {
             auto conn = ozo::execute(conn_info[io],
                 "DROP TYPE IF EXISTS with_jsonb"_SQL, yield[ec]);
             ASSERT_REQUEST_OK(ec, conn);
-            ozo::execute(conn, "CREATE TYPE with_jsonb AS (value jsonb)"_SQL, yield[ec]);
+            ozo::execute(ozo::ref(conn), "CREATE TYPE with_jsonb AS (value jsonb)"_SQL, yield[ec]);
             ASSERT_REQUEST_OK(ec, conn);
         } ();
 

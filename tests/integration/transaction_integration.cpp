@@ -28,7 +28,7 @@ TEST(transaction, create_schema_in_transaction_and_commit_then_table_should_exis
         ozo::request(transaction, "DROP SCHEMA IF EXISTS ozo_test CASCADE;"_SQL, std::ref(result), yield);
         ozo::request(transaction, "CREATE SCHEMA ozo_test;"_SQL, std::ref(result), yield);
         auto connection = ozo::commit(std::move(transaction), yield);
-        ozo::request(connection, "DROP SCHEMA ozo_test;"_SQL, std::ref(result), yield);
+        ozo::request(ozo::ref(connection), "DROP SCHEMA ozo_test;"_SQL, std::ref(result), yield);
     });
 
     io.run();
@@ -47,7 +47,7 @@ TEST(transaction, create_schema_in_transaction_and_rollback_then_table_should_no
         ozo::request(transaction, "CREATE SCHEMA ozo_test;"_SQL, std::ref(result), yield);
         auto connection = ozo::rollback(std::move(transaction), yield);
         ozo::error_code ec;
-        ozo::request(connection, "DROP SCHEMA ozo_test;"_SQL, std::ref(result), yield[ec]);
+        ozo::request(ozo::ref(connection), "DROP SCHEMA ozo_test;"_SQL, std::ref(result), yield[ec]);
         EXPECT_EQ(ec, ozo::error_condition(ozo::sqlstate::invalid_schema_name));
     });
 

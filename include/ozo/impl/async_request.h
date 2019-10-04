@@ -76,12 +76,12 @@ template <typename ...Ts>
 inline void done(const request_operation_context_ptr<Ts...>& ctx, error_code ec) {
     set_query_state(ctx, query_state::error);
     get_connection(ctx).cancel();
-    std::move(get_handler(ctx))(std::move(ec), ctx->conn);
+    std::move(get_handler(ctx))(std::move(ec), std::move(ctx->conn));
 }
 
 template <typename ...Ts>
 inline void done(const request_operation_context_ptr<Ts...>& ctx) {
-    std::move(get_handler(ctx))(error_code {}, ctx->conn);
+    std::move(get_handler(ctx))(error_code {}, std::move(ctx->conn));
 }
 
 template <typename Context, typename BinaryQuery>

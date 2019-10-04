@@ -193,6 +193,72 @@ ozo::get_connection_executor()
 template <typename T>
 constexpr auto Connection = is_connection<std::decay_t<decltype(unwrap_connection(std::declval<T>()))>>::value;
 
+template <typename Connection>
+class connection_reference {
+public:
+    static_assert(ozo::Connection<Connection>, "target type should model Connection");
+
+    using target_type = Connection;
+    using native_handle_type = typename target_type::native_handle_type;
+    using oid_map_type = typename target_type::oid_map_type;
+    using error_context = typename target_type::error_context;
+    using executor_type = typename target_type::executor_type;
+
+    connection_reference() = default;
+    connection_reference(Connection& target) : target_(&target) {}
+    connection_reference(std::unique_ptr<Connection>& target) : target_(target.get()) {}
+
+    native_handle_type native_handle() const noexcept {
+        return target_->native_handle();
+    }
+
+    const oid_map_type& oid_map() const noexcept { return target_->oid_map();}
+
+    auto& statistics() noexcept { return target_->statistics();}
+    const auto& statistics() const noexcept { return target_->statistics();}
+
+    const error_context& get_error_context() const noexcept {
+        return target_->get_error_context();
+    }
+
+    void set_error_context(error_context v = error_context{}) {
+        target_->set_error_context(std::move(v));
+    }
+
+    executor_type get_executor() const noexcept {
+        return target_->get_executor();
+    }
+
+    template <typename WaitHandler>
+    void async_wait_write(WaitHandler&& h) {
+        target_->async_wait_write(std::forward<WaitHandler>(h));
+    }
+
+    template <typename WaitHandler>
+    void async_wait_read(WaitHandler&& h) {
+        target_->async_wait_read(std::forward<WaitHandler>(h));
+    }
+
+    error_code close() noexcept { return target_->close();};
+
+    void cancel() noexcept { target_->cancel();}
+
+    operator bool () const noexcept { return target_ != nullptr;}
+
+private:
+    target_type* target_ = nullptr;
+};
+
+template <typename T>
+struct is_nullable<connection_reference<T>> : std::true_type {};
+
+template <typename T>
+struct is_connection<connection_reference<T>> : std::true_type {};
+
+template <typename Connection>
+inline auto ref(Connection& conn) -> decltype(connection_reference(conn)) {
+    return connection_reference(conn);
+}
 /**
  * @defgroup group-connection-functions Related functions
  * @ingroup group-connection
