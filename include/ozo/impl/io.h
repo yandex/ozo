@@ -103,12 +103,6 @@ inline auto start_connection(T& conn, const std::string& conninfo) {
     return pq_start_connection(unwrap_connection(conn), conninfo);
 }
 
-// Shortcut for post operation with connection associated executor
-template <typename T, typename Oper, typename = Require<Connection<T>>>
-inline void post(T& conn, Oper&& op) {
-    asio::post(get_executor(conn), std::forward<Oper>(op));
-}
-
 template <typename T>
 inline decltype(auto) connect_poll(T& conn) {
     static_assert(Connection<T>, "T must be a Connection");
