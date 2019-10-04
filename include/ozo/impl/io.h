@@ -150,12 +150,6 @@ inline void read_poll(T& conn, Handler&& h) {
             asio::null_buffers(), std::forward<Handler>(h));
 }
 
-// Shortcut for post operation with connection associated executor
-template <typename T, typename Oper, typename = Require<Connection<T>>>
-inline void post(T& conn, Oper&& op) {
-    asio::post(get_executor(conn), std::forward<Oper>(op));
-}
-
 template <typename T>
 inline decltype(auto) connect_poll(T& conn) {
     static_assert(Connection<T>, "T must be a Connection");
