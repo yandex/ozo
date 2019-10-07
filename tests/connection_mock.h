@@ -254,6 +254,8 @@ struct connection {
 
     void cancel() { mock_->cancel(); }
 
+    bool is_open() const { return bool(handle_);}
+
     friend decltype(auto) get_cancel_handle(connection& c) {
         return c.mock_->get_cancel_handle();
     }
@@ -274,11 +276,9 @@ struct connection {
     }
 
     template <typename Q, typename Options, typename Handler>
-    friend void async_execute(ozo::impl::transaction<std::shared_ptr<connection>, Options>&& transaction, Q&&,
+    friend void async_execute(ozo::transaction<std::shared_ptr<connection>, Options>&& transaction, Q&&,
             const ozo::time_traits::duration&, Handler&&) {
-        std::shared_ptr<connection> connection;
-        transaction.take_connection(connection);
-        connection->mock_->async_execute();
+        release_connection(std::move(transaction))->mock_->async_execute();
     }
 
     template <typename WaitHandler>

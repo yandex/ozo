@@ -1,7 +1,7 @@
 #include "connection_mock.h"
 
 #include <ozo/core/options.h>
-#include <ozo/impl/async_end_transaction.h>
+#include <ozo/transaction.h>
 
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
@@ -29,13 +29,13 @@ struct async_end_transaction : Test {
 TEST_F(async_end_transaction, should_call_async_execute) {
     EXPECT_CALL(handle, PQstatus()).WillRepeatedly(Return(CONNECTION_OK));
 
-    auto transaction = ozo::impl::transaction<decltype(conn), decltype(options)>(std::move(conn), options);
+    auto transaction = ozo::transaction(std::move(conn), options);
 
     const InSequence s;
 
     EXPECT_CALL(connection, async_execute()).WillOnce(Return());
 
-    ozo::impl::async_end_transaction(std::move(transaction), fake_query {}, timeout, wrap(callback));
+    ozo::detail::async_end_transaction(std::move(transaction), fake_query {}, timeout, wrap(callback));
 }
 
 } // namespace
