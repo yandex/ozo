@@ -47,7 +47,6 @@ set(SOURCES
     impl/request_oid_map_handler.cpp
     impl/async_start_transaction.cpp
     impl/async_end_transaction.cpp
-    impl/transaction.cpp
     transaction_status.cpp
     impl/async_request.cpp
     io/size_of.cpp

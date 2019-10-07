@@ -11,7 +11,7 @@ namespace ozo {
 namespace hana = boost::hana;
 
 /**
- * @ingroup group-connection-types
+ * @ingroup group-transaction-types
  * @brief 'type enum' for transaction isolation levels supported by PostgreSQL
  *
  * See the official documentation [on transaction isolation](https://www.postgresql.org/docs/11/transaction-iso.html) and
@@ -26,7 +26,7 @@ struct isolation_level {
 };
 
 /**
- * @ingroup group-connection-types
+ * @ingroup group-transaction-types
  * @brief 'type enum' for transaction modes supported by PostgreSQL
  *
  * See the official documentation on [transaction initiation](https://www.postgresql.org/docs/11/sql-set-transaction.html)
@@ -38,7 +38,7 @@ struct transaction_mode {
 };
 
 /**
- * @ingroup group-connection-types
+ * @ingroup group-transaction-types
  * @brief transaction deferrability indicator
  * @tparam V integral constant indicating the deferrability
  *
@@ -57,7 +57,7 @@ struct deferrable_mode : V {
 constexpr deferrable_mode<std::true_type> deferrable;
 
 /**
- * @ingroup group-connection-types
+ * @ingroup group-transaction-types
  * @brief options for transactions
  *
  * This options can be used with ozo::begin
