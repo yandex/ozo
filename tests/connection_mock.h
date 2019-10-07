@@ -208,9 +208,7 @@ struct connection {
     template <typename Q, typename Options, typename Handler>
     friend void async_execute(ozo::impl::transaction<std::shared_ptr<connection>, Options>&& transaction, Q&&,
             const ozo::time_traits::duration&, Handler&&) {
-        std::shared_ptr<connection> connection;
-        transaction.take_connection(connection);
-        connection->mock_->async_execute();
+        transaction.release()->mock_->async_execute();
     }
 
     template <typename Executor>

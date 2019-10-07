@@ -19,13 +19,11 @@ struct async_end_transaction_op {
 
     template <typename Connection, typename Options>
     void operator ()(error_code ec, impl::transaction<Connection, Options> transaction) {
-        Connection connection;
-        transaction.take_connection(connection);
         asio::dispatch(
             detail::bind(
                 std::move(handler),
                 std::move(ec),
-                std::move(connection)
+                transaction.release()
             )
         );
     }

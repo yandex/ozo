@@ -34,7 +34,7 @@ TEST_F(impl_transaction, when_destruct_last_copy_with_connection_should_close_co
 TEST_F(impl_transaction, when_destruct_last_copy_without_connection_should_not_close_connection) {
     EXPECT_CALL(socket, close(_)).Times(0);
 
-    ozo::impl::make_transaction(std::move(conn), options).take_connection(conn);
+    ozo::impl::make_transaction(std::move(conn), options).release();
 }
 
 TEST_F(impl_transaction, should_be_able_to_convert_to_bool) {
@@ -67,7 +67,7 @@ TEST_F(impl_transaction, transaction_without_null_state_connection_is_null) {
 TEST_F(impl_transaction, transaction_become_null_after_take_connection) {
     auto transaction = ozo::impl::make_transaction(std::move(conn), options);
 
-    transaction.take_connection(conn);
+    transaction.release();
 
     EXPECT_TRUE(is_null(transaction));
 }

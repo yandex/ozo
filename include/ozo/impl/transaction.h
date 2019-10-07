@@ -24,10 +24,11 @@ public:
         }
     }
 
-    void take_connection(T& out) {
-        out = std::move(*impl->connection);
+    auto release() {
+        auto out = std::move(*impl->connection);
         impl->connection = __OZO_STD_OPTIONAL<T>{};
         impl.reset();
+        return out;
     }
 
     bool has_connection() const {
