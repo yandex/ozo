@@ -48,7 +48,7 @@ template <typename T>
 struct unwrap_impl<impl::pooled_connection<T>> {
     template <typename Conn>
     static constexpr decltype(auto) apply(Conn&& conn) noexcept {
-        return unwrap(*conn.handle_);
+        return ozo::unwrap(*conn.handle_);
     }
 };
 
@@ -58,7 +58,7 @@ struct is_nullable<impl::pooled_connection<T>> : std::true_type {};
 template <typename T>
 struct is_null_impl<impl::pooled_connection<T>> {
     static bool apply(const impl::pooled_connection<T>& conn) {
-        return conn.empty() ? true : is_null(unwrap(conn));
+        return conn.empty() ? true : ozo::is_null(ozo::unwrap(conn));
     }
 };
 } // namespace ozo

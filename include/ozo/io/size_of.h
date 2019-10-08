@@ -104,7 +104,7 @@ using get_size_of_impl = typename size_of_impl_dispatcher<unwrap_type<T>>::type;
 template <typename T>
 constexpr size_type size_of(const T& v) {
     static_assert(HasDefinition<T>, "the type has not been defined with PostgreSQL type traits");
-    return is_null(v) ? null_state_size : detail::get_size_of_impl<T>::apply(unwrap(v));
+    return ozo::is_null(v) ? null_state_size : detail::get_size_of_impl<T>::apply(ozo::unwrap(v));
 }
 
 template <typename T, typename>

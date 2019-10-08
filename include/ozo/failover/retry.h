@@ -92,8 +92,8 @@ public:
      */
     auto get_context() const {
         return hana::concat(
-            hana::make_tuple(unwrap(ctx_).provider, time_constraint()),
-            unwrap(ctx_).args
+            hana::make_tuple(ozo::unwrap(ctx_).provider, time_constraint()),
+            ozo::unwrap(ctx_).args
         );
     }
 
@@ -141,7 +141,7 @@ public:
     }
 
     auto time_constraint() const {
-        return detail::get_try_time_constraint(unwrap(ctx_).time_constraint, tries_remain());
+        return detail::get_try_time_constraint(ozo::unwrap(ctx_).time_constraint, tries_remain());
     }
 
 private:
