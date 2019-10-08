@@ -9,7 +9,7 @@ template <typename T>
 inline transaction_status get_transaction_status(T&& conn) {
     static_assert(Connection<T>, "T must be a Connection");
 
-    if (is_null(conn)) {
+    if (ozo::is_null(conn)) {
         return transaction_status::unknown;
     }
 

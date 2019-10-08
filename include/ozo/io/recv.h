@@ -157,7 +157,7 @@ inline istream& recv(istream& in, [[maybe_unused]] Oid oid, size_type size, cons
             + boost::core::demangle(typeid(out).name()));
     }
 
-    return detail::get_recv_impl<Out>::apply(in, size, oids, unwrap(out));
+    return detail::get_recv_impl<Out>::apply(in, size, oids, ozo::unwrap(out));
 }
 
 template <typename M, typename Oid, typename Out>

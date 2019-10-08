@@ -35,8 +35,8 @@ struct unwrap_impl<boost::weak_ptr<T>> {
 template <typename T>
 struct is_null_impl<boost::weak_ptr<T>> {
     constexpr static auto apply(const boost::weak_ptr<T>& v) noexcept(
-            noexcept(is_null(v.lock()))) {
-        return is_null(v.lock());
+            noexcept(ozo::is_null(v.lock()))) {
+        return ozo::is_null(v.lock());
     }
 };
 ///@}

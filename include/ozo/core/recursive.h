@@ -41,7 +41,7 @@ template <typename T>
 struct unwrap_recursive_impl<T, hana::when<!std::is_same_v<T, unwrap_type<T>>>> {
     template <typename TT>
     static constexpr decltype(auto) apply(TT&& v) noexcept {
-        return unwrap_recursive(unwrap(v));
+        return ozo::unwrap_recursive(ozo::unwrap(v));
     }
 };
 
@@ -83,7 +83,7 @@ template <typename T>
 struct is_null_recursive_impl<T, hana::when<!std::is_same_v<T, unwrap_type<T>>>> {
     template <typename TT>
     static constexpr bool apply(TT&& v) noexcept {
-        return is_null(v) ? true : is_null_recursive(unwrap(v));
+        return ozo::is_null(v) ? true : ozo::is_null_recursive(ozo::unwrap(v));
     }
 };
 

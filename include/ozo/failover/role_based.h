@@ -270,7 +270,7 @@ public:
     constexpr decltype(auto) rebind_role(OtherRole r) const & {
         static_assert(is_supported(r), "role is not supported by a connection provider");
         using rebind_type = role_based_connection_provider<decltype(source_.rebind_role(r))>;
-        return rebind_type{unwrap(source_).rebind_role(r), io_};
+        return rebind_type{ozo::unwrap(source_).rebind_role(r), io_};
     }
 
     /**
@@ -283,7 +283,7 @@ public:
     constexpr decltype(auto) rebind_role(OtherRole r) & {
         static_assert(is_supported(r), "role is not supported by a connection provider");
         using rebind_type = role_based_connection_provider<decltype(source_.rebind_role(r))>;
-        return rebind_type{unwrap(source_).rebind_role(r), io_};
+        return rebind_type{ozo::unwrap(source_).rebind_role(r), io_};
     }
 
     /**
@@ -296,25 +296,25 @@ public:
     constexpr decltype(auto) rebind_role(OtherRole r) && {
         static_assert(is_supported(r), "role is not supported by a connection provider");
         using rebind_type = role_based_connection_provider<decltype(std::move(source_).rebind_role(r))>;
-        return rebind_type{unwrap(std::forward<Source>(source_)).rebind_role(r), io_};
+        return rebind_type{ozo::unwrap(std::forward<Source>(source_)).rebind_role(r), io_};
     }
 
     template <typename TimeConstraint, typename Handler>
     void async_get_connection(TimeConstraint t, Handler&& h) const & {
         static_assert(ozo::TimeConstraint<TimeConstraint>, "should model TimeConstraint concept");
-        unwrap(source_)(io_, std::move(t), std::forward<Handler>(h));
+        ozo::unwrap(source_)(io_, std::move(t), std::forward<Handler>(h));
     }
 
     template <typename TimeConstraint, typename Handler>
     void async_get_connection(TimeConstraint t, Handler&& h) & {
         static_assert(ozo::TimeConstraint<TimeConstraint>, "should model TimeConstraint concept");
-        unwrap(source_)(io_, std::move(t), std::forward<Handler>(h));
+        ozo::unwrap(source_)(io_, std::move(t), std::forward<Handler>(h));
     }
 
     template <typename TimeConstraint, typename Handler>
     void async_get_connection(TimeConstraint t, Handler&& h) && {
         static_assert(ozo::TimeConstraint<TimeConstraint>, "should model TimeConstraint concept");
-        unwrap(std::forward<Source>(source_))(io_, std::move(t), std::forward<Handler>(h));
+        ozo::unwrap(std::forward<Source>(source_))(io_, std::move(t), std::forward<Handler>(h));
     }
 };
 
@@ -474,8 +474,8 @@ public:
      */
     auto get_context() const {
         return hana::concat(
-            hana::make_tuple(unwrap(ctx_).provider.rebind_role(role()), time_constraint()),
-            unwrap(ctx_).args
+            hana::make_tuple(ozo::unwrap(ctx_).provider.rebind_role(role()), time_constraint()),
+            ozo::unwrap(ctx_).args
         );
     }
 
@@ -485,7 +485,7 @@ public:
      * @return time constraint type value calculated for the try
      */
     auto time_constraint() const {
-        return detail::get_try_time_constraint(unwrap(ctx_).time_constraint, tries_left().value);
+        return detail::get_try_time_constraint(ozo::unwrap(ctx_).time_constraint, tries_left().value);
     }
 
     /**

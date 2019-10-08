@@ -15,7 +15,7 @@ public:
     transaction() = default;
 
     transaction(T connection, Options options)
-            : impl(is_null(connection) ? nullptr : std::make_shared<impl_type>(std::move(connection))), options_(std::move(options)) {}
+            : impl(ozo::is_null(connection) ? nullptr : std::make_shared<impl_type>(std::move(connection))), options_(std::move(options)) {}
 
     ~transaction() {
         const auto c = std::move(impl);
@@ -69,7 +69,7 @@ template <typename... Ts>
 struct unwrap_impl<impl::transaction<Ts...>> {
     template <typename Transaction>
     static constexpr decltype(auto) apply(Transaction&& self) noexcept {
-        return unwrap(*self.impl->connection);
+        return ozo::unwrap(*self.impl->connection);
     }
 };
 

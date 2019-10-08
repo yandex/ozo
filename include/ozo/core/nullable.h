@@ -117,8 +117,8 @@ inline void allocate_nullable(T& out, const Alloc& a) {
 template <typename T, typename Alloc = std::allocator<char>>
 inline void init_nullable(T& n, const Alloc& a = Alloc{}) {
     static_assert(Nullable<T>, "T must be nullable");
-    if (is_null(n)) {
-        allocate_nullable(n, a);
+    if (ozo::is_null(n)) {
+        ozo::allocate_nullable(n, a);
     }
 }
 
