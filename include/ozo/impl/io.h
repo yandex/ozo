@@ -117,7 +117,7 @@ inline ExecStatusType pq_result_status(const PGresult& res) noexcept {
 
 inline error_code pq_result_error(const PGresult& res) noexcept {
     if (auto s = PQresultErrorField(std::addressof(res), PG_DIAG_SQLSTATE)) {
-        return sqlstate::make_error_code(std::strtol(s, NULL, 36));
+        return sqlstate::make_error_code(std::strtol(s, nullptr, 36));
     }
     return error::no_sql_state_found;
 }
