@@ -10,8 +10,9 @@ struct native_conn_handle_deleter {
 };
 
 /**
- * @brief libpq PGconn safe RAII representation.
- * libpq PGconn safe RAII representation.
+ * @ingroup group-connection-types
+ *
+ * RAII safe native connection handler representation.
  */
 using native_conn_handle = std::unique_ptr<::PGconn, native_conn_handle_deleter>;
 
