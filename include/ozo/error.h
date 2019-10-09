@@ -441,11 +441,11 @@ inline auto make_error_code(const code e) {
 
 namespace impl {
 
-class category : public error_category {
+class category final : public error_category {
 public:
-    const char* name() const noexcept override { return "ozo::error::category"; }
+    const char* name() const noexcept override final { return "ozo::error::category"; }
 
-    std::string message(int value) const override {
+    std::string message(int value) const override final {
         switch (code(value)) {
             case ok:
                 return "no error";
@@ -519,7 +519,7 @@ inline auto make_error_condition(const code e) {
 
 namespace impl {
 
-class category : public error_category {
+class category final : public error_category {
 public:
     const char* name() const noexcept override final { return "ozo::sqlstate::category"; }
 
@@ -926,11 +926,11 @@ constexpr bool match_code(const error_code& ec) {
     return ozo::errc::match_code(codes_for_condition<Code>::value, ec);
 }
 
-class category : public error_category {
+class category final : public error_category {
 public:
     const char* name() const noexcept override final { return "ozo::errc::category"; }
 
-    std::string message(int value) const override {
+    std::string message(int value) const override final {
         switch (code(value)) {
             case ok :
                 return "no error";
