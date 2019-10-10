@@ -104,6 +104,6 @@ ozo::request(conn_info[io], query, ozo::into(res), boost::asio::use_future);
  * @param v --- `ozo::basic_result` object for rows.
  */
 template <typename T>
-constexpr auto into(basic_result<T>& v) { return std::ref(v);}
+constexpr auto into(basic_result<T>& v) noexcept { return std::ref(v);}
 
 } // namespace ozo
