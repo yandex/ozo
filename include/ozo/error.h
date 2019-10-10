@@ -441,11 +441,11 @@ inline auto make_error_code(const code e) {
 
 namespace impl {
 
-class category : public error_category {
+class category final : public error_category {
 public:
-    const char* name() const noexcept override { return "ozo::error::category"; }
+    const char* name() const noexcept override final { return "ozo::error::category"; }
 
-    std::string message(int value) const override {
+    std::string message(int value) const override final {
         switch (code(value)) {
             case ok:
                 return "no error";
@@ -519,247 +519,247 @@ inline auto make_error_condition(const code e) {
 
 namespace impl {
 
-class category : public error_category {
+class category final : public error_category {
 public:
     const char* name() const noexcept override final { return "ozo::sqlstate::category"; }
 
     std::string message(int value) const override final {
-        #define __OZO_SQLSTATE_NAME(value) case value: return std::string(#value) + "(" + detail::ltob36(value) + ")";
+        #define OZO_SQLSTATE_NAME(value) case value: return std::string(#value) + "(" + detail::ltob36(value) + ")";
         switch (value) {
-            __OZO_SQLSTATE_NAME(successful_completion)
-            __OZO_SQLSTATE_NAME(warning)
-            __OZO_SQLSTATE_NAME(dynamic_result_sets_returned)
-            __OZO_SQLSTATE_NAME(implicit_zero_bit_padding)
-            __OZO_SQLSTATE_NAME(null_value_eliminated_in_set_function)
-            __OZO_SQLSTATE_NAME(privilege_not_granted)
-            __OZO_SQLSTATE_NAME(privilege_not_revoked)
-            __OZO_SQLSTATE_NAME(string_data_right_truncation_warning)
-            __OZO_SQLSTATE_NAME(deprecated_feature)
-            __OZO_SQLSTATE_NAME(no_data)
-            __OZO_SQLSTATE_NAME(no_additional_dynamic_result_sets_returned)
-            __OZO_SQLSTATE_NAME(sql_statement_not_yet_complete)
-            __OZO_SQLSTATE_NAME(connection_exception)
-            __OZO_SQLSTATE_NAME(connection_does_not_exist)
-            __OZO_SQLSTATE_NAME(connection_failure)
-            __OZO_SQLSTATE_NAME(sqlclient_unable_to_establish_sqlconnection)
-            __OZO_SQLSTATE_NAME(sqlserver_rejected_establishment_of_sqlconnection)
-            __OZO_SQLSTATE_NAME(transaction_resolution_unknown)
-            __OZO_SQLSTATE_NAME(protocol_violation)
-            __OZO_SQLSTATE_NAME(triggered_action_exception)
-            __OZO_SQLSTATE_NAME(feature_not_supported)
-            __OZO_SQLSTATE_NAME(invalid_transaction_initiation)
-            __OZO_SQLSTATE_NAME(locator_exception)
-            __OZO_SQLSTATE_NAME(invalid_locator_specification)
-            __OZO_SQLSTATE_NAME(invalid_grantor)
-            __OZO_SQLSTATE_NAME(invalid_grant_operation)
-            __OZO_SQLSTATE_NAME(invalid_role_specification)
-            __OZO_SQLSTATE_NAME(diagnostics_exception)
-            __OZO_SQLSTATE_NAME(stacked_diagnostics_accessed_without_active_handler)
-            __OZO_SQLSTATE_NAME(case_not_found)
-            __OZO_SQLSTATE_NAME(cardinality_violation)
-            __OZO_SQLSTATE_NAME(data_exception)
-            __OZO_SQLSTATE_NAME(array_subscript_error)
-            __OZO_SQLSTATE_NAME(character_not_in_repertoire)
-            __OZO_SQLSTATE_NAME(datetime_field_overflow)
-            __OZO_SQLSTATE_NAME(division_by_zero)
-            __OZO_SQLSTATE_NAME(error_in_assignment)
-            __OZO_SQLSTATE_NAME(escape_character_conflict)
-            __OZO_SQLSTATE_NAME(indicator_overflow)
-            __OZO_SQLSTATE_NAME(interval_field_overflow)
-            __OZO_SQLSTATE_NAME(invalid_argument_for_logarithm)
-            __OZO_SQLSTATE_NAME(invalid_argument_for_ntile_function)
-            __OZO_SQLSTATE_NAME(invalid_argument_for_nth_value_function)
-            __OZO_SQLSTATE_NAME(invalid_argument_for_power_function)
-            __OZO_SQLSTATE_NAME(invalid_argument_for_width_bucket_function)
-            __OZO_SQLSTATE_NAME(invalid_character_value_for_cast)
-            __OZO_SQLSTATE_NAME(invalid_datetime_format)
-            __OZO_SQLSTATE_NAME(invalid_escape_character)
-            __OZO_SQLSTATE_NAME(invalid_escape_octet)
-            __OZO_SQLSTATE_NAME(invalid_escape_sequence)
-            __OZO_SQLSTATE_NAME(nonstandard_use_of_escape_character)
-            __OZO_SQLSTATE_NAME(invalid_indicator_parameter_value)
-            __OZO_SQLSTATE_NAME(invalid_parameter_value)
-            __OZO_SQLSTATE_NAME(invalid_regular_expression)
-            __OZO_SQLSTATE_NAME(invalid_row_count_in_limit_clause)
-            __OZO_SQLSTATE_NAME(invalid_row_count_in_result_offset_clause)
-            __OZO_SQLSTATE_NAME(invalid_time_zone_displacement_value)
-            __OZO_SQLSTATE_NAME(invalid_use_of_escape_character)
-            __OZO_SQLSTATE_NAME(most_specific_type_mismatch)
-            __OZO_SQLSTATE_NAME(null_value_not_allowed)
-            __OZO_SQLSTATE_NAME(null_value_no_indicator_parameter)
-            __OZO_SQLSTATE_NAME(numeric_value_out_of_range)
-            __OZO_SQLSTATE_NAME(string_data_length_mismatch)
-            __OZO_SQLSTATE_NAME(string_data_right_truncation)
-            __OZO_SQLSTATE_NAME(substring_error)
-            __OZO_SQLSTATE_NAME(trim_error)
-            __OZO_SQLSTATE_NAME(unterminated_c_string)
-            __OZO_SQLSTATE_NAME(zero_length_character_string)
-            __OZO_SQLSTATE_NAME(floating_point_exception)
-            __OZO_SQLSTATE_NAME(invalid_text_representation)
-            __OZO_SQLSTATE_NAME(invalid_binary_representation)
-            __OZO_SQLSTATE_NAME(bad_copy_file_format)
-            __OZO_SQLSTATE_NAME(untranslatable_character)
-            __OZO_SQLSTATE_NAME(not_an_xml_document)
-            __OZO_SQLSTATE_NAME(invalid_xml_document)
-            __OZO_SQLSTATE_NAME(invalid_xml_content)
-            __OZO_SQLSTATE_NAME(invalid_xml_comment)
-            __OZO_SQLSTATE_NAME(invalid_xml_processing_instruction)
-            __OZO_SQLSTATE_NAME(integrity_constraint_violation)
-            __OZO_SQLSTATE_NAME(restrict_violation)
-            __OZO_SQLSTATE_NAME(not_null_violation)
-            __OZO_SQLSTATE_NAME(foreign_key_violation)
-            __OZO_SQLSTATE_NAME(unique_violation)
-            __OZO_SQLSTATE_NAME(check_violation)
-            __OZO_SQLSTATE_NAME(exclusion_violation)
-            __OZO_SQLSTATE_NAME(invalid_cursor_state)
-            __OZO_SQLSTATE_NAME(invalid_transaction_state)
-            __OZO_SQLSTATE_NAME(active_sql_transaction)
-            __OZO_SQLSTATE_NAME(branch_transaction_already_active)
-            __OZO_SQLSTATE_NAME(held_cursor_requires_same_isolation_level)
-            __OZO_SQLSTATE_NAME(inappropriate_access_mode_for_branch_transaction)
-            __OZO_SQLSTATE_NAME(inappropriate_isolation_level_for_branch_transaction)
-            __OZO_SQLSTATE_NAME(no_active_sql_transaction_for_branch_transaction)
-            __OZO_SQLSTATE_NAME(read_only_sql_transaction)
-            __OZO_SQLSTATE_NAME(schema_and_data_statement_mixing_not_supported)
-            __OZO_SQLSTATE_NAME(no_active_sql_transaction)
-            __OZO_SQLSTATE_NAME(in_failed_sql_transaction)
-            __OZO_SQLSTATE_NAME(invalid_sql_statement_name)
-            __OZO_SQLSTATE_NAME(triggered_data_change_violation)
-            __OZO_SQLSTATE_NAME(invalid_authorization_specification)
-            __OZO_SQLSTATE_NAME(invalid_password)
-            __OZO_SQLSTATE_NAME(dependent_privilege_descriptors_still_exist)
-            __OZO_SQLSTATE_NAME(dependent_objects_still_exist)
-            __OZO_SQLSTATE_NAME(invalid_transaction_termination)
-            __OZO_SQLSTATE_NAME(sql_routine_exception)
-            __OZO_SQLSTATE_NAME(function_executed_no_return_statement)
-            __OZO_SQLSTATE_NAME(modifying_sql_data_not_permitted)
-            __OZO_SQLSTATE_NAME(prohibited_sql_statement_attempted)
-            __OZO_SQLSTATE_NAME(reading_sql_data_not_permitted)
-            __OZO_SQLSTATE_NAME(invalid_cursor_name)
-            __OZO_SQLSTATE_NAME(external_routine_exception)
-            __OZO_SQLSTATE_NAME(containing_sql_not_permitted)
-            __OZO_SQLSTATE_NAME(modifying_sql_data_not_permitted_external)
-            __OZO_SQLSTATE_NAME(prohibited_sql_statement_attempted_external)
-            __OZO_SQLSTATE_NAME(reading_sql_data_not_permitted_external)
-            __OZO_SQLSTATE_NAME(external_routine_invocation_exception)
-            __OZO_SQLSTATE_NAME(invalid_sqlstate_returned)
-            __OZO_SQLSTATE_NAME(null_value_not_allowed_external)
-            __OZO_SQLSTATE_NAME(trigger_protocol_violated)
-            __OZO_SQLSTATE_NAME(srf_protocol_violated)
-            __OZO_SQLSTATE_NAME(savepoint_exception)
-            __OZO_SQLSTATE_NAME(invalid_savepoint_specification)
-            __OZO_SQLSTATE_NAME(invalid_catalog_name)
-            __OZO_SQLSTATE_NAME(invalid_schema_name)
-            __OZO_SQLSTATE_NAME(transaction_rollback)
-            __OZO_SQLSTATE_NAME(transaction_integrity_constraint_violation)
-            __OZO_SQLSTATE_NAME(serialization_failure)
-            __OZO_SQLSTATE_NAME(statement_completion_unknown)
-            __OZO_SQLSTATE_NAME(deadlock_detected)
-            __OZO_SQLSTATE_NAME(syntax_error_or_access_rule_violation)
-            __OZO_SQLSTATE_NAME(syntax_error)
-            __OZO_SQLSTATE_NAME(insufficient_privilege)
-            __OZO_SQLSTATE_NAME(cannot_coerce)
-            __OZO_SQLSTATE_NAME(grouping_error)
-            __OZO_SQLSTATE_NAME(windowing_error)
-            __OZO_SQLSTATE_NAME(invalid_recursion)
-            __OZO_SQLSTATE_NAME(invalid_foreign_key)
-            __OZO_SQLSTATE_NAME(invalid_name)
-            __OZO_SQLSTATE_NAME(name_too_long)
-            __OZO_SQLSTATE_NAME(reserved_name)
-            __OZO_SQLSTATE_NAME(datatype_mismatch)
-            __OZO_SQLSTATE_NAME(indeterminate_datatype)
-            __OZO_SQLSTATE_NAME(collation_mismatch)
-            __OZO_SQLSTATE_NAME(indeterminate_collation)
-            __OZO_SQLSTATE_NAME(wrong_object_type)
-            __OZO_SQLSTATE_NAME(undefined_column)
-            __OZO_SQLSTATE_NAME(undefined_function)
-            __OZO_SQLSTATE_NAME(undefined_table)
-            __OZO_SQLSTATE_NAME(undefined_parameter)
-            __OZO_SQLSTATE_NAME(undefined_object)
-            __OZO_SQLSTATE_NAME(duplicate_column)
-            __OZO_SQLSTATE_NAME(duplicate_cursor)
-            __OZO_SQLSTATE_NAME(duplicate_database)
-            __OZO_SQLSTATE_NAME(duplicate_function)
-            __OZO_SQLSTATE_NAME(duplicate_prepared_statement)
-            __OZO_SQLSTATE_NAME(duplicate_schema)
-            __OZO_SQLSTATE_NAME(duplicate_table)
-            __OZO_SQLSTATE_NAME(duplicate_alias)
-            __OZO_SQLSTATE_NAME(duplicate_object)
-            __OZO_SQLSTATE_NAME(ambiguous_column)
-            __OZO_SQLSTATE_NAME(ambiguous_function)
-            __OZO_SQLSTATE_NAME(ambiguous_parameter)
-            __OZO_SQLSTATE_NAME(ambiguous_alias)
-            __OZO_SQLSTATE_NAME(invalid_column_reference)
-            __OZO_SQLSTATE_NAME(invalid_column_definition)
-            __OZO_SQLSTATE_NAME(invalid_cursor_definition)
-            __OZO_SQLSTATE_NAME(invalid_database_definition)
-            __OZO_SQLSTATE_NAME(invalid_function_definition)
-            __OZO_SQLSTATE_NAME(invalid_prepared_statement_definition)
-            __OZO_SQLSTATE_NAME(invalid_schema_definition)
-            __OZO_SQLSTATE_NAME(invalid_table_definition)
-            __OZO_SQLSTATE_NAME(invalid_object_definition)
-            __OZO_SQLSTATE_NAME(with_check_option_violation)
-            __OZO_SQLSTATE_NAME(insufficient_resources)
-            __OZO_SQLSTATE_NAME(disk_full)
-            __OZO_SQLSTATE_NAME(out_of_memory)
-            __OZO_SQLSTATE_NAME(too_many_connections)
-            __OZO_SQLSTATE_NAME(configuration_limit_exceeded)
-            __OZO_SQLSTATE_NAME(program_limit_exceeded)
-            __OZO_SQLSTATE_NAME(statement_too_complex)
-            __OZO_SQLSTATE_NAME(too_many_columns)
-            __OZO_SQLSTATE_NAME(too_many_arguments)
-            __OZO_SQLSTATE_NAME(object_not_in_prerequisite_state)
-            __OZO_SQLSTATE_NAME(object_in_use)
-            __OZO_SQLSTATE_NAME(cant_change_runtime_param)
-            __OZO_SQLSTATE_NAME(lock_not_available)
-            __OZO_SQLSTATE_NAME(operator_intervention)
-            __OZO_SQLSTATE_NAME(query_canceled)
-            __OZO_SQLSTATE_NAME(admin_shutdown)
-            __OZO_SQLSTATE_NAME(crash_shutdown)
-            __OZO_SQLSTATE_NAME(cannot_connect_now)
-            __OZO_SQLSTATE_NAME(database_dropped)
-            __OZO_SQLSTATE_NAME(system_error)
-            __OZO_SQLSTATE_NAME(io_error)
-            __OZO_SQLSTATE_NAME(undefined_file)
-            __OZO_SQLSTATE_NAME(duplicate_file)
-            __OZO_SQLSTATE_NAME(config_file_error)
-            __OZO_SQLSTATE_NAME(lock_file_exists)
-            __OZO_SQLSTATE_NAME(fdw_error)
-            __OZO_SQLSTATE_NAME(fdw_column_name_not_found)
-            __OZO_SQLSTATE_NAME(fdw_dynamic_parameter_value_needed)
-            __OZO_SQLSTATE_NAME(fdw_function_sequence_error)
-            __OZO_SQLSTATE_NAME(fdw_inconsistent_descriptor_information)
-            __OZO_SQLSTATE_NAME(fdw_invalid_attribute_value)
-            __OZO_SQLSTATE_NAME(fdw_invalid_column_name)
-            __OZO_SQLSTATE_NAME(fdw_invalid_column_number)
-            __OZO_SQLSTATE_NAME(fdw_invalid_data_type)
-            __OZO_SQLSTATE_NAME(fdw_invalid_data_type_descriptors)
-            __OZO_SQLSTATE_NAME(fdw_invalid_descriptor_field_identifier)
-            __OZO_SQLSTATE_NAME(fdw_invalid_handle)
-            __OZO_SQLSTATE_NAME(fdw_invalid_option_index)
-            __OZO_SQLSTATE_NAME(fdw_invalid_option_name)
-            __OZO_SQLSTATE_NAME(fdw_invalid_string_length_or_buffer_length)
-            __OZO_SQLSTATE_NAME(fdw_invalid_string_format)
-            __OZO_SQLSTATE_NAME(fdw_invalid_use_of_null_pointer)
-            __OZO_SQLSTATE_NAME(fdw_too_many_handles)
-            __OZO_SQLSTATE_NAME(fdw_out_of_memory)
-            __OZO_SQLSTATE_NAME(fdw_no_schemas)
-            __OZO_SQLSTATE_NAME(fdw_option_name_not_found)
-            __OZO_SQLSTATE_NAME(fdw_reply_handle)
-            __OZO_SQLSTATE_NAME(fdw_schema_not_found)
-            __OZO_SQLSTATE_NAME(fdw_table_not_found)
-            __OZO_SQLSTATE_NAME(fdw_unable_to_create_execution)
-            __OZO_SQLSTATE_NAME(fdw_unable_to_create_reply)
-            __OZO_SQLSTATE_NAME(fdw_unable_to_establish_connection)
-            __OZO_SQLSTATE_NAME(plpgsql_error)
-            __OZO_SQLSTATE_NAME(raise_exception)
-            __OZO_SQLSTATE_NAME(no_data_found)
-            __OZO_SQLSTATE_NAME(too_many_rows)
-            __OZO_SQLSTATE_NAME(internal_error)
-            __OZO_SQLSTATE_NAME(data_corrupted)
-            __OZO_SQLSTATE_NAME(index_corrupted)
+            OZO_SQLSTATE_NAME(successful_completion)
+            OZO_SQLSTATE_NAME(warning)
+            OZO_SQLSTATE_NAME(dynamic_result_sets_returned)
+            OZO_SQLSTATE_NAME(implicit_zero_bit_padding)
+            OZO_SQLSTATE_NAME(null_value_eliminated_in_set_function)
+            OZO_SQLSTATE_NAME(privilege_not_granted)
+            OZO_SQLSTATE_NAME(privilege_not_revoked)
+            OZO_SQLSTATE_NAME(string_data_right_truncation_warning)
+            OZO_SQLSTATE_NAME(deprecated_feature)
+            OZO_SQLSTATE_NAME(no_data)
+            OZO_SQLSTATE_NAME(no_additional_dynamic_result_sets_returned)
+            OZO_SQLSTATE_NAME(sql_statement_not_yet_complete)
+            OZO_SQLSTATE_NAME(connection_exception)
+            OZO_SQLSTATE_NAME(connection_does_not_exist)
+            OZO_SQLSTATE_NAME(connection_failure)
+            OZO_SQLSTATE_NAME(sqlclient_unable_to_establish_sqlconnection)
+            OZO_SQLSTATE_NAME(sqlserver_rejected_establishment_of_sqlconnection)
+            OZO_SQLSTATE_NAME(transaction_resolution_unknown)
+            OZO_SQLSTATE_NAME(protocol_violation)
+            OZO_SQLSTATE_NAME(triggered_action_exception)
+            OZO_SQLSTATE_NAME(feature_not_supported)
+            OZO_SQLSTATE_NAME(invalid_transaction_initiation)
+            OZO_SQLSTATE_NAME(locator_exception)
+            OZO_SQLSTATE_NAME(invalid_locator_specification)
+            OZO_SQLSTATE_NAME(invalid_grantor)
+            OZO_SQLSTATE_NAME(invalid_grant_operation)
+            OZO_SQLSTATE_NAME(invalid_role_specification)
+            OZO_SQLSTATE_NAME(diagnostics_exception)
+            OZO_SQLSTATE_NAME(stacked_diagnostics_accessed_without_active_handler)
+            OZO_SQLSTATE_NAME(case_not_found)
+            OZO_SQLSTATE_NAME(cardinality_violation)
+            OZO_SQLSTATE_NAME(data_exception)
+            OZO_SQLSTATE_NAME(array_subscript_error)
+            OZO_SQLSTATE_NAME(character_not_in_repertoire)
+            OZO_SQLSTATE_NAME(datetime_field_overflow)
+            OZO_SQLSTATE_NAME(division_by_zero)
+            OZO_SQLSTATE_NAME(error_in_assignment)
+            OZO_SQLSTATE_NAME(escape_character_conflict)
+            OZO_SQLSTATE_NAME(indicator_overflow)
+            OZO_SQLSTATE_NAME(interval_field_overflow)
+            OZO_SQLSTATE_NAME(invalid_argument_for_logarithm)
+            OZO_SQLSTATE_NAME(invalid_argument_for_ntile_function)
+            OZO_SQLSTATE_NAME(invalid_argument_for_nth_value_function)
+            OZO_SQLSTATE_NAME(invalid_argument_for_power_function)
+            OZO_SQLSTATE_NAME(invalid_argument_for_width_bucket_function)
+            OZO_SQLSTATE_NAME(invalid_character_value_for_cast)
+            OZO_SQLSTATE_NAME(invalid_datetime_format)
+            OZO_SQLSTATE_NAME(invalid_escape_character)
+            OZO_SQLSTATE_NAME(invalid_escape_octet)
+            OZO_SQLSTATE_NAME(invalid_escape_sequence)
+            OZO_SQLSTATE_NAME(nonstandard_use_of_escape_character)
+            OZO_SQLSTATE_NAME(invalid_indicator_parameter_value)
+            OZO_SQLSTATE_NAME(invalid_parameter_value)
+            OZO_SQLSTATE_NAME(invalid_regular_expression)
+            OZO_SQLSTATE_NAME(invalid_row_count_in_limit_clause)
+            OZO_SQLSTATE_NAME(invalid_row_count_in_result_offset_clause)
+            OZO_SQLSTATE_NAME(invalid_time_zone_displacement_value)
+            OZO_SQLSTATE_NAME(invalid_use_of_escape_character)
+            OZO_SQLSTATE_NAME(most_specific_type_mismatch)
+            OZO_SQLSTATE_NAME(null_value_not_allowed)
+            OZO_SQLSTATE_NAME(null_value_no_indicator_parameter)
+            OZO_SQLSTATE_NAME(numeric_value_out_of_range)
+            OZO_SQLSTATE_NAME(string_data_length_mismatch)
+            OZO_SQLSTATE_NAME(string_data_right_truncation)
+            OZO_SQLSTATE_NAME(substring_error)
+            OZO_SQLSTATE_NAME(trim_error)
+            OZO_SQLSTATE_NAME(unterminated_c_string)
+            OZO_SQLSTATE_NAME(zero_length_character_string)
+            OZO_SQLSTATE_NAME(floating_point_exception)
+            OZO_SQLSTATE_NAME(invalid_text_representation)
+            OZO_SQLSTATE_NAME(invalid_binary_representation)
+            OZO_SQLSTATE_NAME(bad_copy_file_format)
+            OZO_SQLSTATE_NAME(untranslatable_character)
+            OZO_SQLSTATE_NAME(not_an_xml_document)
+            OZO_SQLSTATE_NAME(invalid_xml_document)
+            OZO_SQLSTATE_NAME(invalid_xml_content)
+            OZO_SQLSTATE_NAME(invalid_xml_comment)
+            OZO_SQLSTATE_NAME(invalid_xml_processing_instruction)
+            OZO_SQLSTATE_NAME(integrity_constraint_violation)
+            OZO_SQLSTATE_NAME(restrict_violation)
+            OZO_SQLSTATE_NAME(not_null_violation)
+            OZO_SQLSTATE_NAME(foreign_key_violation)
+            OZO_SQLSTATE_NAME(unique_violation)
+            OZO_SQLSTATE_NAME(check_violation)
+            OZO_SQLSTATE_NAME(exclusion_violation)
+            OZO_SQLSTATE_NAME(invalid_cursor_state)
+            OZO_SQLSTATE_NAME(invalid_transaction_state)
+            OZO_SQLSTATE_NAME(active_sql_transaction)
+            OZO_SQLSTATE_NAME(branch_transaction_already_active)
+            OZO_SQLSTATE_NAME(held_cursor_requires_same_isolation_level)
+            OZO_SQLSTATE_NAME(inappropriate_access_mode_for_branch_transaction)
+            OZO_SQLSTATE_NAME(inappropriate_isolation_level_for_branch_transaction)
+            OZO_SQLSTATE_NAME(no_active_sql_transaction_for_branch_transaction)
+            OZO_SQLSTATE_NAME(read_only_sql_transaction)
+            OZO_SQLSTATE_NAME(schema_and_data_statement_mixing_not_supported)
+            OZO_SQLSTATE_NAME(no_active_sql_transaction)
+            OZO_SQLSTATE_NAME(in_failed_sql_transaction)
+            OZO_SQLSTATE_NAME(invalid_sql_statement_name)
+            OZO_SQLSTATE_NAME(triggered_data_change_violation)
+            OZO_SQLSTATE_NAME(invalid_authorization_specification)
+            OZO_SQLSTATE_NAME(invalid_password)
+            OZO_SQLSTATE_NAME(dependent_privilege_descriptors_still_exist)
+            OZO_SQLSTATE_NAME(dependent_objects_still_exist)
+            OZO_SQLSTATE_NAME(invalid_transaction_termination)
+            OZO_SQLSTATE_NAME(sql_routine_exception)
+            OZO_SQLSTATE_NAME(function_executed_no_return_statement)
+            OZO_SQLSTATE_NAME(modifying_sql_data_not_permitted)
+            OZO_SQLSTATE_NAME(prohibited_sql_statement_attempted)
+            OZO_SQLSTATE_NAME(reading_sql_data_not_permitted)
+            OZO_SQLSTATE_NAME(invalid_cursor_name)
+            OZO_SQLSTATE_NAME(external_routine_exception)
+            OZO_SQLSTATE_NAME(containing_sql_not_permitted)
+            OZO_SQLSTATE_NAME(modifying_sql_data_not_permitted_external)
+            OZO_SQLSTATE_NAME(prohibited_sql_statement_attempted_external)
+            OZO_SQLSTATE_NAME(reading_sql_data_not_permitted_external)
+            OZO_SQLSTATE_NAME(external_routine_invocation_exception)
+            OZO_SQLSTATE_NAME(invalid_sqlstate_returned)
+            OZO_SQLSTATE_NAME(null_value_not_allowed_external)
+            OZO_SQLSTATE_NAME(trigger_protocol_violated)
+            OZO_SQLSTATE_NAME(srf_protocol_violated)
+            OZO_SQLSTATE_NAME(savepoint_exception)
+            OZO_SQLSTATE_NAME(invalid_savepoint_specification)
+            OZO_SQLSTATE_NAME(invalid_catalog_name)
+            OZO_SQLSTATE_NAME(invalid_schema_name)
+            OZO_SQLSTATE_NAME(transaction_rollback)
+            OZO_SQLSTATE_NAME(transaction_integrity_constraint_violation)
+            OZO_SQLSTATE_NAME(serialization_failure)
+            OZO_SQLSTATE_NAME(statement_completion_unknown)
+            OZO_SQLSTATE_NAME(deadlock_detected)
+            OZO_SQLSTATE_NAME(syntax_error_or_access_rule_violation)
+            OZO_SQLSTATE_NAME(syntax_error)
+            OZO_SQLSTATE_NAME(insufficient_privilege)
+            OZO_SQLSTATE_NAME(cannot_coerce)
+            OZO_SQLSTATE_NAME(grouping_error)
+            OZO_SQLSTATE_NAME(windowing_error)
+            OZO_SQLSTATE_NAME(invalid_recursion)
+            OZO_SQLSTATE_NAME(invalid_foreign_key)
+            OZO_SQLSTATE_NAME(invalid_name)
+            OZO_SQLSTATE_NAME(name_too_long)
+            OZO_SQLSTATE_NAME(reserved_name)
+            OZO_SQLSTATE_NAME(datatype_mismatch)
+            OZO_SQLSTATE_NAME(indeterminate_datatype)
+            OZO_SQLSTATE_NAME(collation_mismatch)
+            OZO_SQLSTATE_NAME(indeterminate_collation)
+            OZO_SQLSTATE_NAME(wrong_object_type)
+            OZO_SQLSTATE_NAME(undefined_column)
+            OZO_SQLSTATE_NAME(undefined_function)
+            OZO_SQLSTATE_NAME(undefined_table)
+            OZO_SQLSTATE_NAME(undefined_parameter)
+            OZO_SQLSTATE_NAME(undefined_object)
+            OZO_SQLSTATE_NAME(duplicate_column)
+            OZO_SQLSTATE_NAME(duplicate_cursor)
+            OZO_SQLSTATE_NAME(duplicate_database)
+            OZO_SQLSTATE_NAME(duplicate_function)
+            OZO_SQLSTATE_NAME(duplicate_prepared_statement)
+            OZO_SQLSTATE_NAME(duplicate_schema)
+            OZO_SQLSTATE_NAME(duplicate_table)
+            OZO_SQLSTATE_NAME(duplicate_alias)
+            OZO_SQLSTATE_NAME(duplicate_object)
+            OZO_SQLSTATE_NAME(ambiguous_column)
+            OZO_SQLSTATE_NAME(ambiguous_function)
+            OZO_SQLSTATE_NAME(ambiguous_parameter)
+            OZO_SQLSTATE_NAME(ambiguous_alias)
+            OZO_SQLSTATE_NAME(invalid_column_reference)
+            OZO_SQLSTATE_NAME(invalid_column_definition)
+            OZO_SQLSTATE_NAME(invalid_cursor_definition)
+            OZO_SQLSTATE_NAME(invalid_database_definition)
+            OZO_SQLSTATE_NAME(invalid_function_definition)
+            OZO_SQLSTATE_NAME(invalid_prepared_statement_definition)
+            OZO_SQLSTATE_NAME(invalid_schema_definition)
+            OZO_SQLSTATE_NAME(invalid_table_definition)
+            OZO_SQLSTATE_NAME(invalid_object_definition)
+            OZO_SQLSTATE_NAME(with_check_option_violation)
+            OZO_SQLSTATE_NAME(insufficient_resources)
+            OZO_SQLSTATE_NAME(disk_full)
+            OZO_SQLSTATE_NAME(out_of_memory)
+            OZO_SQLSTATE_NAME(too_many_connections)
+            OZO_SQLSTATE_NAME(configuration_limit_exceeded)
+            OZO_SQLSTATE_NAME(program_limit_exceeded)
+            OZO_SQLSTATE_NAME(statement_too_complex)
+            OZO_SQLSTATE_NAME(too_many_columns)
+            OZO_SQLSTATE_NAME(too_many_arguments)
+            OZO_SQLSTATE_NAME(object_not_in_prerequisite_state)
+            OZO_SQLSTATE_NAME(object_in_use)
+            OZO_SQLSTATE_NAME(cant_change_runtime_param)
+            OZO_SQLSTATE_NAME(lock_not_available)
+            OZO_SQLSTATE_NAME(operator_intervention)
+            OZO_SQLSTATE_NAME(query_canceled)
+            OZO_SQLSTATE_NAME(admin_shutdown)
+            OZO_SQLSTATE_NAME(crash_shutdown)
+            OZO_SQLSTATE_NAME(cannot_connect_now)
+            OZO_SQLSTATE_NAME(database_dropped)
+            OZO_SQLSTATE_NAME(system_error)
+            OZO_SQLSTATE_NAME(io_error)
+            OZO_SQLSTATE_NAME(undefined_file)
+            OZO_SQLSTATE_NAME(duplicate_file)
+            OZO_SQLSTATE_NAME(config_file_error)
+            OZO_SQLSTATE_NAME(lock_file_exists)
+            OZO_SQLSTATE_NAME(fdw_error)
+            OZO_SQLSTATE_NAME(fdw_column_name_not_found)
+            OZO_SQLSTATE_NAME(fdw_dynamic_parameter_value_needed)
+            OZO_SQLSTATE_NAME(fdw_function_sequence_error)
+            OZO_SQLSTATE_NAME(fdw_inconsistent_descriptor_information)
+            OZO_SQLSTATE_NAME(fdw_invalid_attribute_value)
+            OZO_SQLSTATE_NAME(fdw_invalid_column_name)
+            OZO_SQLSTATE_NAME(fdw_invalid_column_number)
+            OZO_SQLSTATE_NAME(fdw_invalid_data_type)
+            OZO_SQLSTATE_NAME(fdw_invalid_data_type_descriptors)
+            OZO_SQLSTATE_NAME(fdw_invalid_descriptor_field_identifier)
+            OZO_SQLSTATE_NAME(fdw_invalid_handle)
+            OZO_SQLSTATE_NAME(fdw_invalid_option_index)
+            OZO_SQLSTATE_NAME(fdw_invalid_option_name)
+            OZO_SQLSTATE_NAME(fdw_invalid_string_length_or_buffer_length)
+            OZO_SQLSTATE_NAME(fdw_invalid_string_format)
+            OZO_SQLSTATE_NAME(fdw_invalid_use_of_null_pointer)
+            OZO_SQLSTATE_NAME(fdw_too_many_handles)
+            OZO_SQLSTATE_NAME(fdw_out_of_memory)
+            OZO_SQLSTATE_NAME(fdw_no_schemas)
+            OZO_SQLSTATE_NAME(fdw_option_name_not_found)
+            OZO_SQLSTATE_NAME(fdw_reply_handle)
+            OZO_SQLSTATE_NAME(fdw_schema_not_found)
+            OZO_SQLSTATE_NAME(fdw_table_not_found)
+            OZO_SQLSTATE_NAME(fdw_unable_to_create_execution)
+            OZO_SQLSTATE_NAME(fdw_unable_to_create_reply)
+            OZO_SQLSTATE_NAME(fdw_unable_to_establish_connection)
+            OZO_SQLSTATE_NAME(plpgsql_error)
+            OZO_SQLSTATE_NAME(raise_exception)
+            OZO_SQLSTATE_NAME(no_data_found)
+            OZO_SQLSTATE_NAME(too_many_rows)
+            OZO_SQLSTATE_NAME(internal_error)
+            OZO_SQLSTATE_NAME(data_corrupted)
+            OZO_SQLSTATE_NAME(index_corrupted)
         }
-    #undef __OZO_SQLSTATE_NAME
+    #undef OZO_SQLSTATE_NAME
         return "sql state " + detail::ltob36(value);
     }
 
@@ -770,54 +770,54 @@ public:
             const auto value_in = [v = code.value()](enum code cond) {
                 return v >= cond && v < cond + class_width;
             };
-#define __OZO_SQL_STATE_CONDITION(name) case name: return value_in(name)
+#define OZO_SQL_STATE_CONDITION(name) case name: return value_in(name)
             switch(condition) {
-                __OZO_SQL_STATE_CONDITION(warning);
-                __OZO_SQL_STATE_CONDITION(no_data);
-                __OZO_SQL_STATE_CONDITION(sql_statement_not_yet_complete);
-                __OZO_SQL_STATE_CONDITION(connection_exception);
-                __OZO_SQL_STATE_CONDITION(triggered_action_exception);
-                __OZO_SQL_STATE_CONDITION(feature_not_supported);
-                __OZO_SQL_STATE_CONDITION(invalid_transaction_initiation);
-                __OZO_SQL_STATE_CONDITION(locator_exception);
-                __OZO_SQL_STATE_CONDITION(invalid_grantor);
-                __OZO_SQL_STATE_CONDITION(invalid_role_specification);
-                __OZO_SQL_STATE_CONDITION(diagnostics_exception);
-                __OZO_SQL_STATE_CONDITION(case_not_found);
-                __OZO_SQL_STATE_CONDITION(cardinality_violation);
-                __OZO_SQL_STATE_CONDITION(data_exception);
-                __OZO_SQL_STATE_CONDITION(integrity_constraint_violation);
-                __OZO_SQL_STATE_CONDITION(invalid_cursor_state);
-                __OZO_SQL_STATE_CONDITION(invalid_transaction_state);
-                __OZO_SQL_STATE_CONDITION(invalid_sql_statement_name);
-                __OZO_SQL_STATE_CONDITION(triggered_data_change_violation);
-                __OZO_SQL_STATE_CONDITION(invalid_authorization_specification);
-                __OZO_SQL_STATE_CONDITION(dependent_privilege_descriptors_still_exist);
-                __OZO_SQL_STATE_CONDITION(invalid_transaction_termination);
-                __OZO_SQL_STATE_CONDITION(sql_routine_exception);
-                __OZO_SQL_STATE_CONDITION(invalid_cursor_name);
-                __OZO_SQL_STATE_CONDITION(external_routine_exception);
-                __OZO_SQL_STATE_CONDITION(external_routine_invocation_exception);
-                __OZO_SQL_STATE_CONDITION(savepoint_exception);
-                __OZO_SQL_STATE_CONDITION(invalid_catalog_name);
-                __OZO_SQL_STATE_CONDITION(invalid_schema_name);
-                __OZO_SQL_STATE_CONDITION(transaction_rollback);
-                __OZO_SQL_STATE_CONDITION(syntax_error_or_access_rule_violation);
-                __OZO_SQL_STATE_CONDITION(with_check_option_violation);
-                __OZO_SQL_STATE_CONDITION(insufficient_resources);
-                __OZO_SQL_STATE_CONDITION(program_limit_exceeded);
-                __OZO_SQL_STATE_CONDITION(object_not_in_prerequisite_state);
-                __OZO_SQL_STATE_CONDITION(operator_intervention);
-                __OZO_SQL_STATE_CONDITION(system_error);
-                __OZO_SQL_STATE_CONDITION(snapshot_too_old);
-                __OZO_SQL_STATE_CONDITION(config_file_error);
-                __OZO_SQL_STATE_CONDITION(fdw_error);
-                __OZO_SQL_STATE_CONDITION(plpgsql_error);
-                __OZO_SQL_STATE_CONDITION(internal_error);
+                OZO_SQL_STATE_CONDITION(warning);
+                OZO_SQL_STATE_CONDITION(no_data);
+                OZO_SQL_STATE_CONDITION(sql_statement_not_yet_complete);
+                OZO_SQL_STATE_CONDITION(connection_exception);
+                OZO_SQL_STATE_CONDITION(triggered_action_exception);
+                OZO_SQL_STATE_CONDITION(feature_not_supported);
+                OZO_SQL_STATE_CONDITION(invalid_transaction_initiation);
+                OZO_SQL_STATE_CONDITION(locator_exception);
+                OZO_SQL_STATE_CONDITION(invalid_grantor);
+                OZO_SQL_STATE_CONDITION(invalid_role_specification);
+                OZO_SQL_STATE_CONDITION(diagnostics_exception);
+                OZO_SQL_STATE_CONDITION(case_not_found);
+                OZO_SQL_STATE_CONDITION(cardinality_violation);
+                OZO_SQL_STATE_CONDITION(data_exception);
+                OZO_SQL_STATE_CONDITION(integrity_constraint_violation);
+                OZO_SQL_STATE_CONDITION(invalid_cursor_state);
+                OZO_SQL_STATE_CONDITION(invalid_transaction_state);
+                OZO_SQL_STATE_CONDITION(invalid_sql_statement_name);
+                OZO_SQL_STATE_CONDITION(triggered_data_change_violation);
+                OZO_SQL_STATE_CONDITION(invalid_authorization_specification);
+                OZO_SQL_STATE_CONDITION(dependent_privilege_descriptors_still_exist);
+                OZO_SQL_STATE_CONDITION(invalid_transaction_termination);
+                OZO_SQL_STATE_CONDITION(sql_routine_exception);
+                OZO_SQL_STATE_CONDITION(invalid_cursor_name);
+                OZO_SQL_STATE_CONDITION(external_routine_exception);
+                OZO_SQL_STATE_CONDITION(external_routine_invocation_exception);
+                OZO_SQL_STATE_CONDITION(savepoint_exception);
+                OZO_SQL_STATE_CONDITION(invalid_catalog_name);
+                OZO_SQL_STATE_CONDITION(invalid_schema_name);
+                OZO_SQL_STATE_CONDITION(transaction_rollback);
+                OZO_SQL_STATE_CONDITION(syntax_error_or_access_rule_violation);
+                OZO_SQL_STATE_CONDITION(with_check_option_violation);
+                OZO_SQL_STATE_CONDITION(insufficient_resources);
+                OZO_SQL_STATE_CONDITION(program_limit_exceeded);
+                OZO_SQL_STATE_CONDITION(object_not_in_prerequisite_state);
+                OZO_SQL_STATE_CONDITION(operator_intervention);
+                OZO_SQL_STATE_CONDITION(system_error);
+                OZO_SQL_STATE_CONDITION(snapshot_too_old);
+                OZO_SQL_STATE_CONDITION(config_file_error);
+                OZO_SQL_STATE_CONDITION(fdw_error);
+                OZO_SQL_STATE_CONDITION(plpgsql_error);
+                OZO_SQL_STATE_CONDITION(internal_error);
             }
         }
         return error_category::equivalent(code, condition);
-#undef __OZO_SQL_STATE_CONDITION
+#undef OZO_SQL_STATE_CONDITION
     }
 };
 
@@ -926,11 +926,11 @@ constexpr bool match_code(const error_code& ec) {
     return ozo::errc::match_code(codes_for_condition<Code>::value, ec);
 }
 
-class category : public error_category {
+class category final : public error_category {
 public:
     const char* name() const noexcept override final { return "ozo::errc::category"; }
 
-    std::string message(int value) const override {
+    std::string message(int value) const override final {
         switch (code(value)) {
             case ok :
                 return "no error";
@@ -949,16 +949,16 @@ public:
     }
 
     bool equivalent (const error_code& code, int condition) const noexcept override final {
-#define __OZO_ERRC_CONDITION_MATCH(name) case name: return match_code<name>(code);
+#define OZO_ERRC_CONDITION_MATCH(name) case name: return match_code<name>(code);
         switch (condition) {
             case ok : return code == error_code{};
-            __OZO_ERRC_CONDITION_MATCH(connection_error);
-            __OZO_ERRC_CONDITION_MATCH(database_readonly);
-            __OZO_ERRC_CONDITION_MATCH(introspection_error);
-            __OZO_ERRC_CONDITION_MATCH(type_mismatch);
-            __OZO_ERRC_CONDITION_MATCH(protocol_error);
+            OZO_ERRC_CONDITION_MATCH(connection_error);
+            OZO_ERRC_CONDITION_MATCH(database_readonly);
+            OZO_ERRC_CONDITION_MATCH(introspection_error);
+            OZO_ERRC_CONDITION_MATCH(type_mismatch);
+            OZO_ERRC_CONDITION_MATCH(protocol_error);
         }
-#undef __OZO_ERRC_CONDITION_MATCH
+#undef OZO_ERRC_CONDITION_MATCH
         return error_category::equivalent(code, condition);
     }
 };
