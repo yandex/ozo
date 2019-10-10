@@ -39,7 +39,7 @@ static std::ostream& operator << (std::ostream& s, const custom_type& v) {
 }
 
 struct with_optional {
-    __OZO_STD_OPTIONAL<std::int32_t> value;
+    OZO_STD_OPTIONAL<std::int32_t> value;
 };
 
 static bool operator ==(const with_optional& lhs, const with_optional& rhs) {
@@ -364,9 +364,9 @@ TEST(request, should_send_empty_optional) {
     ozo::io_context io;
     const ozo::connection_info<> conn_info(OZO_PG_TEST_CONNINFO);
     const auto timeout = ozo::time_traits::duration::max();
-    __OZO_STD_OPTIONAL<std::int32_t> value;
+    OZO_STD_OPTIONAL<std::int32_t> value;
 
-    ozo::rows_of<__OZO_STD_OPTIONAL<std::int32_t>> result;
+    ozo::rows_of<OZO_STD_OPTIONAL<std::int32_t>> result;
     std::atomic_flag called {};
     ozo::request(conn_info[io], "SELECT "_SQL + value + "::integer"_SQL, timeout, ozo::into(result),
             [&](ozo::error_code ec, auto conn) {
@@ -388,9 +388,9 @@ TEST(request, should_send_and_receive_empty_optional) {
     ozo::io_context io;
     const ozo::connection_info<> conn_info(OZO_PG_TEST_CONNINFO);
     const auto timeout = ozo::time_traits::duration::max();
-    __OZO_STD_OPTIONAL<std::int32_t> value;
+    OZO_STD_OPTIONAL<std::int32_t> value;
 
-    ozo::rows_of<__OZO_STD_OPTIONAL<std::int32_t>> result;
+    ozo::rows_of<OZO_STD_OPTIONAL<std::int32_t>> result;
     std::atomic_flag called {};
     ozo::request(conn_info[io], "SELECT "_SQL + value + "::integer"_SQL, timeout, ozo::into(result),
             [&](ozo::error_code ec, auto conn) {

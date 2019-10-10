@@ -33,7 +33,7 @@ TEST(data_frame_size, should_add_size_of_size_type_and_size_of_data) {
 }
 
 TEST(data_frame_size, for_empty_optional_should_be_equal_to_size_of_size_type) {
-    EXPECT_EQ(ozo::data_frame_size(__OZO_STD_OPTIONAL<sized_type>()), sizeof(ozo::size_type));
+    EXPECT_EQ(ozo::data_frame_size(OZO_STD_OPTIONAL<sized_type>()), sizeof(ozo::size_type));
 }
 
 } // namespace

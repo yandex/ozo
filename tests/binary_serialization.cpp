@@ -109,7 +109,7 @@ TEST_F(send, should_send_nothing_for_std_nullptr_t) {
 }
 
 TEST_F(send, should_send_nothing_for_std_nullopt_t) {
-    ozo::send(os, oid_map, __OZO_NULLOPT);
+    ozo::send(os, oid_map, OZO_NULLOPT);
     EXPECT_TRUE(buffer.empty());
 }
 
@@ -129,7 +129,7 @@ TEST(send_impl, should_send_nothing_for_std_nullopt_t) {
     ozo::ostream os{&obuf};
     ozo::empty_oid_map oid_map;
 
-    ozo::send_impl<__OZO_NULLOPT_T>::apply(os, oid_map, __OZO_NULLOPT);
+    ozo::send_impl<OZO_NULLOPT_T>::apply(os, oid_map, OZO_NULLOPT);
     EXPECT_TRUE(buffer.empty());
 }
 
