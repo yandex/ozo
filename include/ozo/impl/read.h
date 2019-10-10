@@ -23,10 +23,11 @@ inline Require<RawDataWritable<T>, istream&> read(istream& in, T& out) {
 
 template <typename T>
 inline Require<Integral<T> && sizeof(T) == 1, istream&> read(istream& in, T& out) {
-    out = in.get();
+    istream::traits_type::int_type c = in.get();
     if (!in) {
         throw system_error(error::unexpected_eof);
     }
+    out = istream::traits_type::to_char_type(c);
     return in;
 }
 
