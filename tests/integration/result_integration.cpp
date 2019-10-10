@@ -86,8 +86,8 @@ TEST(result, should_convert_into_tuple_with_nulls_from_nullables) {
     // move-assign operator to the row type, which swaps the scoped_ptr.
     using row = std::tuple<
         boost::optional<int32_t>,
-#ifdef __OZO_STD_OPTIONAL
-        __OZO_STD_OPTIONAL<float>,
+#ifdef OZO_STD_OPTIONAL
+        OZO_STD_OPTIONAL<float>,
 #else
         boost::optional<float>,
 #endif

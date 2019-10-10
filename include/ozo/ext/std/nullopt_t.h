@@ -23,20 +23,20 @@ namespace ozo {
  */
 ///@{
 template <>
-struct is_nullable<__OZO_NULLOPT_T> : std::true_type {};
+struct is_nullable<OZO_NULLOPT_T> : std::true_type {};
 
 template <>
-struct unwrap_impl<__OZO_NULLOPT_T> : detail::functional::forward {};
+struct unwrap_impl<OZO_NULLOPT_T> : detail::functional::forward {};
 
 template <>
-struct is_null_impl<__OZO_NULLOPT_T> : detail::functional::always_true {};
+struct is_null_impl<OZO_NULLOPT_T> : detail::functional::always_true {};
 
 template <>
-struct send_impl<__OZO_NULLOPT_T> {
+struct send_impl<OZO_NULLOPT_T> {
     template <typename M, typename T>
     static ostream& apply(ostream& out, M&&, T&&) { return out;}
 };
 ///@}
 } // namespace ozo
 
-OZO_PG_BIND_TYPE(__OZO_NULLOPT_T, "null")
+OZO_PG_BIND_TYPE(OZO_NULLOPT_T, "null")
