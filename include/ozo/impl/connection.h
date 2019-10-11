@@ -106,6 +106,11 @@ void connection<OidMap, Statistics>::cancel() noexcept {
     socket_.cancel(_);
 }
 
+template <typename OidMap, typename Statistics>
+bool connection<OidMap, Statistics>::is_bad() const noexcept {
+    return detail::connection_status_bad(native_handle());
+}
+
 template <typename Connection>
 inline std::string_view error_message(const Connection& conn) {
     static_assert(ozo::Connection<Connection>, "conn should model Connection");
@@ -124,8 +129,7 @@ inline error_code close_connection(Connection&& conn) {
 template <typename Connection>
 inline bool connection_bad(const Connection& conn) noexcept {
     static_assert(ozo::Connection<Connection>, "conn should model Connection");
-    using detail::connection_status_bad;
-    return is_null_recursive(conn) ? true : connection_status_bad(get_native_handle(conn));
+    return is_null_recursive(conn) ? true : unwrap_connection(conn).is_bad();
 }
 
 template <typename Connection>

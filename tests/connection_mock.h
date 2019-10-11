@@ -132,6 +132,12 @@ struct connection {
 
     const oid_map_type& oid_map() const noexcept { return oid_map_;}
 
+    bool is_bad() const noexcept {
+        return connection_status_bad(native_handle());
+    }
+
+    operator bool () const noexcept { return !is_bad();}
+
     friend int pq_set_nonblocking(connection& c) {
         return c.mock_->set_nonblocking();
     }
