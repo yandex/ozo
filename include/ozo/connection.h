@@ -430,20 +430,6 @@ template <typename T>
 inline decltype(auto) get_oid_map(T&& conn) noexcept;
 
 /**
- * @brief Access to a Connection statistics
- *
- * @note This feature is not implemented yet
- *
- * Please be sure that the connection  is not in the null state via
- * `ozo::is_null_recursive()` function.
- *
- * @param conn --- #Connection to access statistics, should not be in null state
- * @return statistics of the Connection
- */
-template <typename T>
-inline decltype(auto) get_statistics(T&& conn) noexcept;
-
-/**
  * @brief Get the database name of the active connection
  *
  * See documentation for the underlying [PQdb](https://www.postgresql.org/docs/current/libpq-status.html)

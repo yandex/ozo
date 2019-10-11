@@ -151,12 +151,6 @@ inline decltype(auto) get_oid_map(Connection&& conn) noexcept {
 }
 
 template <typename Connection>
-inline decltype(auto) get_statistics(Connection&& conn) noexcept {
-    static_assert(ozo::Connection<Connection>, "conn should model Connection");
-    return unwrap_connection(std::forward<Connection>(conn)).statistics();
-}
-
-template <typename Connection>
 inline auto get_executor(const Connection& conn) noexcept {
     static_assert(ozo::Connection<Connection>, "conn should model Connection");
     return unwrap_connection(conn).get_executor();
