@@ -60,7 +60,7 @@ struct request_oid_map_op {
 
     template <typename Connection>
     void perform(Connection&& conn) {
-        const auto oid_map = get_oid_map(conn);
+        const auto oid_map = ozo::unwrap_connection(conn).oid_map();
         async_request(std::forward<Connection>(conn), make_oids_query(oid_map),
             none, std::back_inserter(*res_), std::move(*this));
     }
@@ -68,7 +68,7 @@ struct request_oid_map_op {
     template <typename Connection>
     void operator() (error_code ec, Connection&& conn) {
         if (!ec) try {
-            set_oid_map(get_oid_map(conn), *res_);
+            set_oid_map(ozo::unwrap_connection(conn).oid_map(), *res_);
         } catch (const std::exception& e) {
             unwrap_connection(conn).set_error_context(e.what());
             ec = error::oid_request_failed;

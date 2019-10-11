@@ -145,12 +145,6 @@ inline const auto& get_error_context(const Connection& conn) {
 }
 
 template <typename Connection>
-inline decltype(auto) get_oid_map(Connection&& conn) noexcept {
-    static_assert(ozo::Connection<Connection>, "conn should model Connection");
-    return unwrap_connection(std::forward<Connection>(conn)).oid_map();
-}
-
-template <typename Connection>
 inline auto get_executor(const Connection& conn) noexcept {
     static_assert(ozo::Connection<Connection>, "conn should model Connection");
     return unwrap_connection(conn).get_executor();
