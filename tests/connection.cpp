@@ -184,14 +184,6 @@ TEST(get_error_context, should_returns_reference_to_error_context) {
     );
 }
 
-TEST(set_error_context, should_set_error_context) {
-    io_context io;
-    auto conn = std::make_shared<connection<>>(io);
-    ozo::set_error_context(conn, "brand new super context");
-
-    EXPECT_EQ(conn->error_context_, "brand new super context");
-}
-
 struct async_get_connection : Test {
     StrictMock<executor_gmock> executor;
     StrictMock<executor_gmock> callback_executor;

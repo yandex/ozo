@@ -70,7 +70,7 @@ struct request_oid_map_op {
         if (!ec) try {
             set_oid_map(get_oid_map(conn), *res_);
         } catch (const std::exception& e) {
-            set_error_context(conn, e.what());
+            unwrap_connection(conn).set_error_context(e.what());
             ec = error::oid_request_failed;
         }
         handler_(ec, std::forward<Connection>(conn));

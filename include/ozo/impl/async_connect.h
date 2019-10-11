@@ -79,7 +79,7 @@ struct async_connect_op {
     void operator () (error_code ec, std::size_t = 0) {
         if (ec) {
             if (std::empty(get_error_context(get_connection(context)))) {
-                set_error_context(get_connection(context), "error while connection polling");
+                get_connection(context).set_error_context("error while connection polling");
             }
             return done(ec);
         }

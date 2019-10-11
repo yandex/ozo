@@ -416,20 +416,6 @@ template <typename T>
 inline const auto& get_error_context(const T& conn);
 
 /**
- * @brief Additional error context setter
- *
- * In addition to libpq OZO provides its own error context. This is
- * a setter for such a context. Please be sure that the connection
- * is not in the null state via `ozo::is_null_recursive()` function.
- *
- * @sa ozo::get_error_context(), ozo::reset_error_context(), ozo::is_null_recursive()
- * @param conn --- #Connection to set context to
- * @param ctx --- context to set, now only `std::string` is supported
- */
-template <typename T, typename Ctx>
-inline void set_error_context(T& conn, Ctx&& ctx);
-
-/**
  * @brief Access to a connection OID map
  *
  * This function gives access to a connection OID map, which represents mapping

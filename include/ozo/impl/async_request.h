@@ -192,7 +192,7 @@ struct async_get_result_op : boost::asio::coroutine {
 
     void done(error_code ec) {
         if (std::empty(get_error_context(get_connection(ctx_)))) {
-            set_error_context(get_connection(ctx_), "error while get request result");
+            get_connection(ctx_).set_error_context("error while get request result");
         }
         return impl::done(ctx_, ec);
     }
@@ -270,7 +270,7 @@ struct async_get_result_op : boost::asio::coroutine {
                 break;
         }
 
-        set_error_context(get_connection(ctx_), get_result_status_name(status));
+        get_connection(ctx_).set_error_context(get_result_status_name(status));
         done(error::result_status_unexpected);
     }
 
@@ -279,7 +279,7 @@ struct async_get_result_op : boost::asio::coroutine {
         try {
             process_(std::forward<Result>(res), get_connection(ctx_));
         } catch (const std::exception& e) {
-            set_error_context(get_connection(ctx_), e.what());
+            get_connection(ctx_).set_error_context(e.what());
             return done(error::bad_result_process);
         }
         done();
