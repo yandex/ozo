@@ -162,7 +162,7 @@ struct request_oid_map_handler {
 
 template <typename Connection>
 constexpr bool OidMapEmpty = std::is_same_v<
-    std::decay_t<decltype(get_oid_map(std::declval<Connection>()))>,
+    typename std::decay_t<decltype(ozo::unwrap_connection(std::declval<Connection>()))>::oid_map_type,
     ozo::empty_oid_map
 >;
 

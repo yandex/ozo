@@ -165,7 +165,7 @@ inline auto make_binary_query(binary_query<Ts...> query, M&&, A&&) {
 template <typename Context, typename Query>
 void async_send_query_params(std::shared_ptr<Context> ctx, Query&& query) {
     auto q = make_binary_query(std::forward<Query>(query),
-                        get_oid_map(get_connection(ctx)),
+                        get_connection(ctx).oid_map(),
                         asio::get_associated_allocator(get_handler(ctx)));
 
     async_send_query_params_op op{std::move(ctx), std::move(q)};
@@ -366,7 +366,7 @@ struct async_request_out_handler {
     template <typename Handle, typename Conn>
     void operator() (Handle&& h, Conn& conn) {
         auto res = ozo::make_result(std::forward<Handle>(h));
-        ozo::recv_result(res, get_oid_map(conn), out);
+        ozo::recv_result(res, ozo::unwrap_connection(conn).oid_map(), out);
     }
 };
 

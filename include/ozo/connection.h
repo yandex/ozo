@@ -416,20 +416,6 @@ template <typename T>
 inline const auto& get_error_context(const T& conn);
 
 /**
- * @brief Access to a connection OID map
- *
- * This function gives access to a connection OID map, which represents mapping
- * of custom types to its' OIDs in a database connected to.
- * Please be sure that the connection  is not in the null state via
- * `ozo::is_null_recursive()` function.
- *
- * @param conn --- #Connection to access OID map, should not be in null state
- * @return OID map of the Connection
- */
-template <typename T>
-inline decltype(auto) get_oid_map(T&& conn) noexcept;
-
-/**
  * @brief Get the database name of the active connection
  *
  * See documentation for the underlying [PQdb](https://www.postgresql.org/docs/current/libpq-status.html)
