@@ -430,19 +430,6 @@ template <typename T, typename Ctx>
 inline void set_error_context(T& conn, Ctx&& ctx);
 
 /**
- * @brief Reset additional error context
- *
- * This function resets additional error context to its default value.
- * Please be sure that the connection  is not in the null state via
- * `ozo::is_null_recursive()` function.
- *
- * @sa ozo::set_error_context(), ozo::get_error_context(), ozo::is_null_recursive()
- * @param conn --- #Connection to reset context, should not be in null state
- */
-template <typename T>
-inline void reset_error_context(T& conn);
-
-/**
  * @brief Access to a connection OID map
  *
  * This function gives access to a connection OID map, which represents mapping
@@ -645,8 +632,8 @@ struct forward_connection {
     template <typename Conn, typename TimeConstraint, typename Handler>
     static constexpr void apply(Conn&& c, TimeConstraint, Handler&& h) {
         static_assert(ozo::TimeConstraint<TimeConstraint>, "should model TimeConstraint concept");
-        reset_error_context(c);
-        auto ex = get_executor(c);
+        unwrap_connection(c).set_error_context();
+        auto ex = unwrap_connection(c).get_executor();
         asio::dispatch(ex, detail::bind(std::forward<Handler>(h), error_code{}, std::forward<Conn>(c)));
     }
 };

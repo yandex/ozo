@@ -151,12 +151,6 @@ inline void set_error_context(Connection& conn, Ctx&& ctx) {
 }
 
 template <typename Connection>
-inline void reset_error_context(Connection& conn) {
-    static_assert(ozo::Connection<Connection>, "conn should model Connection");
-    unwrap_connection(conn).set_error_context();
-}
-
-template <typename Connection>
 inline decltype(auto) get_oid_map(Connection&& conn) noexcept {
     static_assert(ozo::Connection<Connection>, "conn should model Connection");
     return unwrap_connection(std::forward<Connection>(conn)).oid_map();
