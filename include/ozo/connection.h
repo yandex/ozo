@@ -300,6 +300,26 @@ public:
      */
     void cancel() noexcept;
 
+    /**
+     * Determine whether the connection is in bad state.
+     *
+     * @return false --- connection established, and it is ok to execute operations
+     * @return true  --- connection is not established, no operation shall be performed,
+     *                   but an error context may be obtained via `get_error_context()`
+     *                   and `ozo::error_message()`.
+     */
+    bool is_bad() const noexcept;
+
+    /**
+     * Determine whether the connection is not in bad state.
+     *
+     * @return true  --- connection established, and it is ok to execute operations
+     * @return false --- connection is not established, no operation shall be performed,
+     *                   but an error context may be obtained via `get_error_context()`
+     *                   and `ozo::error_message()`.
+     */
+    operator bool () const noexcept { return !is_bad();}
+
 private:
     using stream_type = asio::posix::stream_descriptor;
 
@@ -361,6 +381,8 @@ struct is_connection<connection<Ts...>> : std::true_type {};
 * | <PRE>c.async_wait_read(WaitHandler)</PRE> | | Should asynchronously wait for read ready state of the connection socket. |
 * | <PRE>c.close()</PRE> | `error_code` | Should close connection socket and cancel all IO operation on the connection (like `async_wait_write`, `async_wait_read`). Shall not throw an exception. |
 * | <PRE>%c.cancel()</PRE> | | Should cancel all IO operation on the connection (like `async_wait_write`, `async_wait_read`). Should not throw an exception. |
+* | <PRE>%c.is_bad()</PRE> | bool | Should return `false` for the established connection that can perform operations. Shall not throw an exception. |
+* | <PRE>%bool(as_const(c))</PRE> | bool | Should return `true` for the established connection that can perform operations. In fact it should be the negation of `c.is_bad()`. Shall not throw an exception. |
 * | <PRE>ozo::get_connection(c, t, Handler)</PRE> | | Should reset the additional error context. This behaviour is performed in default implementation of `ozo::get_connection()` via `%c.set_error_context()` call. |
 * | <PRE>ozo::is_connection<C></PRE> | `std::true_type` | The template `ozo::is_connection` should be specialized for the connection type via inheritance from `std::true_type`. |
 *

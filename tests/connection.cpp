@@ -85,6 +85,8 @@ struct connection {
     auto native_handle() const noexcept { return handle_.get(); }
     const error_context& get_error_context() const noexcept { return error_context_; }
     void set_error_context(error_context v = error_context{}) { error_context_ = std::move(v); }
+    bool is_bad() const noexcept { return connection_status_bad(native_handle()); }
+    operator bool () const noexcept { return !is_bad();}
 
     explicit connection(io_context& io) : socket_(io), io_(&io) {}
 };
