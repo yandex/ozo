@@ -339,37 +339,31 @@ constexpr auto Connection = is_connection<std::decay_t<decltype(unwrap_connectio
 ///@{
 
 /**
- * @brief PostgreSQL native connection handle
+ * @brief Get native connection handle object.
  *
- * In common cases you do not need this function.
- * It's purpose is to support extention and customization of the library. So if you
- * want do extend or customize some behaviour via original libpq calls this is what
- * you really need. In other cases this is not the function what you are looking for.
+ * Alias to `unwrap_connection(conn).native_handle()`. See. `Connection` documentation for more details.
  *
- * @param conn --- #Connection object
- * @return native handle
+ * @param conn --- #Connection object.
+ * @return native connection handle.
  */
 template <typename Connection>
 inline auto get_native_handle(const Connection& conn) noexcept;
 
 /**
- * @brief Executor for connection related asynchronous operations
+ * @brief Get the executor associated with the object.
  *
- * This executor must be used to schedule all the asynchronous operations
- * related to #Connection to allow timer-based timeouts works for all of the
- * operations.
- *
- * @param conn --- #Connection object
- * @return `executor` of socket stream object of the connection
+ * @param conn --- #Connection object.
+ * @return executor associated with the object.
  */
 template <typename Connection>
 inline auto get_executor(const Connection& conn) noexcept;
 
 /**
- * @brief Indicates if connection state is bad
+ * @brief Determine whether the connection is in bad state.
  *
- * If conn is #Nullable - checks for null state first via `operator !()`.
- * @param conn --- #Connection object to check
+ * Alias to `unwrap_connection(conn).is_bad()`. See. `Connection` documentation for more details.
+ *
+ * @param conn --- #Connection object.
  * @return `true` if connection is in bad or null state, `false` - otherwise.
  */
 template <typename T>
@@ -378,42 +372,38 @@ inline bool connection_bad(const T& conn) noexcept;
 /**
  * @brief Indicates if connection state is not bad.
  *
- * See `ozo::connection_bad` for details.
+ * Alias to `!ozo::connection_bad(conn)`.
  *
- * @param conn --- #Connection to check
+ * @param conn --- #Connection object.
  * @return `false` if connection is in bad state, `true` - otherwise
  */
-template <typename T>
-inline bool connection_good(const T& conn) noexcept {
-    static_assert(Connection<T>, "T must be a Connection");
+template <typename Connection>
+inline bool connection_good(const Connection& conn) noexcept {
     return !connection_bad(conn);
 }
 
 /**
- * @brief Gives native libpq error message
+ * @brief Get native libpq error message
  *
  * Underlying libpq provides additional textual context for different errors which
  * can be while interacting via connection. This function gives access for such messages.
  *
- * @param conn --- #Connection to get message from
- * @return `std::string_view` contains a message
+ * @param conn --- #Connection to get message from.
+ * @return `std::string_view` with a message.
  */
 template <typename Connection>
 inline std::string_view error_message(const Connection& conn);
 
 /**
- * @brief Additional error context getter
+ * @brief Get additional error context.
  *
- * In addition to libpq OZO provides its own error context. This is
- * a getter for such a context. Please be sure that the connection
- * is not in the null state via `ozo::is_null_recursive()` function.
+ * Alias to `unwrap_connection(conn).get_error_context()`. See. `Connection` documentation for more details.
  *
- * @sa ozo::set_error_context(), ozo::reset_error_context(), ozo::is_null_recursive()
- * @param conn --- #Connection to get context from, should not be in null state
- * @return `std::string` contains a context
+ * @param conn --- #Connection object which is not in null recursive state
+ * @return reference on additional context
  */
-template <typename T>
-inline const auto& get_error_context(const T& conn);
+template <typename Connection>
+inline const auto& get_error_context(const Connection& conn);
 
 /**
  * @brief Get the database name of the active connection
