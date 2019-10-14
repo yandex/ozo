@@ -63,12 +63,12 @@ struct connection_mock {
     MOCK_METHOD0(get_result, boost::optional<pg_result>());
 
     MOCK_CONST_METHOD0(connect_poll, int());
-    MOCK_METHOD1(start_connection, ozo::error_code(const std::string&));
-    MOCK_METHOD0(assign_socket, ozo::error_code());
+    MOCK_METHOD1(start_connection, std::shared_ptr<native_handle>(const std::string&));
+    MOCK_METHOD0(assign, ozo::error_code());
     MOCK_METHOD0(async_request, void());
     MOCK_METHOD0(async_execute, void());
     MOCK_METHOD0(request_oid_map, void());
-    MOCK_METHOD0(bind_executor, ozo::error_code());
+    MOCK_METHOD0(set_executor, ozo::error_code());
     MOCK_METHOD0(get_cancel_handle, cancel_handle_mock*());
 };
 
@@ -109,16 +109,34 @@ static_assert(Query<fake_query>, "fake_query is not a Query");
 
 template <typename OidMap = empty_oid_map>
 struct connection {
-    using handle_type = std::unique_ptr<native_handle>;
+    using handle_type = std::shared_ptr<ozo::tests::native_handle>;
+    using error_context = std::string;
+    using oid_map_type = OidMap;
 
     handle_type handle_;
     stream_descriptor socket_;
     OidMap oid_map_;
     connection_mock* mock_ = nullptr;
-    std::string error_context_;
+    error_context error_context_;
     io_context* io_;
 
     auto get_executor() const { return io_->get_executor(); }
+
+    auto native_handle() const noexcept { return handle_.get(); }
+
+    const error_context& get_error_context() const noexcept { return error_context_; }
+
+    void set_error_context(error_context v = error_context{}) { error_context_ = std::move(v); }
+
+    oid_map_type& oid_map() noexcept { return oid_map_;}
+
+    const oid_map_type& oid_map() const noexcept { return oid_map_;}
+
+    bool is_bad() const noexcept {
+        return connection_status_bad(native_handle());
+    }
+
+    operator bool () const noexcept { return !is_bad();}
 
     friend int pq_set_nonblocking(connection& c) {
         return c.mock_->set_nonblocking();
@@ -149,13 +167,29 @@ struct connection {
         return c.mock_->connect_poll();
     }
 
-    friend ozo::error_code pq_start_connection(
+    friend handle_type pq_start_connection(
             connection& c, const std::string& conninfo) {
         return c.mock_->start_connection(conninfo);
     }
 
-    friend ozo::error_code pq_assign_socket(connection& c) {
-        return c.mock_->assign_socket();
+    ozo::error_code assign(handle_type&& handle) {
+        ozo::error_code ec = mock_->assign();
+        if (!ec) {
+            handle_ = std::move(handle);
+        }
+        return ec;
+    }
+
+    ozo::error_code close() {
+        error_code ec;
+        socket_.close(ec);
+        handle_.reset();
+        return ec;
+    }
+
+    void cancel() {
+        ozo::error_code _;
+        socket_.cancel(_);
     }
 
     friend decltype(auto) get_cancel_handle(connection& c) {
@@ -186,10 +220,31 @@ struct connection {
     }
 
     template <typename Executor>
-    friend ozo::error_code bind_connection_executor(connection& c, const Executor&) {
-        return c.mock_->bind_executor();
+    ozo::error_code set_executor(const Executor&) {
+        return mock_->set_executor();
+    }
+
+    template <typename WaitHandler>
+    void async_wait_write(WaitHandler&& h) {
+        socket_.async_write_some(asio::null_buffers(), std::forward<WaitHandler>(h));
+    }
+
+    template <typename WaitHandler>
+    void async_wait_read(WaitHandler&& h) {
+        socket_.async_read_some(asio::null_buffers(), std::forward<WaitHandler>(h));
     }
 };
+
+} // namespace ozo::tests
+
+namespace ozo {
+
+template <typename OidMap>
+struct is_connection<tests::connection<OidMap>> : std::true_type {};
+
+} // namespace ozo
+
+namespace ozo::tests {
 
 template <typename ...Ts>
 using connection_ptr = std::shared_ptr<connection<Ts...>>;

@@ -43,7 +43,7 @@ auto make_connect_operation_context(Connection&& connection, Handler&& handler) 
 
 template <typename ... Ts>
 auto& get_connection(const connect_operation_context_ptr<Ts ...>& context) noexcept {
-    return context->connection;
+    return unwrap_connection(context->connection);
 }
 
 template <typename ... Ts>
@@ -59,19 +59,21 @@ struct async_connect_op {
     Context context;
 
     void perform(const std::string& conninfo) {
-        if (error_code ec = start_connection(get_connection(context), conninfo)) {
-            return done(ec);
+        auto handle = start_connection(get_connection(context), conninfo);
+        if (!handle) {
+            return done(error::pq_connection_start_failed);
         }
 
-        if (connection_bad(get_connection(context))) {
+        using detail::connection_status_bad;
+        if (connection_status_bad(handle.get())) {
             return done(error::pq_connection_status_bad);
         }
 
-        if (error_code ec = assign_socket(get_connection(context))) {
+        if (error_code ec = get_connection(context).assign(std::move(handle)); ec) {
             return done(ec);
         }
 
-        return write_poll(get_connection(context), std::move(*this));
+        return get_connection(context).async_wait_write(std::move(*this));
     }
 
     void operator () (error_code ec, std::size_t = 0) {
@@ -87,10 +89,10 @@ struct async_connect_op {
                 return done();
 
             case PGRES_POLLING_WRITING:
-                return write_poll(get_connection(context), std::move(*this));
+                return get_connection(context).async_wait_write(std::move(*this));
 
             case PGRES_POLLING_READING:
-                return read_poll(get_connection(context), std::move(*this));
+                return get_connection(context).async_wait_read(std::move(*this));
 
             case PGRES_POLLING_FAILED:
             case PGRES_POLLING_ACTIVE:
@@ -101,7 +103,7 @@ struct async_connect_op {
     }
 
     void done(error_code ec = error_code {}) {
-        get_handler(context)(std::move(ec), std::move(get_connection(context)));
+        get_handler(context)(std::move(ec), std::move(context->connection));
     }
 
     using handler_type = std::decay_t<decltype(get_handler(context))>;
@@ -178,7 +180,7 @@ inline auto apply_time_constaint(const TimeConstraint& t, [[maybe_unused]] Conne
     if constexpr (IsNone<TimeConstraint>) {
         return detail::wrap_executor {get_executor(conn), std::forward<Handler>(handler)};
     } else {
-        auto on_deadline = detail::cancel_socket(get_socket(conn), asio::get_associated_allocator(handler));
+        auto on_deadline = detail::cancel_io(unwrap_connection(conn), asio::get_associated_allocator(handler));
         return detail::deadline_handler {
             ozo::get_executor(conn), t, std::forward<Handler>(handler), std::move(on_deadline)
         };

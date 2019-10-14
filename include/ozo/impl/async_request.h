@@ -42,7 +42,7 @@ using request_operation_context_ptr = std::shared_ptr<request_operation_context<
 
 template <typename ...Ts>
 inline auto& get_connection(const request_operation_context_ptr<Ts...>& ctx) noexcept {
-    return ctx->conn;
+    return unwrap_connection(ctx->conn);
 }
 
 template <typename ...Ts>
@@ -75,25 +75,13 @@ auto& get_handler(const request_operation_context_ptr<Ts ...>& context) noexcept
 template <typename ...Ts>
 inline void done(const request_operation_context_ptr<Ts...>& ctx, error_code ec) {
     set_query_state(ctx, query_state::error);
-    decltype(auto) conn = get_connection(ctx);
-    error_code _;
-    get_socket(conn).cancel(_);
-    std::move(get_handler(ctx))(std::move(ec), conn);
+    get_connection(ctx).cancel();
+    std::move(get_handler(ctx))(std::move(ec), ctx->conn);
 }
 
 template <typename ...Ts>
 inline void done(const request_operation_context_ptr<Ts...>& ctx) {
-    std::move(get_handler(ctx))(error_code {}, get_connection(ctx));
-}
-
-template <typename Continuation, typename ...Ts>
-inline void write_poll(const request_operation_context_ptr<Ts...>& ctx, Continuation&& c) {
-    write_poll(get_connection(ctx), std::forward<Continuation>(c));
-}
-
-template <typename Continuation, typename ...Ts>
-inline void read_poll(const request_operation_context_ptr<Ts...>& ctx, Continuation&& c) {
-    read_poll(get_connection(ctx), std::forward<Continuation>(c));
+    std::move(get_handler(ctx))(error_code {}, ctx->conn);
 }
 
 template <typename Context, typename BinaryQuery>
@@ -138,7 +126,7 @@ struct async_send_query_params_op {
                 done(ctx_, error::pg_flush_failed);
                 break;
             case query_state::send_in_progress:
-                write_poll(ctx_, *this);
+                get_connection(ctx_).async_wait_write(std::move(*this));
                 break;
             case query_state::send_finish:
                 set_query_state(ctx_, query_state::send_finish);
@@ -227,7 +215,7 @@ struct async_get_result_op : boost::asio::coroutine {
 
         reenter(*this) {
             while (is_busy(get_connection(ctx_))) {
-                yield read_poll(ctx_, *this);
+                yield get_connection(ctx_).async_wait_read(std::move(*this));
                 if (auto err = consume_input(get_connection(ctx_))) {
                     return done(err);
                 }
@@ -242,7 +230,7 @@ struct async_get_result_op : boost::asio::coroutine {
             if (result_status(*get_request_result(ctx_)) != PGRES_SINGLE_TUPLE) {
                 do {
                     while (is_busy(get_connection(ctx_))) {
-                        yield read_poll(ctx_, *this);
+                        yield get_connection(ctx_).async_wait_read(std::move(*this));
                         if (consume_input(get_connection(ctx_))) {
                             return handle_result();
                         }
@@ -338,7 +326,7 @@ struct async_request_op {
         } else {
             return detail::deadline_handler {
                 ozo::get_executor(conn), time_constraint_, std::move(handler),
-                detail::cancel_socket(get_socket(conn), get_allocator())
+                detail::cancel_io(unwrap_connection(conn), get_allocator())
             };
         }
     }

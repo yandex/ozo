@@ -91,7 +91,7 @@ using get_send_impl = typename send_impl_dispatcher<unwrap_type<T>>::type;
  */
 template <class M, class In>
 inline ostream& send(ostream& out, const oid_map_t<M>& oid_map, const In& in) {
-    return is_null(in) ? out : detail::get_send_impl<In>::apply(out, oid_map, unwrap(in));
+    return ozo::is_null(in) ? out : detail::get_send_impl<In>::apply(out, oid_map, ozo::unwrap(in));
 }
 
 /**

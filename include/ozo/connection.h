@@ -13,6 +13,7 @@
 #include <ozo/detail/functional.h>
 
 #include <boost/asio/dispatch.hpp>
+#include <boost/asio/posix/stream_descriptor.hpp>
 
 namespace ozo {
 
@@ -83,41 +84,10 @@ struct get_connection_oid_map_impl {
     }
 };
 
-/**
- * @ingroup group-connection-functions
- * @brief Get the connection oid map object
- *
- * #Connection types' OID map getter. This function must be specified for a #Connection concept
- * implementation to be conform to. Function must return reference to ozo::oid_map_t template
- * specialization or proxy class object to access connection's types' OID map.
- *
- * **Customization Point**
- *
- * This is customization point for #Connection concept implementation. To customize it please
- * specialize `ozo::get_connection_oid_map_impl` template. Default specialization may look like this
- * (`for exposition only`):
- * @code
-    template <typename T, typename = std::void_t<>>
-    struct get_connection_oid_map_impl {
-        template <typename Conn>
-        constexpr static auto apply(Conn&& c) -> decltype((c.oid_map_)) {
-            return c.oid_map_;
-        }
-    };
- * @endcode
- * Function overload works as well, but it is safer to specialize the template.
- * @param conn --- #Connection object
- * @return reference or proxy to OID map object.
- */
-#ifdef OZO_DOCUMENTATION
-template <typename T>
-constexpr OidMap& get_connection_oid_map(T&& conn);
-#else
 template <typename T>
 constexpr detail::result_of<get_connection_oid_map_impl, T> get_connection_oid_map(T&& conn) {
     return detail::apply<get_connection_oid_map_impl>(std::forward<T>(conn));
 }
-#endif
 
 template <typename T, typename = std::void_t<>>
 struct get_connection_socket_impl {
@@ -126,42 +96,10 @@ struct get_connection_socket_impl {
         return c.socket_;
     }
 };
-
-/**
- * @ingroup group-connection-functions
- * @brief Get the connection socket object
- *
- * #Connection socket object getter. #Connection must provide socket for IO. In general it must return
- * reference to an instance of [boost::asio::posix::stream_descriptor](https://www.boost.org/doc/libs/1_66_0/doc/html/boost_asio/reference/posix__stream_descriptor.html).
- *
- * **Customization Point**
- *
- * This is customization point for #Connection concept implementation. To customize it please
- * specialize `ozo::get_connection_socket_impl` template. Default specialization may look like this
- * (`for exposition only`):
- * @code
-    template <typename T, typename = std::void_t<>>
-    struct get_connection_socket_impl {
-        template <typename Conn>
-        constexpr static auto apply(Conn&& c) -> decltype((c.socket_)) {
-            return c.socket_;
-        }
-    };
- * @endcode
- * Function overload works as well, but it is safer to specialize the template.
- *
- * @param conn --- #Connection object
- * @return reference or proxy to the socket object
- */
-#ifdef OZO_DOCUMENTATION
-template <typename T>
-constexpr auto get_connection_socket(T&& conn);
-#else
 template <typename T>
 constexpr detail::result_of<get_connection_socket_impl, T> get_connection_socket(T&& conn) {
     return detail::apply<get_connection_socket_impl>(std::forward<T>(conn));
 }
-#endif
 
 template <typename T, typename = hana::when<true>>
 struct get_connection_executor_impl;
@@ -175,41 +113,10 @@ struct get_connection_executor_impl<T,
     }
 };
 
-/**
- * @ingroup group-connection-functions
- * @brief Get the connection associated executor object
- *
- * #Connection should provide an executor for IO and timer operations. In general it should return
- * [boost::asio::io_context::executor_type](https://www.boost.org/doc/libs/1_66_0/doc/html/boost_asio/reference/io_context__executor_type.html) object.
- *
- * **Customization Point**
- *
- * This is customization point for #Connection concept implementation. To customize it please
- * specialize `ozo::get_connection_executor_impl` template. Default specialization may look like this
- * (`for exposition only`):
- * @code
-    template <typename T, typename = std::void_t<>>
-    struct get_connection_socket_impl {
-        template <typename Conn>
-        constexpr static auto apply(Conn&& c) -> decltype((c.socket_)) {
-            return c.socket_;
-        }
-    };
- * @endcode
- * Function overload works as well, but it is safer to specialize the template.
- *
- * @param conn --- #Connection object
- * @return reference or proxy to the socket object
- */
-#ifdef OZO_DOCUMENTATION
-template <typename T>
-constexpr auto get_connection_executor(T&& conn);
-#else
 template <typename T>
 constexpr detail::result_of<get_connection_executor_impl, T> get_connection_executor(T&& conn) {
     return detail::apply<get_connection_executor_impl>(std::forward<T>(conn));
 }
-#endif
 
 template <typename T, typename = std::void_t<>>
 struct get_connection_handle_impl {
@@ -219,41 +126,10 @@ struct get_connection_handle_impl {
     }
 };
 
-/**
- * @ingroup group-connection-functions
- * @brief Get the connection handle object
- *
- * PosgreSQL connection handle getter. In general it must return reference or proxy object to
- * `ozo::native_conn_handle` object.
- *
- * **Customization Point**
- *
- * This is customization point for #Connection concept implementation. To customize it please
- * specialize `ozo::get_connection_handle_impl` template. Default specialization may look like this
- * (`for exposition only`):
- * @code
-    template <typename T, typename = std::void_t<>>
-    struct get_connection_handle_impl {
-        template <typename Conn>
-        constexpr static auto apply(Conn&& c) -> decltype((c.handle_)) {
-            return c.handle_;
-        }
-    };
- * @endcode
- * Function overload works as well, but it is safer to specialize the template.
- *
- * @param conn --- #Connection object
- * @return reference or proxy object to `ozo::native_conn_handle` object
- */
-#ifdef OZO_DOCUMENTATION
-template <typename T>
-constexpr auto get_connection_handle(T&& conn);
-#else
 template <typename T>
 constexpr detail::result_of<get_connection_handle_impl, T> get_connection_handle(T&& conn) {
     return detail::apply<get_connection_handle_impl>(std::forward<T>(conn));
 }
-#endif
 
 template <typename T, typename = std::void_t<>>
 struct get_connection_error_context_impl {
@@ -263,114 +139,265 @@ struct get_connection_error_context_impl {
     }
 };
 
-/**
- * @ingroup group-connection-functions
- * @brief Get the connection error context object
- *
- * Connection OZO error context getter. In many cases the `error_code` is a good thing, but sometimes
- * you need an additional context which unlucky can not be placed inside an `error_code` object. To
- * solve this problem this additional error context is introduced. Usually it returns a reference to an
- * std::string object. The error context is reset inside get_connection implementation for Connection.
- *
- * **Customization Point**
- *
- * This is customization point for #Connection concept implementation. To customize it please
- * specialize `ozo::get_connection_error_context_impl` template. Default specialization may look like this
- * (`for exposition only`):
- * @code
-    template <typename T, typename = std::void_t<>>
-    struct get_connection_error_context_impl {
-        template <typename Conn>
-        constexpr static auto apply(Conn&& c) -> decltype((c.error_context_)) {
-            return c.error_context_;
-        }
-    };
- * @endcode
- * Function overload works as well, but it is safer to specialize the template.
- *
- * @param conn --- #Connection object
- * @return additional error context, for now `std::string` is supported only
- */
-#ifdef OZO_DOCUMENTATION
-template <typename T>
-constexpr auto get_connection_error_context(T&& conn);
-#else
 template <typename T>
 constexpr detail::result_of<get_connection_error_context_impl, T> get_connection_error_context(T&& conn) {
     return detail::apply<get_connection_error_context_impl>(std::forward<T>(conn));
 }
-#endif
 
+namespace detail {
+template <typename Connection, typename Executor>
+inline error_code bind_connection_executor(Connection&, const Executor&);
+}
+
+/**
+ * @brief Default model for `Connection` concept
+ *
+ * `Connection` concept model which is used by the library as default model.
+ *
+ * @tparam OidMap --- oid map of types are used with connection
+ * @tparam Statistics --- statistics of the connection (not supported yet)
+ *
+ * ### Thread safety
+ *
+ * *Distinct objects*: Safe.
+ *
+ * *Shared objects*: Unsafe.
+ *
+ * @ingroup group-connection-types
+ */
+template <typename OidMap, typename Statistics>
+class connection {
+public:
+    using native_handle_type = native_conn_handle::pointer; //!< Native connection handle type
+    using oid_map_type = OidMap; //!< Oid map of types that are used with the connection
+    using error_context = std::string; //!< Additional error context which could provide context depended information for errors
+    using executor_type = io_context::executor_type; //!< The type of the executor associated with the object.
+
+    /**
+     * Construct a new connection object.
+     *
+     * @param io --- execution context for IO operations associated with the object.
+     * @param statistics --- initial statistics (not supported yet)
+     */
+    connection(io_context& io, Statistics statistics);
+
+    /**
+     * Get native connection handle object.
+     *
+     * This function may be used to obtain the underlying representation of the connection.
+     * This is intended to allow access to native `libpq` functionality that is not otherwise provided.
+     *
+     * @return native_handle_type --- native connection handle.
+     */
+    native_handle_type native_handle() const noexcept { return handle_.get(); }
+
+    /**
+     * Get a reference to an oid map object for types that are used with the connection.
+     *
+     * @return oid_map_type& --- reference on oid map object.
+     */
+    oid_map_type& oid_map() noexcept { return oid_map_;}
+    /**
+     * Get a reference to an oid map object for types that are used with the connection.
+     *
+     * @return const oid_map_type& --- reference on oid map object.
+     */
+    const oid_map_type& oid_map() const noexcept { return oid_map_;}
+
+    Statistics& statistics() noexcept { return statistics_;}
+    const Statistics& statistics() const noexcept { return statistics_;}
+
+    /**
+     * Get the additional context object for an error that occurred during the last operation on the connection.
+     *
+     * @return const error_context& --- additional context for the error
+     */
+    const error_context& get_error_context() const noexcept { return error_context_; }
+    /**
+     * Set the additional error context object. This function may be used to provide additional context-depended
+     * data that is related to the current operation error.
+     *
+     * @param v --- new error context.
+     */
+    void set_error_context(error_context v = error_context{}) { error_context_ = std::move(v); }
+
+    /**
+     * Get the executor associated with the object.
+     *
+     * @return executor_type --- executor object.
+     */
+    executor_type get_executor() const noexcept { return io_->get_executor(); }
+
+    /**
+     * Set the new executor for the object.
+     *
+     * This function may be used to migrate the object between different execution contexts.
+     *
+     * Typically this function is used by the library in the connection pool implementation.
+     * Users should not use it directly other than for a special purpose (e.g., own connection pool
+     * implementation and so on).
+     *
+     * @note The function shall not be called while any active operation executes on the object.
+     *
+     * @param ex --- new executor object.
+     * @return error_code --- error code of the function call.
+     */
+    error_code set_executor(const executor_type& ex);
+
+    /**
+     * Assign an existing native connection handle to the object.
+     *
+     * Typically this function is used by the library within the connection establishing process.
+     * Users should not use it directly other than for a special purpose (e.g., special connection pool
+     * implementation and so on).
+     *
+     * @note The function shall not be called while any active operation executes on the object.
+     *
+     * @param handle --- rvalue reference on a new handle.
+     * @return error_code --- error code of the function call.
+     */
+    error_code assign(native_conn_handle&& handle);
+
+    /**
+     * Asynchronously wait for the connection socket to become ready to write or to have pending error conditions.
+     *
+     * Typically this function is used by the library within the connection establishing process and operation execution.
+     * Users should not use it directly other than for custom `libpq`-based opeartions.
+     *
+     * @param handler --- wait handler with `void(ozo::error_code, int=0)` signature.
+     */
+    template <typename WaitHandler>
+    void async_wait_write(WaitHandler&& handler);
+
+    /**
+     * Asynchronously wait for the connection socket to become ready to read or to have pending error conditions.
+     *
+     * Typically this function is used by the library within the connection establishing process and operation execution.
+     * Users should not use it directly other than for custom `libpq`-based opeartions.
+     *
+     * @param handler --- wait handler with `void(ozo::error_code, int=0)` signature.
+     */
+    template <typename WaitHandler>
+    void async_wait_read(WaitHandler&& handler);
+
+    /**
+     * Close the connection.
+     *
+     * Any asynchronous operations will be cancelled immediately,
+     * and will complete with the `boost::asio::error::operation_aborted` error.
+     *
+     * @return error_code - indicates what error occurred, if any. Note that,
+     *                      even if the function indicates an error, the underlying
+     *                      connection is closed.
+     */
+    error_code close() noexcept;
+
+    /**
+     * Cancel all asynchronous operations associated with the connection.
+     *
+     * This function causes all outstanding asynchronous operations to finish immediately,
+     * and the handlers for cancelled operations will be passed the `boost::asio::error::operation_aborted` error.
+     */
+    void cancel() noexcept;
+
+    /**
+     * Determine whether the connection is in bad state.
+     *
+     * @return false --- connection established, and it is ok to execute operations
+     * @return true  --- connection is not established, no operation shall be performed,
+     *                   but an error context may be obtained via `get_error_context()`
+     *                   and `ozo::error_message()`.
+     */
+    bool is_bad() const noexcept;
+
+    /**
+     * Determine whether the connection is not in bad state.
+     *
+     * @return true  --- connection established, and it is ok to execute operations
+     * @return false --- connection is not established, no operation shall be performed,
+     *                   but an error context may be obtained via `get_error_context()`
+     *                   and `ozo::error_message()`.
+     */
+    operator bool () const noexcept { return !is_bad();}
+
+private:
+    using stream_type = asio::posix::stream_descriptor;
+
+    template <typename Connection, typename Executor>
+    friend error_code ozo::detail::bind_connection_executor(Connection&, const Executor&);
+
+    native_conn_handle handle_;
+    io_context* io_ = nullptr;
+    stream_type socket_;
+    oid_map_type oid_map_;
+    Statistics statistics_;
+    error_context error_context_;
+};
+
+/**
+ * @ingroup group-connection-types
+ * @brief Connection indicator
+ *
+ * This structure template should be specialized as `std::true_type`
+ * for a type that models the `Connection` concept.
+ */
 template <typename, typename = std::void_t<>>
 struct is_connection : std::false_type {};
-template <typename T>
-struct is_connection<T, std::void_t<
-    decltype(get_connection_oid_map(unwrap_connection(std::declval<T&>()))),
-    decltype(get_connection_socket(unwrap_connection(std::declval<T&>()))),
-    decltype(get_connection_handle(unwrap_connection(std::declval<T&>()))),
-    decltype(get_connection_error_context(unwrap_connection(std::declval<T&>()))),
-    decltype(get_connection_oid_map(unwrap_connection(std::declval<const T&>()))),
-    decltype(get_connection_socket(unwrap_connection(std::declval<const T&>()))),
-    decltype(get_connection_handle(unwrap_connection(std::declval<const T&>()))),
-    decltype(get_connection_error_context(unwrap_connection(std::declval<const T&>()))),
-    decltype(get_connection_executor(unwrap_connection(std::declval<const T&>())))
->> : std::true_type {};
 
+template <typename ...Ts>
+struct is_connection<connection<Ts...>> : std::true_type {};
 
 /**
 * @ingroup group-connection-concepts
 * @brief Database connection concept
 *
-* We define the `Connection` to database not as a concrete class or type,
-* but as an entity which must support some traits. The reason why we
-* choose such strategy is - we want to provide flexibility and extension ability
-* for implementation and testing. User can implement a connection bound additional
-* functionality.
+* `Connection` concept represents a minimum set of attributes and functions that are required
+* by the library to establish communication and execute operations. `Connection` should provide:
+* * the native PostgreSQL connection handle from `libpq`,
+* * an executor to perform IO-related operation (according to the current version of Boost.Asio
+*   it should be `boost::asio::io_context::executor_type` object),
+* * an additional error context to provide context-depended information for errors,
+* * IO functions that are necessary to perform operations.
 *
-* ###Connection Definition
+* The default implementation of the concept is `ozo::connection`.
 *
-* Connection `conn` is an object for which these next statements are valid:
+* ### Requirements
 *
-* @code{cpp}
-decltype(auto) oid_map = get_connection_oid_map(unwrap_connection(conn));
-* @endcode
-* There the `oid_map` must be a reference or proxy for connection's #OidMap object, which allows to read and modify it.
-* Object must be created via `ozo::register_types()` template function or be empty_oid_map in case if no custom
-* types are used with the connection.
+* Any wrapper object, which may be unwrapped to the underlying `Connection` model via
+* `ozo::unwrap_connection` is valid `Connection` model.
 *
-* @code
-decltype(auto) socket = get_connection_socket(unwrap_connection(conn));
-* @endcode
-* Must return reference or proxy for a socket IO stream object which allows to bind the connection to the asio
-* io_context, currently <a href="https://www.boost.org/doc/libs/1_66_0/doc/html/boost_asio/reference/posix__stream_descriptor.html">boost::asio::posix::stream_descriptor</a> is suppurted only.
+* Connection `c` is an object of type `C` for which these next requirements are valid:
 *
+* | Expression | Type | Description |
+* |------------|------|-------------|
+* | <PRE>as_const(c).native_handle()</PRE> | `C::native_handle_type` | Should return native handle type of PostgreSQL connection. In the current implementation it should be `PGconn*` type. Shall not throw an exception. |
+* | <PRE>c.oid_map()<sup>[1]</sup><br/>as_const(c).oid_map()<sup>[2]</sup></PRE> | `C::oid_map_type` | Should return a reference<sup>[1]</sup> or a const reference<sup>[2]</sup> on `OidMap` which is used by the connection, the library may update this map during connection establishing. Shall not throw an exception. |
+* | <PRE>as_const(c).%get_error_context()</PRE> | `C::error_context_type` | Should return a const reference on an additional error context is related to at least the last error. In the current implementation, the type supported is `std::string`. Shall not throw an exception. |
+* | <PRE>c.set_error_context(error_context)<sup>[1]</sup><br/>%c.set_error_context()<sup>[2]</sup></PRE> | | Should set<sup>[1]</sup> or reset<sup>[2]</sup> additional error context. |
+* | <PRE>as_const(c).%get_executor()</PRE> | `C::executor_type` | Should provide an executor object that is useful for IO-related operations, like timer and so on. In the current implementation `boost::asio::io_context::executor_type` is only applicable. Shall not throw an exception. |
+* | <PRE>c.set_executor(executor)</PRE> | `error_code` | Should change the executor for the specified one. This operation is used by `ozo::connection_pool` to provide connection migration between different instances of `boost::asio::io_service`. The call of the function during the active operation on connection is UB. The error should be indicated via the result. |
+* | <PRE>c.assign(move(native_conn_handle))</PRE> | `error_code` | Should assign `ozo::native_conn_handle` to the connection object. If success - the previous handle should be destroyed. The error should be indicated via the result. |
+* | <PRE>c.async_wait_write(WaitHandler)</PRE> | | Should asynchronously wait for write ready state of the connection socket. |
+* | <PRE>c.async_wait_read(WaitHandler)</PRE> | | Should asynchronously wait for read ready state of the connection socket. |
+* | <PRE>c.close()</PRE> | `error_code` | Should close connection socket and cancel all IO operation on the connection (like `async_wait_write`, `async_wait_read`). Shall not throw an exception. |
+* | <PRE>%c.cancel()</PRE> | | Should cancel all IO operation on the connection (like `async_wait_write`, `async_wait_read`). Should not throw an exception. |
+* | <PRE>%c.is_bad()</PRE> | bool | Should return `false` for the established connection that can perform operations. Shall not throw an exception. |
+* | <PRE>%bool(as_const(c))</PRE> | bool | Should return `true` for the established connection that can perform operations. In fact it should be the negation of `c.is_bad()`. Shall not throw an exception. |
+* | <PRE>ozo::get_connection(c, t, Handler)</PRE> | | Should reset the additional error context. This behaviour is performed in default implementation of `ozo::get_connection()` via `%c.set_error_context()` call. |
+* | <PRE>ozo::is_connection<C></PRE> | `std::true_type` | The template `ozo::is_connection` should be specialized for the connection type via inheritance from `std::true_type`. |
 *
-* @code
-decltype(auto) handle = get_connection_handle(unwrap_connection(conn));
-* @endcode
-* Must return reference or proxy for native_conn_handle object.
+* Where:
+* * `Handler` is callable with `template <typename Connection> void(ozo::error_code, Connection&&)` signature,
+* * `WaitHandler` is callable with `void(ozo::error_code, int = 0)` signature,
+* * `t` is a `TimeConstraint` model object,
+* * `as_const()` is `std::as_const()`,
+* * `move()` is `std::move()`.
 *
-*
-* @code
-decltype(auto) error_ctx = get_connection_error_context(unwrap_connection(conn));
-* @endcode
-* Must return reference or proxy for an additional error context.
-*
-*
-* @code
-decltype(auto) ex = get_connection_executor(unwrap_connection(conn));
-* @endcode
-* Should return IO operations executor associated with connection.
-* @sa ozo::unwrap_connection(),
-ozo::get_connection_oid_map(),
-ozo::get_connection_socket(),
-ozo::get_connection_handle(),
-ozo::get_connection_error_context(),
-ozo::get_connection_executor()
+* @sa ozo::connection, ozo::get_connection(), ozo::is_connection
 * @hideinitializer
 */
 template <typename T>
-constexpr auto Connection = is_connection<std::decay_t<T>>::value;
+constexpr auto Connection = is_connection<std::decay_t<decltype(unwrap_connection(std::declval<T>()))>>::value;
 
 /**
  * @defgroup group-connection-functions Related functions
@@ -378,22 +405,6 @@ constexpr auto Connection = is_connection<std::decay_t<T>>::value;
  * @brief Connection related functions
  */
 ///@{
-/**
- * @brief PostgreSQL connection handle
- *
- * PostgreSQL native connection handle wrapped with RAII smart pointer.
- * In common cases you do not need this function. It's purpose is to support
- * extention and customization of the library. See get_native_handle for details.
- *
- * @param conn --- #Connection object
- * @return refernce to a wrapped PostgreSQL connection handle
- */
-template <typename T>
-inline decltype(auto) get_handle(T&& conn) noexcept {
-    static_assert(Connection<T>, "T must be a Connection");
-    return get_connection_handle(
-        unwrap_connection(std::forward<T>(conn)));
-}
 
 /**
  * @brief PostgreSQL native connection handle
@@ -407,23 +418,7 @@ inline decltype(auto) get_handle(T&& conn) noexcept {
  * @return native handle
  */
 template <typename Connection>
-inline auto get_native_handle(const Connection& conn) noexcept {
-    return get_handle(conn).get();
-}
-
-/**
- * @brief Socket stream object of the connection
- *
- * See underlying `ozo::get_connection_socket` for details.
- *
- * @param conn --- #Connection object
- * @return socket stream object of the connection
- */
-template <typename T>
-inline decltype(auto) get_socket(T&& conn) noexcept {
-    static_assert(Connection<T>, "T must be a Connection");
-    return get_connection_socket(unwrap_connection(std::forward<T>(conn)));
-}
+inline auto get_native_handle(const Connection& conn) noexcept;
 
 /**
  * @brief Executor for connection related asynchronous operations
@@ -435,21 +430,8 @@ inline decltype(auto) get_socket(T&& conn) noexcept {
  * @param conn --- #Connection object
  * @return `executor` of socket stream object of the connection
  */
-template <typename T>
-inline auto get_executor(T& conn) noexcept {
-    static_assert(Connection<T>, "T must be a Connection");
-    return get_connection_executor(unwrap_connection(conn));
-}
-
-/**
- * @brief Binds executor for the connection
- *
- * @param conn --- #Connection which must be rebound
- * @param ex --- Executor whish should be used for IO and timers
- * @return `error_code` in case of error has been
- */
-template <typename T, typename Executor>
-inline error_code bind_executor(T& conn, const Executor& ex);
+template <typename Connection>
+inline auto get_executor(const Connection& conn) noexcept;
 
 /**
  * @brief Indicates if connection state is bad
@@ -484,8 +466,8 @@ inline bool connection_good(const T& conn) noexcept {
  * @param conn --- #Connection to get message from
  * @return `std::string_view` contains a message
  */
-template <typename T>
-inline std::string_view error_message(T&& conn);
+template <typename Connection>
+inline std::string_view error_message(const Connection& conn);
 
 /**
  * @brief Additional error context getter
@@ -499,10 +481,7 @@ inline std::string_view error_message(T&& conn);
  * @return `std::string` contains a context
  */
 template <typename T>
-inline const auto& get_error_context(const T& conn) {
-    static_assert(Connection<T>, "T must be a Connection");
-    return get_connection_error_context(unwrap_connection(conn));
-}
+inline const auto& get_error_context(const T& conn);
 
 /**
  * @brief Additional error context setter
@@ -516,10 +495,7 @@ inline const auto& get_error_context(const T& conn) {
  * @param ctx --- context to set, now only `std::string` is supported
  */
 template <typename T, typename Ctx>
-inline void set_error_context(T& conn, Ctx&& ctx) {
-    static_assert(Connection<T>, "T must be a Connection");
-    get_connection_error_context(unwrap_connection(conn)) = std::forward<Ctx>(ctx);
-}
+inline void set_error_context(T& conn, Ctx&& ctx);
 
 /**
  * @brief Reset additional error context
@@ -532,11 +508,7 @@ inline void set_error_context(T& conn, Ctx&& ctx) {
  * @param conn --- #Connection to reset context, should not be in null state
  */
 template <typename T>
-inline void reset_error_context(T& conn) {
-    static_assert(Connection<T>, "T must be a Connection");
-    using ctx_type = std::decay_t<decltype(get_error_context(conn))>;
-    set_error_context(conn, ctx_type{});
-}
+inline void reset_error_context(T& conn);
 
 /**
  * @brief Access to a connection OID map
@@ -550,10 +522,7 @@ inline void reset_error_context(T& conn) {
  * @return OID map of the Connection
  */
 template <typename T>
-inline decltype(auto) get_oid_map(T&& conn) noexcept {
-    static_assert(Connection<T>, "T must be a Connection");
-    return get_connection_oid_map(unwrap_connection(std::forward<T>(conn)));
-}
+inline decltype(auto) get_oid_map(T&& conn) noexcept;
 
 /**
  * @brief Access to a Connection statistics
@@ -567,10 +536,7 @@ inline decltype(auto) get_oid_map(T&& conn) noexcept {
  * @return statistics of the Connection
  */
 template <typename T>
-inline decltype(auto) get_statistics(T&& conn) noexcept {
-    static_assert(Connection<T>, "T must be a Connection");
-    return get_connection_statistics(unwrap_connection(std::forward<T>(conn)));
-}
+inline decltype(auto) get_statistics(T&& conn) noexcept;
 
 /**
  * @brief Get the database name of the active connection
@@ -658,6 +624,11 @@ template <typename ConnectionProvider>
 struct get_connection_type_default<ConnectionProvider,
     std::void_t<typename ConnectionProvider::connection_type>> {
     using type = typename ConnectionProvider::connection_type;
+};
+
+template <typename T>
+struct get_connection_type_default<T, Require<ozo::Connection<T>>> {
+    using type = T;
 };
 
 } // namespace detail
@@ -1014,14 +985,6 @@ struct initiate_async_get_connection {
 constexpr get_connection_op<detail::initiate_async_get_connection> get_connection;
 #endif
 
-namespace detail {
-
-template <typename T>
-struct get_connection_type_default<T, Require<Connection<T>>> {
-    using type = T;
-};
-
-} // namespace detail
 
 /**
  * @brief Close connection to the database immediately
@@ -1036,14 +999,8 @@ struct get_connection_type_default<T, Require<Connection<T>>> {
  *
  * @param conn --- #Connection to be closed
  */
-template <typename T>
-inline void close_connection(T&& conn) {
-    static_assert(Connection<T>, "T is not a Connection concept");
-
-    error_code ec;
-    get_socket(conn).close(ec);
-    get_handle(std::forward<T>(conn)).reset();
-}
+template <typename Connection>
+inline error_code close_connection(Connection&& conn);
 
 /**
  * @brief Close connection to the database when leaving the scope

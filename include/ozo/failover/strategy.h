@@ -250,7 +250,7 @@ struct get_try_context_impl<my_strategy_try> {
  */
 template <typename FailoverTry>
 inline auto get_try_context(const FailoverTry& a_try) {
-    auto res = detail::apply<get_try_context_impl>(unwrap(a_try));
+    auto res = detail::apply<get_try_context_impl>(ozo::unwrap(a_try));
     static_assert(HanaSequence<decltype(res)>,
         "get_try_context_impl::apply() should provide HanaSequence");
     return res;
@@ -304,14 +304,14 @@ struct get_next_try_impl<my_strategy_try> {
  */
 template <typename Try, typename Connection>
 inline auto get_next_try(Try& a_try, const error_code& ec, Connection& conn) {
-    return detail::apply<get_next_try_impl>(unwrap(a_try), ec, conn);
+    return detail::apply<get_next_try_impl>(ozo::unwrap(a_try), ec, conn);
 }
 
 template <typename Try>
 struct initiate_next_try_impl {
     template <typename Connection, typename Initiator>
     static auto apply(Try& a_try, const error_code& ec, Connection& conn, Initiator init) {
-        if (auto next = get_next_try(a_try, ec, conn); !is_null(next)) {
+        if (auto next = get_next_try(a_try, ec, conn); !ozo::is_null(next)) {
             init(std::move(next));
         }
     }
@@ -359,7 +359,7 @@ struct initiate_next_try_impl {
  */
 template <typename Try, typename Connection, typename Initiator>
 inline auto initiate_next_try(Try& a_try, const error_code& ec, Connection& conn, Initiator&& init) {
-    return detail::apply<initiate_next_try_impl>(unwrap(a_try), ec, conn, std::forward<Initiator>(init));
+    return detail::apply<initiate_next_try_impl>(ozo::unwrap(a_try), ec, conn, std::forward<Initiator>(init));
 }
 
 namespace detail {
