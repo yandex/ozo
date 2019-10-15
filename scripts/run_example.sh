@@ -9,7 +9,7 @@ docker-compose run \
     --user "$(id -u):$(id -g)" \
     ozo_build_with_pg_tests \
     bash \
-    -exc '/code/scripts/wait_postgres.sh; ${BASE_BUILD_DIR}/clang_release/examples/ozo_request "host=${POSTGRES_HOST} user=${POSTGRES_USER} dbname=${POSTGRES_DB} password=${POSTGRES_PASSWORD}"'
+    -exc '/code/scripts/wait_postgres.sh; ${BASE_BUILD_DIR}/clang_release/examples/ozo_request_coroutine "host=${POSTGRES_HOST} user=${POSTGRES_USER} dbname=${POSTGRES_DB} password=${POSTGRES_PASSWORD}"'
 
 docker-compose run \
     --rm \

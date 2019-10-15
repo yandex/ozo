@@ -5,15 +5,15 @@ if(CCACHE_FOUND)
     set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
 endif()
 
-add_executable(ozo_request request.cpp)
-target_link_libraries(ozo_request ozo)
+add_executable(ozo_request_coroutine request_coroutine.cpp)
+target_link_libraries(ozo_request_coroutine ozo)
 
 # enable a bunch of warnings and make them errors
-target_compile_options(ozo_request PRIVATE -Wall -Wextra -Wsign-compare -pedantic -Werror)
+target_compile_options(ozo_request_coroutine PRIVATE -Wall -Wextra -Wsign-compare -pedantic -Werror)
 
 # ignore specific errors for clang
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-    target_compile_options(ozo_request PRIVATE -Wno-ignored-optimization-argument)
+    target_compile_options(ozo_request_coroutine PRIVATE -Wno-ignored-optimization-argument)
 endif()
 
 add_executable(ozo_retry_request retry_request.cpp)
