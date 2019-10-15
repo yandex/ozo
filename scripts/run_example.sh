@@ -19,6 +19,7 @@ run_example ozo_request_coroutine
 run_example ozo_connection_pool
 run_example ozo_retry_request
 run_example ozo_role_based_request
+run_example ozo_request_future
 
 docker-compose stop ozo_postgres
 docker-compose rm -f ozo_postgres
