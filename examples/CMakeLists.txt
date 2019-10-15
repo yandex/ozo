@@ -59,3 +59,14 @@ target_compile_options(ozo_request_future PRIVATE -Wall -Wextra -Wsign-compare -
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     target_compile_options(ozo_request_future PRIVATE -Wno-ignored-optimization-argument)
 endif()
+
+add_executable(ozo_request_callback request_callback.cpp)
+target_link_libraries(ozo_request_callback ozo)
+
+# enable a bunch of warnings and make them errors
+target_compile_options(ozo_request_callback PRIVATE -Wall -Wextra -Wsign-compare -pedantic -Werror)
+
+# ignore specific errors for clang
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+    target_compile_options(ozo_request_callback PRIVATE -Wno-ignored-optimization-argument)
+endif()
