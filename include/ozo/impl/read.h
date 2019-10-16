@@ -6,6 +6,8 @@
 #include <ozo/detail/float.h>
 #include <ozo/detail/typed_buffer.h>
 
+#include <boost/hana/for_each.hpp>
+
 namespace ozo::impl {
 
 using detail::istream;
@@ -55,8 +57,10 @@ inline istream& read(istream& in, bool& out) {
 }
 
 template <typename T>
-inline Require<FusionSequence<T>, istream&> read(istream& in, T& out) {
-    fusion::for_each(out, [&in](auto& member) { read(in, member); });
+inline Require<HanaStruct<T>, istream&> read(istream& in, T& out) {
+    hana::for_each(hana::keys(out), [&in, &out](auto key) {
+        read(in, hana::at_key(out, key));
+    });
     return in;
 }
 
