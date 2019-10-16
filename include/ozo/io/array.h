@@ -83,17 +83,6 @@ struct pg_array_dimension {
 
 } //namespace ozo::detail
 
-BOOST_FUSION_ADAPT_STRUCT(ozo::detail::pg_array,
-    dimensions_count,
-    dataoffset,
-    elemtype
-)
-
-BOOST_FUSION_ADAPT_STRUCT(ozo::detail::pg_array_dimension,
-    size,
-    index
-)
-
 namespace ozo::detail {
 
 template <typename T>

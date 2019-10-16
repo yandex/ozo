@@ -21,9 +21,6 @@ struct pg_composite {
 
 } // namespace ozo::detail
 
-
-BOOST_FUSION_ADAPT_STRUCT(ozo::detail::pg_composite, count)
-
 namespace ozo {
 
 namespace detail {
