@@ -113,8 +113,8 @@ public:
 
 private:
     std::size_t max_rows_count;
-    __OZO_STD_OPTIONAL<std::chrono::steady_clock::time_point> start_time;
-    __OZO_STD_OPTIONAL<std::chrono::steady_clock::time_point> finish;
+    OZO_STD_OPTIONAL<std::chrono::steady_clock::time_point> start_time;
+    OZO_STD_OPTIONAL<std::chrono::steady_clock::time_point> finish;
     std::size_t total_rows_count;
 };
 

@@ -26,7 +26,7 @@ public:
 
     void take_connection(T& out) {
         out = std::move(*impl->connection);
-        impl->connection = __OZO_STD_OPTIONAL<T>{};
+        impl->connection = OZO_STD_OPTIONAL<T>{};
         impl.reset();
     }
 
@@ -43,7 +43,7 @@ public:
 
 private:
     struct impl_type {
-        __OZO_STD_OPTIONAL<T> connection;
+        OZO_STD_OPTIONAL<T> connection;
 
         impl_type(T&& connection) : connection(std::move(connection)) {}
 

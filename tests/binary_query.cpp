@@ -54,7 +54,7 @@ TEST_F(binary_query_types, for_nullptr_should_be_equal_to_0) {
 }
 
 TEST_F(binary_query_types, for_not_initialized_std_optional_should_be_equal_to_value_type_oid) {
-    const auto query = make_binary_query("", hana::make_tuple(__OZO_STD_OPTIONAL<std::int32_t>()));
+    const auto query = make_binary_query("", hana::make_tuple(OZO_STD_OPTIONAL<std::int32_t>()));
     EXPECT_EQ(query.types()[0], ozo::type_traits<std::int32_t>::oid());
 }
 
@@ -93,7 +93,7 @@ TEST_F(binary_query_lengths, for_std_string_should_be_equal_to_std_string_length
 }
 
 TEST_F(binary_query_lengths, for_empty_optional_should_be_zero) {
-    const auto query = make_binary_query("", hana::make_tuple(__OZO_STD_OPTIONAL<int>()));
+    const auto query = make_binary_query("", hana::make_tuple(OZO_STD_OPTIONAL<int>()));
     EXPECT_EQ(query.lengths()[0], 0);
 }
 
@@ -117,17 +117,17 @@ TEST_F(binary_query_values, for_nullptr_should_be_equal_to_nullptr) {
 }
 
 TEST_F(binary_query_values, for_nullopt_value_should_be_equal_to_nullptr) {
-    const auto query = make_binary_query("", hana::make_tuple(__OZO_NULLOPT));
+    const auto query = make_binary_query("", hana::make_tuple(OZO_NULLOPT));
     EXPECT_EQ(query.values()[0], nullptr);
 }
 
 TEST_F(binary_query_values, for_not_initialized_std_optional_should_be_equal_to_nullptr) {
-    const auto query = make_binary_query("", hana::make_tuple(__OZO_STD_OPTIONAL<std::int32_t>()));
+    const auto query = make_binary_query("", hana::make_tuple(OZO_STD_OPTIONAL<std::int32_t>()));
     EXPECT_EQ(query.values()[0], nullptr);
 }
 
 TEST_F(binary_query_values, for_initialized_std_optional_value_should_be_equal_to_binary_representation) {
-    const auto query = make_binary_query("", hana::make_tuple(__OZO_STD_OPTIONAL<std::string>("string")));
+    const auto query = make_binary_query("", hana::make_tuple(OZO_STD_OPTIONAL<std::string>("string")));
     EXPECT_THAT(std::vector<char>(query.values()[0], query.values()[0] + 6),
         ElementsAre('s', 't', 'r', 'i', 'n', 'g'));
 }
