@@ -85,6 +85,7 @@ inline error_code bind_connection_executor(Connection&, const Executor&);
  * @brief Default model for `Connection` concept
  *
  * `Connection` concept model which is used by the library as default model.
+ * The class object is non-copyable.
  *
  * @tparam OidMap --- oid map of types are used with connection
  * @tparam Statistics --- statistics of the connection (not supported yet)
@@ -308,7 +309,6 @@ struct is_connection<connection<Ts...>> : std::true_type {};
 * | <PRE>c.set_error_context(error_context)<sup>[1]</sup><br/>%c.set_error_context()<sup>[2]</sup></PRE> | | Should set<sup>[1]</sup> or reset<sup>[2]</sup> additional error context. |
 * | <PRE>as_const(c).%get_executor()</PRE> | `C::executor_type` | Should provide an executor object that is useful for IO-related operations, like timer and so on. In the current implementation `boost::asio::io_context::executor_type` is only applicable. Shall not throw an exception. |
 * | <PRE>c.set_executor(executor)</PRE> | `error_code` | Should change the executor for the specified one. This operation is used by `ozo::connection_pool` to provide connection migration between different instances of `boost::asio::io_service`. The call of the function during the active operation on connection is UB. The error should be indicated via the result. |
-* | <PRE>c.assign(move(native_conn_handle))</PRE> | `error_code` | Should assign `ozo::native_conn_handle` to the connection object. If success - the previous handle should be destroyed. The error should be indicated via the result. |
 * | <PRE>c.async_wait_write(WaitHandler)</PRE> | | Should asynchronously wait for write ready state of the connection socket. |
 * | <PRE>c.async_wait_read(WaitHandler)</PRE> | | Should asynchronously wait for read ready state of the connection socket. |
 * | <PRE>c.close()</PRE> | `error_code` | Should close connection socket and cancel all IO operation on the connection (like `async_wait_write`, `async_wait_read`). Shall not throw an exception. |
