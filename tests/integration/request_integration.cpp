@@ -226,7 +226,7 @@ TEST(request, should_call_handler_with_error_for_zero_timeout) {
     ozo::request(conn_info[io], "SELECT 1"_SQL, timeout, std::ref(res),
             [&](ozo::error_code ec, auto conn) {
         EXPECT_FALSE(called.test_and_set());
-        EXPECT_EQ(ec, boost::system::error_condition(boost::system::errc::operation_canceled));
+        EXPECT_EQ(ec, boost::asio::error::timed_out);
         EXPECT_FALSE(ozo::connection_bad(conn));
     });
 
