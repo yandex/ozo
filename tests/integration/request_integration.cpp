@@ -4,7 +4,7 @@
 #include <ozo/request.h>
 #include <ozo/execute.h>
 #include <ozo/shortcuts.h>
-#include <ozo/pg/jsonb.h>
+#include <ozo/pg/types/jsonb.h>
 
 #include <boost/asio/spawn.hpp>
 
