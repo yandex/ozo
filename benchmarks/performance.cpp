@@ -71,6 +71,7 @@ struct benchmark_params {
     std::size_t queue_capacity = 0;
     std::size_t connections = 0;
     bool parse_result = false;
+    bool verbose = false;
 };
 
 template <typename Row, typename Query>
@@ -78,6 +79,8 @@ void reopen_connection(const benchmark_params& params, Query query) {
     std::cout << '\n' << __func__ << std::endl;
 
     benchmark_t benchmark(1);
+    benchmark.set_print_progress(params.verbose);
+
     asio::io_context io(1);
     ozo::connection_info connection_info(params.conn_string);
 
@@ -99,6 +102,8 @@ void reuse_connection(const benchmark_params& params, Query query) {
     std::cout << '\n' << __func__ << std::endl;
 
     benchmark_t benchmark(1);
+    benchmark.set_print_progress(params.verbose);
+
     asio::io_context io(1);
     ozo::connection_info connection_info(params.conn_string);
 
@@ -121,6 +126,8 @@ void use_connection_pool(const benchmark_params& params, Query query) {
     std::cout << '\n' << __func__ << " coroutines=" << params.coroutines << std::endl;
 
     benchmark_t benchmark(params.coroutines);
+    benchmark.set_print_progress(params.verbose);
+
     asio::io_context io(1);
     const ozo::connection_info connection_info(params.conn_string);
     ozo::connection_pool_config config;
@@ -160,6 +167,8 @@ void use_connection_pool_mult_threads(const benchmark_params& params, Query quer
         << " queue_capacity=" << params.queue_capacity << std::endl;
 
     benchmark_t benchmark(params.coroutines * params.threads_number);
+    benchmark.set_print_progress(params.verbose);
+
     const ozo::connection_info connection_info(params.conn_string);
     ozo::connection_pool_config config;
     config.capacity = params.connections;
@@ -298,6 +307,7 @@ int main(int argc, char **argv) {
             ("threads", po::value<std::size_t>()->default_value(1), "number of threads")
             ("connections", po::value<std::size_t>(), "number of parallel coroutines (default: equal to coroutines + 1)")
             ("parse,p", "parse query result")
+            ("verbose,v", "use verbose output")
         ;
 
         po::variables_map variables;
@@ -328,6 +338,7 @@ int main(int argc, char **argv) {
             params.connections = params.coroutines;
         }
         params.parse_result = variables.count("parse") > 0;
+        params.verbose = variables.count("verbose") > 0;
 
         run_benchmark(name, params);
 
