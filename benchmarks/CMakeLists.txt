@@ -21,6 +21,7 @@ endif()
 add_executable(ozo_benchmark_performance performance.cpp)
 target_link_libraries(ozo_benchmark_performance ozo)
 target_link_libraries(ozo_benchmark_performance Boost::program_options)
+target_link_libraries(ozo_benchmark_performance nlohmann_json::nlohmann_json)
 
 # enable a bunch of warnings and make them errors
 target_compile_options(ozo_benchmark_performance PRIVATE -Wall -Wextra -Wsign-compare -pedantic -Werror)
