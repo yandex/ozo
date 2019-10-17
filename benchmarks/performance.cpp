@@ -34,13 +34,21 @@ void spawn(asio::io_context& io, std::size_t token, T&& coroutine) {
     });
 }
 
+struct benchmark_params {
+    std::string conn_string;
+    std::size_t coroutines = 0;
+    std::size_t threads_number = 0;
+    std::size_t queue_capacity = 0;
+    std::size_t connections = 0;
+};
+
 template <typename Row, typename Query>
-void reopen_connection(const std::string& conn_string, Query query) {
+void reopen_connection(const benchmark_params& params, Query query) {
     std::cout << '\n' << __func__ << std::endl;
 
     benchmark_t benchmark(1);
     asio::io_context io(1);
-    ozo::connection_info<> connection_info(conn_string);
+    ozo::connection_info<> connection_info(params.conn_string);
 
     spawn(io, 0, [&] (asio::yield_context yield) {
         while (true) {
@@ -56,12 +64,12 @@ void reopen_connection(const std::string& conn_string, Query query) {
 }
 
 template <typename Row, typename Query>
-void reuse_connection(const std::string& conn_string, Query query) {
+void reuse_connection(const benchmark_params& params, Query query) {
     std::cout << '\n' << __func__ << std::endl;
 
     benchmark_t benchmark(1);
     asio::io_context io(1);
-    ozo::connection_info<> connection_info(conn_string);
+    ozo::connection_info<> connection_info(params.conn_string);
 
     spawn(io, 0, [&] (asio::yield_context yield) {
         auto connection = ozo::get_connection(connection_info[io], connect_timeout, yield);
@@ -77,19 +85,19 @@ void reuse_connection(const std::string& conn_string, Query query) {
     io.run();
 }
 
-template <std::size_t coroutines, typename Row, typename Query>
-void use_connection_pool(const std::string& conn_string, Query query) {
-    std::cout << '\n' << __func__ << " coroutines=" << coroutines << std::endl;
+template <typename Row, typename Query>
+void use_connection_pool(const benchmark_params& params, Query query) {
+    std::cout << '\n' << __func__ << " coroutines=" << params.coroutines << std::endl;
 
-    benchmark_t benchmark(coroutines);
+    benchmark_t benchmark(params.coroutines);
     asio::io_context io(1);
-    const ozo::connection_info<> connection_info(conn_string);
+    const ozo::connection_info<> connection_info(params.conn_string);
     ozo::connection_pool_config config;
-    config.capacity = coroutines + 1;
-    config.queue_capacity = 0;
+    config.capacity = params.coroutines + 1;
+    config.queue_capacity = params.queue_capacity;
     auto pool = ozo::make_connection_pool(connection_info, config);
 
-    for (std::size_t token = 0; token < coroutines; ++token) {
+    for (std::size_t token = 0; token < params.coroutines; ++token) {
         spawn(io, token, [&, token] (asio::yield_context yield) {
             while (true) {
                 std::conditional_t<std::is_same_v<Row, void>, ozo::result, std::vector<Row>> result;
@@ -112,20 +120,19 @@ struct context {
     context() = default;
 };
 
-template <std::size_t threads_number, std::size_t coroutines, typename Row, typename Query>
-void use_connection_pool_mult_threads(const std::string& conn_string, Query query,
-        std::size_t connections, std::size_t queue_capacity) {
+template <typename Row, typename Query>
+void use_connection_pool_mult_threads(const benchmark_params& params, Query query) {
     std::cout << '\n' << __func__
-        << " threads_number=" << threads_number
-        << " coroutines_per_thread=" << coroutines
-        << " connections=" << connections
-        << " queue_capacity=" << queue_capacity << std::endl;
+        << " threads_number=" << params.threads_number
+        << " coroutines_per_thread=" << params.coroutines
+        << " connections=" << params.connections
+        << " queue_capacity=" << params.queue_capacity << std::endl;
 
-    benchmark_t benchmark(coroutines * threads_number);
-    const ozo::connection_info<> connection_info(conn_string);
+    benchmark_t benchmark(params.coroutines * params.threads_number);
+    const ozo::connection_info<> connection_info(params.conn_string);
     ozo::connection_pool_config config;
-    config.capacity = connections;
-    config.queue_capacity = queue_capacity;
+    config.capacity = params.connections;
+    config.queue_capacity = params.queue_capacity;
     std::vector<std::unique_ptr<context>> contexts;
     auto pool = ozo::make_connection_pool(connection_info, config);
     std::atomic_size_t finished_coroutines {0};
@@ -133,11 +140,11 @@ void use_connection_pool_mult_threads(const std::string& conn_string, Query quer
     std::unique_lock<std::mutex> lock(mutex);
     std::condition_variable coroutine_finished;
 
-    for (std::size_t i = 0; i < threads_number; ++i) {
+    for (std::size_t i = 0; i < params.threads_number; ++i) {
         contexts.emplace_back(std::make_unique<context>());
         auto& io = contexts.back()->io;
-        for (std::size_t j = 0; j < coroutines; ++j) {
-            const auto token = coroutines * i + j;
+        for (std::size_t j = 0; j < params.coroutines; ++j) {
+            const auto token = params.coroutines * i + j;
             spawn(io, token, [&, token] (asio::yield_context yield) {
                 while (true) {
                     std::conditional_t<std::is_same_v<Row, void>, ozo::result, std::vector<Row>> result;
@@ -156,8 +163,10 @@ void use_connection_pool_mult_threads(const std::string& conn_string, Query quer
         }
     }
 
-    if (coroutines * threads_number > 0) {
-        coroutine_finished.wait(lock, [&] { return finished_coroutines >= coroutines * threads_number; });
+    if (params.coroutines * params.threads_number > 0) {
+        coroutine_finished.wait(lock, [&] {
+            return finished_coroutines >= params.coroutines * params.threads_number;
+        });
     }
 
     std::for_each(contexts.begin(), contexts.end(), [] (const auto& v) { v->guard.reset(); });
@@ -176,18 +185,31 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    const std::string conn_string(argv[1]);
-
     const auto simple_query = "SELECT 1"_SQL.build();
 
     std::cout << "\nquery: " << ozo::to_const_char(ozo::get_text(simple_query)) << std::endl;
-    reopen_connection<void>(conn_string, simple_query);
-    reuse_connection<void>(conn_string, simple_query);
-    use_connection_pool<1, void>(conn_string, simple_query);
-    use_connection_pool<2, void>(conn_string, simple_query);
-    use_connection_pool_mult_threads<2, 2, void>(conn_string, simple_query, 4, 0);
-    use_connection_pool_mult_threads<2, 2, void>(conn_string, simple_query, 2, 4);
-    use_connection_pool<1, std::tuple<std::int32_t>>(conn_string, simple_query);
+
+    benchmark_params params;
+    params.conn_string = argv[1];
+
+    reopen_connection<void>(params, simple_query);
+    reuse_connection<void>(params, simple_query);
+    params.coroutines = 1;
+    use_connection_pool<void>(params, simple_query);
+    params.coroutines = 2;
+    use_connection_pool<void>(params, simple_query);
+    params.threads_number = 2;
+    params.coroutines = 2;
+    params.connections = 4;
+    params.queue_capacity = 0;
+    use_connection_pool_mult_threads<void>(params, simple_query);
+    params.threads_number = 2;
+    params.coroutines = 2;
+    params.connections = 2;
+    params.queue_capacity = 4;
+    use_connection_pool_mult_threads<void>(params, simple_query);
+    params.coroutines = 1;
+    use_connection_pool<std::tuple<std::int32_t>>(params, simple_query);
 
     const auto complex_query = (
         "SELECT typname, typnamespace, typowner, typlen, typbyval, typcategory, "_SQL +
@@ -196,23 +218,58 @@ int main(int argc, char **argv) {
     ).build();
 
     std::cout << "\nquery: " << ozo::to_const_char(ozo::get_text(complex_query)) << std::endl;
-    use_connection_pool<1, void>(conn_string, complex_query);
-    use_connection_pool<1, pg_type>(conn_string, complex_query);
-    use_connection_pool<2, void>(conn_string, complex_query);
-    use_connection_pool<4, void>(conn_string, complex_query);
-    use_connection_pool<8, void>(conn_string, complex_query);
-    use_connection_pool<16, void>(conn_string, complex_query);
-    use_connection_pool<32, void>(conn_string, complex_query);
-    use_connection_pool<64, void>(conn_string, complex_query);
-    use_connection_pool<2, pg_type>(conn_string, complex_query);
-    use_connection_pool<4, pg_type>(conn_string, complex_query);
-    use_connection_pool<8, pg_type>(conn_string, complex_query);
-    use_connection_pool_mult_threads<2, 8, void>(conn_string, complex_query, 16, 0);
-    use_connection_pool_mult_threads<2, 8, void>(conn_string, complex_query, 8, 16);
-    use_connection_pool_mult_threads<4, 8, void>(conn_string, complex_query, 32, 0);
-    use_connection_pool_mult_threads<4, 8, void>(conn_string, complex_query, 16, 32);
-    use_connection_pool_mult_threads<8, 8, void>(conn_string, complex_query, 64, 0);
-    use_connection_pool_mult_threads<8, 8, void>(conn_string, complex_query, 32, 64);
+    params.coroutines = 1;
+    use_connection_pool<void>(params, complex_query);
+    params.coroutines = 1;
+    use_connection_pool<pg_type>(params, complex_query);
+    params.coroutines = 2;
+    use_connection_pool<void>(params, complex_query);
+    params.coroutines = 4;
+    use_connection_pool<void>(params, complex_query);
+    params.coroutines = 8;
+    use_connection_pool<void>(params, complex_query);
+    params.coroutines = 16;
+    use_connection_pool<void>(params, complex_query);
+    params.coroutines = 32;
+    use_connection_pool<void>(params, complex_query);
+    params.coroutines = 64;
+    use_connection_pool<void>(params, complex_query);
+    params.coroutines = 2;
+    use_connection_pool<pg_type>(params, complex_query);
+    params.coroutines = 4;
+    use_connection_pool<pg_type>(params, complex_query);
+    params.coroutines = 8;
+    use_connection_pool<pg_type>(params, complex_query);
+    params.threads_number = 2;
+    params.coroutines = 8;
+    params.connections = 16;
+    params.queue_capacity = 0;
+    use_connection_pool_mult_threads<void>(params, complex_query);
+    params.threads_number = 2;
+    params.coroutines = 8;
+    params.connections = 8;
+    params.queue_capacity = 16;
+    use_connection_pool_mult_threads<void>(params, complex_query);
+    params.threads_number = 4;
+    params.coroutines = 8;
+    params.connections = 32;
+    params.queue_capacity = 0;
+    use_connection_pool_mult_threads<void>(params, complex_query);
+    params.threads_number = 4;
+    params.coroutines = 8;
+    params.connections = 16;
+    params.queue_capacity = 32;
+    use_connection_pool_mult_threads<void>(params, complex_query);
+    params.threads_number = 8;
+    params.coroutines = 8;
+    params.connections = 64;
+    params.queue_capacity = 0;
+    use_connection_pool_mult_threads<void>(params, complex_query);
+    params.threads_number = 8;
+    params.coroutines = 8;
+    params.connections = 32;
+    params.queue_capacity = 64;
+    use_connection_pool_mult_threads<void>(params, complex_query);
 
     return 0;
 }
