@@ -838,8 +838,9 @@ inline auto make_error_condition(const code e) {
 
 template<typename Conditions>
 constexpr bool match_code(const Conditions& conditions, const error_code& ec) {
-    return hana::fold(conditions, false,
-        [&ec](bool v, auto errc) { return v || (ec == errc); });
+    return hana::unpack(conditions, [&ec](auto const& ...x) {
+        return ((ec == x) || ... || false);
+    });
 }
 
 namespace impl {

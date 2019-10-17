@@ -98,16 +98,17 @@ private:
                 types[i] = type_oid(oid_map, params[i]);
             });
 
-            buffer.reserve(hana::fold(lengths, 0, hana::plus));
+            buffer.reserve(hana::unpack(lengths, [](auto ...x) {return (x + ... + 0);}));
 
             ozo::detail::ostreambuf osbuf(buffer);
             ozo::ostream os(&osbuf);
 
             hana::for_each(params, [&] (auto& param) { send(os, oid_map, param);});
 
-            hana::fold(range, 0, [&] (std::size_t offset, auto i) {
+            std::size_t offset = 0;
+            hana::for_each(range, [&] (auto i) {
                 values[i] = lengths[i] ? std::data(buffer) + offset : nullptr;
-                return offset + lengths[i];
+                offset += lengths[i];
             });
         }
 

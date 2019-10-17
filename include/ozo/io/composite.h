@@ -47,8 +47,8 @@ constexpr auto data_size(const T& v) -> Require<FusionSequence<T>&&!HanaStruct<T
 
 template <typename T>
 constexpr auto data_size(const T& v)  -> Require<HanaStruct<T>, size_type>{
-    return hana::fold(hana::members(v), size_type(0),
-        [&] (auto r, const auto& item) { return r + frame_size(item); });
+    return hana::unpack(hana::members(v),
+        [&] (const auto& ...x) { return (frame_size(x) + ... + 0); });
 }
 
 template <typename T>
