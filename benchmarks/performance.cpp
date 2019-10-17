@@ -35,7 +35,7 @@ void spawn(asio::io_context& io, std::size_t token, T&& coroutine) {
 }
 
 template <typename Query>
-void reuse_connection_info(const std::string& conn_string, Query query) {
+void reopen_connection(const std::string& conn_string, Query query) {
     std::cout << '\n' << __func__ << std::endl;
 
     benchmark_t<1> benchmark;
@@ -56,7 +56,7 @@ void reuse_connection_info(const std::string& conn_string, Query query) {
 }
 
 template <typename Result, typename Query>
-void reuse_connection_info_and_parse_result(const std::string& conn_string, Query query) {
+void reopen_connection_and_parse_result(const std::string& conn_string, Query query) {
     std::cout << '\n' << __func__ << std::endl;
 
     benchmark_t<1> benchmark;
@@ -301,7 +301,7 @@ int main(int argc, char **argv) {
     const auto simple_query = "SELECT 1"_SQL.build();
 
     std::cout << "\nquery: " << ozo::to_const_char(ozo::get_text(simple_query)) << std::endl;
-    reuse_connection_info(conn_string, simple_query);
+    reopen_connection(conn_string, simple_query);
     reuse_connection(conn_string, simple_query);
     use_connection_pool(conn_string, simple_query);
     use_connection_pool_mult_connection<2>(conn_string, simple_query);
