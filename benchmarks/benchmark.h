@@ -118,14 +118,12 @@ private:
     std::size_t total_rows_count;
 };
 
-template <std::size_t coroutines>
 class time_limit_benchmark {
 public:
-    time_limit_benchmark(std::chrono::steady_clock::duration max_duration = std::chrono::seconds(31))
-            : max_duration(max_duration) {
+    time_limit_benchmark(std::size_t coroutines, std::chrono::steady_clock::duration max_duration = std::chrono::seconds(31))
+            : max_duration(max_duration), request_start(coroutines, start) {
         steps.reserve(100);
         requests.reserve(1000000);
-        std::fill(request_start.begin(), request_start.end(), start);
     }
 
     ~time_limit_benchmark() {
@@ -218,7 +216,7 @@ private:
     const std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
     std::chrono::steady_clock::time_point next_print = start + std::chrono::seconds(1);
     std::chrono::steady_clock::time_point step_start = start;
-    std::array<std::chrono::steady_clock::time_point, coroutines> request_start;
+    std::vector<std::chrono::steady_clock::time_point> request_start;
 
     bool step_impl() {
         finish = std::chrono::steady_clock::now();
