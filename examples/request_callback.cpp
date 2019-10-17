@@ -25,11 +25,14 @@ int main(int argc, char **argv) {
     auto conn_info = ozo::connection_info(argv[1]);
 
     // Request result is always set of rows. Client should take care of output object lifetime.
-    const auto result = std::make_shared<ozo::rows_of<int>>();
+    auto result = std::make_unique<ozo::rows_of<int>>();
+
+    // First we take a reference to result to be able move unique_ptr to callback context.
+    const auto result_ref = ozo::into(*result);
 
     // All IO is asynchronous, therefore we have a choice here, what should be our CompletionToken.
     // We use callback function that will be called after operation is finished.
-    const auto callback = [result] (ozo::error_code ec, auto connection) {
+    auto callback = [result = std::move(result)] (ozo::error_code ec, auto connection) {
         // When request is completed we check is there an error. This example should not produce any errors
         // if there are no problems with target database, network or permissions for given user in connection
         // string.
@@ -61,7 +64,7 @@ int main(int argc, char **argv) {
     // This allows to use _SQL literals
     using namespace ozo::literals;
     using namespace std::chrono_literals;
-    ozo::request(conn_info[io], "SELECT 1"_SQL, 1s, ozo::into(*result), callback);
+    ozo::request(conn_info[io], "SELECT 1"_SQL, 1s, result_ref, std::move(callback));
 
     io.run();
 
