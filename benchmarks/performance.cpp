@@ -16,8 +16,7 @@ namespace {
 
 namespace asio = boost::asio;
 
-template <std::size_t coroutines>
-using benchmark_t = ozo::benchmark::time_limit_benchmark<coroutines>;
+using benchmark_t = ozo::benchmark::time_limit_benchmark;
 
 constexpr const std::chrono::seconds connect_timeout(1);
 constexpr const std::chrono::seconds request_timeout(1);
@@ -39,7 +38,7 @@ template <typename Row, typename Query>
 void reopen_connection(const std::string& conn_string, Query query) {
     std::cout << '\n' << __func__ << std::endl;
 
-    benchmark_t<1> benchmark;
+    benchmark_t benchmark(1);
     asio::io_context io(1);
     ozo::connection_info connection_info(conn_string);
 
@@ -60,7 +59,7 @@ template <typename Row, typename Query>
 void reuse_connection(const std::string& conn_string, Query query) {
     std::cout << '\n' << __func__ << std::endl;
 
-    benchmark_t<1> benchmark;
+    benchmark_t benchmark(1);
     asio::io_context io(1);
     ozo::connection_info connection_info(conn_string);
 
@@ -82,7 +81,7 @@ template <std::size_t coroutines, typename Row, typename Query>
 void use_connection_pool(const std::string& conn_string, Query query) {
     std::cout << '\n' << __func__ << " coroutines=" << coroutines << std::endl;
 
-    benchmark_t<coroutines> benchmark;
+    benchmark_t benchmark(coroutines);
     asio::io_context io(1);
     const ozo::connection_info connection_info(conn_string);
     ozo::connection_pool_config config;
@@ -122,7 +121,7 @@ void use_connection_pool_mult_threads(const std::string& conn_string, Query quer
         << " connections=" << connections
         << " queue_capacity=" << queue_capacity << std::endl;
 
-    benchmark_t<coroutines * threads_number> benchmark;
+    benchmark_t benchmark(coroutines * threads_number);
     const ozo::connection_info connection_info(conn_string);
     ozo::connection_pool_config config;
     config.capacity = connections;
