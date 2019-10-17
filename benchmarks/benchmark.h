@@ -294,7 +294,7 @@ private:
             total_rows_count += step_rows_count;
             const auto total_duration = finish - start;
             if (print_progress) {
-                std::cout << total_requests_count << " requests done in "
+                std::cerr << total_requests_count << " requests done in "
                           << std::chrono::duration_cast<double_s>(total_duration).count() << " seconds, "
                           << std::setprecision(4) << std::fixed << requests_per_second << " req/sec "
                           << total_rows_count << " rows read "
