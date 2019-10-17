@@ -10,6 +10,7 @@
 #include <boost/asio/spawn.hpp>
 #include <boost/program_options.hpp>
 
+#include <cassert>
 #include <condition_variable>
 #include <thread>
 
@@ -74,9 +75,50 @@ struct benchmark_params {
     bool verbose = false;
 };
 
+struct benchmark_report {
+    std::string name;
+    std::string query;
+    ozo::benchmark::output output;
+    ozo::benchmark::stats stats;
+    OZO_STD_OPTIONAL<std::size_t> coroutines;
+    OZO_STD_OPTIONAL<std::size_t> threads_number;
+    OZO_STD_OPTIONAL<std::size_t> queue_capacity;
+    OZO_STD_OPTIONAL<std::size_t> connections;
+    OZO_STD_OPTIONAL<bool> parse_result;
+};
+
+std::ostream& operator <<(std::ostream& stream, const benchmark_report& value) {
+    stream << "benchmark: " << value.name << '\n';
+    stream << "query: " << value.query << '\n';
+    if (value.coroutines) {
+        stream << "threads_number: " << *value.coroutines << '\n';
+    }
+    if (value.threads_number) {
+        stream << "threads_number: " << *value.threads_number << '\n';
+    }
+    if (value.queue_capacity) {
+        stream << "queue_capacity: " << *value.queue_capacity << '\n';
+    }
+    if (value.connections) {
+        stream << "connections: " << *value.connections << '\n';
+    }
+    if (value.parse_result) {
+        stream << "parse_result: " << *value.parse_result << '\n';
+    }
+    stream << value.stats << '\n';
+    return stream;
+}
+
 template <typename Row, typename Query>
-void reopen_connection(const benchmark_params& params, Query query) {
-    std::cout << '\n' << __func__ << std::endl;
+benchmark_report reopen_connection(const benchmark_params& params, Query query) {
+    constexpr bool parse_result = !std::is_same_v<Row, void>;
+
+    assert(parse_result == params.parse_result);
+
+    benchmark_report report;
+    report.name = __func__;
+    report.query = ozo::to_const_char(ozo::get_text(query));
+    report.parse_result = parse_result;
 
     benchmark_t benchmark(1);
     benchmark.set_print_progress(params.verbose);
@@ -86,7 +128,7 @@ void reopen_connection(const benchmark_params& params, Query query) {
 
     spawn(io, 0, [&] (asio::yield_context yield) {
         while (true) {
-            std::conditional_t<std::is_same_v<Row, void>, ozo::result, std::vector<Row>> result;
+            std::conditional_t<parse_result, std::vector<Row>, ozo::result> result;
             ozo::request(connection_info[io], query, request_timeout, ozo::into(result), yield);
             if (!benchmark.step(result.size())) {
                 break;
@@ -95,11 +137,23 @@ void reopen_connection(const benchmark_params& params, Query query) {
     });
 
     io.run();
+
+    report.output = benchmark.get_output();
+    report.stats = benchmark.get_stats();
+
+    return report;
 }
 
 template <typename Row, typename Query>
-void reuse_connection(const benchmark_params& params, Query query) {
-    std::cout << '\n' << __func__ << std::endl;
+benchmark_report reuse_connection(const benchmark_params& params, Query query) {
+    constexpr bool parse_result = !std::is_same_v<Row, void>;
+
+    assert(parse_result == params.parse_result);
+
+    benchmark_report report;
+    report.name = __func__;
+    report.query = ozo::to_const_char(ozo::get_text(query));
+    report.parse_result = parse_result;
 
     benchmark_t benchmark(1);
     benchmark.set_print_progress(params.verbose);
@@ -110,7 +164,7 @@ void reuse_connection(const benchmark_params& params, Query query) {
     spawn(io, 0, [&] (asio::yield_context yield) {
         auto connection = ozo::get_connection(connection_info[io], connect_timeout, yield);
         while (true) {
-            std::conditional_t<std::is_same_v<Row, void>, ozo::result, std::vector<Row>> result;
+            std::conditional_t<parse_result, std::vector<Row>, ozo::result> result;
             ozo::request(connection, query, request_timeout, ozo::into(result), yield);
             if (!benchmark.step(result.size())) {
                 break;
@@ -119,11 +173,25 @@ void reuse_connection(const benchmark_params& params, Query query) {
     });
 
     io.run();
+
+    report.output = benchmark.get_output();
+    report.stats = benchmark.get_stats();
+
+    return report;
 }
 
 template <typename Row, typename Query>
-void use_connection_pool(const benchmark_params& params, Query query) {
-    std::cout << '\n' << __func__ << " coroutines=" << params.coroutines << std::endl;
+benchmark_report use_connection_pool(const benchmark_params& params, Query query) {
+    constexpr bool parse_result = !std::is_same_v<Row, void>;
+
+    assert(parse_result == params.parse_result);
+
+    benchmark_report report;
+    report.name = __func__;
+    report.query = ozo::to_const_char(ozo::get_text(query));
+    report.coroutines = params.coroutines;
+    report.queue_capacity = params.queue_capacity;
+    report.parse_result = parse_result;
 
     benchmark_t benchmark(params.coroutines);
     benchmark.set_print_progress(params.verbose);
@@ -138,7 +206,7 @@ void use_connection_pool(const benchmark_params& params, Query query) {
     for (std::size_t token = 0; token < params.coroutines; ++token) {
         spawn(io, token, [&, token] (asio::yield_context yield) {
             while (true) {
-                std::conditional_t<std::is_same_v<Row, void>, ozo::result, std::vector<Row>> result;
+                std::conditional_t<parse_result, std::vector<Row>, ozo::result> result;
                 ozo::request(pool[io], query, request_timeout, ozo::into(result), yield);
                 if (!benchmark.step(result.size(), token)) {
                     break;
@@ -148,6 +216,11 @@ void use_connection_pool(const benchmark_params& params, Query query) {
     }
 
     io.run();
+
+    report.output = benchmark.get_output();
+    report.stats = benchmark.get_stats();
+
+    return report;
 }
 
 struct context {
@@ -159,12 +232,19 @@ struct context {
 };
 
 template <typename Row, typename Query>
-void use_connection_pool_mult_threads(const benchmark_params& params, Query query) {
-    std::cout << '\n' << __func__
-        << " threads_number=" << params.threads_number
-        << " coroutines_per_thread=" << params.coroutines
-        << " connections=" << params.connections
-        << " queue_capacity=" << params.queue_capacity << std::endl;
+benchmark_report use_connection_pool_mult_threads(const benchmark_params& params, Query query) {
+    constexpr bool parse_result = !std::is_same_v<Row, void>;
+
+    assert(parse_result == params.parse_result);
+
+    benchmark_report report;
+    report.name = __func__;
+    report.query = ozo::to_const_char(ozo::get_text(query));
+    report.coroutines = params.coroutines;
+    report.queue_capacity = params.queue_capacity;
+    report.threads_number = params.threads_number;
+    report.connections = params.connections;
+    report.parse_result = parse_result;
 
     benchmark_t benchmark(params.coroutines * params.threads_number);
     benchmark.set_print_progress(params.verbose);
@@ -187,7 +267,7 @@ void use_connection_pool_mult_threads(const benchmark_params& params, Query quer
             const auto token = params.coroutines * i + j;
             spawn(io, token, [&, token] (asio::yield_context yield) {
                 while (true) {
-                    std::conditional_t<std::is_same_v<Row, void>, ozo::result, std::vector<Row>> result;
+                    std::conditional_t<parse_result, std::vector<Row>, ozo::result> result;
                     boost::system::error_code ec;
                     ozo::request(pool[io], query, request_timeout, ozo::into(result), yield[ec]);
                     if (!benchmark.thread_safe_step(result.size(), token)) {
@@ -211,11 +291,16 @@ void use_connection_pool_mult_threads(const benchmark_params& params, Query quer
 
     std::for_each(contexts.begin(), contexts.end(), [] (const auto& v) { v->guard.reset(); });
     std::for_each(contexts.begin(), contexts.end(), [] (const auto& v) { v->thread.join(); });
+
+    report.output = benchmark.get_output();
+    report.stats = benchmark.get_stats();
+
+    return report;
 }
 
 template <typename Row, typename Query>
-void run_benchmark(const std::string& name, const benchmark_params& params, Query query) {
-    std::map<std::string, std::function<void ()>> scenarios {{
+benchmark_report run_benchmark(const std::string& name, const benchmark_params& params, Query query) {
+    std::map<std::string, std::function<benchmark_report ()>> scenarios {{
         {
             "reopen_connection",
             [&] {
@@ -267,7 +352,7 @@ void run_benchmark(const std::string& name, const benchmark_params& params, Quer
     return scenario->second();
 }
 
-void run_benchmark(const std::string& name, const benchmark_params& params) {
+benchmark_report run_benchmark(const std::string& name, const benchmark_params& params) {
     using namespace ozo::literals;
 
     const auto simple_query = "SELECT 1"_SQL.build();
@@ -340,7 +425,9 @@ int main(int argc, char **argv) {
         params.parse_result = variables.count("parse") > 0;
         params.verbose = variables.count("verbose") > 0;
 
-        run_benchmark(name, params);
+        const auto report = run_benchmark(name, params);
+
+        std::cout << report << std::endl;
 
         return 0;
     } catch (const std::exception& e) {
