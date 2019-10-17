@@ -205,11 +205,11 @@ private:
     std::mutex step_mutex;
     std::chrono::steady_clock::duration max_duration;
     std::size_t total_requests_count = 0;
-    volatile std::size_t modulo = 1;
+    std::atomic<std::size_t> modulo {1};
     std::atomic<std::size_t> step_count {0};
     std::atomic<std::size_t> step_rows_count {0};
     std::size_t total_rows_count = 0;
-    volatile bool finished = false;
+    std::atomic<bool> finished {false};
     std::chrono::steady_clock::time_point finish;
     std::vector<step_t> steps;
     std::vector<std::chrono::steady_clock::duration> requests;
