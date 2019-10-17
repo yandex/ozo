@@ -116,7 +116,7 @@ void use_connection_pool_mult_connection(const std::string& conn_string, Query q
     auto pool = ozo::make_connection_pool(connection_info, config);
 
     for (std::size_t token = 0; token < coroutines; ++token) {
-        spawn(io, 0, [&, token] (asio::yield_context yield) {
+        spawn(io, token, [&, token] (asio::yield_context yield) {
             while (true) {
                 std::conditional_t<std::is_same_v<Row, void>, ozo::result, std::vector<Row>> result;
                 ozo::request(pool[io], query, request_timeout, ozo::into(result), yield);
