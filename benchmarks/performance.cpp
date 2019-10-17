@@ -8,6 +8,7 @@
 
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/spawn.hpp>
+#include <boost/program_options.hpp>
 
 #include <condition_variable>
 #include <thread>
@@ -34,12 +35,42 @@ void spawn(asio::io_context& io, std::size_t token, T&& coroutine) {
     });
 }
 
+enum class query_type {
+    simple,
+    complex,
+};
+
+std::ostream& operator <<(std::ostream& stream, query_type value) {
+    switch (value) {
+        case query_type::simple:
+            return stream << "simple";
+        case query_type::complex:
+            return stream << "complex";
+    }
+    return stream;
+}
+
+std::istream& operator >>(std::istream& stream, query_type& value) {
+    std::string token;
+    stream >> token;
+    if (token == "simple") {
+        value = query_type::simple;
+    } else if (token == "complex") {
+        value = query_type::complex;
+    } else {
+        throw std::invalid_argument("Invalid query type: \"" + token + "\"");
+    }
+    return stream;
+}
+
 struct benchmark_params {
     std::string conn_string;
+    ::query_type query_type = ::query_type::simple;
     std::size_t coroutines = 0;
     std::size_t threads_number = 0;
     std::size_t queue_capacity = 0;
     std::size_t connections = 0;
+    bool parse_result = false;
 };
 
 template <typename Row, typename Query>
@@ -173,103 +204,136 @@ void use_connection_pool_mult_threads(const benchmark_params& params, Query quer
     std::for_each(contexts.begin(), contexts.end(), [] (const auto& v) { v->thread.join(); });
 }
 
-} // namespace
+template <typename Row, typename Query>
+void run_benchmark(const std::string& name, const benchmark_params& params, Query query) {
+    std::map<std::string, std::function<void ()>> scenarios {{
+        {
+            "reopen_connection",
+            [&] {
+                if (params.parse_result) {
+                    return reopen_connection<Row>(params, query);
+                } else {
+                    return reopen_connection<void>(params, query);
+                }
+            }
+        },
+        {
+            "reuse_connection",
+            [&] {
+                if (params.parse_result) {
+                    return reuse_connection<Row>(params, query);
+                } else {
+                    return reuse_connection<void>(params, query);
+                }
+            }
+        },
+        {
+            "use_connection_pool",
+            [&] {
+                if (params.parse_result) {
+                    return use_connection_pool<Row>(params, query);
+                } else {
+                    return use_connection_pool<void>(params, query);
+                }
+            }
+        },
+        {
+            "use_connection_pool_mult_threads",
+            [&] {
+                if (params.parse_result) {
+                    return use_connection_pool_mult_threads<Row>(params, query);
+                } else {
+                    return use_connection_pool_mult_threads<void>(params, query);
+                }
+            }
+        },
+    }};
 
-int main(int argc, char **argv) {
-    using namespace ozo::benchmark;
-    using namespace ozo::literals;
-    using namespace hana::literals;
+    const auto scenario = scenarios.find(name);
 
-    if (argc < 2) {
-        std::cerr << "Usage: " << argv[0] << " <conninfo>\n";
-        return 1;
+    if (scenario == scenarios.end()) {
+        throw std::invalid_argument("Invalid benchmark name: \"" + name + "\"");
     }
 
+    return scenario->second();
+}
+
+void run_benchmark(const std::string& name, const benchmark_params& params) {
+    using namespace ozo::literals;
+
     const auto simple_query = "SELECT 1"_SQL.build();
-
-    std::cout << "\nquery: " << ozo::to_const_char(ozo::get_text(simple_query)) << std::endl;
-
-    benchmark_params params;
-    params.conn_string = argv[1];
-
-    reopen_connection<void>(params, simple_query);
-    reuse_connection<void>(params, simple_query);
-    params.coroutines = 1;
-    use_connection_pool<void>(params, simple_query);
-    params.coroutines = 2;
-    use_connection_pool<void>(params, simple_query);
-    params.threads_number = 2;
-    params.coroutines = 2;
-    params.connections = 4;
-    params.queue_capacity = 0;
-    use_connection_pool_mult_threads<void>(params, simple_query);
-    params.threads_number = 2;
-    params.coroutines = 2;
-    params.connections = 2;
-    params.queue_capacity = 4;
-    use_connection_pool_mult_threads<void>(params, simple_query);
-    params.coroutines = 1;
-    use_connection_pool<std::tuple<std::int32_t>>(params, simple_query);
-
     const auto complex_query = (
         "SELECT typname, typnamespace, typowner, typlen, typbyval, typcategory, "_SQL +
         "typispreferred, typisdefined, typdelim, typrelid, typelem, typarray "_SQL +
         "FROM pg_type WHERE typtypmod = "_SQL + -1 + " AND typisdefined = "_SQL + true
     ).build();
 
-    std::cout << "\nquery: " << ozo::to_const_char(ozo::get_text(complex_query)) << std::endl;
-    params.coroutines = 1;
-    use_connection_pool<void>(params, complex_query);
-    params.coroutines = 1;
-    use_connection_pool<pg_type>(params, complex_query);
-    params.coroutines = 2;
-    use_connection_pool<void>(params, complex_query);
-    params.coroutines = 4;
-    use_connection_pool<void>(params, complex_query);
-    params.coroutines = 8;
-    use_connection_pool<void>(params, complex_query);
-    params.coroutines = 16;
-    use_connection_pool<void>(params, complex_query);
-    params.coroutines = 32;
-    use_connection_pool<void>(params, complex_query);
-    params.coroutines = 64;
-    use_connection_pool<void>(params, complex_query);
-    params.coroutines = 2;
-    use_connection_pool<pg_type>(params, complex_query);
-    params.coroutines = 4;
-    use_connection_pool<pg_type>(params, complex_query);
-    params.coroutines = 8;
-    use_connection_pool<pg_type>(params, complex_query);
-    params.threads_number = 2;
-    params.coroutines = 8;
-    params.connections = 16;
-    params.queue_capacity = 0;
-    use_connection_pool_mult_threads<void>(params, complex_query);
-    params.threads_number = 2;
-    params.coroutines = 8;
-    params.connections = 8;
-    params.queue_capacity = 16;
-    use_connection_pool_mult_threads<void>(params, complex_query);
-    params.threads_number = 4;
-    params.coroutines = 8;
-    params.connections = 32;
-    params.queue_capacity = 0;
-    use_connection_pool_mult_threads<void>(params, complex_query);
-    params.threads_number = 4;
-    params.coroutines = 8;
-    params.connections = 16;
-    params.queue_capacity = 32;
-    use_connection_pool_mult_threads<void>(params, complex_query);
-    params.threads_number = 8;
-    params.coroutines = 8;
-    params.connections = 64;
-    params.queue_capacity = 0;
-    use_connection_pool_mult_threads<void>(params, complex_query);
-    params.threads_number = 8;
-    params.coroutines = 8;
-    params.connections = 32;
-    params.queue_capacity = 64;
-    use_connection_pool_mult_threads<void>(params, complex_query);
+    switch (params.query_type) {
+        case query_type::simple:
+            return run_benchmark<std::tuple<std::int32_t>>(name, params, simple_query);
+        case query_type::complex:
+            return run_benchmark<ozo::benchmark::pg_type>(name, params, complex_query);
+    }
 
-    return 0;
+    throw std::invalid_argument("Invalid query type: \"" + std::to_string(static_cast<int>(params.query_type)) + "\"");
+}
+
+} // namespace
+
+int main(int argc, char **argv) {
+    using namespace ozo::benchmark;
+
+    namespace po = boost::program_options;
+
+    try {
+        po::options_description options;
+
+        options.add_options()
+            ("help,h", "print help message")
+            ("benchmark,b", po::value<std::string>(), "benchmark name to run")
+            ("conninfo", po::value<std::string>()->default_value(""), "psql-like database connection info")
+            ("query", po::value<query_type>()->default_value(query_type::simple), "query type (simple or complex)")
+            ("coroutines", po::value<std::size_t>()->default_value(1), "number of parallel coroutines")
+            ("queue", po::value<std::size_t>()->default_value(0), "connection pool queue capacity")
+            ("threads", po::value<std::size_t>()->default_value(1), "number of threads")
+            ("connections", po::value<std::size_t>(), "number of parallel coroutines (default: equal to coroutines + 1)")
+            ("parse,p", "parse query result")
+        ;
+
+        po::variables_map variables;
+        po::store(po::parse_command_line(argc, argv, options), variables);
+        po::notify(variables);
+
+        if (variables.count("help")) {
+            std::cout << options << std::endl;
+            return 0;
+        }
+
+        if (!variables.count("benchmark")) {
+            std::cerr << "Nothing to run: benchmark is not set" << std::endl;
+            return -1;
+        }
+
+        const auto name = variables.at("benchmark").as<std::string>();
+
+        benchmark_params params;
+        params.conn_string = variables.at("conninfo").as<std::string>();
+        params.query_type = variables.at("query").as<query_type>();
+        params.coroutines = variables.at("coroutines").as<std::size_t>();
+        params.queue_capacity = variables.at("queue").as<std::size_t>();
+        params.threads_number = variables.at("threads").as<std::size_t>();
+        if (variables.count("connections")) {
+            params.connections = variables.at("connections").as<std::size_t>();
+        } else {
+            params.connections = params.coroutines;
+        }
+        params.parse_result = variables.count("parse") > 0;
+
+        run_benchmark(name, params);
+
+        return 0;
+    } catch (const std::exception& e) {
+        std::cerr << e.what() << std::endl;
+        return -1;
+    }
 }

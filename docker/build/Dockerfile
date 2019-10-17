@@ -37,7 +37,7 @@ RUN update-alternatives --install /usr/bin/clang clang /usr/bin/clang-7 100 && \
 RUN wget -qO boost_1_66_0.tar.gz https://dl.bintray.com/boostorg/release/1.66.0/source/boost_1_66_0.tar.gz && \
     tar xzf boost_1_66_0.tar.gz && \
     cd boost_1_66_0 && \
-    ./bootstrap.sh --with-libraries=atomic,system,thread,chrono,date_time,context,coroutine && \
+    ./bootstrap.sh --with-libraries=atomic,system,thread,chrono,date_time,context,coroutine,program_options && \
     ./b2 \
         -j $(nproc) \
         --reconfigure \
