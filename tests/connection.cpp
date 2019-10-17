@@ -305,8 +305,8 @@ TEST(ConnectionProvider, should_return_false_for_non_connection_provider_type){
     EXPECT_FALSE(ozo::ConnectionProvider<int>);
 }
 
-static const char* PQdb(const native_handle*) {
-    return "PQdb";
+static const char* PQdb(const native_handle* h) {
+    return h ? "PQdb" : nullptr;
 }
 
 TEST(get_database, should_return_PQdb_call_result){
@@ -314,8 +314,15 @@ TEST(get_database, should_return_PQdb_call_result){
     EXPECT_EQ(std::string(ozo::get_database(connection<>{io})), "PQdb");
 }
 
-static const char* PQhost(const native_handle*) {
-    return "PQhost";
+TEST(get_database, should_return_empty_string_view_for_null_handle){
+    io_context io;
+    connection<> conn{io};
+    conn.handle_.reset();
+    EXPECT_TRUE(ozo::get_database(conn).empty());
+}
+
+static const char* PQhost(const native_handle* h) {
+    return h ? "PQhost" : nullptr;
 }
 
 TEST(get_host, should_return_PQhost_call_result){
@@ -323,8 +330,15 @@ TEST(get_host, should_return_PQhost_call_result){
     EXPECT_EQ(std::string(ozo::get_host(connection<>{io})), "PQhost");
 }
 
-static const char* PQport(const native_handle*) {
-    return "PQport";
+TEST(get_host, should_return_empty_string_view_for_null_handle){
+    io_context io;
+    connection<> conn{io};
+    conn.handle_.reset();
+    EXPECT_TRUE(ozo::get_host(conn).empty());
+}
+
+static const char* PQport(const native_handle* h) {
+    return h ? "PQport" : nullptr;
 }
 
 TEST(get_port, should_return_PQport_call_result){
@@ -332,8 +346,15 @@ TEST(get_port, should_return_PQport_call_result){
     EXPECT_EQ(std::string(ozo::get_port(connection<>{io})), "PQport");
 }
 
-static const char* PQuser(const native_handle*) {
-    return "PQuser";
+TEST(get_port, should_return_empty_string_view_for_null_handle){
+    io_context io;
+    connection<> conn{io};
+    conn.handle_.reset();
+    EXPECT_TRUE(ozo::get_port(conn).empty());
+}
+
+static const char* PQuser(const native_handle* h) {
+    return h ? "PQuser" : nullptr;
 }
 
 TEST(get_user, should_return_PQport_call_result){
@@ -341,13 +362,27 @@ TEST(get_user, should_return_PQport_call_result){
     EXPECT_EQ(std::string(ozo::get_user(connection<>{io})), "PQuser");
 }
 
-static const char* PQpass(const native_handle*) {
-    return "PQpass";
+TEST(get_user, should_return_empty_string_view_for_null_handle){
+    io_context io;
+    connection<> conn{io};
+    conn.handle_.reset();
+    EXPECT_TRUE(ozo::get_user(conn).empty());
+}
+
+static const char* PQpass(const native_handle* h) {
+    return h ? "PQpass" : nullptr;
 }
 
 TEST(get_password, should_return_PQport_call_result){
     io_context io;
     EXPECT_EQ(std::string(ozo::get_password(connection<>{io})), "PQpass");
+}
+
+TEST(get_password, should_return_empty_string_view_for_null_handle){
+    io_context io;
+    connection<> conn{io};
+    conn.handle_.reset();
+    EXPECT_TRUE(ozo::get_password(conn).empty());
 }
 
 } //namespace

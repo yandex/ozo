@@ -174,34 +174,40 @@ inline auto get_executor(const Connection& conn) noexcept {
     return unwrap_connection(conn).get_executor();
 }
 
+namespace detail {
+inline constexpr std::string_view make_string_view(const char* src) {
+    return src == nullptr ? std::string_view{} : std::string_view{src};
+}
+} // namespace detail
+
 template <typename Connection>
 inline std::string_view get_database(const Connection& conn) {
     static_assert(ozo::Connection<Connection>, "conn should model Connection");
-    return PQdb(get_native_handle(conn));
+    return detail::make_string_view(PQdb(get_native_handle(conn)));
 }
 
 template <typename Connection>
 inline std::string_view get_host(const Connection& conn) {
     static_assert(ozo::Connection<Connection>, "conn should model Connection");
-    return PQhost(get_native_handle(conn));
+    return detail::make_string_view(PQhost(get_native_handle(conn)));
 }
 
 template <typename Connection>
 inline std::string_view get_port(const Connection& conn) {
     static_assert(ozo::Connection<Connection>, "conn should model Connection");
-    return PQport(get_native_handle(conn));
+    return detail::make_string_view(PQport(get_native_handle(conn)));
 }
 
 template <typename Connection>
 inline std::string_view get_user(const Connection& conn) {
     static_assert(ozo::Connection<Connection>, "conn should model Connection");
-    return PQuser(get_native_handle(conn));
+    return detail::make_string_view(PQuser(get_native_handle(conn)));
 }
 
 template <typename Connection>
 inline std::string_view get_password(const Connection& conn) {
     static_assert(ozo::Connection<Connection>, "conn should model Connection");
-    return PQpass(get_native_handle(conn));
+    return detail::make_string_view(PQpass(get_native_handle(conn)));
 }
 
 } // namespace ozo
