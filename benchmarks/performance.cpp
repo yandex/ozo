@@ -6,6 +6,8 @@
 #include <ozo/query_builder.h>
 #include <ozo/shortcuts.h>
 
+#include <nlohmann/json.hpp>
+
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/spawn.hpp>
 #include <boost/program_options.hpp>
@@ -31,7 +33,7 @@ void spawn(asio::io_context& io, std::size_t token, T&& coroutine) {
         } catch (const boost::coroutines::detail::forced_unwind&) {
             throw;
         } catch (const std::exception& e) {
-            std::cout << "coroutine " << token << " failed: " << e.what() << std::endl;
+            std::cerr << "coroutine " << token << " failed: " << e.what() << std::endl;
         }
     });
 }
@@ -373,7 +375,149 @@ benchmark_report run_benchmark(const std::string& name, const benchmark_params& 
     throw std::invalid_argument("Invalid query type: \"" + std::to_string(static_cast<int>(params.query_type)) + "\"");
 }
 
+enum class format {
+    text,
+    json
+};
+
+std::ostream& operator <<(std::ostream& stream, format value) {
+    switch (value) {
+        case format::text:
+            return stream << "text";
+        case format::json:
+            return stream << "json";
+    }
+    return stream;
+}
+
+std::istream& operator >>(std::istream& stream, format& value) {
+    std::string token;
+    stream >> token;
+    if (token == "text") {
+        value = format::text;
+    } else if (token == "json") {
+        value = format::json;
+    } else {
+        throw std::invalid_argument("Invalid format: \"" + token + "\"");
+    }
+    return stream;
+}
+
 } // namespace
+
+namespace nlohmann {
+
+template <>
+struct adl_serializer<std::chrono::steady_clock::duration> {
+    static void to_json(json& j, const std::chrono::steady_clock::duration& value) {
+        j = value.count();
+    }
+
+    static void from_json(const json&, std::chrono::steady_clock::duration&) {
+        throw std::logic_error("std::chrono::steady_clock::duration is not implemented");
+    }
+};
+
+template <>
+struct adl_serializer<ozo::benchmark::stats> {
+    static void to_json(json& j, const ozo::benchmark::stats& value) {
+        if (value.mean_request_time) {
+            j["mean_request_time"] = *value.mean_request_time;
+        }
+        if (value.median_request_time) {
+            j["median_request_time"] = *value.median_request_time;
+        }
+        if (value.q90_request_time) {
+            j["q90_request_time"] = *value.q90_request_time;
+        }
+        if (value.min_request_time) {
+            j["min_request_time"] = *value.min_request_time;
+        }
+        if (value.max_request_time) {
+            j["max_request_time"] = *value.max_request_time;
+        }
+        j["mean_request_speed"] = value.mean_request_speed;
+        if (value.median_request_speed) {
+            j["median_request_speed"] = *value.median_request_speed;
+        }
+        if (value.min_request_speed) {
+            j["min_request_speed"] = *value.min_request_speed;
+        }
+        if (value.max_request_speed) {
+            j["max_request_speed"] = *value.max_request_speed;
+        }
+        j["mean_read_rows_speed"] = value.mean_read_rows_speed;
+        if (value.median_read_rows_speed) {
+            j["median_read_rows_speed"] = *value.median_read_rows_speed;
+        }
+        if (value.min_read_rows_speed) {
+            j["min_read_rows_speed"] = *value.min_read_rows_speed;
+        }
+        if (value.max_read_rows_speed) {
+            j["max_read_rows_speed"] = *value.max_read_rows_speed;
+        }
+    }
+
+    static void from_json(const json&, ozo::benchmark::stats&) {
+        throw std::logic_error("ozo::benchmark::stats serialization is not implemented");
+    }
+};
+
+template <>
+struct adl_serializer<ozo::benchmark::step> {
+    static void to_json(json& j, const ozo::benchmark::step& value) {
+        j["duration"] = value.duration;
+        j["rows_count"] = value.rows_count;
+        j["requests_count"] = value.requests_count;
+    }
+
+    static void from_json(const json&, ozo::benchmark::step&) {
+        throw std::logic_error("ozo::benchmark::step serialization is not implemented");
+    }
+};
+
+template <>
+struct adl_serializer<ozo::benchmark::output> {
+    static void to_json(json& j, const ozo::benchmark::output& value) {
+        j["steps"] = value.steps;
+        j["requests"] = value.requests;
+    }
+
+    static void from_json(const json&, ozo::benchmark::output&) {
+        throw std::logic_error("ozo::benchmark::output serialization is not implemented");
+    }
+};
+
+template <>
+struct adl_serializer<benchmark_report> {
+    static void to_json(json& j, const benchmark_report& value) {
+        j["name"] = value.name;
+        j["query"] = value.query;
+        if (value.coroutines) {
+            j["coroutines"] = *value.coroutines;
+        }
+        if (value.connections) {
+            j["connections"] = *value.connections;
+        }
+        if (value.queue_capacity) {
+            j["queue_capacity"] = *value.queue_capacity;
+        }
+        if (value.threads_number) {
+            j["threads_number"] = *value.threads_number;
+        }
+        if (value.parse_result) {
+            j["parse_result"] = *value.parse_result;
+        }
+        j["output"] = value.output;
+        j["stats"] = value.stats;
+    }
+
+    static void from_json(const json&, benchmark_report&) {
+        throw std::logic_error("benchmark_report serialization is not implemented");
+    }
+};
+
+} // namespace nlohmann
 
 int main(int argc, char **argv) {
     using namespace ozo::benchmark;
@@ -395,6 +539,7 @@ int main(int argc, char **argv) {
             ("parse,p", "parse query result")
             ("verbose,v", "use verbose output")
             ("duration,d", po::value<std::uint64_t>()->default_value(31), "benchmark duration in seconds")
+            ("format,f", po::value<format>()->default_value(format::text), "benchmark report format (text, json)")
         ;
 
         po::variables_map variables;
@@ -430,7 +575,14 @@ int main(int argc, char **argv) {
 
         const auto report = run_benchmark(name, params);
 
-        std::cout << report << std::endl;
+        switch (variables.at("format").as<format>()) {
+            case format::text:
+                std::cout << report << std::endl;
+                break;
+            case format::json:
+                std::cout << nlohmann::json(report) << std::endl;
+                break;
+        }
 
         return 0;
     } catch (const std::exception& e) {
