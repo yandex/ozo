@@ -78,33 +78,8 @@ void reuse_connection(const std::string& conn_string, Query query) {
     io.run();
 }
 
-template <typename Row, typename Query>
-void use_connection_pool(const std::string& conn_string, Query query) {
-    std::cout << '\n' << __func__ << std::endl;
-
-    benchmark_t<1> benchmark;
-    asio::io_context io(1);
-    const ozo::connection_info connection_info(conn_string);
-    ozo::connection_pool_config config;
-    config.capacity = 2;
-    config.queue_capacity = 0;
-    ozo::connection_pool pool(connection_info, config);
-
-    spawn(io, 0, [&] (asio::yield_context yield) {
-        while (true) {
-            std::conditional_t<std::is_same_v<Row, void>, ozo::result, std::vector<Row>> result;
-            ozo::request(pool[io], query, request_timeout, ozo::into(result), yield);
-            if (!benchmark.step(result.size())) {
-                break;
-            }
-        }
-    });
-
-    io.run();
-}
-
 template <std::size_t coroutines, typename Row, typename Query>
-void use_connection_pool_mult_connection(const std::string& conn_string, Query query) {
+void use_connection_pool(const std::string& conn_string, Query query) {
     std::cout << '\n' << __func__ << " coroutines=" << coroutines << std::endl;
 
     benchmark_t<coroutines> benchmark;
@@ -209,11 +184,11 @@ int main(int argc, char **argv) {
     std::cout << "\nquery: " << ozo::to_const_char(ozo::get_text(simple_query)) << std::endl;
     reopen_connection<void>(conn_string, simple_query);
     reuse_connection<void>(conn_string, simple_query);
-    use_connection_pool<void>(conn_string, simple_query);
-    use_connection_pool_mult_connection<2, void>(conn_string, simple_query);
+    use_connection_pool<1, void>(conn_string, simple_query);
+    use_connection_pool<2, void>(conn_string, simple_query);
     use_connection_pool_mult_threads<2, 2, void>(conn_string, simple_query, 4, 0);
     use_connection_pool_mult_threads<2, 2, void>(conn_string, simple_query, 2, 4);
-    use_connection_pool<std::tuple<std::int32_t>>(conn_string, simple_query);
+    use_connection_pool<1, std::tuple<std::int32_t>>(conn_string, simple_query);
 
     const auto complex_query = (
         "SELECT typname, typnamespace, typowner, typlen, typbyval, typcategory, "_SQL +
@@ -222,17 +197,17 @@ int main(int argc, char **argv) {
     ).build();
 
     std::cout << "\nquery: " << ozo::to_const_char(ozo::get_text(complex_query)) << std::endl;
-    use_connection_pool<void>(conn_string, complex_query);
-    use_connection_pool<pg_type>(conn_string, complex_query);
-    use_connection_pool_mult_connection<2, void>(conn_string, complex_query);
-    use_connection_pool_mult_connection<4, void>(conn_string, complex_query);
-    use_connection_pool_mult_connection<8, void>(conn_string, complex_query);
-    use_connection_pool_mult_connection<16, void>(conn_string, complex_query);
-    use_connection_pool_mult_connection<32, void>(conn_string, complex_query);
-    use_connection_pool_mult_connection<64, void>(conn_string, complex_query);
-    use_connection_pool_mult_connection<2, pg_type>(conn_string, complex_query);
-    use_connection_pool_mult_connection<4, pg_type>(conn_string, complex_query);
-    use_connection_pool_mult_connection<8, pg_type>(conn_string, complex_query);
+    use_connection_pool<1, void>(conn_string, complex_query);
+    use_connection_pool<1, pg_type>(conn_string, complex_query);
+    use_connection_pool<2, void>(conn_string, complex_query);
+    use_connection_pool<4, void>(conn_string, complex_query);
+    use_connection_pool<8, void>(conn_string, complex_query);
+    use_connection_pool<16, void>(conn_string, complex_query);
+    use_connection_pool<32, void>(conn_string, complex_query);
+    use_connection_pool<64, void>(conn_string, complex_query);
+    use_connection_pool<2, pg_type>(conn_string, complex_query);
+    use_connection_pool<4, pg_type>(conn_string, complex_query);
+    use_connection_pool<8, pg_type>(conn_string, complex_query);
     use_connection_pool_mult_threads<2, 8, void>(conn_string, complex_query, 16, 0);
     use_connection_pool_mult_threads<2, 8, void>(conn_string, complex_query, 8, 16);
     use_connection_pool_mult_threads<4, 8, void>(conn_string, complex_query, 32, 0);
