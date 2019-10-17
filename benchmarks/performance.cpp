@@ -21,7 +21,7 @@ using benchmark_t = ozo::benchmark::time_limit_benchmark<coroutines>;
 constexpr const std::chrono::seconds connect_timeout(1);
 constexpr const std::chrono::seconds request_timeout(1);
 
-template <class T>
+template <typename T>
 void spawn(asio::io_context& io, std::size_t token, T&& coroutine) {
     asio::spawn(io, [token, coroutine = std::forward<T>(coroutine)] (asio::yield_context yield) {
         try {
@@ -34,7 +34,7 @@ void spawn(asio::io_context& io, std::size_t token, T&& coroutine) {
     });
 }
 
-template <class Query>
+template <typename Query>
 void reuse_connection_info(const std::string& conn_string, Query query) {
     std::cout << '\n' << __func__ << std::endl;
 
@@ -55,7 +55,7 @@ void reuse_connection_info(const std::string& conn_string, Query query) {
     io.run();
 }
 
-template <class Result, class Query>
+template <typename Result, typename Query>
 void reuse_connection_info_and_parse_result(const std::string& conn_string, Query query) {
     std::cout << '\n' << __func__ << std::endl;
 
@@ -76,7 +76,7 @@ void reuse_connection_info_and_parse_result(const std::string& conn_string, Quer
     io.run();
 }
 
-template <class Query>
+template <typename Query>
 void reuse_connection(const std::string& conn_string, Query query) {
     std::cout << '\n' << __func__ << std::endl;
 
@@ -98,7 +98,7 @@ void reuse_connection(const std::string& conn_string, Query query) {
     io.run();
 }
 
-template <class Result, class Query>
+template <typename Result, typename Query>
 void reuse_connection_and_parse_result(const std::string& conn_string, Query query) {
     std::cout << '\n' << __func__ << std::endl;
 
@@ -120,7 +120,7 @@ void reuse_connection_and_parse_result(const std::string& conn_string, Query que
     io.run();
 }
 
-template <class Query>
+template <typename Query>
 void use_connection_pool(const std::string& conn_string, Query query) {
     std::cout << '\n' << __func__ << std::endl;
 
@@ -145,7 +145,7 @@ void use_connection_pool(const std::string& conn_string, Query query) {
     io.run();
 }
 
-template <class Result, class Query>
+template <typename Result, typename Query>
 void use_connection_pool_and_parse_result(const std::string& conn_string, Query query) {
     std::cout << '\n' << __func__ << std::endl;
 
@@ -170,7 +170,7 @@ void use_connection_pool_and_parse_result(const std::string& conn_string, Query 
     io.run();
 }
 
-template <std::size_t coroutines, class Query>
+template <std::size_t coroutines, typename Query>
 void use_connection_pool_mult_connection(const std::string& conn_string, Query query) {
     std::cout << '\n' << __func__ << " coroutines=" << coroutines << std::endl;
 
@@ -197,7 +197,7 @@ void use_connection_pool_mult_connection(const std::string& conn_string, Query q
     io.run();
 }
 
-template <std::size_t coroutines, class Result, class Query>
+template <std::size_t coroutines, typename Result, typename Query>
 void use_connection_pool_and_parse_result_mult_connection(const std::string& conn_string, Query query) {
     std::cout << '\n' << __func__ << " coroutines=" << coroutines << std::endl;
 
@@ -232,7 +232,7 @@ struct context {
     context() = default;
 };
 
-template <std::size_t threads_number, std::size_t coroutines, class Query>
+template <std::size_t threads_number, std::size_t coroutines, typename Query>
 void use_connection_pool_mult_threads(const std::string& conn_string, Query query,
         std::size_t connections, std::size_t queue_capacity) {
     std::cout << '\n' << __func__

@@ -24,7 +24,7 @@ namespace ozo::benchmark {
 
 namespace hana = boost::hana;
 
-template <class Ratio>
+template <typename Ratio>
 struct duration_name {};
 
 template <>
