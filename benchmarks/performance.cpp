@@ -67,6 +67,7 @@ std::istream& operator >>(std::istream& stream, query_type& value) {
 struct benchmark_params {
     std::string conn_string;
     ::query_type query_type = ::query_type::simple;
+    std::chrono::steady_clock::duration duration;
     std::size_t coroutines = 0;
     std::size_t threads_number = 0;
     std::size_t queue_capacity = 0;
@@ -117,7 +118,7 @@ benchmark_report reopen_connection(const benchmark_params& params, Query query) 
     report.query = ozo::to_const_char(ozo::get_text(query));
     report.parse_result = parse_result;
 
-    benchmark_t benchmark(1);
+    benchmark_t benchmark(1, params.duration);
     benchmark.set_print_progress(params.verbose);
 
     asio::io_context io(1);
@@ -152,7 +153,7 @@ benchmark_report reuse_connection(const benchmark_params& params, Query query) {
     report.query = ozo::to_const_char(ozo::get_text(query));
     report.parse_result = parse_result;
 
-    benchmark_t benchmark(1);
+    benchmark_t benchmark(1, params.duration);
     benchmark.set_print_progress(params.verbose);
 
     asio::io_context io(1);
@@ -190,7 +191,7 @@ benchmark_report use_connection_pool(const benchmark_params& params, Query query
     report.queue_capacity = params.queue_capacity;
     report.parse_result = parse_result;
 
-    benchmark_t benchmark(params.coroutines);
+    benchmark_t benchmark(params.coroutines, params.duration);
     benchmark.set_print_progress(params.verbose);
 
     asio::io_context io(1);
@@ -243,7 +244,7 @@ benchmark_report use_connection_pool_mult_threads(const benchmark_params& params
     report.connections = params.connections;
     report.parse_result = parse_result;
 
-    benchmark_t benchmark(params.coroutines * params.threads_number);
+    benchmark_t benchmark(params.coroutines * params.threads_number, params.duration);
     benchmark.set_print_progress(params.verbose);
 
     const ozo::connection_info<> connection_info(params.conn_string);
@@ -390,6 +391,7 @@ int main(int argc, char **argv) {
             ("conninfo", po::value<std::string>()->default_value(""), "psql-like database connection info")
             ("query", po::value<query_type>()->default_value(query_type::simple), "query type (simple or complex)")
             ("verbose,v", "use verbose output")
+            ("duration,d", po::value<std::uint64_t>()->default_value(31), "benchmark duration in seconds")
         ;
 
         po::variables_map variables;
@@ -418,6 +420,7 @@ int main(int argc, char **argv) {
             params.connections = params.coroutines;
         }
         params.verbose = variables.count("verbose");
+        params.duration = std::chrono::seconds(variables.at("duration").as<std::uint64_t>());
 
         const auto report = run_benchmark(variables.at("benchmark").as<std::string>(), params);
 
