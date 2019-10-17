@@ -160,6 +160,10 @@ public:
         }
     }
 
+    void set_print_progress(bool value) {
+        print_progress = value;
+    }
+
     bool step(std::size_t rows_count, std::size_t token = 0) {
         if (finished) {
             return false;
@@ -217,6 +221,7 @@ private:
     std::chrono::steady_clock::time_point next_print = start + std::chrono::seconds(1);
     std::chrono::steady_clock::time_point step_start = start;
     std::vector<std::chrono::steady_clock::time_point> request_start;
+    bool print_progress = false;
 
     bool step_impl() {
         finish = std::chrono::steady_clock::now();
@@ -233,12 +238,14 @@ private:
             total_requests_count += step_count;
             total_rows_count += step_rows_count;
             const auto total_duration = finish - start;
-            std::cout << total_requests_count << " requests done in "
-                      << std::chrono::duration_cast<double_s>(total_duration).count() << " seconds, "
-                      << std::setprecision(4) << std::fixed << requests_per_second << " req/sec "
-                      << total_rows_count << " rows read "
-                      << std::setprecision(4) << std::fixed << rows_per_second << " row/sec"
-                      << std::endl;
+            if (print_progress) {
+                std::cout << total_requests_count << " requests done in "
+                          << std::chrono::duration_cast<double_s>(total_duration).count() << " seconds, "
+                          << std::setprecision(4) << std::fixed << requests_per_second << " req/sec "
+                          << total_rows_count << " rows read "
+                          << std::setprecision(4) << std::fixed << rows_per_second << " row/sec"
+                          << std::endl;
+            }
             if (total_duration > max_duration) {
                 finished = true;
                 return false;
