@@ -97,13 +97,13 @@ struct size_of_array_impl {
     }
 
     static constexpr auto apply(const T& v) {
-        constexpr const auto header_size = hana::fold(
-            hana::members(pg_array{}), size_type(0),
-            [&] (auto r, const auto& item) { return r + sizeof(item); });
+        constexpr const auto header_size = hana::unpack(
+            hana::members(pg_array{}),
+            [] (const auto& ...x) { return (sizeof(x) + ... + 0); });
 
-        constexpr const auto dimension_header_size = hana::fold(
-            hana::members(pg_array_dimension{}), size_type(0),
-            [&] (auto r, const auto& item) { return r + sizeof(item); });
+        constexpr const auto dimension_header_size = hana::unpack(
+            hana::members(pg_array_dimension{}),
+            [] (const auto& ...x) { return (sizeof(x) + ... + 0); });
 
         return header_size + dimension_header_size + data_size(v);
     }

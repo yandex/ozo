@@ -69,7 +69,9 @@ struct begin_statement_builder {
         const auto real_options = hana::filter(hana::filter(supported_options, hana::partial(hana::contains, options)),
                                                ([&](const auto& v) { return std::negation<is_none<std::decay_t<decltype(options[v])>>>{}; }));
         const auto strings = hana::transform(real_options, [&](const auto& v) { return to_string(v, options[v]); });
-        return make_query(hana::fold(strings, query_prefix, hana::plus));
+        return make_query(hana::unpack(strings, [query_prefix](const auto& ...s) {
+            return query_prefix + (s + ... + hana::string_c<>);
+        }));
     }
 };
 
