@@ -25,15 +25,23 @@ using benchmark_t = ozo::benchmark::time_limit_benchmark;
 constexpr const std::chrono::seconds connect_timeout(1);
 constexpr const std::chrono::seconds request_timeout(1);
 
+std::mutex cerr_mutex;
+
 template <typename T>
 void spawn(asio::io_context& io, std::size_t token, T&& coroutine) {
     asio::spawn(io, [token, coroutine = std::forward<T>(coroutine)] (asio::yield_context yield) {
         try {
+            {
+                const std::lock_guard lock(cerr_mutex);
+                std::cerr << "coroutine " << token << " started" << std::endl;
+            }
             coroutine(yield);
         } catch (const boost::coroutines::detail::forced_unwind&) {
             throw;
         } catch (const std::exception& e) {
+            const std::lock_guard lock(cerr_mutex);
             std::cerr << "coroutine " << token << " failed: " << e.what() << std::endl;
+            std::abort();
         }
     });
 }
@@ -132,7 +140,16 @@ benchmark_report reopen_connection(const benchmark_params& params, Query query) 
     spawn(io, 0, [&] (asio::yield_context yield) {
         while (true) {
             std::conditional_t<parse_result, std::vector<Row>, ozo::result> result;
-            ozo::request(connection_info[io], query, request_timeout, ozo::into(result), yield);
+            ozo::error_code ec;
+            const auto connection = ozo::request(connection_info[io], query, request_timeout, ozo::into(result), yield[ec]);
+            if (ec) {
+                std::cerr << ec.message() << '\n';
+                if (connection) {
+                    std::cerr << ozo::get_error_context(connection) << '\n';
+                    std::cerr << ozo::error_message(connection) << '\n';
+                }
+                std::abort();
+            }
             if (!benchmark.step(result.size())) {
                 break;
             }
@@ -168,7 +185,16 @@ benchmark_report reuse_connection(const benchmark_params& params, Query query) {
         auto connection = ozo::get_connection(connection_info[io], connect_timeout, yield);
         while (true) {
             std::conditional_t<parse_result, std::vector<Row>, ozo::result> result;
-            ozo::request(connection, query, request_timeout, ozo::into(result), yield);
+            ozo::error_code ec;
+            connection = ozo::request(std::move(connection), query, request_timeout, ozo::into(result), yield[ec]);
+            if (ec) {
+                std::cerr << ec.message() << '\n';
+                if (connection) {
+                    std::cerr << ozo::get_error_context(connection) << '\n';
+                    std::cerr << ozo::error_message(connection) << '\n';
+                }
+                std::abort();
+            }
             if (!benchmark.step(result.size())) {
                 break;
             }
@@ -210,7 +236,16 @@ benchmark_report use_connection_pool(const benchmark_params& params, Query query
         spawn(io, token, [&, token] (asio::yield_context yield) {
             while (true) {
                 std::conditional_t<parse_result, std::vector<Row>, ozo::result> result;
-                ozo::request(pool[io], query, request_timeout, ozo::into(result), yield);
+                ozo::error_code ec;
+                const auto connection = ozo::request(pool[io], query, request_timeout, ozo::into(result), yield[ec]);
+                if (ec) {
+                    std::cerr << ec.message() << '\n';
+                    if (connection) {
+                        std::cerr << ozo::get_error_context(connection) << '\n';
+                        std::cerr << ozo::error_message(connection) << '\n';
+                    }
+                    std::abort();
+                }
                 if (!benchmark.step(result.size(), token)) {
                     break;
                 }
@@ -271,12 +306,20 @@ benchmark_report use_connection_pool_mult_threads(const benchmark_params& params
             spawn(io, token, [&, token] (asio::yield_context yield) {
                 while (true) {
                     std::conditional_t<parse_result, std::vector<Row>, ozo::result> result;
-                    boost::system::error_code ec;
-                    ozo::request(pool[io], query, request_timeout, ozo::into(result), yield[ec]);
-                    if (!benchmark.thread_safe_step(result.size(), token)) {
-                        break;
+                    ozo::error_code ec;
+                    {
+                        const auto connection = ozo::request(pool[io], query, request_timeout, ozo::into(result), yield[ec]);
+                        if (ec) {
+                            const std::lock_guard lock(cerr_mutex);
+                            std::cerr << "coroutine " << token << ": " << ec.message() << '\n';
+                            if (connection) {
+                                std::cerr << "coroutine " << token << ": " << ozo::get_error_context(connection) << '\n';
+                                std::cerr << "coroutine " << token << ": " << ozo::error_message(connection) << '\n';
+                            }
+                            std::abort();
+                        }
                     }
-                    if (ec) {
+                    if (!benchmark.thread_safe_step(result.size(), token)) {
                         break;
                     }
                 }
