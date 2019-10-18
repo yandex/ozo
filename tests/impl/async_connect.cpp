@@ -37,20 +37,19 @@ struct fixture {
     StrictMock<executor_gmock> callback_executor{};
     StrictMock<callback_gmock<decltype(conn)>> callback{};
 
-    decltype(ozo::impl::make_connect_operation_context(conn, wrap(callback))) context;
-
-    auto make_operation_context() {
-        EXPECT_CALL(strand_service, get_executor()).WillOnce(ReturnRef(strand));
-        auto ex = boost::asio::executor(ozo::detail::make_strand_executor(io.get_executor()));
-        EXPECT_CALL(callback, get_executor()).WillRepeatedly(Return(ex));
-        return ozo::impl::make_connect_operation_context(conn, wrap(callback));
+    auto async_connect_op() {
+        return ozo::impl::async_connect_op(conn, wrap(callback));
     }
 
     static auto make_native_handle(native_handle::state state = native_handle::good) {
         return std::make_shared<native_handle>(state);
     }
 
-    fixture() : context(make_operation_context()) {}
+    fixture() {
+        EXPECT_CALL(strand_service, get_executor()).WillOnce(ReturnRef(strand));
+        auto ex = boost::asio::executor(ozo::detail::make_strand_executor(io.get_executor()));
+        EXPECT_CALL(callback, get_executor()).WillRepeatedly(Return(ex));
+    }
 };
 
 using ozo::error_code;
@@ -67,7 +66,7 @@ TEST_F(async_connect_op, should_start_connection_assign_and_wait_for_compile) {
     EXPECT_CALL(f.connection, assign()).WillOnce(Return(error_code{}));
     EXPECT_CALL(f.socket, async_write_some(_)).WillOnce(Return());
 
-    ozo::impl::make_async_connect_op(f.context).perform("conninfo");
+    f.async_connect_op().perform("conninfo");
 }
 
 TEST_F(async_connect_op, should_call_handler_with_pq_connection_start_failed_on_nullptr_in_start_connection) {
@@ -81,7 +80,7 @@ TEST_F(async_connect_op, should_call_handler_with_pq_connection_start_failed_on_
     EXPECT_CALL(f.callback, call(error_code{ozo::error::pq_connection_start_failed}, f.conn))
         .WillOnce(Return());
 
-    ozo::impl::make_async_connect_op(f.context).perform("conninfo");
+    f.async_connect_op().perform("conninfo");
 }
 
 TEST_F(async_connect_op, should_call_handler_with_pq_connection_status_bad_if_connection_status_is_bad) {
@@ -94,7 +93,7 @@ TEST_F(async_connect_op, should_call_handler_with_pq_connection_status_bad_if_co
     EXPECT_CALL(f.callback, call(error_code{ozo::error::pq_connection_status_bad}, f.conn))
         .WillOnce(Return());
 
-    ozo::impl::make_async_connect_op(f.context).perform("conninfo");
+    f.async_connect_op().perform("conninfo");
 }
 
 TEST_F(async_connect_op, should_call_handler_with_error_if_assign_returns_error) {
@@ -107,7 +106,7 @@ TEST_F(async_connect_op, should_call_handler_with_error_if_assign_returns_error)
 
     EXPECT_CALL(f.callback, call(error_code{error::error}, f.conn)).WillOnce(Return());
 
-    ozo::impl::make_async_connect_op(f.context).perform("conninfo");
+    f.async_connect_op().perform("conninfo");
 }
 
 TEST_F(async_connect_op, should_wait_for_write_complete_if_connect_poll_returns_PGRES_POLLING_WRITING) {
@@ -125,7 +124,7 @@ TEST_F(async_connect_op, should_wait_for_write_complete_if_connect_poll_returns_
 
     EXPECT_CALL(f.socket, async_write_some(_)).WillOnce(Return());
 
-    ozo::impl::make_async_connect_op(f.context).perform("conninfo");
+    f.async_connect_op().perform("conninfo");
 }
 
 TEST_F(async_connect_op, should_wait_for_read_complete_if_connect_poll_returns_PGRES_POLLING_READING) {
@@ -144,7 +143,7 @@ TEST_F(async_connect_op, should_wait_for_read_complete_if_connect_poll_returns_P
 
     EXPECT_CALL(f.socket, async_read_some(_)).WillOnce(Return());
 
-    ozo::impl::make_async_connect_op(f.context).perform("conninfo");
+    f.async_connect_op().perform("conninfo");
 }
 
 TEST_F(async_connect_op, should_call_handler_with_no_error_if_connect_poll_returns_PGRES_POLLING_OK) {
@@ -163,7 +162,7 @@ TEST_F(async_connect_op, should_call_handler_with_no_error_if_connect_poll_retur
 
     EXPECT_CALL(f.callback, call(error_code{}, f.conn)).WillOnce(Return());
 
-    ozo::impl::make_async_connect_op(f.context).perform("conninfo");
+    f.async_connect_op().perform("conninfo");
 }
 
 TEST_F(async_connect_op, should_call_handler_with_pq_connect_poll_failed_if_connect_poll_returns_PGRES_POLLING_FAILED) {
@@ -182,7 +181,7 @@ TEST_F(async_connect_op, should_call_handler_with_pq_connect_poll_failed_if_conn
     EXPECT_CALL(f.callback, call(error_code{ozo::error::pq_connect_poll_failed}, f.conn))
         .WillOnce(Return());
 
-    ozo::impl::make_async_connect_op(f.context).perform("conninfo");
+    f.async_connect_op().perform("conninfo");
 }
 
 TEST_F(async_connect_op, should_call_handler_with_pq_connect_poll_failed_if_connect_poll_returns_PGRES_POLLING_ACTIVE) {
@@ -202,7 +201,7 @@ TEST_F(async_connect_op, should_call_handler_with_pq_connect_poll_failed_if_conn
     EXPECT_CALL(f.callback, call(error_code{ozo::error::pq_connect_poll_failed}, f.conn))
         .WillOnce(Return());
 
-    ozo::impl::make_async_connect_op(f.context).perform("conninfo");
+    f.async_connect_op().perform("conninfo");
 }
 
 TEST_F(async_connect_op, should_call_handler_with_the_error_if_polling_operation_invokes_callback_with_it) {
@@ -220,7 +219,7 @@ TEST_F(async_connect_op, should_call_handler_with_the_error_if_polling_operation
     EXPECT_CALL(f.callback, call(error_code{error::error}, f.conn))
         .WillOnce(Return());
 
-    ozo::impl::make_async_connect_op(f.context).perform("conninfo");
+    f.async_connect_op().perform("conninfo");
 }
 
 struct async_connect_op_call : Test {};
@@ -231,7 +230,7 @@ TEST_F(async_connect_op_call, should_replace_empty_connection_error_context_on_e
     EXPECT_CALL(f.callback, call(error_code{error::error}, f.conn))
         .WillOnce(Return());
 
-    ozo::impl::make_async_connect_op(f.context)(error_code{error::error});
+    f.async_connect_op()(error_code{error::error});
 
     EXPECT_EQ(f.conn->error_context_, "error while connection polling");
 }
@@ -243,7 +242,7 @@ TEST_F(async_connect_op_call, should_preserve_not_empty_connection_error_context
     EXPECT_CALL(f.callback, call(error_code{error::error}, f.conn))
         .WillOnce(Return());
 
-    ozo::impl::make_async_connect_op(f.context)(error_code{error::error});
+    f.async_connect_op()(error_code{error::error});
 
     EXPECT_EQ(f.conn->error_context_, "my error");
 }
