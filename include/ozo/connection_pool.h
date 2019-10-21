@@ -296,6 +296,8 @@ struct connection_traits<yamail::resource_pool::handle<Pool>> :
  */
 template <typename Source>
 class connection_pool {
+    static_assert(ConnectionSource<Source>, "should model ConnectionSource concept");
+
 public:
     using connection_rep_type = ozo::connection_rep<typename ozo::unwrap_type<ozo::connection_type<Source>>::oid_map_type>;
 
@@ -395,7 +397,6 @@ constexpr auto ConnectionPool = is_connection_pool<std::decay_t<T>>::value;
  */
 template <typename Source>
 auto make_connection_pool(Source&& source, const connection_pool_config& config) {
-    static_assert(ConnectionSource<Source>, "is not a ConnectionSource");
     return connection_pool<std::decay_t<Source>>{std::forward<Source>(source), config};
 }
 

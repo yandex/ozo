@@ -202,7 +202,7 @@ TEST(request, should_request_with_connection_pool) {
     ozo::io_context io;
     ozo::connection_info<> conn_info(OZO_PG_TEST_CONNINFO);
     const ozo::connection_pool_config config;
-    auto pool = ozo::make_connection_pool(conn_info, config);
+    ozo::connection_pool pool(conn_info, config);
     asio::spawn(io, [&] (asio::yield_context yield) {
         ozo::result result;
         ozo::error_code ec{};
