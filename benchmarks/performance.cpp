@@ -130,7 +130,7 @@ void use_connection_pool(const std::string& conn_string, Query query) {
     ozo::connection_pool_config config;
     config.capacity = 2;
     config.queue_capacity = 0;
-    auto pool = ozo::make_connection_pool(connection_info, config);
+    ozo::connection_pool pool(connection_info, config);
 
     spawn(io, 0, [&] (asio::yield_context yield) {
         while (true) {
@@ -155,7 +155,7 @@ void use_connection_pool_and_parse_result(const std::string& conn_string, Query 
     ozo::connection_pool_config config;
     config.capacity = 2;
     config.queue_capacity = 0;
-    auto pool = ozo::make_connection_pool(connection_info, config);
+    ozo::connection_pool pool(connection_info, config);
 
     spawn(io, 0, [&] (asio::yield_context yield) {
         while (true) {
@@ -180,7 +180,7 @@ void use_connection_pool_mult_connection(const std::string& conn_string, Query q
     ozo::connection_pool_config config;
     config.capacity = coroutines + 1;
     config.queue_capacity = 0;
-    auto pool = ozo::make_connection_pool(connection_info, config);
+    ozo::connection_pool pool(connection_info, config);
 
     for (std::size_t token = 0; token < coroutines; ++token) {
         spawn(io, 0, [&, token] (asio::yield_context yield) {
@@ -207,7 +207,7 @@ void use_connection_pool_and_parse_result_mult_connection(const std::string& con
     ozo::connection_pool_config config;
     config.capacity = coroutines + 1;
     config.queue_capacity = 0;
-    auto pool = ozo::make_connection_pool(connection_info, config);
+    ozo::connection_pool pool(connection_info, config);
 
     for (std::size_t token = 0; token < coroutines; ++token) {
         spawn(io, token, [&, token] (asio::yield_context yield) {
@@ -247,7 +247,7 @@ void use_connection_pool_mult_threads(const std::string& conn_string, Query quer
     config.capacity = connections;
     config.queue_capacity = queue_capacity;
     std::vector<std::unique_ptr<context>> contexts;
-    auto pool = ozo::make_connection_pool(connection_info, config);
+    ozo::connection_pool pool(connection_info, config);
     std::atomic_size_t finished_coroutines {0};
     std::mutex mutex;
     std::unique_lock<std::mutex> lock(mutex);

@@ -36,7 +36,7 @@ int main(int argc, char **argv) {
     connection_pool_config.idle_timeout = std::chrono::seconds(60);
 
     // Creating connection pool from connection_info as the underlying ConnectionSource
-    auto connection_pool = ozo::make_connection_pool(connection_info, connection_pool_config);
+    ozo::connection_pool connection_pool(connection_info, connection_pool_config);
     //! [Creating Connection Pool]
 
     const auto coroutine = [&] (asio::yield_context yield) {
