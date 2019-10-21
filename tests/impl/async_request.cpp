@@ -43,10 +43,12 @@ TEST_F(async_request_op, should_set_timer_and_send_query_params_and_get_result_a
     EXPECT_CALL(callback, get_executor()).WillRepeatedly(Return(cb_io.get_executor()));
     EXPECT_CALL(timer_service, timer(time_traits::duration(42))).WillRepeatedly(ReturnRef(timer));
 
+    std::function<void (error_code)> on_timer_expired;
+
     Sequence s;
 
     // Set timer
-    EXPECT_CALL(timer, async_wait(_)).InSequence(s).WillOnce(Return());
+    EXPECT_CALL(timer, async_wait(_)).InSequence(s).WillOnce(SaveArg<0>(&on_timer_expired));
 
     // Send query params
     EXPECT_CALL(connection, set_nonblocking()).InSequence(s).WillOnce(Return(0));
@@ -62,10 +64,12 @@ TEST_F(async_request_op, should_set_timer_and_send_query_params_and_get_result_a
     EXPECT_CALL(timer, cancel()).InSequence(s).WillOnce(Return(1));
 
     // Call client handler
+    EXPECT_CALL(strand, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(callback_executor, dispatch(_)).InSequence(s).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(callback, call(error_code {}, _)).InSequence(s).WillOnce(Return());
 
     ozo::impl::async_request_op{fake_query {}, timeout, ozo::none, wrap(callback)}(error_code {}, conn);
+    on_timer_expired(boost::asio::error::operation_aborted);
 }
 
 TEST_F(async_request_op, should_send_query_params_and_get_result_and_call_handler_whith_no_time_constraint) {

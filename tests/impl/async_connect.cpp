@@ -257,7 +257,11 @@ TEST_F(async_connect, should_cancel_timer_when_operation_is_done_before_timeout)
     EXPECT_CALL(callback, get_executor()).WillRepeatedly(Return(cb_io.get_executor()));
     EXPECT_CALL(f.strand_service, get_executor()).WillRepeatedly(ReturnRef(f.strand));
     EXPECT_CALL(f.timer_service, timer(time_traits::duration(42))).WillRepeatedly(ReturnRef(f.timer));
-    EXPECT_CALL(f.timer, async_wait(_)).WillOnce(Return());
+
+    std::function<void (ozo::error_code)> on_timer_expired;
+    std::function<void (ozo::error_code)> on_async_write_some;
+
+    EXPECT_CALL(f.timer, async_wait(_)).WillOnce(SaveArg<0>(&on_timer_expired));
 
     Sequence s;
 
@@ -265,39 +269,51 @@ TEST_F(async_connect, should_cancel_timer_when_operation_is_done_before_timeout)
     EXPECT_CALL(f.connection, assign()).InSequence(s).WillOnce(Return(error_code{}));
 
 
-    EXPECT_CALL(f.socket, async_write_some(_)).InSequence(s).WillOnce(InvokeArgument<0>(error_code{}));
-
+    EXPECT_CALL(f.socket, async_write_some(_)).InSequence(s).WillOnce(SaveArg<0>(&on_async_write_some));
     EXPECT_CALL(f.strand, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
 
     EXPECT_CALL(f.connection, connect_poll()).InSequence(s).WillOnce(Return(PGRES_POLLING_OK));
 
-    EXPECT_CALL(f.timer, cancel()).InSequence(s).WillOnce(Return(0));
+    EXPECT_CALL(f.timer, cancel()).InSequence(s).WillOnce(Return(1));
+
+    EXPECT_CALL(f.strand, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
 
     EXPECT_CALL(f.callback_executor, dispatch(_)).InSequence(s).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(callback, call(error_code{}, f.conn)).InSequence(s).WillOnce(Return());
 
     ozo::impl::async_connect("conninfo", time_traits::duration(42), f.conn, wrap(callback));
+
+    on_async_write_some(ozo::error_code{});
+    on_timer_expired(boost::asio::error::operation_aborted);
 }
 
 TEST_F(async_connect, should_cancel_socket_on_timeout) {
     StrictMock<callback_gmock<decltype(f.conn)>> callback{};
     execution_context cb_io {f.callback_executor};
-    std::function<void (error_code)> on_timeout;
+    std::function<void (error_code)> on_timer_expired;
+    std::function<void (error_code)> on_async_write_some;
+
     EXPECT_CALL(callback, get_executor()).WillRepeatedly(Return(cb_io.get_executor()));
     EXPECT_CALL(f.strand_service, get_executor()).WillRepeatedly(ReturnRef(f.strand));
     EXPECT_CALL(f.timer_service, timer(time_traits::duration(42))).WillRepeatedly(ReturnRef(f.timer));
-    EXPECT_CALL(f.timer, async_wait(_)).WillOnce(SaveArg<0>(&on_timeout));
+    EXPECT_CALL(f.timer, async_wait(_)).WillOnce(SaveArg<0>(&on_timer_expired));
 
     Sequence s;
 
     EXPECT_CALL(f.connection, start_connection("conninfo")).InSequence(s).WillOnce(Return(f.make_native_handle()));
     EXPECT_CALL(f.connection, assign()).InSequence(s).WillOnce(Return(error_code{}));
-    EXPECT_CALL(f.socket, async_write_some(_)).InSequence(s).WillOnce(Return());
+    EXPECT_CALL(f.socket, async_write_some(_)).InSequence(s).WillOnce(SaveArg<0>(&on_async_write_some));
     EXPECT_CALL(f.strand, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(f.socket, cancel(_)).InSequence(s).WillOnce(Return());
 
+    EXPECT_CALL(f.strand, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(f.callback_executor, dispatch(_)).InSequence(s).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(callback, call(Eq(boost::asio::error::timed_out), f.conn)).InSequence(s).WillOnce(Return());
+
     ozo::impl::async_connect("conninfo", time_traits::duration(42), f.conn, wrap(callback));
-    on_timeout(error_code {});
+
+    on_timer_expired(error_code {});
+    on_async_write_some(boost::asio::error::operation_aborted);
 }
 
 TEST_F(async_connect, should_request_oid_map_when_oid_map_is_not_empty) {

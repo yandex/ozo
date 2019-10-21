@@ -112,6 +112,7 @@ struct connection {
     using handle_type = std::shared_ptr<ozo::tests::native_handle>;
     using error_context = std::string;
     using oid_map_type = OidMap;
+    using executor_type = io_context::executor_type;
 
     handle_type handle_;
     stream_descriptor socket_;
@@ -120,7 +121,7 @@ struct connection {
     error_context error_context_;
     io_context* io_;
 
-    auto get_executor() const { return io_->get_executor(); }
+    executor_type get_executor() const { return io_->get_executor(); }
 
     auto native_handle() const noexcept { return handle_.get(); }
 
