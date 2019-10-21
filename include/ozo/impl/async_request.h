@@ -316,17 +316,13 @@ struct async_request_op {
     async_request_op(Query query, TimeConstraint time_constrain, OutHandler out, Handler handler)
     : out_(std::move(out)), query_(std::move(query)), time_constraint_(time_constrain), handler_(std::move(handler)) {}
 
-    template <typename Connection>
-    auto apply_time_constaint_or_strand (Connection& conn, Handler handler) const {
+    template <typename Connection, typename SourceHandler>
+    auto apply_time_constaint_or_strand (Connection& conn, SourceHandler&& handler) const {
         if constexpr (IsNone<TimeConstraint>) {
-            return detail::wrap_executor {
-                detail::make_strand_executor(ozo::get_executor(conn)),
-                std::move(handler)
-            };
+            return std::forward<SourceHandler>(handler);
         } else {
-            return detail::deadline_handler {
-                ozo::get_executor(conn), time_constraint_, std::move(handler),
-                detail::cancel_io(unwrap_connection(conn), get_allocator())
+            return detail::io_deadline_handler<std::decay_t<decltype(unwrap_connection(conn))>, std::decay_t<SourceHandler>, Connection> {
+                unwrap_connection(conn), time_constraint_, std::forward<SourceHandler>(handler)
             };
         }
     }
@@ -337,7 +333,11 @@ struct async_request_op {
             return handler_(ec, std::move(conn));
         }
 
-        auto handler = apply_time_constaint_or_strand(conn, std::move(handler_));
+        auto handler = apply_time_constaint_or_strand(conn, detail::wrap_executor {
+            detail::make_strand_executor(ozo::get_executor(conn)),
+            std::move(handler_)
+        });
+
         auto ctx = make_request_operation_context(std::move(conn), std::move(handler));
 
         async_send_query_params(ctx, std::move(query_));
