@@ -55,7 +55,6 @@ set(SOURCES
     failover/strategy.cpp
     failover/role_based.cpp
     detail/deadline.cpp
-    detail/call_once.cpp
     impl/cancel.cpp
     main.cpp
 )
