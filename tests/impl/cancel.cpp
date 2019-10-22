@@ -108,10 +108,4 @@ TEST_F(initiate_async_cancel, should_post_cancel_op_with_time_constraint_into_ca
     initiate_async_cancel_(ozo::tests::wrap(callback), cancel_handle(cancel_handle_, handle_executor), io, ozo::time_traits::time_point{});
 }
 
-TEST(on_cancel_op_timer, should_call_callback_with_asio_error_timed_out) {
-    StrictMock<ozo::tests::callback_gmock<std::string>> callback;
-    EXPECT_CALL(callback, call(ozo::error_code{boost::asio::error::timed_out}, _));
-    ozo::impl::on_cancel_op_timer(ozo::tests::wrap(callback))(ozo::error_code{});
-}
-
 }

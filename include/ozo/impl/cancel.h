@@ -5,8 +5,7 @@
 #include <ozo/type_traits.h>
 #include <ozo/time_traits.h>
 #include <ozo/detail/deadline.h>
-#include <ozo/detail/make_copyable.h>
-#include <ozo/detail/call_once.h>
+#include <ozo/detail/wrap_executor.h>
 
 #include <boost/asio/bind_executor.hpp>
 #include <future>
@@ -38,24 +37,72 @@ inline auto dispatch_cancel(Handle&& h) {
     return res;
 }
 
-template <typename CancelHandler>
-struct on_cancel_op_timer {
-
-    CancelHandler handler_;
-
-    on_cancel_op_timer(CancelHandler handler) : handler_(handler) {}
-
-    void operator() (error_code) {
-        handler_(asio::error::timed_out, "cancel() operation waiting aborted by time-out");
+template <typename Executor, typename Continuation>
+class deadline_cancel_handler {
+public:
+    template <typename TimeConstraint>
+    deadline_cancel_handler(const Executor& ex, TimeConstraint t, Continuation handler)
+    : timer_(ozo::detail::get_operation_timer(ex, t)) {
+        auto allocator = asio::get_associated_allocator(handler);
+        ctx_ = std::allocate_shared<context>(allocator, std::move(handler));
+        timer_.async_wait(on_timer_expired{ctx_});
     }
 
-    using executor_type = asio::associated_executor_t<CancelHandler>;
+    void operator() (error_code ec, std::string msg) {
+        if (--ctx_->state_) {
+            timer_.cancel();
+            auto handler = std::move(ctx_->handler_);
+            ctx_.reset();
+            handler(std::move(ec), std::move(msg));
+        }
+    }
 
-    executor_type get_executor() const noexcept { return asio::get_associated_executor(handler_);}
+    using executor_type = asio::associated_executor_t<Continuation>;
 
-    using allocator_type = asio::associated_allocator_t<CancelHandler>;
+    executor_type get_executor() const noexcept { return ctx_->executor_;}
 
-    allocator_type get_allocator() const noexcept { return asio::get_associated_allocator(handler_);}
+    using allocator_type = asio::associated_allocator_t<Continuation>;
+
+    allocator_type get_allocator() const noexcept { return ctx_->allocator_;}
+
+private:
+    using timer_type = typename ozo::detail::operation_timer<Executor>::type;
+
+    struct context {
+        Continuation handler_;
+        executor_type executor_;
+        allocator_type allocator_;
+        std::atomic<int> state_{2};
+
+        context(Continuation&& handler)
+        : handler_(std::move(handler)),
+          executor_(asio::get_associated_executor(handler_)),
+          allocator_(asio::get_associated_allocator(handler_)) {
+        }
+    };
+
+    timer_type timer_;
+    std::shared_ptr<context> ctx_;
+
+    struct on_timer_expired {
+        using executor_type = deadline_cancel_handler::executor_type;
+
+        executor_type get_executor() const noexcept { return ctx_->executor_;}
+
+        using allocator_type = deadline_cancel_handler::allocator_type;
+
+        allocator_type get_allocator() const noexcept { return ctx_->allocator_;}
+
+        void operator() (error_code) {
+            if (--(ctx_->state_)) {
+                auto handler = std::move(ctx_->handler_);
+                ctx_.reset();
+                handler(asio::error::timed_out, "cancel() operation waiting aborted by time-out");
+            }
+        }
+
+        std::shared_ptr<context> ctx_;
+    };
 };
 
 template <typename Handle, typename CancelHandler>
@@ -84,12 +131,14 @@ struct cancel_op {
 struct initiate_async_cancel {
     template <typename CompletionHandler, typename Handle, typename IoContext>
     inline auto operator () (CompletionHandler&& h, Handle&& cancel_handle, IoContext& io, time_traits::time_point t) const {
-        using shared_handler_t = detail::make_copyable<detail::call_once<CompletionHandler>>;
-        auto allocator = asio::get_associated_allocator(h);
-        shared_handler_t shared_handler(std::allocator_arg, allocator, std::forward<CompletionHandler>(h));
         asio::post(cancel_op{
             std::forward<Handle>(cancel_handle),
-            detail::deadline_handler(io.get_executor(), t, shared_handler, on_cancel_op_timer{shared_handler})
+            deadline_cancel_handler {io.get_executor(), t,
+                detail::wrap_executor {
+                    ozo::detail::make_strand_executor(io.get_executor()),
+                    std::forward<CompletionHandler>(h)
+                }
+            }
         });
     }
 
@@ -97,7 +146,7 @@ struct initiate_async_cancel {
     inline auto operator () (CompletionHandler&& h, Handle&& cancel_handle) const {
         asio::post(cancel_op{
             std::forward<Handle>(cancel_handle),
-            std::move(h)
+            std::forward<CompletionHandler>(h)
         });
     }
 };
