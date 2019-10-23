@@ -234,13 +234,9 @@ struct async_get_result_op : boost::asio::coroutine {
         const auto status = result_status(*result_);
         switch (status) {
             case PGRES_SINGLE_TUPLE:
-                process_and_done(std::move(result_));
-                return;
             case PGRES_TUPLES_OK:
-                process_and_done(std::move(result_));
-                return;
             case PGRES_COMMAND_OK:
-                done();
+                process_and_done(std::move(result_));
                 return;
             case PGRES_BAD_RESPONSE:
                 done(error::result_status_bad_response);
