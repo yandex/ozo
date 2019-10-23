@@ -240,15 +240,12 @@ TEST_F(basic_result, at_should_throw_std_out_of_range_if_row_number_greater_than
     EXPECT_THROW(result.at(42), std::out_of_range);
 }
 
-TEST_F(basic_result, handle_should_return_reference_to_handle) {
-    static_assert(std::is_reference_v<decltype(std::as_const(result).handle())>, "should be reference");
-    EXPECT_EQ(result.handle(), &mock);
+TEST_F(basic_result, handle_should_return_pointer_to_native_handle) {
+    EXPECT_EQ(result.native_handle(), &mock);
 }
 
 TEST_F(basic_result, const_handle_should_return_const_reference_to_handle) {
-    static_assert(std::is_reference_v<decltype(std::as_const(result).handle())>, "should be reference");
-    static_assert(std::is_const_v<std::remove_reference_t<decltype(std::as_const(result).handle())>>, "should be const");
-    EXPECT_EQ(std::as_const(result).handle(), &std::as_const(mock));
+    EXPECT_EQ(std::as_const(result).native_handle(), &mock);
 }
 
 } // namespace
