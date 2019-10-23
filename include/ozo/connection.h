@@ -42,7 +42,7 @@ struct unwrap_connection_impl : unwrap_recursive_impl<T> {};
  *
  * This is customization point for the Connection enhancement. To customize it
  * it is better to specialize `ozo::unwrap_connection_impl` template for custom type.
- * E.g. such overload is used for the `ozo::impl::pooled_connection` of this library.
+ * E.g. such overload is used for the `ozo::pooled_connection` of this library.
  * The deafult implementation of the function is perfect forwarding. And may look like
  * this (*for exposition only - actual implementation may be different*):
  * @code
