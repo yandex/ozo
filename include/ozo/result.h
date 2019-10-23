@@ -10,13 +10,14 @@ namespace ozo {
 
 /**
  * @brief Database request result value proxy
- * @ingroup group-requests-types
  *
  * Provides access to values of a database request result. The library is designed
  * to do not obligate a user to have a deal with raw and untyped results representation.
  * But sometimes it is really needed to have an access to raw representation of the
  * result. E.g. for reducing memory consumption or performance reason. For that case
  * the library provides this mechanism.
+ *
+ * @ingroup group-requests-types
  */
 #ifndef OZO_DOCUMENTATION
 template <typename Result>
@@ -32,7 +33,7 @@ public:
     value(const coordinates& v) : v_(v) {}
 
     /**
-     * @brief Value type OID
+     * Get value type OID
      *
      * @return oid_t --- type OID
      */
@@ -41,7 +42,8 @@ public:
     }
 
     /**
-     * @brief Indicates text format representation for the value
+     * Determine whether the value is in binary format. Should be always false for current
+     * implementation.
      *
      * @return `true` --- value in text format
      * @return `false` --- value in binary format
@@ -51,7 +53,8 @@ public:
     }
 
     /**
-     * @brief Indicates binary format representation for the value
+     * Determine whether the value is in binary format. Should be always true for current
+     * implementation.
      *
      * @return `true` --- value in binary format
      * @return `false` --- value in text format
@@ -61,7 +64,7 @@ public:
     }
 
     /**
-     * @brief Value raw data buffer access
+     * Get value raw data buffer access.
      *
      * @return const char* --- pointer to raw data buffer
      * @sa ozo::value::size()
@@ -71,7 +74,7 @@ public:
     }
 
     /**
-     * @brief Value raw data buffer size
+     * Get value raw data buffer size.
      *
      * @return std::size_t --- size of raw data buffer in bytes.
      * @sa ozo::value::data()
@@ -81,7 +84,7 @@ public:
     }
 
     /**
-     * @brief Indicates if value is in `NULL` state.
+     * Determine whether the value is in `NULL` state.
      *
      * @return `true` --- if value is `NULL`
      * @return `false` --- value is not `NULL`
@@ -103,6 +106,11 @@ inline const T* data(const value<Result>& v) noexcept {
     return reinterpret_cast<const T*>(v.data());
 }
 
+template <typename T, typename Result>
+inline std::size_t size(const value<Result>& v) noexcept {
+    return v.size();
+}
+
 /**
  * @brief Database request result row proxy
  *
@@ -118,7 +126,7 @@ public:
 
 #ifdef OZO_DOCUMENTATION
     /**
-     * @brief Constant iterator on value in the row.
+     * Constant iterator on value in the row.
      *
      * Random access iterator. Provides access to a `ozo::value` object.
      * Since `ozo::basic_result` provides read-only access to a database
@@ -157,28 +165,28 @@ public:
     };
 #endif
     /**
-     * @brief Iterator on value in the row, alias on `iterator` class.
+     * Iterator on value in the row, alias on `iterator` class.
      */
     using iterator = const_iterator;
 
     row(const coordinates& first) : first_(first) {}
 
     /**
-     * @brief Iterator on the first of row values sequence.
+     * Iterator on the first of row values sequence.
      *
      * @return const_iterator --- iterator on the first of row values sequence
      */
     const_iterator begin() const noexcept { return {first_}; }
 
     /**
-     * @brief Iterator on end of row values sequence.
+     * Iterator on end of row values sequence.
      *
-     * @return const_iterator --- iterator on end of row values sequence
+     * @return const_iterator --- iterator on the end of row values sequence
      */
     const_iterator end() const noexcept { return begin() + size(); }
 
     /**
-     * @brief Find value by field name.
+     * Find value by field name.
      *
      * @param name --- value field name to find.
      * @return `const_iterator` --- iterator on found value.
@@ -190,24 +198,25 @@ public:
     }
 
     /**
-     * @brief Get value by field index.
+     * Get value by field index.
      *
      * Valid index is in range `[0, size())`. No index-in-range check is performing.
      * @note If given index is out of range the result is UB.
+     *
      * @param index --- index of the value field.
      * @return `ozo::value` --- proxy object on the value.
      */
     value operator[] (int index) const noexcept { return *(begin() + index); }
 
     /**
-     * @brief Get count of values in row.
+     * Get count of values in row.
      *
      * @return `std::size_t` --- count of values in row.
      */
     std::size_t size() const noexcept { return impl::nfields(*(first_.res)); }
 
     /**
-     * @brief Indicates if there are no values in row.
+     * Indicates if there are no values in row.
      *
      * @return `true` --- no values in the row, `size() == 0`, `begin() == end()`.
      * @return `false` --- row is not empty, `size() > 0`, `begin() != end()`.
@@ -215,9 +224,10 @@ public:
     bool empty() const noexcept { return size() == 0; }
 
     /**
-     * @brief Get value by field index with range check
+     * Get value by field index with range check
      *
      * If index in not range `[0, size())` throws `std::out_of_range`.
+     *
      * @param index --- index of value in the row.
      * @return `ozo::value` --- proxy object to a value.
      */
@@ -230,9 +240,10 @@ public:
     }
 
     /**
-     * @brief Get value by field name with range check
+     * Get value by field name with range check
      *
      * If value with field name not found throws `std::out_of_range`.
+     *
      * @param name --- index of value in the row.
      * @return value --- proxy object to a value.
      */
@@ -251,23 +262,25 @@ private:
 
 /**
  * @brief Database raw result representation
- * @ingroup group-requests-types
  *
  * This class provides access to the raw representation of a database request result. It
  * models range of rows. Each row can be accessed via index or iterator.
  * @tparam T --- underlying native result handler type, in common case `ozo::native_result_handle`.
+ *
+ * @ingroup group-requests-types
  */
 template <typename T>
 class basic_result {
 public:
     using handle_type = T;
+    using native_handle_type = decltype(std::addressof(*std::declval<handle_type>()));
     using row = ozo::row<std::decay_t<decltype(*std::declval<handle_type>())>>;
     using value = typename row::value;
     using coordinates = typename row::coordinates;
 
 #ifdef OZO_DOCUMENTATION
     /**
-     * @brief Constant iterator on row in the result.
+     * Constant iterator on row in the result.
      *
      * Random access iterator. Provides access to a `ozo::row` object.
      * Since `ozo::basic_result` provides read-only access to a database
@@ -307,7 +320,7 @@ public:
 #endif
 
     /**
-     * @brief Iterator on value in the row, alias on `iterator` class.
+     * Iterator on value in the row, alias on `iterator` class.
      */
     using iterator = const_iterator;
 
@@ -315,28 +328,28 @@ public:
     basic_result(handle_type res) : res_(std::move(res)) {}
 
     /**
-     * @brief Iterator on the first row of the result.
+     * Iterator on the first row of the result.
      *
      * @return const_iterator --- iterator on the first row
      */
     const_iterator begin() const noexcept { return {{std::addressof(*res_), 0, 0}}; }
 
     /**
-     * @brief Iterator on end of row sequence.
+     * Iterator on end of row sequence.
      *
      * @return const_iterator --- iterator on end of row sequence
      */
     const_iterator end() const noexcept { return begin() + size(); }
 
     /**
-     * @brief Get count of rows.
+     * Get count of rows.
      *
      * @return `std::size_t` --- count of rows.
      */
     std::size_t size() const noexcept { return impl::ntuples(*res_);}
 
     /**
-     * @brief Indicates if result is empty.
+     * Determine whether the result is empty.
      *
      * @return `true` --- no ros in the result, `size() == 0`, `begin() == end()`.
      * @return `false` --- row is not empty, `size() > 0`, `begin() != end()`.
@@ -344,9 +357,10 @@ public:
     bool empty() const noexcept { return size() == 0; }
 
     /**
-     * @brief Get row by index.
+     * Get row by index.
      *
      * Valid index is in range `[0, size())`. No index-in-range check is performing.
+     *
      * @note If given index is out of range the result is UB.
      * @param index --- index of a row.
      * @return `ozo::row` --- proxy object to a row.
@@ -354,9 +368,10 @@ public:
     row operator[] (int i) const noexcept { return *(begin() + i); }
 
     /**
-     * @brief Get row by index with range check
+     * Get row by index with range check.
      *
      * If index in not range `[0, size())` throws `std::out_of_range`.
+     *
      * @param index --- index of a row.
      * @return `ozo::row` --- proxy object to a row.
      */
@@ -367,18 +382,30 @@ public:
         return (*this)[i];
     }
 
-    handle_type& handle() noexcept {
-        return res_;
-    }
-
-    const handle_type& handle() const noexcept {
-        return res_;
+    /**
+     * Get the native `libpq` handle representation.
+     *
+     * This function may be used to obtain the underlying representation of the handle.
+     * This is intended to allow access to native handle functionality that is not otherwise provided.
+     *
+     * @return native_handle_type --- native handle representation
+     */
+    native_handle_type native_handle() const noexcept {
+        return std::addressof(*res_);
     }
 
 private:
     handle_type res_;
 };
 
+/**
+ * @brief Database raw result representation
+ *
+ * Stores raw request result. The result object is useful then it needs to get an access
+ * to raw data representation or the underlying `libpq` handle.
+ *
+ * @ingroup group-requests-types
+ */
 using result = basic_result<native_result_handle>;
 
 template <typename T>
