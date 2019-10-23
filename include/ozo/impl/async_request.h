@@ -21,9 +21,6 @@ struct request_operation_context {
     std::decay_t<Handler> handler;
     query_state state = query_state::send_in_progress;
 
-    using result_type = std::decay_t<decltype(get_result(conn))>;
-    result_type result;
-
     request_operation_context(Connection conn, Handler handler)
       : conn(std::forward<Connection>(conn)),
         handler(std::forward<Handler>(handler)) {}
@@ -54,17 +51,6 @@ template <typename ...Ts>
 inline void set_query_state(const request_operation_context_ptr<Ts...>& ctx,
         query_state state) noexcept {
     ctx->state = state;
-}
-
-template <typename ...Ts>
-inline auto& get_request_result(const request_operation_context_ptr<Ts...>& ctx) noexcept {
-    return ctx->result;
-}
-
-template <typename ...Ts>
-inline void set_request_result(const request_operation_context_ptr<Ts...>& ctx,
-        typename request_operation_context<Ts...>::result_type value) noexcept {
-    ctx->result = std::move(value);
 }
 
 template <typename ... Ts>
@@ -178,6 +164,8 @@ template <typename Context, typename ResultProcessor>
 struct async_get_result_op : boost::asio::coroutine {
     Context ctx_;
     ResultProcessor process_;
+    using result_type = std::decay_t<decltype(get_result(get_connection(ctx_)))>;
+    result_type result_;
 
     async_get_result_op(Context ctx, ResultProcessor process)
     : ctx_(ctx), process_(process) {}
@@ -221,13 +209,13 @@ struct async_get_result_op : boost::asio::coroutine {
                 }
             }
 
-            set_request_result(ctx_, get_result(get_connection(ctx_)));
+            result_ = get_result(get_connection(ctx_));
 
-            if (!get_request_result(ctx_)) {
+            if (!result_) {
                 return done();
             }
 
-            if (result_status(*get_request_result(ctx_)) != PGRES_SINGLE_TUPLE) {
+            if (result_status(*result_) != PGRES_SINGLE_TUPLE) {
                 do {
                     while (is_busy(get_connection(ctx_))) {
                         yield get_connection(ctx_).async_wait_read(std::move(*this));
@@ -243,13 +231,13 @@ struct async_get_result_op : boost::asio::coroutine {
     }
 
     void handle_result() {
-        const auto status = result_status(*get_request_result(ctx_));
+        const auto status = result_status(*result_);
         switch (status) {
             case PGRES_SINGLE_TUPLE:
-                process_and_done(std::move(get_request_result(ctx_)));
+                process_and_done(std::move(result_));
                 return;
             case PGRES_TUPLES_OK:
-                process_and_done(std::move(get_request_result(ctx_)));
+                process_and_done(std::move(result_));
                 return;
             case PGRES_COMMAND_OK:
                 done();
@@ -261,7 +249,7 @@ struct async_get_result_op : boost::asio::coroutine {
                 done(error::result_status_empty_query);
                 return;
             case PGRES_FATAL_ERROR:
-                done(result_error(*get_request_result(ctx_)));
+                done(result_error(*result_));
                 return;
             case PGRES_COPY_OUT:
             case PGRES_COPY_IN:
