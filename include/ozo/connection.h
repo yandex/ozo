@@ -28,7 +28,7 @@ namespace ozo {
  * @brief Database connection concept definition
  */
 
-using no_statistics = decltype(hana::make_map());
+using no_statistics = ozo::none_t;
 
 template <typename T>
 struct unwrap_connection_impl : unwrap_recursive_impl<T> {};
@@ -103,7 +103,7 @@ class connection {
 public:
     using native_handle_type = native_conn_handle::pointer; //!< Native connection handle type
     using oid_map_type = OidMap; //!< Oid map of types that are used with the connection
-    using error_context = std::string; //!< Additional error context which could provide context depended information for errors
+    using error_context_type = std::string; //!< Additional error context which could provide context depended information for errors
     using executor_type = io_context::executor_type; //!< The type of the executor associated with the object.
 
     /**
@@ -126,6 +126,7 @@ public:
 
     /**
      * Get a reference to an oid map object for types that are used with the connection.
+     * This method is used after connection establishing process to update the map.
      *
      * @return oid_map_type& --- reference on oid map object.
      */
@@ -137,22 +138,25 @@ public:
      */
     const oid_map_type& oid_map() const noexcept { return oid_map_;}
 
-    Statistics& statistics() noexcept { return statistics_;}
+    template <typename Key, typename Value>
+    void update_statistics(const Key&, const Value&) noexcept {
+        static_assert(std::is_void_v<Key>, "update_statistics is not supperted");
+    }
     const Statistics& statistics() const noexcept { return statistics_;}
 
     /**
      * Get the additional context object for an error that occurred during the last operation on the connection.
      *
-     * @return const error_context& --- additional context for the error
+     * @return const error_context_type& --- additional context for the error
      */
-    const error_context& get_error_context() const noexcept { return error_context_; }
+    const error_context_type& get_error_context() const noexcept { return error_context_; }
     /**
      * Set the additional error context object. This function may be used to provide additional context-depended
      * data that is related to the current operation error.
      *
      * @param v --- new error context.
      */
-    void set_error_context(error_context v = error_context{}) { error_context_ = std::move(v); }
+    void set_error_context(error_context_type v = error_context_type{}) { error_context_ = std::move(v); }
 
     /**
      * Get the executor associated with the object.
@@ -190,6 +194,19 @@ public:
      * @return error_code --- error code of the function call.
      */
     error_code assign(native_conn_handle&& handle);
+
+    /**
+     * Release ownership of the native connection handle object.
+     *
+     * This function may be used to obtain the underlying representation of the descriptor.
+     * After calling this function, is_open() returns false. The caller is the owner for
+     * the connection descriptor. All outstanding asynchronous read or write operations will
+     * finish immediately, and the handlers for cancelled operations will be passed the
+     * `boost::asio::error::operation_aborted` error.
+     *
+     * @return native_conn_handle --- native connection handle object
+     */
+    native_conn_handle release();
 
     /**
      * Asynchronously wait for the connection socket to become ready to write or to have pending error conditions.
@@ -253,6 +270,15 @@ public:
      */
     operator bool () const noexcept { return !is_bad();}
 
+    /**
+     * Determine whether the connection is open.
+     *
+     * @return false --- connection is closed and no native handle associated with.
+     * @return true  --- connection is open and there is a native handle associated with.
+     */
+    bool is_open() const noexcept { return native_handle() != nullptr;};
+
+    ~connection();
 private:
     using stream_type = asio::posix::stream_descriptor;
 
@@ -264,7 +290,7 @@ private:
     stream_type socket_;
     oid_map_type oid_map_;
     Statistics statistics_;
-    error_context error_context_;
+    error_context_type error_context_;
 };
 
 /**
@@ -304,9 +330,9 @@ struct is_connection<connection<Ts...>> : std::true_type {};
 * | Expression | Type | Description |
 * |------------|------|-------------|
 * | <PRE>as_const(c).native_handle()</PRE> | `C::native_handle_type` | Should return native handle type of PostgreSQL connection. In the current implementation it should be `PGconn*` type. Shall not throw an exception. |
-* | <PRE>c.oid_map()<sup>[1]</sup><br/>as_const(c).oid_map()<sup>[2]</sup></PRE> | `C::oid_map_type` | Should return a reference<sup>[1]</sup> or a const reference<sup>[2]</sup> on `OidMap` which is used by the connection, the library may update this map during connection establishing. Shall not throw an exception. |
+* | <PRE>as_const(c).oid_map()</PRE> | `C::oid_map_type` | Should return a const reference on `OidMap` which is used by the library for custom types introspection for the connection IO. Shall not throw an exception. |
 * | <PRE>as_const(c).%get_error_context()</PRE> | `C::error_context_type` | Should return a const reference on an additional error context is related to at least the last error. In the current implementation, the type supported is `std::string`. Shall not throw an exception. |
-* | <PRE>c.set_error_context(error_context)<sup>[1]</sup><br/>%c.set_error_context()<sup>[2]</sup></PRE> | | Should set<sup>[1]</sup> or reset<sup>[2]</sup> additional error context. |
+* | <PRE>c.set_error_context(error_context_type)<sup>[1]</sup><br/>%c.set_error_context()<sup>[2]</sup></PRE> | | Should set<sup>[1]</sup> or reset<sup>[2]</sup> additional error context. |
 * | <PRE>as_const(c).%get_executor()</PRE> | `C::executor_type` | Should provide an executor object that is useful for IO-related operations, like timer and so on. In the current implementation `boost::asio::io_context::executor_type` is only applicable. Shall not throw an exception. |
 * | <PRE>c.set_executor(executor)</PRE> | `error_code` | Should change the executor for the specified one. This operation is used by `ozo::connection_pool` to provide connection migration between different instances of `boost::asio::io_service`. The call of the function during the active operation on connection is UB. The error should be indicated via the result. |
 * | <PRE>c.async_wait_write(WaitHandler)</PRE> | | Should asynchronously wait for write ready state of the connection socket. |
@@ -314,6 +340,7 @@ struct is_connection<connection<Ts...>> : std::true_type {};
 * | <PRE>c.close()</PRE> | `error_code` | Should close connection socket and cancel all IO operation on the connection (like `async_wait_write`, `async_wait_read`). Shall not throw an exception. |
 * | <PRE>%c.cancel()</PRE> | | Should cancel all IO operation on the connection (like `async_wait_write`, `async_wait_read`). Should not throw an exception. |
 * | <PRE>%c.is_bad()</PRE> | bool | Should return `false` for the established connection that can perform operations. Shall not throw an exception. |
+* | <PRE>%c.is_open()</PRE> | bool | Should return `true` for the object with valid native connection handle attached. Shall not throw an exception. |
 * | <PRE>%bool(as_const(c))</PRE> | bool | Should return `true` for the established connection that can perform operations. In fact it should be the negation of `c.is_bad()`. Shall not throw an exception. |
 * | <PRE>ozo::get_connection(c, t, Handler)</PRE> | | Should reset the additional error context. This behaviour is performed in default implementation of `ozo::get_connection()` via `%c.set_error_context()` call. |
 * | <PRE>ozo::is_connection<C></PRE> | `std::true_type` | The template `ozo::is_connection` should be specialized for the connection type via inheritance from `std::true_type`. |
