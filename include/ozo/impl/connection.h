@@ -63,22 +63,21 @@ error_code connection<OidMap, Statistics>::assign(native_conn_handle&& handle) {
         return error::pq_socket_failed;
     }
 
-    int new_fd = dup(fd);
-    if (new_fd == -1) {
-        set_error_context("error while dup(fd) for socket stream");
-        return error_code{errno, boost::system::generic_category()};
-    }
+    stream_type new_socket(*io_, fd);
+    socket_.release();
 
-    error_code ec;
-    socket_.assign(new_fd, ec);
-
-    if (ec) {
-        set_error_context("assign socket failed");
-        return ec;
-    }
-
+    socket_ = std::move(new_socket);
     handle_ = std::move(handle);
-    return ec;
+    return {};
+}
+
+template <typename OidMap, typename Statistics>
+native_conn_handle connection<OidMap, Statistics>::release() {
+    socket_.release();
+    native_conn_handle retval;
+    using std::swap;
+    swap(retval, handle_);
+    return retval;
 }
 
 template <typename OidMap, typename Statistics>
@@ -95,10 +94,8 @@ void connection<OidMap, Statistics>::async_wait_read(WaitHandler&& h) {
 
 template <typename OidMap, typename Statistics>
 error_code connection<OidMap, Statistics>::close() noexcept {
-    error_code ec;
-    socket_.close(ec);
-    handle_.reset();
-    return ec;
+    release().reset();
+    return error_code{};
 }
 
 template <typename OidMap, typename Statistics>
@@ -110,6 +107,11 @@ void connection<OidMap, Statistics>::cancel() noexcept {
 template <typename OidMap, typename Statistics>
 bool connection<OidMap, Statistics>::is_bad() const noexcept {
     return detail::connection_status_bad(native_handle());
+}
+
+template <typename OidMap, typename Statistics>
+connection<OidMap, Statistics>::~connection() {
+    close();
 }
 
 template <typename Connection>
