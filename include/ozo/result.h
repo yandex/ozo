@@ -42,7 +42,7 @@ public:
     }
 
     /**
-     * Determine whether the value is in binary format. Should be always false for current
+     * Determine whether the value is in text format. Should be always false for current
      * implementation.
      *
      * @return `true` --- value in text format
