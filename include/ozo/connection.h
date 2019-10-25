@@ -76,11 +76,6 @@ inline constexpr decltype(auto) unwrap_connection(T&& conn) noexcept {
     return detail::apply<unwrap_connection_impl>(std::forward<T>(conn));
 }
 
-namespace detail {
-template <typename Connection, typename Executor>
-inline error_code bind_connection_executor(Connection&, const Executor&);
-}
-
 /**
  * @brief Default model for `Connection` concept
  *
@@ -164,22 +159,6 @@ public:
      * @return executor_type --- executor object.
      */
     executor_type get_executor() const noexcept { return io_->get_executor(); }
-
-    /**
-     * Set the new executor for the object.
-     *
-     * This function may be used to migrate the object between different execution contexts.
-     *
-     * Typically this function is used by the library in the connection pool implementation.
-     * Users should not use it directly other than for a special purpose (e.g., own connection pool
-     * implementation and so on).
-     *
-     * @note The function shall not be called while any active operation executes on the object.
-     *
-     * @param ex --- new executor object.
-     * @return error_code --- error code of the function call.
-     */
-    error_code set_executor(const executor_type& ex);
 
     /**
      * Assign an existing native connection handle to the object.
@@ -282,9 +261,6 @@ public:
 private:
     using stream_type = asio::posix::stream_descriptor;
 
-    template <typename Connection, typename Executor>
-    friend error_code ozo::detail::bind_connection_executor(Connection&, const Executor&);
-
     native_conn_handle handle_;
     io_context* io_ = nullptr;
     stream_type socket_;
@@ -334,7 +310,6 @@ struct is_connection<connection<Ts...>> : std::true_type {};
 * | <PRE>as_const(c).%get_error_context()</PRE> | `C::error_context_type` | Should return a const reference on an additional error context is related to at least the last error. In the current implementation, the type supported is `std::string`. Shall not throw an exception. |
 * | <PRE>c.set_error_context(error_context_type)<sup>[1]</sup><br/>%c.set_error_context()<sup>[2]</sup></PRE> | | Should set<sup>[1]</sup> or reset<sup>[2]</sup> additional error context. |
 * | <PRE>as_const(c).%get_executor()</PRE> | `C::executor_type` | Should provide an executor object that is useful for IO-related operations, like timer and so on. In the current implementation `boost::asio::io_context::executor_type` is only applicable. Shall not throw an exception. |
-* | <PRE>c.set_executor(executor)</PRE> | `error_code` | Should change the executor for the specified one. This operation is used by `ozo::connection_pool` to provide connection migration between different instances of `boost::asio::io_service`. The call of the function during the active operation on connection is UB. The error should be indicated via the result. |
 * | <PRE>c.async_wait_write(WaitHandler)</PRE> | | Should asynchronously wait for write ready state of the connection socket. |
 * | <PRE>c.async_wait_read(WaitHandler)</PRE> | | Should asynchronously wait for read ready state of the connection socket. |
 * | <PRE>c.close()</PRE> | `error_code` | Should close connection socket and cancel all IO operation on the connection (like `async_wait_write`, `async_wait_read`). Shall not throw an exception. |
