@@ -83,10 +83,12 @@ using namespace testing;
 struct pooled_connection : Test {
     StrictMock<connection_gmock> connection_mock{};
     StrictMock<pool_handle_mock> handle_mock{};
+    StrictMock<stream_descriptor_mock> stream;
+    io_context io;
 
     using impl = ozo::impl::pooled_connection<connection_source>;
     auto make_connection() {
-        return std::make_shared<connection<>>();
+        return std::make_shared<connection<>>(connection<>{{}, {io, stream}, {}, nullptr, {} , nullptr});
     }
     auto make_connection(native_handle h) {
         auto conn = make_connection();
@@ -173,10 +175,11 @@ struct pooled_connection_wrapper : Test {
     StrictMock<callback_gmock<pooled_connection_ptr>> callback_mock;
     StrictMock<connection_gmock> connection_mock{};
     StrictMock<pool_handle_mock> handle_mock{};
+    StrictMock<stream_descriptor_mock> stream;
     io_context io;
 
     auto make_connection() {
-        return std::make_shared<connection<>>();
+        return std::make_shared<connection<>>(connection<>{{}, {io, stream}, {}, nullptr, {} , nullptr});
     }
 
     auto null_connection() {

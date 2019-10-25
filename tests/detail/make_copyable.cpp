@@ -15,9 +15,8 @@ using namespace ozo::tests;
 namespace asio = boost::asio;
 
 struct make_copyable : Test {
-    StrictMock<executor_gmock> executor;
     StrictMock<callback_gmock<int>> cb_mock {};
-    ozo::tests::execution_context io{executor};
+    ozo::tests::execution_context io;
 };
 
 struct handler_mock {

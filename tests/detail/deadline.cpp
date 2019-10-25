@@ -20,18 +20,15 @@ struct stream_mock {
 };
 
 struct io_deadline_handler : Test {
-    ozo::tests::executor_gmock executor;
-    ozo::tests::strand_executor_service_gmock strand_service;
-    ozo::tests::steady_timer_gmock timer;
-    ozo::tests::steady_timer_service_mock timer_service;
-    ozo::tests::execution_context io{executor, strand_service, timer_service};
+    ozo::tests::steady_timer_mock timer;
+    ozo::tests::execution_context io;
     StrictMock<ozo::tests::callback_gmock<int>> continuation;
-    StrictMock<ozo::tests::executor_gmock> continuation_executor;
+    StrictMock<ozo::tests::executor_mock> continuation_executor;
     StrictMock<stream_mock> stream;
     std::function<void (ozo::error_code)> on_timer_expired;
 
     io_deadline_handler() {
-        EXPECT_CALL(timer_service, timer(An<time_point>())).WillRepeatedly(ReturnRef(timer));
+        EXPECT_CALL(io.timer_service_, timer(An<time_point>())).WillRepeatedly(ReturnRef(timer));
         EXPECT_CALL(stream, get_executor()).WillRepeatedly(Return(io.get_executor()));
         EXPECT_CALL(continuation, get_executor())
             .WillRepeatedly(Return(ozo::tests::executor{continuation_executor, io}));

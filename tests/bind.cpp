@@ -15,16 +15,15 @@ using namespace ozo::tests;
 namespace asio = boost::asio;
 
 struct bind : Test {
-    StrictMock<executor_gmock> executor;
     StrictMock<callback_gmock<int>> cb_mock {};
-    ozo::tests::execution_context io{executor};
+    ozo::tests::execution_context io;
 };
 
 TEST_F(bind, should_use_handler_executor) {
     const InSequence s;
 
     EXPECT_CALL(cb_mock, get_executor()).WillOnce(Return(io.get_executor()));
-    EXPECT_CALL(executor, post(_)).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(io.executor_, post(_)).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(cb_mock, call(_, _)).WillOnce(Return());
 
     asio::post(ozo::detail::bind(wrap(cb_mock), ozo::error_code{}, 42));
