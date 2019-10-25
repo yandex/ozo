@@ -12,22 +12,6 @@ namespace ozo {
 
 namespace detail {
 
-template <typename Connection, typename Executor>
-inline error_code bind_connection_executor(Connection& conn, const Executor& ex) {
-    if (conn.get_executor() != ex) {
-        typename Connection::stream_type s{ex.context()};
-        error_code ec;
-        s.assign(conn.socket_.native_handle(), ec);
-        if (ec) {
-            return ec;
-        }
-        conn.socket_.release();
-        conn.socket_ = std::move(s);
-        conn.io_ = std::addressof(ex.context());
-    }
-    return {};
-}
-
 template <typename NativeHandle>
 inline bool connection_status_bad(NativeHandle handle) noexcept {
     return !handle || PQstatus(handle) == CONNECTION_BAD;
@@ -50,11 +34,6 @@ inline auto connection_error_message(NativeHandleType handle) {
 template <typename OidMap, typename Statistics>
 connection<OidMap, Statistics>::connection(io_context& io, Statistics statistics)
 : io_(std::addressof(io)), socket_(*io_), statistics_(std::move(statistics)) {}
-
-template <typename OidMap, typename Statistics>
-error_code connection<OidMap, Statistics>::set_executor(const executor_type& ex) {
-    return ozo::detail::bind_connection_executor(*this, ex);
-}
 
 template <typename OidMap, typename Statistics>
 error_code connection<OidMap, Statistics>::assign(native_conn_handle&& handle) {
