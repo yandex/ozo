@@ -15,13 +15,6 @@ namespace ozo {
 namespace tests {
 
 struct executor_mock {
-    virtual ~executor_mock() = default;
-    virtual void dispatch(std::function<void ()>) const = 0;
-    virtual void post(std::function<void ()>) const = 0;
-    virtual void defer(std::function<void ()>) const = 0;
-};
-
-struct executor_gmock : executor_mock {
     MOCK_CONST_METHOD1(dispatch, void (std::function<void ()>));
     MOCK_CONST_METHOD1(post, void (std::function<void ()>));
     MOCK_CONST_METHOD1(defer, void (std::function<void ()>));
@@ -42,12 +35,7 @@ auto wrap_shared(Function&& f) {
     return shared_wrapper<std::decay_t<Function>> {std::make_shared<std::decay_t<Function>>(std::forward<Function>(f))};
 }
 
-struct strand_executor_service_mock {
-    virtual ~strand_executor_service_mock() = default;
-    virtual executor_mock& get_executor() = 0;
-};
-
-struct strand_executor_service_gmock : strand_executor_service_mock {
+struct strand_service_mock {
     MOCK_METHOD0(get_executor, executor_mock& ());
 };
 
@@ -64,7 +52,22 @@ struct steady_timer_service_mock {
     MOCK_METHOD1(timer, steady_timer_mock& (asio::steady_timer::time_point));
 };
 
-using steady_timer_gmock = steady_timer_mock;
+struct stream_descriptor_mock {
+    MOCK_METHOD1(async_write_some, void(std::function<void(error_code)>));
+    MOCK_METHOD1(async_read_some, void(std::function<void(error_code)>));
+    MOCK_METHOD1(cancel, void(error_code&));
+    MOCK_METHOD1(close, void(error_code&));
+    MOCK_METHOD0(release, int());
+
+    friend bool invalid_stream_descriptor(stream_descriptor_mock* v) {
+        return v != nullptr;
+    }
+};
+
+struct stream_descriptor_service_mock {
+    MOCK_METHOD0(create, stream_descriptor_mock& ());
+    MOCK_METHOD1(create, stream_descriptor_mock& (int));
+};
 
 template <typename Executor>
 struct steady_timer {
@@ -152,56 +155,32 @@ struct execution_context : asio::execution_context {
         }
     };
 
-    executor_mock* executor_ = nullptr;
-    strand_executor_service_mock* strand_service_ = nullptr;
-    steady_timer_service_mock* timer_service_ = nullptr;
+    testing::StrictMock<executor_mock> executor_;
+    testing::StrictMock<strand_service_mock> strand_service_;
+    testing::StrictMock<steady_timer_service_mock> timer_service_;
+    testing::StrictMock<stream_descriptor_service_mock> stream_service_;
 
-    execution_context() = default;
-
-    execution_context(executor_mock& executor)
-        : executor_ {&executor} {}
-
-    execution_context(executor_mock& executor, strand_executor_service_mock& strand_service)
-        : executor_ {&executor}, strand_service_(&strand_service) {}
-
-    execution_context(executor_mock& executor, strand_executor_service_mock& strand_service, steady_timer_service_mock& timer_service)
-        : executor_ {&executor}, strand_service_(&strand_service), timer_service_(&timer_service) {}
-
-    executor_type get_executor() {
-        if (!executor_) {
-            // Contstruct with empty implementation, as get_io_context depends on an executor being present
-            return executor_type{*this};
-        }
-        return {*executor_, *this};
-    }
+    executor_type get_executor() { return {executor_, *this}; }
 };
 
 using io_context = execution_context;
 using executor = execution_context::executor_type;
 using strand = executor;
 
-struct stream_descriptor_mock {
-    virtual void async_write_some(std::function<void(error_code)> handler) = 0;
-    virtual void async_read_some(std::function<void(error_code)> handler) = 0;
-    virtual void cancel(error_code&) = 0;
-    virtual void close(error_code&) = 0;
-    virtual ~stream_descriptor_mock() = default;
-};
-
-struct stream_descriptor_gmock : stream_descriptor_mock {
-    MOCK_METHOD1(async_write_some, void(std::function<void(error_code)>));
-    MOCK_METHOD1(async_read_some, void(std::function<void(error_code)>));
-    MOCK_METHOD1(cancel, void(error_code&));
-    MOCK_METHOD1(close, void(error_code&));
-};
-
 struct stream_descriptor {
     io_context* io_ = nullptr;
     stream_descriptor_mock* mock_ = nullptr;
 
-    stream_descriptor() = default;
+    using native_handle_type = int;
+
     stream_descriptor(io_context& io, stream_descriptor_mock& mock)
     : io_(&io), mock_(&mock) {}
+
+    stream_descriptor(io_context& io, int fd)
+    : io_(&io), mock_(&io.stream_service_.create(fd)) {}
+
+    stream_descriptor(io_context& io)
+    : io_(&io), mock_(&io.stream_service_.create()) {}
 
     template <typename ConstBufferSequence, typename WriteHandler>
     void async_write_some(ConstBufferSequence const &, WriteHandler&& h) {
@@ -219,9 +198,9 @@ struct stream_descriptor {
 
     void cancel(error_code& ec) { mock_->cancel(ec);}
 
-    void close(error_code& ec) {
-        mock_->close(ec);
-    }
+    void close(error_code& ec) { mock_->close(ec);}
+
+    void release() { mock_->release();}
 
     using executor_type = boost::asio::executor;
 
@@ -239,7 +218,7 @@ struct strand_executor<ozo::tests::executor> {
     using type = ozo::tests::executor;
 
     static auto get(const tests::executor& ex) {
-        return type{ex.context().strand_service_->get_executor(), ex.context()};
+        return type{ex.context().strand_service_.get_executor(), ex.context()};
     }
 };
 
@@ -249,18 +228,12 @@ struct operation_timer<ozo::tests::executor> {
 
     template <typename TimeConstraint>
     static type get(const ozo::tests::executor& ex, TimeConstraint t) {
-        if (!ex.context_->timer_service_) {
-            throw std::logic_error("timer_service is nullptr");
-        }
-        return type{std::addressof(ex.context_->timer_service_->timer(t)), ex};
+        return type{std::addressof(ex.context_->timer_service_.timer(t)), ex};
     }
 
     template <typename TimeConstraint>
     static type get(const ozo::tests::executor& ex) {
-        if (!ex.context_->timer_service_) {
-            throw std::logic_error("timer_service is nullptr");
-        }
-        return type{std::addressof(ex.context_->timer_service_->timer()), ex};
+        return type{std::addressof(ex.context_->timer_service_.timer()), ex};
     }
 };
 

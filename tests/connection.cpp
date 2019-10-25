@@ -185,10 +185,8 @@ TEST(get_error_context, should_returns_reference_to_error_context) {
 }
 
 struct async_get_connection : Test {
-    StrictMock<executor_gmock> executor;
-    StrictMock<executor_gmock> callback_executor;
-    io_context io {executor};
-    execution_context cb_io {callback_executor};
+    io_context io;
+    execution_context cb_io;
 };
 
 TEST_F(async_get_connection, should_pass_through_the_connection_to_handler) {
@@ -198,8 +196,8 @@ TEST_F(async_get_connection, should_pass_through_the_connection_to_handler) {
     const InSequence s;
 
     EXPECT_CALL(cb_mock, get_executor()).WillOnce(Return(cb_io.get_executor()));
-    EXPECT_CALL(executor, dispatch(_)).WillOnce(InvokeArgument<0>());
-    EXPECT_CALL(callback_executor, dispatch(_)).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(io.executor_, dispatch(_)).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(cb_io.executor_, dispatch(_)).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(cb_mock, call(error_code{}, conn)).WillOnce(Return());
 
     ozo::async_get_connection(conn, ozo::none, wrap(cb_mock));
@@ -209,7 +207,7 @@ TEST_F(async_get_connection, should_reset_connection_error_context) {
     auto conn = std::make_shared<connection<>>(io);
     conn->error_context_ = "some context here";
 
-    EXPECT_CALL(executor, dispatch(_)).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(io.executor_, dispatch(_)).WillOnce(InvokeArgument<0>());
 
     ozo::async_get_connection(conn, ozo::none, [](error_code, auto conn) {
         EXPECT_TRUE(conn->error_context_.empty());

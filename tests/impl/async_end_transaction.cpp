@@ -16,13 +16,11 @@ using ozo::time_traits;
 
 struct async_end_transaction : Test {
     StrictMock<connection_gmock> connection {};
-    StrictMock<executor_gmock> callback_executor{};
+    StrictMock<executor_mock> callback_executor{};
     StrictMock<callback_gmock<connection_ptr<>>> callback {};
-    StrictMock<executor_gmock> executor {};
-    StrictMock<executor_gmock> strand {};
-    StrictMock<strand_executor_service_gmock> strand_service {};
-    StrictMock<stream_descriptor_gmock> socket {};
-    io_context io {executor, strand_service};
+    StrictMock<executor_mock> strand {};
+    StrictMock<stream_descriptor_mock> socket {};
+    io_context io;
     decltype(make_connection(connection, io, socket)) conn = make_connection(connection, io, socket);
     decltype(ozo::make_options()) options = ozo::make_options();
     time_traits::duration timeout {42};
