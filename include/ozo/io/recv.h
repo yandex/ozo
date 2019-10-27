@@ -81,12 +81,12 @@ struct recv_impl {
      *
      * @param in --- input stream
      * @param size --- size of incoming data
-     * @param oid_map_t<M> --- #OidMap to get oid for custom types
+     * @param OidMap --- #OidMap to get oid for custom types
      * @param out --- object to deserialize
      * @return ostream& --- input stream
      */
-    template <typename M>
-    static istream& apply(istream& in, size_type size, const oid_map_t<M>&, Out& out) {
+    template <typename OidMap>
+    static istream& apply(istream& in, size_type size, const OidMap&, Out& out) {
         auto& real_out = [&] {
             if constexpr (StrongTypedef<Out>) {
                 return std::ref(static_cast<typename Out::base_type&>(out));
@@ -130,8 +130,8 @@ struct recv_impl_dispatcher { using type = recv_impl<std::decay_t<T>>; };
 template <typename T>
 using get_recv_impl = typename recv_impl_dispatcher<unwrap_type<T>>::type;
 
-template <typename M, typename Oid, typename Out>
-inline istream& recv(istream& in, [[maybe_unused]] Oid oid, size_type size, const oid_map_t<M>& oids, Out& out) {
+template <typename OidMap, typename Oid, typename Out>
+inline istream& recv(istream& in, [[maybe_unused]] Oid oid, size_type size, const OidMap& oids, Out& out) {
     static_assert(std::is_same_v<Oid, oid_t>||std::is_same_v<Oid, null_oid_t>,
         "oid must be oid_t or null_oid_t type");
 
@@ -160,8 +160,8 @@ inline istream& recv(istream& in, [[maybe_unused]] Oid oid, size_type size, cons
     return detail::get_recv_impl<Out>::apply(in, size, oids, ozo::unwrap(out));
 }
 
-template <typename M, typename Oid, typename Out>
-inline istream& recv_data_frame(istream& in, Oid oid, const oid_map_t<M>& oids, Out& out) {
+template <typename OidMap, typename Oid, typename Out>
+inline istream& recv_data_frame(istream& in, Oid oid, const OidMap& oids, Out& out) {
     size_type size = 0;
     read(in, size);
     return recv(in, oid, size, oids, out);
@@ -196,8 +196,8 @@ inline istream& recv_data_frame(istream& in, Oid oid, const oid_map_t<M>& oids, 
  * @param out --- object to deserialize into
  * @return istream& --- input stream
  */
-template <typename M, typename Out>
-inline istream& recv(istream& in, oid_t oid, size_type size, const oid_map_t<M>& oids, Out& out) {
+template <typename OidMap, typename Out>
+inline istream& recv(istream& in, oid_t oid, size_type size, const OidMap& oids, Out& out) {
     return detail::recv(in, oid, size, oids, out);
 }
 
@@ -217,8 +217,8 @@ inline istream& recv(istream& in, oid_t oid, size_type size, const oid_map_t<M>&
  * @param out --- object to receive
  * @return ostream& --- reference to the input stream
  */
-template <typename M, typename Out>
-inline istream& recv_data_frame(istream& in, const oid_map_t<M>& oids, Out& out) {
+template <typename OidMap, typename Out>
+inline istream& recv_data_frame(istream& in, const OidMap& oids, Out& out) {
     return detail::recv_data_frame(in, null_oid, oids, out);
 }
 
@@ -238,23 +238,23 @@ inline istream& recv_data_frame(istream& in, const oid_map_t<M>& oids, Out& out)
  * @param out --- object to receive
  * @return ostream& --- reference to the output stream
  */
-template <typename M, typename Out>
-inline istream& recv_frame(istream& in, const oid_map_t<M>& oids, Out& out) {
+template <typename OidMap, typename Out>
+inline istream& recv_frame(istream& in, const OidMap& oids, Out& out) {
     oid_t oid = null_oid;
     read(in, oid);
     return detail::recv_data_frame(in, oid, oids, out);
 }
 
-template <typename T, typename M, typename Out>
-void recv(const value<T>& in, const oid_map_t<M>& oids, Out& out) {
+template <typename T, typename OidMap, typename Out>
+void recv(const value<T>& in, const OidMap& oids, Out& out) {
     detail::istreambuf_view sbuf(in.data(), in.size());
     istream s(&sbuf);
     recv(s, in.oid(), (in.is_null() ? null_state_size : in.size()), oids, out);
 }
 
-template <typename T, typename M, typename Out>
+template <typename T, typename OidMap, typename Out>
 Require<!FusionSequence<Out> && !FusionAdaptedStruct<Out> && !HanaStruct<Out>>
-recv_row(const row<T>& in, const oid_map_t<M>& oid_map, Out& out) {
+recv_row(const row<T>& in, const OidMap& oid_map, Out& out) {
     if (std::size(in) != 1) {
         throw std::range_error("row size " + std::to_string(std::size(in))
             + " does not equal 1 for single column result");
@@ -263,9 +263,9 @@ recv_row(const row<T>& in, const oid_map_t<M>& oid_map, Out& out) {
     recv(*(in.begin()), oid_map, out);
 }
 
-template <typename T, typename M, typename Out>
+template <typename T, typename OidMap, typename Out>
 Require<FusionSequence<Out> && !FusionAdaptedStruct<Out> && !HanaStruct<Out>>
-recv_row(const row<T>& in, const oid_map_t<M>& oid_map, Out& out) {
+recv_row(const row<T>& in, const OidMap& oid_map, Out& out) {
 
     if (static_cast<std::size_t>(fusion::size(out)) != std::size(in)) {
         throw std::range_error("row size " + std::to_string(std::size(in))
@@ -280,9 +280,9 @@ recv_row(const row<T>& in, const oid_map_t<M>& oid_map, Out& out) {
     });
 }
 
-template <typename T, typename M, typename Out>
+template <typename T, typename OidMap, typename Out>
 Require<FusionAdaptedStruct<Out> && !HanaStruct<Out>>
-recv_row(const row<T>& in, const oid_map_t<M>& oid_map, Out& out) {
+recv_row(const row<T>& in, const OidMap& oid_map, Out& out) {
 
     if (static_cast<std::size_t>(fusion::size(out)) != std::size(in)) {
         throw std::range_error("row size " + std::to_string(std::size(in))
@@ -302,9 +302,9 @@ recv_row(const row<T>& in, const oid_map_t<M>& oid_map, Out& out) {
     });
 }
 
-template <typename T, typename M, typename Out>
+template <typename T, typename OidMap, typename Out>
 Require<HanaStruct<Out>>
-recv_row(const row<T>& in, const oid_map_t<M>& oid_map, Out& out) {
+recv_row(const row<T>& in, const OidMap& oid_map, Out& out) {
 
     const auto keys = hana::keys(out);
     const auto size = size_type(hana::value(hana::size(keys)));
@@ -326,18 +326,18 @@ recv_row(const row<T>& in, const oid_map_t<M>& oid_map, Out& out) {
     });
 }
 
-template <typename T, typename M, typename Out>
+template <typename T, typename OidMap, typename Out>
 Require<ForwardIterator<Out>, Out>
-recv_result(const basic_result<T>& in, const oid_map_t<M>& oid_map, Out out) {
+recv_result(const basic_result<T>& in, const OidMap& oid_map, Out out) {
     for (auto row : in) {
         recv_row(row, oid_map, *out++);
     }
     return out;
 }
 
-template <typename T, typename M, typename Out>
+template <typename T, typename OidMap, typename Out>
 Require<InsertIterator<Out>, Out>
-recv_result(const basic_result<T>& in, const oid_map_t<M>& oid_map, Out out) {
+recv_result(const basic_result<T>& in, const OidMap& oid_map, Out out) {
     for (auto row : in) {
         typename Out::container_type::value_type v{};
         recv_row(row, oid_map, v);
@@ -346,14 +346,14 @@ recv_result(const basic_result<T>& in, const oid_map_t<M>& oid_map, Out out) {
     return out;
 }
 
-template <typename T, typename M>
-basic_result<T>& recv_result(basic_result<T>& in, const oid_map_t<M>&, basic_result<T>& out) {
+template <typename T, typename OidMap>
+basic_result<T>& recv_result(basic_result<T>& in, const OidMap&, basic_result<T>& out) {
     out = std::move(in);
     return out;
 }
 
-template <typename T, typename M>
-basic_result<T>& recv_result(basic_result<T>& in, const oid_map_t<M>& oid_map, std::reference_wrapper<basic_result<T>> out) {
+template <typename T, typename OidMap>
+basic_result<T>& recv_result(basic_result<T>& in, const OidMap& oid_map, std::reference_wrapper<basic_result<T>> out) {
     return recv_result(in, oid_map, out.get());
 }
 

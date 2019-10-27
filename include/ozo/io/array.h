@@ -114,8 +114,8 @@ struct size_of_impl_dispatcher<T, Require<Array<T>>> { using type = size_of_arra
 
 template <typename T>
 struct send_array_impl {
-    template <typename M>
-    static ostream& apply(ostream& out, const oid_map_t<M>& oid_map, const T& in) {
+    template <typename OidMap>
+    static ostream& apply(ostream& out, const OidMap& oid_map, const T& in) {
         using value_type = typename T::value_type;
         write(out, pg_array {1, 0, type_oid<value_type>(oid_map)});
         write(out, pg_array_dimension {std::int32_t(std::size(in)), 0});
@@ -131,8 +131,8 @@ template <typename T>
 struct recv_array_impl {
     using out_type = T;
 
-    template <typename M>
-    static istream& apply(istream& in, size_type, const oid_map_t<M>& oids, out_type& out) {
+    template <typename OidMap>
+    static istream& apply(istream& in, size_type, const OidMap& oids, out_type& out) {
         pg_array array_header;
         pg_array_dimension dim_header;
 

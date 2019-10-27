@@ -8,8 +8,8 @@ namespace ozo::impl {
 template <typename T>
 inline T unwrap_type_c(hana::basic_type<T>);
 
-template <typename Impl>
-inline auto get_types_names(const oid_map_t<Impl>& oid_map) {
+template <typename ...Ts>
+inline auto get_types_names(const oid_map_t<Ts...>& oid_map) {
     return hana::unpack(hana::keys(oid_map.impl), [](auto const& ...x) {
         return std::array<std::string_view, sizeof...(x)>{
             {type_name<decltype(unwrap_type_c(x))>()...}
@@ -17,8 +17,8 @@ inline auto get_types_names(const oid_map_t<Impl>& oid_map) {
     });
 }
 
-template <typename Impl>
-inline auto make_oids_query(const oid_map_t<Impl>& oid_map) {
+template <typename ...Ts>
+inline auto make_oids_query(const oid_map_t<Ts...>& oid_map) {
     using namespace literals;
     return "SELECT COALESCE(to_regtype(f)::oid, 0) AS oid FROM UNNEST("_SQL
         + get_types_names(oid_map) + ") AS f"_SQL;
@@ -26,8 +26,8 @@ inline auto make_oids_query(const oid_map_t<Impl>& oid_map) {
 
 using oids_result = std::vector<oid_t>;
 
-template <typename Impl>
-inline void set_oid_map(oid_map_t<Impl>& oid_map, const oids_result& res) {
+template <typename ...Ts>
+inline void set_oid_map(oid_map_t<Ts...>& oid_map, const oids_result& res) {
     if (hana::length(oid_map.impl).value != res.size()) {
         throw std::length_error(std::string("result size ")
             + std::to_string(res.size())
