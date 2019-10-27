@@ -75,8 +75,8 @@ struct size_of_impl_dispatcher<T, Require<Composite<T>>> { using type = size_of_
 
 template <typename T>
 struct send_composite_impl {
-    template <typename M>
-    static ostream& apply(ostream& out, const oid_map_t<M>& oid_map, const T& in) {
+    template <typename OidMap>
+    static ostream& apply(ostream& out, const OidMap& oid_map, const T& in) {
         write(out, pg_composite{fields_number(in)});
         for_each_member(in, [&] (const auto& v) {
             send_frame(out, oid_map, v);
@@ -102,8 +102,8 @@ inline Require<Composite<T>> read_and_verify_header(istream& in, const T& v) {
 
 template <typename T>
 struct recv_fusion_adapted_composite_impl {
-    template <typename M>
-    static istream& apply(istream& in, size_type, const oid_map_t<M>& oid_map, T& out) {
+    template <typename OidMap>
+    static istream& apply(istream& in, size_type, const OidMap& oid_map, T& out) {
         read_and_verify_header(in, out);
         fusion::for_each(out, [&] (auto& v) {
             recv_frame(in, oid_map, v);
@@ -114,8 +114,8 @@ struct recv_fusion_adapted_composite_impl {
 
 template <typename T>
 struct recv_hana_adapted_composite_impl {
-    template <typename M>
-    static istream& apply(istream& in, size_type, const oid_map_t<M>& oid_map, T& out) {
+    template <typename OidMap>
+    static istream& apply(istream& in, size_type, const OidMap& oid_map, T& out) {
         read_and_verify_header(in, out);
         hana::for_each(hana::keys(out), [&in, &out, &oid_map](auto key) {
             recv_frame(in, oid_map, hana::at_key(out, key));

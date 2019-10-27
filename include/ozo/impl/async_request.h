@@ -133,8 +133,8 @@ struct async_send_query_params_op {
     }
 };
 
-template <typename T, typename Allocator, typename ...Ts>
-inline auto make_binary_query(const query_builder<Ts...>& builder, const oid_map_t<T>& m, Allocator a) {
+template <typename OidMap, typename Allocator, typename ...Ts>
+inline auto make_binary_query(const query_builder<Ts...>& builder, const OidMap& m, Allocator a) {
     return binary_query(builder.build(), m, a);
 }
 
