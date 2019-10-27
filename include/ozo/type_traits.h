@@ -15,6 +15,7 @@
 #include <boost/hana/map.hpp>
 #include <boost/hana/pair.hpp>
 #include <boost/hana/type.hpp>
+#include <boost/hana/not_equal.hpp>
 
 #include <memory>
 #include <string>
@@ -565,7 +566,10 @@ oid_t type_oid(const OidMap& map) noexcept;
 template <typename T, typename MapImplT>
 inline auto type_oid(const oid_map_t<MapImplT>& map) noexcept
         -> Require<!BuiltIn<T>, oid_t> {
-    return map.impl[hana::type_c<unwrap_type<T>>];
+    constexpr auto key = hana::type_c<unwrap_type<T>>;
+    static_assert(decltype(hana::find(map.impl, key) != hana::nothing)::value,
+        "type OID for T can not be found in the OidMap, it should be registered via register_type()");
+    return map.impl[key];
 }
 
 template <typename T, typename MapImplT>
