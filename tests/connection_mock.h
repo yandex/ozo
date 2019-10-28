@@ -8,28 +8,59 @@
 
 namespace ozo::tests {
 
-struct native_handle {
-    enum state {bad, good};
-    native_handle& operator = (state v) {
-        state_ = v;
-        return *this;
-    }
-    bool operator == (state rhs) const { return state_ == rhs; }
+struct PGconn_mock {
+    PGconn_mock() {
+        ON_CALL(*this, PQsocket()).WillByDefault(::testing::Return(-1));
+        ON_CALL(*this, PQstatus()).WillByDefault(::testing::Return(CONNECTION_BAD));
+        ON_CALL(*this, PQtransactionStatus()).WillByDefault(::testing::Return(PQTRANS_UNKNOWN));
+    };
 
-    native_handle(state s) : state_(s) {}
-    native_handle(state s, PGTransactionStatusType status) : state_(s), status_(status) {}
-    native_handle() = default;
-    state state_;
-    PGTransactionStatusType status_ = PQTRANS_UNKNOWN;
+    MOCK_METHOD0(PQsocket, int());
+    friend int PQsocket(PGconn_mock* self) {
+        return self ? self->PQsocket() : null_mock().PQsocket();
+    }
+
+    MOCK_METHOD0(PQstatus, ConnStatusType());
+    friend ConnStatusType PQstatus(PGconn_mock* self) {
+        return self ? self->PQstatus() : null_mock().PQstatus();
+    }
+
+    MOCK_METHOD0(PQtransactionStatus, PGTransactionStatusType());
+    friend PGTransactionStatusType PQtransactionStatus(PGconn_mock* self) {
+        return self ? self->PQtransactionStatus() : null_mock().PQtransactionStatus();
+    }
+
+private:
+    static PGconn_mock& null_mock() {
+        static PGconn_mock mock;
+        // These defaults copy-pasted here to to get a line number relates to the null_mock()
+        // form the gmock console warning message. If you are here - it looks like your
+        // PGconn_mock pointer is nullptr and if it is on purpose you can ignore this messages.
+        ON_CALL(mock, PQsocket()).WillByDefault(::testing::Return(-1));
+        ON_CALL(mock, PQstatus()).WillByDefault(::testing::Return(CONNECTION_BAD));
+        ON_CALL(mock, PQtransactionStatus()).WillByDefault(::testing::Return(PQTRANS_UNKNOWN));
+        return mock;
+    }
 };
 
-inline bool connection_status_bad(const native_handle* h) {
-    return *h == native_handle::bad;
-}
+struct native_conn_handle {
+    PGconn_mock* mock_ = nullptr;
 
-inline PGTransactionStatusType PQtransactionStatus(const native_handle* h) {
-    return h->status_;
-}
+    using pointer = PGconn_mock*;
+
+    native_conn_handle(pointer mock = nullptr) : mock_(mock) {}
+
+    auto& operator * () const { assert_not_null(); return *mock_; }
+    pointer operator -> () const { assert_not_null(); return mock_; }
+    pointer get () const { assert_not_null(); return mock_; }
+    operator bool () const { return mock_ != nullptr; }
+
+    void assert_not_null() const {
+        if (!mock_) {
+            throw std::invalid_argument("ozo::tests::native_conn_handle is in null state");
+        }
+    }
+};
 
 struct pg_result {
     ExecStatusType status;
@@ -63,7 +94,7 @@ struct connection_mock {
     MOCK_METHOD0(get_result, boost::optional<pg_result>());
 
     MOCK_CONST_METHOD0(connect_poll, int());
-    MOCK_METHOD1(start_connection, std::shared_ptr<native_handle>(const std::string&));
+    MOCK_METHOD1(start_connection, native_conn_handle(const std::string&));
     MOCK_METHOD0(assign, ozo::error_code());
     MOCK_METHOD0(async_request, void());
     MOCK_METHOD0(async_execute, void());
@@ -109,7 +140,8 @@ static_assert(Query<fake_query>, "fake_query is not a Query");
 
 template <typename OidMap = empty_oid_map>
 struct connection {
-    using handle_type = std::shared_ptr<ozo::tests::native_handle>;
+    using handle_type = ozo::tests::native_conn_handle;
+    using native_handle_type = ozo::tests::PGconn_mock*;
     using error_context = std::string;
     using oid_map_type = OidMap;
     using executor_type = io_context::executor_type;
@@ -134,7 +166,7 @@ struct connection {
     const oid_map_type& oid_map() const noexcept { return oid_map_;}
 
     bool is_bad() const noexcept {
-        return connection_status_bad(native_handle());
+        return ozo::detail::connection_status_bad(native_handle());
     }
 
     operator bool () const noexcept { return !is_bad();}
@@ -184,8 +216,11 @@ struct connection {
     ozo::error_code close() {
         error_code ec;
         socket_.close(ec);
-        handle_.reset();
         return ec;
+    }
+
+    native_conn_handle release() {
+        return std::move(handle_);
     }
 
     void cancel() {
@@ -259,9 +294,22 @@ static_assert(ozo::Connection<connection_ptr<>>,
 
 template <typename OidMap = empty_oid_map>
 inline auto make_connection(connection_mock& mock, io_context& io,
+        stream_descriptor_mock& socket_mock, PGconn_mock& handle, OidMap oid_map) {
+    return std::make_shared<connection<OidMap>>(connection<OidMap>{
+            std::addressof(handle),
+            stream_descriptor{io, socket_mock},
+            oid_map,
+            std::addressof(mock),
+            "",
+            std::addressof(io)
+        });
+}
+
+template <typename OidMap = empty_oid_map>
+inline auto make_connection(connection_mock& mock, io_context& io,
         stream_descriptor_mock& socket_mock, OidMap oid_map = OidMap{}) {
     return std::make_shared<connection<OidMap>>(connection<OidMap>{
-            std::make_unique<native_handle>(native_handle::bad),
+            nullptr,
             stream_descriptor{io, socket_mock},
             oid_map,
             std::addressof(mock),

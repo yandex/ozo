@@ -33,13 +33,10 @@ struct fixture {
             make_connection(connection, io, socket);
     StrictMock<executor_mock> callback_executor{};
     StrictMock<callback_gmock<decltype(conn)>> callback{};
+    StrictMock<PGconn_mock> handle;
 
     auto async_connect_op() {
         return ozo::impl::async_connect_op(conn, wrap(callback));
-    }
-
-    static auto make_native_handle(native_handle::state state = native_handle::good) {
-        return std::make_shared<native_handle>(state);
     }
 
     fixture() {
@@ -52,14 +49,15 @@ struct fixture {
 using ozo::error_code;
 using ozo::time_traits;
 
-struct async_connect_op : Test {};
+struct async_connect_op : Test {
+    fixture f;
+};
 
 TEST_F(async_connect_op, should_start_connection_assign_and_wait_for_compile) {
-    fixture f;
-
     const InSequence s;
 
-    EXPECT_CALL(f.connection, start_connection("conninfo")).WillOnce(Return(f.make_native_handle()));
+    EXPECT_CALL(f.connection, start_connection("conninfo")).WillOnce(Return(std::addressof(f.handle)));
+    EXPECT_CALL(f.handle, PQstatus()).WillRepeatedly(Return(CONNECTION_OK));
     EXPECT_CALL(f.connection, assign()).WillOnce(Return(error_code{}));
     EXPECT_CALL(f.socket, async_write_some(_)).WillOnce(Return());
 
@@ -67,12 +65,10 @@ TEST_F(async_connect_op, should_start_connection_assign_and_wait_for_compile) {
 }
 
 TEST_F(async_connect_op, should_call_handler_with_pq_connection_start_failed_on_nullptr_in_start_connection) {
-    fixture f;
-
     const InSequence s;
 
     EXPECT_CALL(f.connection, start_connection("conninfo"))
-        .WillOnce(Return(std::shared_ptr<native_handle>{}));
+        .WillOnce(Return(native_conn_handle{}));
 
     EXPECT_CALL(f.callback, call(error_code{ozo::error::pq_connection_start_failed}, f.conn))
         .WillOnce(Return());
@@ -81,11 +77,10 @@ TEST_F(async_connect_op, should_call_handler_with_pq_connection_start_failed_on_
 }
 
 TEST_F(async_connect_op, should_call_handler_with_pq_connection_status_bad_if_connection_status_is_bad) {
-    fixture f;
-
     const InSequence s;
 
-    EXPECT_CALL(f.connection, start_connection("conninfo")).WillOnce(Return(f.make_native_handle(native_handle::bad)));
+    EXPECT_CALL(f.connection, start_connection("conninfo")).WillOnce(Return(std::addressof(f.handle)));
+    EXPECT_CALL(f.handle, PQstatus()).WillRepeatedly(Return(CONNECTION_BAD));
 
     EXPECT_CALL(f.callback, call(error_code{ozo::error::pq_connection_status_bad}, f.conn))
         .WillOnce(Return());
@@ -94,11 +89,10 @@ TEST_F(async_connect_op, should_call_handler_with_pq_connection_status_bad_if_co
 }
 
 TEST_F(async_connect_op, should_call_handler_with_error_if_assign_returns_error) {
-    fixture f;
-
     const InSequence s;
 
-    EXPECT_CALL(f.connection, start_connection("conninfo")).WillOnce(Return(f.make_native_handle()));
+    EXPECT_CALL(f.connection, start_connection("conninfo")).WillOnce(Return(std::addressof(f.handle)));
+    EXPECT_CALL(f.handle, PQstatus()).WillRepeatedly(Return(CONNECTION_OK));
     EXPECT_CALL(f.connection, assign()).WillOnce(Return(error_code{error::error}));
 
     EXPECT_CALL(f.callback, call(error_code{error::error}, f.conn)).WillOnce(Return());
@@ -107,11 +101,10 @@ TEST_F(async_connect_op, should_call_handler_with_error_if_assign_returns_error)
 }
 
 TEST_F(async_connect_op, should_wait_for_write_complete_if_connect_poll_returns_PGRES_POLLING_WRITING) {
-    fixture f;
-
     const InSequence s;
 
-    EXPECT_CALL(f.connection, start_connection("conninfo")).WillOnce(Return(f.make_native_handle()));
+    EXPECT_CALL(f.connection, start_connection("conninfo")).WillOnce(Return(std::addressof(f.handle)));
+    EXPECT_CALL(f.handle, PQstatus()).WillRepeatedly(Return(CONNECTION_OK));
     EXPECT_CALL(f.connection, assign()).WillOnce(Return(error_code{}));
 
     EXPECT_CALL(f.socket, async_write_some(_)).WillOnce(InvokeArgument<0>(error_code{}));
@@ -125,11 +118,10 @@ TEST_F(async_connect_op, should_wait_for_write_complete_if_connect_poll_returns_
 }
 
 TEST_F(async_connect_op, should_wait_for_read_complete_if_connect_poll_returns_PGRES_POLLING_READING) {
-    fixture f;
-
     const InSequence s;
 
-    EXPECT_CALL(f.connection, start_connection("conninfo")).WillOnce(Return(f.make_native_handle()));
+    EXPECT_CALL(f.connection, start_connection("conninfo")).WillOnce(Return(std::addressof(f.handle)));
+    EXPECT_CALL(f.handle, PQstatus()).WillRepeatedly(Return(CONNECTION_OK));
     EXPECT_CALL(f.connection, assign()).WillOnce(Return(error_code{}));
 
     EXPECT_CALL(f.socket, async_write_some(_)).WillOnce(InvokeArgument<0>(error_code{}));
@@ -144,11 +136,10 @@ TEST_F(async_connect_op, should_wait_for_read_complete_if_connect_poll_returns_P
 }
 
 TEST_F(async_connect_op, should_call_handler_with_no_error_if_connect_poll_returns_PGRES_POLLING_OK) {
-    fixture f;
-
     const InSequence s;
 
-    EXPECT_CALL(f.connection, start_connection("conninfo")).WillOnce(Return(f.make_native_handle()));
+    EXPECT_CALL(f.connection, start_connection("conninfo")).WillOnce(Return(std::addressof(f.handle)));
+    EXPECT_CALL(f.handle, PQstatus()).WillRepeatedly(Return(CONNECTION_OK));
     EXPECT_CALL(f.connection, assign()).WillOnce(Return(error_code{}));
 
     EXPECT_CALL(f.socket, async_write_some(_)).WillOnce(InvokeArgument<0>(error_code{}));
@@ -163,11 +154,10 @@ TEST_F(async_connect_op, should_call_handler_with_no_error_if_connect_poll_retur
 }
 
 TEST_F(async_connect_op, should_call_handler_with_pq_connect_poll_failed_if_connect_poll_returns_PGRES_POLLING_FAILED) {
-    fixture f;
-
     const InSequence s;
 
-    EXPECT_CALL(f.connection, start_connection("conninfo")).WillOnce(Return(f.make_native_handle()));
+    EXPECT_CALL(f.connection, start_connection("conninfo")).WillOnce(Return(std::addressof(f.handle)));
+    EXPECT_CALL(f.handle, PQstatus()).WillRepeatedly(Return(CONNECTION_OK));
     EXPECT_CALL(f.connection, assign()).WillOnce(Return(error_code{}));
 
     EXPECT_CALL(f.socket, async_write_some(_)).WillOnce(InvokeArgument<0>(error_code{}));
@@ -182,11 +172,10 @@ TEST_F(async_connect_op, should_call_handler_with_pq_connect_poll_failed_if_conn
 }
 
 TEST_F(async_connect_op, should_call_handler_with_pq_connect_poll_failed_if_connect_poll_returns_PGRES_POLLING_ACTIVE) {
-    fixture f;
-
     const InSequence s;
 
-    EXPECT_CALL(f.connection, start_connection("conninfo")).WillOnce(Return(f.make_native_handle()));
+    EXPECT_CALL(f.connection, start_connection("conninfo")).WillOnce(Return(std::addressof(f.handle)));
+    EXPECT_CALL(f.handle, PQstatus()).WillRepeatedly(Return(CONNECTION_OK));
     EXPECT_CALL(f.connection, assign()).WillOnce(Return(error_code{}));
 
     EXPECT_CALL(f.socket, async_write_some(_)).WillOnce(InvokeArgument<0>(error_code{}));
@@ -202,11 +191,10 @@ TEST_F(async_connect_op, should_call_handler_with_pq_connect_poll_failed_if_conn
 }
 
 TEST_F(async_connect_op, should_call_handler_with_the_error_if_polling_operation_invokes_callback_with_it) {
-    fixture f;
-
     const InSequence s;
 
-    EXPECT_CALL(f.connection, start_connection("conninfo")).WillOnce(Return(f.make_native_handle()));
+    EXPECT_CALL(f.connection, start_connection("conninfo")).WillOnce(Return(std::addressof(f.handle)));
+    EXPECT_CALL(f.handle, PQstatus()).WillRepeatedly(Return(CONNECTION_OK));
     EXPECT_CALL(f.connection, assign()).WillOnce(Return(error_code{}));
 
     EXPECT_CALL(f.socket, async_write_some(_)).WillOnce(InvokeArgument<0>(error::error));
@@ -219,11 +207,11 @@ TEST_F(async_connect_op, should_call_handler_with_the_error_if_polling_operation
     f.async_connect_op().perform("conninfo");
 }
 
-struct async_connect_op_call : Test {};
+struct async_connect_op_call : Test {
+    fixture f;
+};
 
 TEST_F(async_connect_op_call, should_replace_empty_connection_error_context_on_error) {
-    fixture f;
-
     EXPECT_CALL(f.callback, call(error_code{error::error}, f.conn))
         .WillOnce(Return());
 
@@ -233,7 +221,6 @@ TEST_F(async_connect_op_call, should_replace_empty_connection_error_context_on_e
 }
 
 TEST_F(async_connect_op_call, should_preserve_not_empty_connection_error_context_on_error) {
-    fixture f;
     f.conn->error_context_ = "my error";
 
     EXPECT_CALL(f.callback, call(error_code{error::error}, f.conn))
@@ -262,7 +249,8 @@ TEST_F(async_connect, should_cancel_timer_when_operation_is_done_before_timeout)
 
     Sequence s;
 
-    EXPECT_CALL(f.connection, start_connection("conninfo")).InSequence(s).WillOnce(Return(f.make_native_handle()));
+    EXPECT_CALL(f.connection, start_connection("conninfo")).InSequence(s).WillOnce(Return(std::addressof(f.handle)));
+    EXPECT_CALL(f.handle, PQstatus()).WillRepeatedly(Return(CONNECTION_OK));
     EXPECT_CALL(f.connection, assign()).InSequence(s).WillOnce(Return(error_code{}));
 
 
@@ -297,7 +285,8 @@ TEST_F(async_connect, should_cancel_socket_on_timeout) {
 
     Sequence s;
 
-    EXPECT_CALL(f.connection, start_connection("conninfo")).InSequence(s).WillOnce(Return(f.make_native_handle()));
+    EXPECT_CALL(f.connection, start_connection("conninfo")).InSequence(s).WillOnce(Return(std::addressof(f.handle)));
+    EXPECT_CALL(f.handle, PQstatus()).WillRepeatedly(Return(CONNECTION_OK));
     EXPECT_CALL(f.connection, assign()).InSequence(s).WillOnce(Return(error_code{}));
     EXPECT_CALL(f.socket, async_write_some(_)).InSequence(s).WillOnce(SaveArg<0>(&on_async_write_some));
     EXPECT_CALL(f.strand, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
@@ -325,7 +314,8 @@ TEST_F(async_connect, should_request_oid_map_when_oid_map_is_not_empty) {
 
     Sequence s;
 
-    EXPECT_CALL(f.connection, start_connection("conninfo")).InSequence(s).WillOnce(Return(f.make_native_handle()));
+    EXPECT_CALL(f.connection, start_connection("conninfo")).InSequence(s).WillOnce(Return(std::addressof(f.handle)));
+    EXPECT_CALL(f.handle, PQstatus()).WillRepeatedly(Return(CONNECTION_OK));
     EXPECT_CALL(f.connection, assign()).InSequence(s).WillOnce(Return(error_code{}));
 
     EXPECT_CALL(f.socket, async_write_some(_)).InSequence(s).WillOnce(InvokeArgument<0>(error_code{}));

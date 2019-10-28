@@ -28,7 +28,8 @@ inline error_code bind_connection_executor(Connection& conn, const Executor& ex)
     return {};
 }
 
-inline bool connection_status_bad(PGconn* handle) noexcept {
+template <typename NativeHandle>
+inline bool connection_status_bad(NativeHandle handle) noexcept {
     return !handle || PQstatus(handle) == CONNECTION_BAD;
 }
 

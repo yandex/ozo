@@ -7,13 +7,17 @@
 
 namespace {
 
-struct get_transaction_status : testing::Test {
+using namespace testing;
+
+struct get_transaction_status : Test {
     ozo::tests::io_context io;
-    testing::StrictMock<ozo::tests::stream_descriptor_mock> stream;
+    StrictMock<ozo::tests::stream_descriptor_mock> stream;
+    StrictMock<ozo::tests::PGconn_mock> handle;
     auto make_connection() {
         using namespace ozo::tests;
+        EXPECT_CALL(handle, PQstatus()).WillRepeatedly(Return(CONNECTION_OK));
         return std::make_shared<connection<>>(connection<>{
-            std::make_unique<native_handle>(native_handle::good),
+            std::addressof(handle),
             ozo::tests::stream_descriptor{io, stream}, {}, nullptr, "", nullptr
         });
     }
@@ -26,19 +30,21 @@ TEST_F(get_transaction_status, should_return_transaction_status_unknown_for_null
 
 TEST_F(get_transaction_status, should_return_throw_for_unsupported_status) {
     const auto conn = make_connection();
-    conn->handle_->status_ = static_cast<PGTransactionStatusType>(-1);
+    EXPECT_CALL(handle, PQtransactionStatus())
+        .WillOnce(Return(static_cast<PGTransactionStatusType>(-1)));
     EXPECT_THROW(ozo::get_transaction_status(conn), std::invalid_argument);
 }
 
 namespace with_params {
 
 struct get_transaction_status : ::get_transaction_status,
-        testing::WithParamInterface<std::tuple<PGTransactionStatusType, ozo::transaction_status>> {
+        WithParamInterface<std::tuple<PGTransactionStatusType, ozo::transaction_status>> {
 };
 
 TEST_P(get_transaction_status, should_return_status_for_connection){
     const auto conn = make_connection();
-    conn->handle_->status_ = std::get<0>(GetParam());
+    EXPECT_CALL(handle, PQtransactionStatus())
+        .WillOnce(Return(std::get<0>(GetParam())));
     EXPECT_EQ(std::get<1>(GetParam()), ozo::get_transaction_status(conn));
 }
 

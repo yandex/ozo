@@ -22,12 +22,13 @@ struct async_start_transaction : Test {
     StrictMock<executor_mock> strand {};
     StrictMock<stream_descriptor_mock> socket {};
     io_context io;
-    decltype(make_connection(connection, io, socket)) conn = make_connection(connection, io, socket);
+    StrictMock<PGconn_mock> handle;
+    decltype(make_connection(connection, io, socket)) conn = make_connection(connection, io, socket, handle, ozo::empty_oid_map{});
     time_traits::duration timeout {42};
 };
 
 TEST_F(async_start_transaction, should_call_async_execute) {
-    *conn->handle_ = native_handle::good;
+    EXPECT_CALL(handle, PQstatus()).WillRepeatedly(Return(CONNECTION_OK));
 
     EXPECT_CALL(connection, async_execute()).WillOnce(Return());
 
