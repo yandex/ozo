@@ -7,6 +7,7 @@
 #include <ozo/io/composite.h>
 #include <ozo/shortcuts.h>
 
+#include <boost/tuple/tuple_comparison.hpp>
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
@@ -162,6 +163,21 @@ TEST(result, should_convert_rows_of_records_in_rows_of_std_pairs) {
         std::make_tuple(std::make_pair(int(1), "one")),
         std::make_tuple(std::make_pair(int(2), "two")),
         std::make_tuple(std::make_pair(int(3), "three"))
+    ));
+}
+
+TEST(result, should_convert_rows_of_records_in_rows_of_boost_tuple) {
+    auto result = execute_query("SELECT * FROM (VALUES ((1, 'one'::text)), ((2, 'two'::text)), ((3, 'three'::text))) AS t (tuple);");
+    auto oid_map = ozo::empty_oid_map();
+
+    ozo::rows_of<boost::tuple<int, std::string>> out;
+
+    ozo::recv_result(result, oid_map, ozo::into(out));
+
+    EXPECT_THAT(out, ElementsAre(
+        std::make_tuple(boost::make_tuple(int(1), "one")),
+        std::make_tuple(boost::make_tuple(int(2), "two")),
+        std::make_tuple(boost::make_tuple(int(3), "three"))
     ));
 }
 

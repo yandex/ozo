@@ -35,12 +35,12 @@
  */
 
 /**
- * @defgroup group-ext Extentions
- * @brief Library extentions.
+ * @defgroup group-ext External adaptors
+ * @brief External type adaptors.
  *
  * The Library can be extended via specialization of different
- * functors and traits. Here in-library extentions are collected.
- * Use it as an example of extentions.
+ * functors and traits. Here in-library eternal type adaptors are collected.
+ * Use it as an example of external types adaptation.
  */
 
 #include <ozo/connection_pool.h>

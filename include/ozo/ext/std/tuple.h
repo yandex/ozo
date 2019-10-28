@@ -1,6 +1,7 @@
 #pragma once
 
 #include <ozo/pg/definitions.h>
+#include <boost/hana/ext/std/tuple.hpp>
 #include <tuple>
 
 /**

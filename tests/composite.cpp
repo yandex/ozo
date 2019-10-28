@@ -1,9 +1,12 @@
 #include "result_mock.h"
 #include <ozo/ext/std/tuple.h>
 #include <ozo/ext/std/pair.h>
+#include <ozo/ext/boost/tuple.h>
 #include <ozo/io/composite.h>
 #include <ozo/pg/types/integer.h>
 #include <ozo/pg/types/text.h>
+
+#include <boost/tuple/tuple_comparison.hpp>
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
@@ -143,6 +146,23 @@ TEST_F(send_composite, should_store_std_pair_with_number_of_fields_and_fields_fr
     }));
 }
 
+TEST_F(send_composite, should_store_boost_tuple_with_number_of_fields_and_fields_frames) {
+    const auto v = boost::make_tuple(std::string("TEST"), std::int64_t(0x0001020304050607));
+    ozo::send(os, oid_map, v);
+    EXPECT_EQ(buffer, std::vector<char>({
+        0x00, 0x00, 0x00, 0x02, // Number of members
+                                // ---- v.string frame ---
+        0x00, 0x00, 0x00, 0x19, //   Oid:  TEXTOID
+        0x00, 0x00, 0x00, 0x04, //   size: 4
+        'T' , 'E' , 'S' , 'T' , //   data: "TEST"
+                                // ---- v.number frame ---
+        0x00, 0x00, 0x00, 0x14, //   Oid:  INT8OID
+        0x00, 0x00, 0x00, 0x08, //   size: 8
+        0x00, 0x01, 0x02, 0x03, //   data: 00 01 02 03
+        0x04, 0x05, 0x06, 0x07, //         04 05 06 07
+    }));
+}
+
 struct recv_composite : Test {
     StrictMock<ozo::tests::pg_result_mock>  mock{};
     ozo::value<ozo::tests::pg_result_mock>  value{{&mock, 0, 0}};
@@ -253,6 +273,31 @@ TEST_F(recv_composite, should_receive_std_pair) {
     EXPECT_THAT(got, expected);
 }
 
+TEST_F(recv_composite, should_receive_boost_tuple) {
+    const char bytes[] = {
+        0x00, 0x00, 0x00, 0x02, // Number of members
+                                // ---- v.string frame ---
+        0x00, 0x00, 0x00, 0x19, //   Oid:  TEXTOID
+        0x00, 0x00, 0x00, 0x04, //   size: 4
+        'T' , 'E' , 'S' , 'T' , //   data: "TEST"
+                                // ---- v.number frame ---
+        0x00, 0x00, 0x00, 0x14, //   Oid:  INT8OID
+        0x00, 0x00, 0x00, 0x08, //   size: 8
+        0x00, 0x01, 0x02, 0x03, //   data: 00 01 02 03
+        0x04, 0x05, 0x06, 0x07, //         04 05 06 07
+    };
+
+    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(0x08C9));
+    EXPECT_CALL(mock, get_value(_, _)).WillRepeatedly(Return(bytes));
+    EXPECT_CALL(mock, get_length(_, _)).WillRepeatedly(Return(sizeof(bytes)));
+    EXPECT_CALL(mock, get_isnull(_, _)).WillRepeatedly(Return(false));
+
+    boost::tuple<std::string, std::int64_t> got;
+    ozo::set_type_oid<hana_test_struct>(oid_map, 0x10);
+    ozo::recv(value, oid_map, got);
+    const auto expected = boost::make_tuple("TEST"s, 0x0001020304050607);
+    EXPECT_THAT(got, expected);
+}
 
 TEST_F(recv_composite, should_throw_exception_if_wrong_number_of_fields_are_received) {
     const char bytes[] = {
