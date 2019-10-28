@@ -66,8 +66,10 @@ matrix:
     osx_image: xcode10
     install:
     - brew update
-    - brew upgrade
-    - brew install boost postgresql ccache
+    - brew upgrade boost
+    #- brew upgrade postgresql
+    - brew upgrade cmake
+    - brew install ccache
     env: BUILD_ARGS='clang debug'
 
 script: scripts/build.sh ${BUILD_ARGS}
