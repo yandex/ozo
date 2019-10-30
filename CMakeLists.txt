@@ -11,7 +11,7 @@ find_package(Boost COMPONENTS coroutine context system thread atomic REQUIRED)
 find_package(PostgreSQL REQUIRED)
 
 # Try and find provided resource pool (e.g. from conan), default to vendored version otherwise
-find_package(resource_pool 0.1.0)
+find_package(resource_pool 0.1.0 QUIET)
 if (NOT resource_pool_FOUND)
     add_subdirectory(contrib)
 endif()
