@@ -1,9 +1,11 @@
 #pragma once
 
-#include <ozo/impl/connection_pool.h>
 #include <ozo/connection_info.h>
+#include <ozo/transaction_status.h>
 #include <ozo/asio.h>
 #include <ozo/connector.h>
+
+#include <yamail/resource_pool/async/pool.hpp>
 
 namespace ozo {
 
@@ -32,6 +34,233 @@ struct /*[[deprecated]]*/ connection_pool_timeouts {
     time_traits::duration connect = std::chrono::seconds(10); //!< maximum time interval to establish to or wait for free connection with DBMS
     time_traits::duration queue = std::chrono::seconds(10); //!< [[IGNORED]]
 };
+
+/**
+ * @brief Connection traits depend on a representation type
+ *
+ * @tparam Rep --- connection representation data type
+ * @ingroup group-connection-types
+ */
+template <typename Rep>
+struct connection_traits {
+    using native_handle_type = typename Rep::native_handle_type; //!< Native connection handle type
+    using oid_map_type = typename Rep::oid_map_type; //!< Oid map of types that are used with the connection
+    using error_context_type = typename Rep::error_context_type; //!< Additional error context which could provide context depended information for errors
+    using statistics_type = typename Rep::statistics_type; //!< Connection statistics to be collected
+};
+
+template <typename OidMap, typename Statistics = none_t>
+class connection_rep {
+public:
+    using oid_map_type = OidMap;
+    using native_handle_type = typename native_conn_handle::pointer;
+    using statistics_type = Statistics;
+    using error_context_type = std::string;
+
+    const native_conn_handle& safe_native_handle() const & {return safe_handle_;}
+    native_conn_handle& safe_native_handle() & {return safe_handle_;}
+
+    const oid_map_type& oid_map() const & {return oid_map_;}
+    oid_map_type& oid_map() & {return oid_map_;}
+
+    const auto& statistics() const & {return statistics_;}
+
+    template <typename Key, typename Value>
+    void update_statistics(const Key&, Value&&) noexcept {
+        static_assert(std::is_void_v<Key>, "update_statistics is not supperted");
+    }
+
+    const error_context_type& get_error_context() const noexcept {
+        return error_context_;
+    }
+    void set_error_context(error_context_type v) {
+        error_context_ = std::move(v);
+    }
+
+    connection_rep(
+        native_conn_handle&& safe_handle,
+        OidMap oid_map = OidMap{},
+        error_context_type error_context = {},
+        Statistics statistics = Statistics{})
+    : safe_handle_(std::move(safe_handle)),
+      oid_map_(std::move(oid_map)),
+      error_context_(std::move(error_context)),
+      statistics_(std::move(statistics)) {}
+private:
+    native_conn_handle safe_handle_;
+    oid_map_type oid_map_;
+    error_context_type error_context_;
+    statistics_type statistics_;
+};
+
+/**
+ * @brief Pool bound model for `Connection` concept
+ *
+ * `Connection` concept model which is bound to and may be obtained only from
+ * the connection pool. On the `pooled_connection` object destruction, the
+ * underlying handle that contains a connection will be returned to the handle-associated
+ * connection pool. If the connection is in a bad state either its current transaction
+ * status is different than `ozo::transaction_status::idle` then it will not return to
+ * the pool and be closed. The class object is non-copyable.
+ *
+ * @tparam Rep      --- underlying connection pool representation for the real connection.
+ * @tparam Executor --- the type of the executor is used to perform IO; currently only
+ *                      `boost::asio::io_context::executor_type` is supported.
+ *
+ * ### Thread safety
+ *
+ * *Distinct objects*: Safe.
+ *
+ * *Shared objects*: Unsafe.
+ *
+ * @ingroup group-connection-types
+ */
+template <typename Rep, typename Executor = asio::io_context::executor_type>
+class pooled_connection {
+public:
+    using rep_type = Rep; //!< Connection representation type
+    using native_handle_type = typename connection_traits<rep_type>::native_handle_type; //!< Native connection handle type
+    using oid_map_type = typename connection_traits<rep_type>::oid_map_type; //!< Oid map of types that are used with the connection
+    using error_context_type = typename connection_traits<rep_type>::error_context_type; //!< Additional error context which could provide context depended information for errors
+    using statistics_type = typename connection_traits<rep_type>::statistics_type; //!< Connection statistics to be collected
+    using executor_type = Executor; //!< The type of the executor associated with the object.
+
+    pooled_connection(const Executor& ex, Rep&& rep);
+
+    /**
+     * Get native connection handle object.
+     *
+     * This function may be used to obtain the underlying representation of the connection.
+     * This is intended to allow access to native `libpq` functionality that is not otherwise provided.
+     *
+     * @return native_handle_type --- native connection handle.
+     */
+    native_handle_type native_handle() const noexcept;
+
+    /**
+     * Get a reference to an oid map object for types that are used with the connection.
+     *
+     * @return const oid_map_type& --- reference on oid map object.
+     */
+    const oid_map_type& oid_map() const noexcept { return ozo::unwrap(rep_).oid_map();}
+
+    template <typename Key, typename Value>
+    void update_statistics(const Key& key, Value&& v) noexcept {
+        ozo::unwrap(rep_).update_statistics(key, std::forward<Value(v)>);
+    }
+    const statistics_type& statistics() const noexcept { return ozo::unwrap(rep_).statistics();}
+
+    /**
+     * Get the additional context object for an error that occurred during the last operation on the connection.
+     *
+     * @return const error_context& --- additional context for the error
+     */
+    const error_context_type& get_error_context() const noexcept {
+        return ozo::unwrap(rep_).get_error_context();
+    }
+
+    /**
+     * Set the additional error context object. This function may be used to provide additional context-depended
+     * data that is related to the current operation error.
+     *
+     * @param v --- new error context.
+     */
+    void set_error_context(error_context_type v = {}) {
+        ozo::unwrap(rep_).set_error_context(std::move(v));
+    }
+
+    /**
+     * Get the executor associated with the object.
+     *
+     * @return executor_type --- executor object.
+     */
+    executor_type get_executor() const noexcept { return ex_; }
+
+    /**
+     * Asynchronously wait for the connection socket to become ready to write or to have pending error conditions.
+     *
+     * Typically this function is used by the library within the connection establishing process and operation execution.
+     * Users should not use it directly other than for custom `libpq`-based opeartions.
+     *
+     * @param handler --- wait handler with `void(ozo::error_code, int=0)` signature.
+     */
+    template <typename WaitHandler>
+    void async_wait_write(WaitHandler&& handler);
+
+    /**
+     * Asynchronously wait for the connection socket to become ready to read or to have pending error conditions.
+     *
+     * Typically this function is used by the library within the connection establishing process and operation execution.
+     * Users should not use it directly other than for custom `libpq`-based opeartions.
+     *
+     * @param handler --- wait handler with `void(ozo::error_code, int=0)` signature.
+     */
+    template <typename WaitHandler>
+    void async_wait_read(WaitHandler&& handler);
+
+    /**
+     * Close the connection.
+     *
+     * Any asynchronous operations will be cancelled immediately,
+     * and will complete with the `boost::asio::error::operation_aborted` error.
+     *
+     * @return error_code - indicates what error occurred, if any. Note that,
+     *                      even if the function indicates an error, the underlying
+     *                      connection is closed.
+     */
+    error_code close() noexcept;
+
+    /**
+     * Cancel all asynchronous operations associated with the connection.
+     *
+     * This function causes all outstanding asynchronous operations to finish immediately,
+     * and the handlers for cancelled operations will be passed the `boost::asio::error::operation_aborted` error.
+     */
+    void cancel() noexcept;
+
+    /**
+     * Determine whether the connection is in bad state.
+     *
+     * @return false --- connection established, and it is ok to execute operations
+     * @return true  --- connection is not established, no operation shall be performed,
+     *                   but an error context may be obtained via `get_error_context()`
+     *                   and `ozo::error_message()`.
+     */
+    bool is_bad() const noexcept;
+
+    /**
+     * Determine whether the connection is not in bad state.
+     *
+     * @return true  --- connection established, and it is ok to execute operations
+     * @return false --- connection is not established, no operation shall be performed,
+     *                   but an error context may be obtained via `get_error_context()`
+     *                   and `ozo::error_message()`.
+     */
+    operator bool () const noexcept { return !is_bad();}
+
+    /**
+     * Determine whether the connection is open.
+     *
+     * @return false --- connection is closed and no native handle associated with.
+     * @return true  --- connection is open and there is a native handle associated with.
+     */
+    bool is_open() const noexcept { return native_handle() != nullptr;}
+
+    ~pooled_connection();
+private:
+    using stream_type = typename detail::connection_stream<executor_type>::type;
+
+    rep_type rep_;
+    executor_type ex_;
+    stream_type stream_;
+};
+
+template <typename ...Ts>
+struct is_connection<pooled_connection<Ts...>> : std::true_type {};
+
+template <typename Pool>
+struct connection_traits<yamail::resource_pool::handle<Pool>> :
+    connection_traits<typename yamail::resource_pool::handle<Pool>::value_type> {};
 
 /**
  * @brief Connection pool implementation
@@ -68,6 +297,9 @@ struct /*[[deprecated]]*/ connection_pool_timeouts {
 template <typename Source>
 class connection_pool {
 public:
+    using connection_rep_type = ozo::connection_rep<typename ozo::unwrap_type<ozo::connection_type<Source>>::oid_map_type>;
+
+    using impl_type = yamail::resource_pool::async::pool<connection_rep_type>;
     /**
      * @brief Construct a new connection pool object
      *
@@ -83,7 +315,7 @@ public:
      *
      * Type is used to model #ConnectionSource
      */
-    using connection_type = impl::pooled_connection_ptr<Source>;
+    using connection_type = std::shared_ptr<pooled_connection<typename impl_type::handle>>;
 
     /**
      * @brief Provides connection is binded to the given `io_context`
@@ -99,19 +331,7 @@ public:
      * @param handler --- #Handler.
      */
     template <typename TimeConstraint, typename Handler>
-    void operator ()(io_context& io, TimeConstraint t, Handler&& handler) {
-        static_assert(ozo::TimeConstraint<TimeConstraint>, "should model TimeConstraint concept");
-        impl_.get_auto_recycle(
-            io,
-            impl::wrap_pooled_connection_handler(
-                io,
-                source_,
-                t,
-                std::forward<Handler>(handler)
-            ),
-            queue_timeout(t)
-        );
-    }
+    void operator ()(io_context& io, TimeConstraint t, Handler&& handler);
 
     auto stats() const {
         return impl_.stats();
@@ -135,7 +355,7 @@ private:
         return time_traits::duration(0);
     }
 
-    impl::connection_pool<Source> impl_;
+    impl_type impl_;
     Source source_;
 };
 
@@ -180,3 +400,5 @@ auto make_connection_pool(Source&& source, const connection_pool_config& config)
 }
 
 } // namespace ozo
+
+#include <ozo/impl/connection_pool.h>

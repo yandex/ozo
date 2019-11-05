@@ -214,36 +214,6 @@ TEST_F(async_get_connection, should_reset_connection_error_context) {
     });
 }
 
-TEST(bind_connection_executor, should_leave_same_io_context_and_socket_when_address_of_new_io_is_equal_to_old) {
-    io_context io;
-    connection<> conn(io);
-    EXPECT_EQ(ozo::detail::bind_connection_executor(conn, io.get_executor()), error_code());
-    EXPECT_EQ(ozo::get_executor(conn), io.get_executor());
-}
-
-TEST(bind_connection_executor, should_change_socket_when_address_of_new_io_is_not_equal_to_old) {
-    io_context old_io;
-    connection<> conn(old_io);
-    io_context new_io;
-
-    EXPECT_CALL(*conn.socket_.native_handle(), assign(_)).WillOnce(Return());
-    EXPECT_CALL(*conn.socket_.native_handle(), release()).WillOnce(Return());
-
-    EXPECT_EQ(ozo::detail::bind_connection_executor(conn, new_io.get_executor()), error_code());
-    EXPECT_EQ(ozo::get_executor(conn), new_io.get_executor());
-}
-
-TEST(bind_connection_executor, should_return_error_when_socket_assign_fails_with_error) {
-    io_context old_io;
-    connection<> conn(old_io);
-    io_context new_io;
-
-    EXPECT_CALL(*conn.socket_.native_handle(), assign(_))
-        .WillOnce(SetArgReferee<0>(error_code(error::code::error)));
-
-    EXPECT_EQ(ozo::detail::bind_connection_executor(conn, new_io.get_executor()), error_code(error::code::error));
-}
-
 struct fake_native_pq_handle {
     std::string message;
     friend const char* PQerrorMessage(const fake_native_pq_handle& self) {

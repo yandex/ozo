@@ -21,7 +21,34 @@ TEST(make_connection_pool, should_not_throw) {
 namespace ozo::tests {
 
 struct pool_handle_mock {
-    using value_type = std::shared_ptr<connection<>>;
+    struct value_type {
+        using native_handle_type = PGconn_mock*;
+        using oid_map_type = empty_oid_map;
+        using error_context_type = std::string;
+        using statistics_type = ozo::none_t;
+
+        native_conn_handle safe_handle_;
+        ozo::empty_oid_map oid_map_;
+        error_context_type error_context_;
+
+        const native_conn_handle& safe_native_handle() const & {return safe_handle_;}
+        native_conn_handle& safe_native_handle() & {return safe_handle_;}
+
+        const oid_map_type& oid_map() const & {return oid_map_;}
+
+        const statistics_type& statistics() const & {return ozo::none;}
+        template <typename Key, typename Value>
+        void update_statistics(const Key&, Value&&) noexcept {
+            static_assert(std::is_void_v<Key>, "update_statistics is not supperted");
+        }
+        const error_context_type& get_error_context() const noexcept {
+            return error_context_;
+        }
+        void set_error_context(error_context_type v) {
+            error_context_ = std::move(v);
+        }
+    };
+
     MOCK_CONST_METHOD0(empty, bool());
     MOCK_METHOD1(reset, void(value_type&));
     MOCK_METHOD0(waste, void());
@@ -34,6 +61,11 @@ struct connection_pool {
     struct handle {
         pool_handle_mock* mock_;
         using value_type = pool_handle_mock::value_type;
+        using native_handle_type = value_type::native_handle_type;
+        using oid_map_type = value_type::oid_map_type;
+        using error_context_type = value_type::error_context_type;
+        using statistics_type = value_type::statistics_type;
+
         handle(const handle&) = delete;
         handle(handle&&) = default;
         handle& operator = (const handle& ) = delete;
@@ -43,10 +75,11 @@ struct connection_pool {
         void waste() { mock_->waste(); }
         value_type& operator * () { return mock_->value(); }
         const value_type& operator * () const { return mock_->value(); }
+        value_type* operator -> () { return std::addressof(mock_->value()); }
+        const value_type* operator -> () const { return std::addressof(mock_->value()); }
     };
 };
 
-struct connection_source;
 struct connection_source_mock {
     using connection_type = std::shared_ptr<connection<>>;
     using handler_type = std::function<void(error_code, connection_type)>;
@@ -63,17 +96,41 @@ struct connection_source {
 
     template <typename IoContext, typename TimeConstraint, typename Handler>
     void operator()(IoContext&, TimeConstraint&&, Handler&& h) const {
-        mock_->async_get_connection(std::forward<Handler>(h));
+        mock_->async_get_connection(ozo::detail::make_copyable(std::forward<Handler>(h)));
     }
 };
 } // namespace ozo::tests
 
-namespace ozo::impl {
+namespace ozo {
 template <>
-struct get_connection_pool<ozo::tests::connection_source> {
-    using type = ozo::tests::connection_pool;
+class connection_pool<ozo::tests::connection_source> {
+public:
+    using connection_type = std::shared_ptr<ozo::pooled_connection<ozo::tests::connection_pool::handle, ozo::tests::executor>>;
 };
-} // namespace ozo::impl
+
+template <>
+struct unwrap_impl<ozo::tests::connection_pool::handle> {
+    template <typename T>
+    static constexpr decltype(auto) apply(T&& handle) {
+        return *handle;
+    }
+};
+
+namespace detail {
+template <>
+struct connection_stream<ozo::tests::executor> {
+    using type = ozo::tests::stream_descriptor;
+
+    static type get(const ozo::tests::executor& ex, type::native_handle_type fd) {
+        return type{ex.context(), fd};
+    }
+
+    static type get(const ozo::tests::executor& ex) {
+        return type{ex.context()};
+    }
+};
+} // namespace detail
+} // namespace ozo
 
 namespace {
 
@@ -81,29 +138,30 @@ using namespace ozo::tests;
 using namespace testing;
 
 struct pooled_connection : Test {
-    StrictMock<connection_gmock> connection_mock{};
     StrictMock<pool_handle_mock> handle_mock{};
     StrictMock<stream_descriptor_mock> stream;
-    PGconn_mock conn_handle;
     io_context io;
+    StrictMock<stream_descriptor_mock> socket {};
 
-    using impl = ozo::impl::pooled_connection<connection_source>;
-    auto make_connection() {
-        return std::make_shared<connection<>>(connection<>{&conn_handle, {io, stream}, {}, &connection_mock, {} , nullptr});
-    }
+    StrictMock<PGconn_mock> conn_handle;
+    pool_handle_mock::value_type value{std::addressof(conn_handle), ozo::empty_oid_map{}, ""};
+
+    using impl = ozo::pooled_connection<ozo::tests::connection_pool::handle, ozo::tests::executor>;
+
 };
 
 TEST_F(pooled_connection, should_call_handle_waste_on_destruction_if_handle_is_not_empty_and_connection_is_bad) {
-    auto conn = make_connection();
-
-    EXPECT_CALL(conn_handle, PQstatus()).WillRepeatedly(Return(CONNECTION_BAD));
-
-    EXPECT_CALL(handle_mock, value()).WillRepeatedly(ReturnRef(conn));
+    EXPECT_CALL(handle_mock, value()).WillRepeatedly(ReturnRef(value));
     EXPECT_CALL(handle_mock, empty()).WillRepeatedly(Return(false));
+    EXPECT_CALL(conn_handle, PQsocket()).WillOnce(Return(42));
+    EXPECT_CALL(io.stream_service_, create()).WillRepeatedly(ReturnRef(socket));
+    EXPECT_CALL(socket, assign(42));
+    EXPECT_CALL(conn_handle, PQstatus()).WillOnce(Return(CONNECTION_BAD));
+    EXPECT_CALL(socket, release()).WillOnce(Return(42));
     EXPECT_CALL(handle_mock, waste()).WillOnce(Return());
 
     {
-        impl p(connection_pool::handle{&handle_mock});
+        impl p(io.get_executor(), connection_pool::handle{&handle_mock});
     }
 }
 
@@ -114,17 +172,18 @@ struct pooled_connection : ::pooled_connection,
 };
 
 TEST_P(pooled_connection, should_call_handle_waste_on_destruction_if_connection_is_good_and_not_idle) {
-    auto conn = make_connection();
-
-    EXPECT_CALL(conn_handle, PQstatus()).WillRepeatedly(Return(CONNECTION_OK));
-    EXPECT_CALL(conn_handle, PQtransactionStatus()).WillRepeatedly(Return(GetParam()));
-
-    EXPECT_CALL(handle_mock, value()).WillRepeatedly(ReturnRef(conn));
+    EXPECT_CALL(handle_mock, value()).WillRepeatedly(ReturnRef(value));
     EXPECT_CALL(handle_mock, empty()).WillRepeatedly(Return(false));
+    EXPECT_CALL(conn_handle, PQsocket()).WillOnce(Return(42));
+    EXPECT_CALL(io.stream_service_, create()).WillRepeatedly(ReturnRef(socket));
+    EXPECT_CALL(socket, assign(42));
+    EXPECT_CALL(conn_handle, PQstatus()).WillOnce(Return(CONNECTION_OK));
+    EXPECT_CALL(conn_handle, PQtransactionStatus()).WillOnce(Return(GetParam()));
+    EXPECT_CALL(socket, release()).WillOnce(Return(42));
     EXPECT_CALL(handle_mock, waste()).WillOnce(Return());
 
     {
-        impl p(connection_pool::handle{&handle_mock});
+        impl p(io.get_executor(), connection_pool::handle{&handle_mock});
     }
 }
 
@@ -141,61 +200,71 @@ INSTANTIATE_TEST_CASE_P(
 
 } // namespace with_params
 
-TEST_F(pooled_connection, should_call_nothing_on_destruction_if_handle_is_not_empty_connection_is_good_and_idle) {
-    auto conn = make_connection();
+TEST_F(pooled_connection, should_not_call_waste_on_destruction_if_handle_is_not_empty_connection_is_good_and_idle) {
+    EXPECT_CALL(handle_mock, value()).WillRepeatedly(ReturnRef(value));
+    EXPECT_CALL(handle_mock, empty()).WillRepeatedly(Return(false));
+    EXPECT_CALL(conn_handle, PQsocket()).WillOnce(Return(42));
+    EXPECT_CALL(io.stream_service_, create()).WillRepeatedly(ReturnRef(socket));
+    EXPECT_CALL(socket, assign(42));
+    EXPECT_CALL(conn_handle, PQstatus()).WillOnce(Return(CONNECTION_OK));
+    EXPECT_CALL(conn_handle, PQtransactionStatus()).WillOnce(Return(PQTRANS_IDLE));
+    EXPECT_CALL(socket, release()).WillOnce(Return(42));
 
-    EXPECT_CALL(conn_handle, PQstatus()).WillRepeatedly(Return(CONNECTION_OK));
-    EXPECT_CALL(conn_handle, PQtransactionStatus()).WillRepeatedly(Return(PQTRANS_IDLE));
+    {
+        impl p(io.get_executor(), connection_pool::handle{&handle_mock});
+    }
+}
 
-    EXPECT_CALL(handle_mock, value()).WillRepeatedly(ReturnRef(conn));
+TEST_F(pooled_connection, should_not_check_connection_status_and_call_waste_on_destruction_if_handle_is_empty) {
+    EXPECT_CALL(handle_mock, value()).WillRepeatedly(ReturnRef(value));
+    EXPECT_CALL(conn_handle, PQsocket()).WillOnce(Return(42));
+    EXPECT_CALL(io.stream_service_, create()).WillRepeatedly(ReturnRef(socket));
+    EXPECT_CALL(socket, assign(42));
+    EXPECT_CALL(socket, release()).WillOnce(Return(42));
     EXPECT_CALL(handle_mock, empty()).WillRepeatedly(Return(false));
 
     {
-        impl p(connection_pool::handle{&handle_mock});
-    }
-}
+        impl p(io.get_executor(), connection_pool::handle{&handle_mock});
 
-TEST_F(pooled_connection, should_call_nothing_on_destruction_if_handle_is_empty) {
-    EXPECT_CALL(handle_mock, empty()).WillRepeatedly(Return(true));
-
-    {
-        impl p(connection_pool::handle{&handle_mock});
-    }
-}
-
-TEST_F(pooled_connection, should_call_handle_reset_on_reset) {
-    EXPECT_CALL(handle_mock, empty()).WillRepeatedly(Return(true));
-    {
-        impl p(connection_pool::handle{&handle_mock});
-        EXPECT_CALL(handle_mock, reset(_)).WillOnce(Return());
-        p.reset(make_connection());
+        EXPECT_CALL(handle_mock, empty()).WillRepeatedly(Return(true));
     }
 }
 
 struct pooled_connection_wrapper : Test {
-    using pooled_connection_ptr = ozo::impl::pooled_connection_ptr<connection_source>;
+    using pooled_connection_ptr = std::shared_ptr<ozo::pooled_connection<ozo::tests::connection_pool::handle, ozo::tests::executor>>;
     StrictMock<connection_source_mock> provider_mock;
     StrictMock<callback_gmock<pooled_connection_ptr>> callback_mock;
     StrictMock<connection_gmock> connection_mock{};
     StrictMock<pool_handle_mock> handle_mock{};
     StrictMock<stream_descriptor_mock> stream;
-    PGconn_mock conn_handle;
+    StrictMock<PGconn_mock> native_handle;
+    pool_handle_mock::value_type rep{std::addressof(native_handle), {}, {}};
     io_context io;
 
-    auto make_connection() {
-        return std::make_shared<connection<>>(connection<>{&conn_handle, {io, stream}, {}, &connection_mock, {} , nullptr});
+    pooled_connection_wrapper() {
+        EXPECT_CALL(handle_mock, value()).WillRepeatedly(ReturnRef(rep));
     }
 
-    auto null_connection() {
-        return std::shared_ptr<connection<>>();
+    auto wrap_pooled_connection_handler() {
+        return ozo::detail::wrap_pooled_connection_handler(
+            io.get_executor(),
+            connection_source{&provider_mock},
+            ozo::none,
+            wrap(callback_mock)
+        );
+    }
+
+    auto make_connection() {
+        return std::make_shared<ozo::tests::connection<>>(connection<>{
+            std::addressof(native_handle), {io, stream}, {}, &connection_mock, {}, &io});
     }
 };
 
 using ozo::error_code;
 
 TEST_F(pooled_connection_wrapper, should_be_copyable_with_non_copyable_handler_for_resource_pool_compatibility) {
-    auto h = ozo::impl::wrap_pooled_connection_handler(
-            io,
+    auto h = ozo::detail::wrap_pooled_connection_handler(
+            io.get_executor(),
             connection_source{&provider_mock},
             ozo::none,
             [&, attr = std::unique_ptr<int>()](error_code ec, auto& conn) mutable { callback_mock.call(ec, conn); }
@@ -205,12 +274,7 @@ TEST_F(pooled_connection_wrapper, should_be_copyable_with_non_copyable_handler_f
 }
 
 TEST_F(pooled_connection_wrapper, should_invoke_handler_with_error_if_error_is_passed) {
-    auto h = ozo::impl::wrap_pooled_connection_handler(
-            io,
-            connection_source{&provider_mock},
-            ozo::none,
-            wrap(callback_mock)
-        );
+    auto h = wrap_pooled_connection_handler();
 
     EXPECT_CALL(callback_mock, call(error_code(error::error), _)).WillOnce(Return());
 
@@ -218,123 +282,125 @@ TEST_F(pooled_connection_wrapper, should_invoke_handler_with_error_if_error_is_p
 }
 
 TEST_F(pooled_connection_wrapper, should_invoke_handler_if_passed_connection_is_good_and_handle_is_not_empty) {
-    auto conn = make_connection();
-    EXPECT_CALL(conn_handle, PQstatus()).WillRepeatedly(Return(CONNECTION_OK));
-    EXPECT_CALL(conn_handle, PQtransactionStatus()).WillRepeatedly(Return(PQTRANS_IDLE));
+    auto h = wrap_pooled_connection_handler();
 
-    auto h = ozo::impl::wrap_pooled_connection_handler(
-            io,
-            connection_source{&provider_mock},
-            ozo::none,
-            wrap(callback_mock)
-        );
 
-    EXPECT_CALL(handle_mock, value()).WillRepeatedly(ReturnRef(conn));
     EXPECT_CALL(handle_mock, empty()).WillRepeatedly(Return(false));
-    EXPECT_CALL(connection_mock, set_executor()).WillRepeatedly(Return(ozo::error_code{}));
+    EXPECT_CALL(io.stream_service_, create()).WillOnce(ReturnRef(stream));
+    EXPECT_CALL(stream, assign(42));
+    EXPECT_CALL(stream, release());
+    EXPECT_CALL(native_handle, PQsocket()).WillRepeatedly(Return(42));
+    EXPECT_CALL(native_handle, PQstatus()).WillRepeatedly(Return(CONNECTION_OK));
+    EXPECT_CALL(native_handle, PQtransactionStatus()).WillRepeatedly(Return(PQTRANS_IDLE));
 
     EXPECT_CALL(callback_mock, call(_, _)).WillOnce(Return());
 
     h({}, connection_pool::handle{&handle_mock});
 }
 
+
 TEST_F(pooled_connection_wrapper, should_call_async_get_connection_and_invoke_handler_if_passed_connection_is_bad_and_handle_is_not_empty) {
-    auto bad_conn = make_connection();
-    PGconn_mock bad_conn_handle;
-    EXPECT_CALL(bad_conn_handle, PQstatus()).WillRepeatedly(Return(CONNECTION_BAD));
-    bad_conn->handle_=&bad_conn_handle;
+    auto h = wrap_pooled_connection_handler();
 
-
-    auto good_conn = make_connection();
-    EXPECT_CALL(conn_handle, PQstatus()).WillRepeatedly(Return(CONNECTION_OK));
-    EXPECT_CALL(conn_handle, PQtransactionStatus()).WillRepeatedly(Return(PQTRANS_IDLE));
-
-    auto h = ozo::impl::wrap_pooled_connection_handler(
-            io,
-            connection_source{&provider_mock},
-            ozo::none,
-            wrap(callback_mock)
-        );
-
-    auto conn = std::move(bad_conn);
-
-    EXPECT_CALL(handle_mock, value()).WillRepeatedly(ReturnRef(conn));
+    Sequence s;
     EXPECT_CALL(handle_mock, empty()).WillRepeatedly(Return(false));
-
+    EXPECT_CALL(native_handle, PQstatus())
+        .InSequence(s)
+        .WillOnce(Return(CONNECTION_BAD));
     EXPECT_CALL(provider_mock, async_get_connection(_))
-        .WillOnce(InvokeArgument<0>(error_code{}, good_conn));
+        .InSequence(s)
+        .WillOnce(InvokeArgument<0>(error_code{}, make_connection()));
+    EXPECT_CALL(handle_mock, reset(_)).InSequence(s);
+    EXPECT_CALL(io.stream_service_, create()).InSequence(s).WillOnce(ReturnRef(stream));
+    EXPECT_CALL(native_handle, PQsocket()).InSequence(s).WillOnce(Return(42));
+    EXPECT_CALL(stream, assign(42)).InSequence(s);
 
-    EXPECT_CALL(handle_mock, reset(_))
-        .WillOnce(Invoke([&](auto c){
-            conn = std::move(c);
-        }));
+    EXPECT_CALL(callback_mock, call(ozo::error_code{}, _))
+        .InSequence(s)
+        .WillOnce(Return());
 
-    EXPECT_CALL(callback_mock, call(_, _)).WillOnce(Return());
+    EXPECT_CALL(stream, release()).InSequence(s);
+    EXPECT_CALL(native_handle, PQstatus())
+        .InSequence(s)
+        .WillOnce(Return(CONNECTION_OK));
+    EXPECT_CALL(native_handle, PQtransactionStatus())
+        .InSequence(s)
+        .WillOnce(Return(PQTRANS_IDLE));
 
     h({}, connection_pool::handle{&handle_mock});
 }
 
 TEST_F(pooled_connection_wrapper, should_call_async_get_connection_and_invoke_handler_if_handle_is_empty) {
-    auto h = ozo::impl::wrap_pooled_connection_handler(
-            io,
-            connection_source{&provider_mock},
-            ozo::none,
-            wrap(callback_mock)
-        );
+    auto h = wrap_pooled_connection_handler();
 
-    EXPECT_CALL(handle_mock, empty()).WillRepeatedly(Return(true));
-
+    bool handle_empty = true;
+    Sequence s;
+    EXPECT_CALL(handle_mock, empty()).WillRepeatedly(Invoke([&]{ return handle_empty;}));
     EXPECT_CALL(provider_mock, async_get_connection(_))
-        .WillOnce(InvokeArgument<0>(
-            error_code{}, make_connection())
-        );
+        .InSequence(s)
+        .WillOnce(InvokeArgument<0>(error_code{}, make_connection()));
+    EXPECT_CALL(handle_mock, reset(_)).InSequence(s).WillOnce(Invoke([&](auto){ handle_empty = false;}));
+    EXPECT_CALL(io.stream_service_, create()).InSequence(s).WillOnce(ReturnRef(stream));
+    EXPECT_CALL(native_handle, PQsocket()).InSequence(s).WillOnce(Return(42));
+    EXPECT_CALL(stream, assign(42)).InSequence(s);
 
-    EXPECT_CALL(handle_mock, reset(_)).WillOnce(Return());
-    EXPECT_CALL(callback_mock, call(_, _)).WillOnce(Return());
+    EXPECT_CALL(callback_mock, call(ozo::error_code{}, _))
+        .InSequence(s)
+        .WillOnce(Return());
+
+    EXPECT_CALL(stream, release()).InSequence(s);
+    EXPECT_CALL(native_handle, PQstatus())
+        .InSequence(s)
+        .WillOnce(Return(CONNECTION_OK));
+    EXPECT_CALL(native_handle, PQtransactionStatus())
+        .InSequence(s)
+        .WillOnce(Return(PQTRANS_IDLE));
 
     h({}, connection_pool::handle{&handle_mock});
 }
 
 TEST_F(pooled_connection_wrapper, should_invoke_callback_with_error_and_provided_connection_if_async_get_connection_fails) {
-    auto h = ozo::impl::wrap_pooled_connection_handler(
-            io,
-            connection_source{&provider_mock},
-            ozo::none,
-            wrap(callback_mock)
-        );
+    auto h = wrap_pooled_connection_handler();
 
-    EXPECT_CALL(handle_mock, empty()).WillRepeatedly(Return(true));
-
-    auto conn = make_connection();
-
+    bool handle_empty = true;
+    Sequence s;
+    EXPECT_CALL(handle_mock, empty()).WillRepeatedly(Invoke([&]{ return handle_empty;}));
     EXPECT_CALL(provider_mock, async_get_connection(_))
-        .WillOnce(InvokeArgument<0>(
-            error::error, conn)
-        );
+        .InSequence(s)
+        .WillOnce(InvokeArgument<0>(error::error, make_connection()));
+    EXPECT_CALL(handle_mock, reset(_)).InSequence(s).WillOnce(Invoke([&](auto){ handle_empty = false;}));
+    EXPECT_CALL(io.stream_service_, create()).InSequence(s).WillOnce(ReturnRef(stream));
+    EXPECT_CALL(native_handle, PQsocket()).InSequence(s).WillOnce(Return(42));
+    EXPECT_CALL(stream, assign(42)).InSequence(s);
 
-    EXPECT_CALL(handle_mock, reset(conn)).WillOnce(Return());
+    EXPECT_CALL(callback_mock, call(Eq(error::error), _))
+        .InSequence(s)
+        .WillOnce(Return());
 
-    EXPECT_CALL(callback_mock, call(error_code{error::error}, _)).WillOnce(Return());
+    EXPECT_CALL(stream, release()).InSequence(s);
+    EXPECT_CALL(native_handle, PQstatus())
+        .InSequence(s)
+        .WillOnce(Return(CONNECTION_OK));
+    EXPECT_CALL(native_handle, PQtransactionStatus())
+        .InSequence(s)
+        .WillOnce(Return(PQTRANS_IDLE));
 
     h({}, connection_pool::handle{&handle_mock});
 }
 
 TEST_F(pooled_connection_wrapper, should_invoke_callback_with_null_pointer_if_async_get_connection_provides_null_pointer) {
-    auto h = ozo::impl::wrap_pooled_connection_handler(
-            io,
-            connection_source{&provider_mock},
-            ozo::none,
-            wrap(callback_mock)
-        );
+    auto h = wrap_pooled_connection_handler();
 
-    EXPECT_CALL(handle_mock, empty()).WillRepeatedly(Return(true));
-
+    bool handle_empty = true;
+    Sequence s;
+    EXPECT_CALL(handle_mock, empty()).WillRepeatedly(Invoke([&]{ return handle_empty;}));
     EXPECT_CALL(provider_mock, async_get_connection(_))
-        .WillOnce(InvokeArgument<0>(
-            error::error, null_connection())
-        );
+        .InSequence(s)
+        .WillOnce(InvokeArgument<0>(error::error, nullptr));
 
-    EXPECT_CALL(callback_mock, call(error_code{error::error}, pooled_connection_ptr{})).WillOnce(Return());
+    EXPECT_CALL(callback_mock, call(Eq(error::error), _))
+        .InSequence(s)
+        .WillOnce(Return());
 
     h({}, connection_pool::handle{&handle_mock});
 }

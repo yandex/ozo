@@ -58,10 +58,7 @@ struct stream_descriptor_mock {
     MOCK_METHOD1(cancel, void(error_code&));
     MOCK_METHOD1(close, void(error_code&));
     MOCK_METHOD0(release, int());
-
-    friend bool invalid_stream_descriptor(stream_descriptor_mock* v) {
-        return v != nullptr;
-    }
+    MOCK_METHOD1(assign, void(int));
 };
 
 struct stream_descriptor_service_mock {
@@ -201,6 +198,8 @@ struct stream_descriptor {
     void close(error_code& ec) { mock_->close(ec);}
 
     void release() { mock_->release();}
+
+    void assign(int fd) { mock_->assign(fd);}
 
     using executor_type = boost::asio::executor;
 
