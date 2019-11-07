@@ -70,12 +70,12 @@ inline void done(const request_operation_context_ptr<Ts...>& ctx) {
     std::move(get_handler(ctx))(error_code {}, ctx->conn);
 }
 
-template <typename Context, typename BinaryQuery>
+template <typename Context>
 struct async_send_query_params_op {
     Context ctx_;
-    BinaryQuery query_;
+    binary_query query_;
 
-    async_send_query_params_op(Context ctx, BinaryQuery query)
+    async_send_query_params_op(Context ctx, binary_query query)
     : ctx_(std::move(ctx)), query_(std::move(query)) {}
 
     void perform() {
@@ -143,8 +143,8 @@ inline auto make_binary_query(const T& query, const M& oid_map, const Alloc& all
     return binary_query(query, oid_map, allocator);
 }
 
-template <typename ...Ts, typename M, typename A>
-inline auto make_binary_query(binary_query<Ts...> query, M&&, A&&) {
+template <typename M, typename A>
+inline auto make_binary_query(binary_query query, M&&, A&&) {
     return std::move(query);
 }
 
@@ -357,7 +357,8 @@ struct async_request_out_handler {
 template <typename P, typename Q, typename TimeConstraint, typename Out, typename Handler>
 inline void async_request(P&& provider, Q&& query, TimeConstraint t, Out&& out, Handler&& handler) {
     static_assert(ConnectionProvider<P>, "is not a ConnectionProvider");
-    static_assert(Query<Q> || QueryBuilder<Q>, "is neither Query nor QueryBuilder");
+    static_assert(Query<Q> || QueryBuilder<Q> || std::is_same_v<std::decay_t<Q>, binary_query>,
+        "query should be binary_query type or model Query or QueryBuilder concept");
     static_assert(ozo::TimeConstraint<TimeConstraint>, "should model TimeConstraint concept");
     async_get_connection(std::forward<P>(provider), deadline(t),
         async_request_op{

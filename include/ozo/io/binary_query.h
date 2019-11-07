@@ -27,100 +27,134 @@
 
 namespace ozo {
 
-template <class Text, class Params, class OidMap, class Allocator = std::allocator<char>>
 class binary_query {
 public:
-    static_assert(ozo::HanaSequence<Params>, "Params should be Hana.Sequence");
-    static_assert(ozo::OidMap<OidMap>, "OidMap should model ozo::OidMap");
-    static_assert(ozo::QueryText<Text>, "Text should model ozo::QueryText concept");
-
-    using allocator_type = std::conditional_t<
-                                    std::is_same_v<typename Allocator::value_type, char>,
-                                        Allocator,
-                                        typename Allocator::template rebind<char>::other>;
-    using oid_map_type = OidMap;
-    using text_type = std::decay_t<Text>;
-    using params_type = Params;
-
-    static constexpr auto params_count = decltype(hana::length(std::declval<params_type>()))::value;
-
+    template <class Text, class Params, class OidMap, class Allocator = std::allocator<char>>
     binary_query(Text text, const Params& params, const OidMap& oid_map, const Allocator& allocator = Allocator{},
             Require<ozo::QueryText<Text> && ozo::HanaSequence<Params>>* = nullptr)
-    : impl{std::allocate_shared<impl_type>(allocator, std::move(text), params, oid_map, allocator)} {}
+    : impl{std::allocate_shared<impl_type<Text, Params, OidMap, Allocator>>(allocator, std::move(text), params, oid_map, allocator)} {}
 
-    template <typename Query>
+    template <typename Query, class OidMap, class Allocator = std::allocator<char>>
     binary_query(const Query& query, const OidMap& oid_map, const Allocator& allocator = Allocator{},
             Require<ozo::Query<Query>>* = nullptr)
     : binary_query(get_query_text(query), get_query_params(query), oid_map, allocator) {}
 
-    constexpr const char* text() const noexcept {
-        return to_const_char(impl->text);
+    const char* text() const noexcept {
+        return impl->text();
     }
 
-    constexpr const oid_t* types() const noexcept {
-        return std::data(impl->types);
+    const oid_t* types() const noexcept {
+        return impl->types();
     }
 
-    constexpr const int* formats() const noexcept {
-        return std::data(impl->formats);
+    const int* formats() const noexcept {
+        return impl->formats();
     }
 
-    constexpr const int* lengths() const noexcept {
-        return std::data(impl->lengths);
+    const int* lengths() const noexcept {
+        return impl->lengths();
     }
 
-    constexpr const char* const* values() const noexcept {
-        return std::data(impl->values);
+    const char* const* values() const noexcept {
+        return impl->values();
+    }
+
+    std::ptrdiff_t params_count() const noexcept {
+        return impl->params_count();
     }
 
 private:
     static constexpr auto binary_format = 1;
 
-    using buffer_type = std::vector<char, allocator_type>;
+    struct interface {
+        virtual const char* text() const noexcept = 0;
+        virtual const oid_t* types() const noexcept = 0;
+        virtual const int* formats() const noexcept = 0;
+        virtual const int* lengths() const noexcept = 0;
+        virtual const char* const* values() const noexcept = 0;
+        virtual std::ptrdiff_t params_count() const noexcept = 0;
+        virtual ~interface() = default;
+    };
 
-    struct impl_type {
-        text_type text;
-        buffer_type buffer;
-        std::array<oid_t, params_count> types;
-        std::array<int, params_count> formats;
-        std::array<int, params_count> lengths;
-        std::array<const char*, params_count> values;
+    template <class Text, class Params, class OidMap, class Allocator = std::allocator<char>>
+    struct impl_type final : interface {
+        static_assert(ozo::HanaSequence<Params>, "Params should be Hana.Sequence");
+        static_assert(ozo::OidMap<OidMap>, "OidMap should model ozo::OidMap");
+        static_assert(ozo::QueryText<Text>, "Text should model ozo::QueryText concept");
 
-        impl_type(text_type text, const params_type& params,
-            const oid_map_type& oid_map, const allocator_type& allocator)
-        : text(std::move(text)), buffer(allocator) {
-            formats.fill(binary_format);
+        using allocator_type = std::conditional_t<
+                                std::is_same_v<typename Allocator::value_type, char>,
+                                    Allocator,
+                                    typename Allocator::template rebind<char>::other>;
+        using buffer_type = std::vector<char, allocator_type>;
+        using oid_map_type = OidMap;
+        using text_type = std::decay_t<Text>;
+        using params_type = Params;
 
-            const auto range = hana::to_tuple(hana::make_range(hana::size_c<0>, hana::size_c<params_count>));
+        static constexpr auto params_count_ = decltype(hana::length(std::declval<params_type>()))::value;
+
+        text_type text_;
+        buffer_type buffer_;
+        std::array<oid_t, params_count_> types_;
+        std::array<int, params_count_> formats_;
+        std::array<int, params_count_> lengths_;
+        std::array<const char*, params_count_> values_;
+
+        impl_type(Text text, const Params& params,
+            const OidMap& oid_map, const Allocator& allocator)
+        : text_(std::move(text)), buffer_(allocator) {
+            formats_.fill(binary_format);
+
+            const auto range = hana::to_tuple(hana::make_range(hana::size_c<0>, hana::size_c<params_count_>));
 
             hana::for_each(range, [&] (auto i) {
-                lengths[i] = std::max(0, size_of(params[i]));
-                types[i] = type_oid(oid_map, params[i]);
+                lengths_[i] = std::max(0, size_of(params[i]));
+                types_[i] = type_oid(oid_map, params[i]);
             });
 
-            buffer.reserve(hana::unpack(lengths, [](auto ...x) {return (x + ... + 0);}));
+            buffer_.reserve(hana::unpack(lengths_, [](auto ...x) {return (x + ... + 0);}));
 
-            ozo::detail::ostreambuf osbuf(buffer);
+            ozo::detail::ostreambuf osbuf(buffer_);
             ozo::ostream os(&osbuf);
 
             hana::for_each(params, [&] (auto& param) { send(os, oid_map, param);});
 
             std::size_t offset = 0;
             hana::for_each(range, [&] (auto i) {
-                values[i] = lengths[i] ? std::data(buffer) + offset : nullptr;
-                offset += lengths[i];
+                values_[i] = lengths_[i] ? std::data(buffer_) + offset : nullptr;
+                offset += lengths_[i];
             });
         }
 
         impl_type(const impl_type&) = delete;
         impl_type(impl_type&&) = delete;
+
+        const char* text() const noexcept override {
+            return to_const_char(text_);
+        }
+
+        const oid_t* types() const noexcept override {
+            return std::data(types_);
+        }
+
+        const int* formats() const noexcept override {
+            return std::data(formats_);
+        }
+
+        const int* lengths() const noexcept override {
+            return std::data(lengths_);
+        }
+
+        const char* const* values() const noexcept override {
+            return std::data(values_);
+        }
+
+        std::ptrdiff_t params_count() const noexcept override {
+            return params_count_;
+        }
     };
 
-    std::shared_ptr<const impl_type> impl;
+    std::shared_ptr<const interface> impl;
 };
-
-template <class Query, class OidMap, class Allocator = std::allocator<char>>
-binary_query(const Query& q, const OidMap&, const Allocator& = Allocator{}, Require<ozo::Query<Query>>* = nullptr) ->
-    binary_query<decltype(get_query_text(q)), decltype(get_query_params(q)), OidMap, Allocator>;
 
 } // namespace ozo
