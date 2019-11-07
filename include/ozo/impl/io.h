@@ -40,11 +40,11 @@ inline native_conn_handle pq_start_connection(const T&, const std::string& conni
 }
 
 template <typename T, typename ...Ts>
-inline int pq_send_query_params(T& conn, const binary_query<Ts...>& q) noexcept {
+inline int pq_send_query_params(T& conn, const binary_query& q) noexcept {
     static_assert(Connection<T>, "T must be a Connection");
     return PQsendQueryParams(get_native_handle(conn),
                 q.text(),
-                q.params_count,
+                q.params_count(),
                 q.types(),
                 q.values(),
                 q.lengths(),
