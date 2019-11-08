@@ -14,14 +14,14 @@ namespace ozo {
  * @note The function does not particitate in ADL since could be implemented via functional object.
  *
  * @param provider --- #ConnectionProvider object
- * @param query --- #Query or `ozo::binary_query` to execute
+ * @param query --- query object to execute
  * @param time_constraint --- request #TimeConstraint; this time constrain <b>includes</b> time for getting connection from provider.
  * @param token --- operation #CompletionToken.
  * @return deduced from #CompletionToken.
  * @ingroup group-requests-functions
  */
-template <typename ConnectionProvider, typename Query, typename TimeConstraint, typename CompletionToken>
-decltype(auto) execute(ConnectionProvider&& provider, Query&& query, TimeConstraint time_constraint, CompletionToken&& token);
+template <typename ConnectionProvider, typename BinaryQueryConvertible, typename TimeConstraint, typename CompletionToken>
+decltype(auto) execute(ConnectionProvider&& provider, BinaryQueryConvertible&& query, TimeConstraint time_constraint, CompletionToken&& token);
 
 /**
  * @brief Executes query with no result data expected
@@ -32,13 +32,13 @@ decltype(auto) execute(ConnectionProvider&& provider, Query&& query, TimeConstra
  * @note The function does not particitate in ADL since could be implemented via functional object.
  *
  * @param provider --- #ConnectionProvider object
- * @param query --- #Query or `ozo::binary_query` to execute
+ * @param query --- query object to execute
  * @param token --- operation #CompletionToken.
  * @return deduced from #CompletionToken.
  * @ingroup group-requests-functions
  */
-template <typename P, typename Q, typename CompletionToken>
-decltype(auto) execute(P&& provider, Q&& query, CompletionToken&& token);
+template <typename P, typename BinaryQueryConvertible, typename CompletionToken>
+decltype(auto) execute(P&& provider, BinaryQueryConvertible&& query, CompletionToken&& token);
 #else
 
 template <typename Initiator>

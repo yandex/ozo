@@ -12,9 +12,7 @@
 #include <ozo/pg/types.h>
 
 #include <boost/hana/for_each.hpp>
-#include <boost/hana/fold.hpp>
 #include <boost/hana/tuple.hpp>
-#include <boost/hana/plus.hpp>
 #include <boost/hana/ext/std/array.hpp>
 
 #include <libpq-fe.h>
@@ -27,38 +25,83 @@
 
 namespace ozo {
 
+/**
+ * @brief Binary protocol query representation.
+ *
+ * The `binary_query` being used for query sending to a database.
+ *
+ * @models{BinaryQueryConvertible}
+ *
+ * @ingroup group-query-types
+ */
 class binary_query {
 public:
+    /**
+     * Construct a new binary query object.
+     *
+     * @param text      --- query text object, should model `QueryText` concept.
+     * @param params    --- query parameters object, should model `HanaSequence` concept.
+     * @param oid_map   --- `OidMap` which is used within connection.
+     * @param allocator --- allocator object which should be used to allocate internal data,
+     *                      default is `std::allocator<char>`.
+     */
     template <class Text, class Params, class OidMap, class Allocator = std::allocator<char>>
-    binary_query(Text text, const Params& params, const OidMap& oid_map, const Allocator& allocator = Allocator{},
-            Require<ozo::QueryText<Text> && ozo::HanaSequence<Params>>* = nullptr)
-    : impl{std::allocate_shared<impl_type<Text, Params, OidMap, Allocator>>(allocator, std::move(text), params, oid_map, allocator)} {}
+    binary_query(Text text, const Params& params, const OidMap& oid_map, const Allocator& allocator = Allocator{})
+    : impl{std::allocate_shared<impl_type<Text, Params, OidMap, Allocator>>(
+        allocator, std::move(text), params, oid_map, allocator
+    )} {}
 
-    template <typename Query, class OidMap, class Allocator = std::allocator<char>>
-    binary_query(const Query& query, const OidMap& oid_map, const Allocator& allocator = Allocator{},
-            Require<ozo::Query<Query>>* = nullptr)
-    : binary_query(get_query_text(query), get_query_params(query), oid_map, allocator) {}
-
+    /**
+     * Get raw query text buffer.
+     *
+     * @return `const char*` --- pointer to the buffer.
+     */
     const char* text() const noexcept {
         return impl->text();
     }
 
+    /**
+     * Get query parameter types array.
+     *
+     * @return `const oid_t*` --- the query parameter types array.
+     */
     const oid_t* types() const noexcept {
         return impl->types();
     }
 
+    /**
+     * Get query parameter formats array. For the `binary_array` all the formats are `binary_format`.
+     *
+     * @return `const int*` --- the query parameter formats array.
+     */
     const int* formats() const noexcept {
         return impl->formats();
     }
 
+    /**
+     * Get query parameter lengths array. Each element represents length of the respective parameter
+     * binary representation from `values()`.
+     *
+     * @return `const int*` --- the query parameter lengths array.
+     */
     const int* lengths() const noexcept {
         return impl->lengths();
     }
 
+    /**
+     * Get query parameter binary representations array.
+     *
+     * @return `const char* const*` --- an array with pointers to the binary representations.
+     */
     const char* const* values() const noexcept {
         return impl->values();
     }
 
+    /**
+     * Get query parameters count.
+     *
+     * @return `std::ptrdiff_t` --- the query parameters count.
+     */
     std::ptrdiff_t params_count() const noexcept {
         return impl->params_count();
     }
@@ -156,5 +199,122 @@ private:
 
     std::shared_ptr<const interface> impl;
 };
+
+namespace detail {
+struct no_binary_query_conversion {};
+} // namespace detail
+
+template <typename T, typename = hana::when<true>>
+struct to_binary_query_impl : detail::no_binary_query_conversion {
+    template <typename OidMap, typename Alloc>
+    static auto apply(const T&, const OidMap&, const Alloc&) {
+        static_assert(std::is_void_v<to_binary_query_impl>, "no conversion to the binary_query is defined");
+    }
+};
+
+template <typename T>
+using is_binary_query_convertible = typename std::negation<typename std::is_base_of<detail::no_binary_query_conversion, T>::type>::type;
+
+template <typename T>
+constexpr auto is_binary_query_convertible_v = is_binary_query_convertible<T>::value;
+
+/**
+ * @brief Concept of a type that is convertible to `ozo::binary_query`
+ *
+ * To be convertible to the `ozo::binary_query` type should model `Query`
+ * concept or should have a valid `ozo::to_binary_query_impl<T>` overload.
+ *
+ * ### Customization
+ *
+ * A particular query object type may become `BinaryQueryConvertible` via the
+ * specialization of `ozo::to_binary_query_impl<T>::apply()` template function.
+ * By default, it handles any `Query` model object or `binary_query` object.
+ *
+ * @code
+template <typename T>
+struct to_binary_query_impl<T> {
+    template <typename OidMap, typename Allocator>
+    static binary_query apply(const T&, const OidMap&, const Allocator&);
+};
+ * @endcode
+ *
+ * ### Example
+ *
+ * E.g., a custom library contains type-erasure interface for its queries.
+ *
+ * @code
+namespace demo {
+
+constexpr auto oidMap = ozo::register_types<...>();
+
+using OidMap = decltype(oidMap);
+
+struct Query {
+    virtual ozo::binary_query toBinaryQuery(const OidMap&, const std::allocator<char>&) const = 0;
+    virtual ~Query() = 0;
+};
+
+} // namespace demo
+ * @endcode
+ * Then the adaptation should look like this:
+ * @code
+namespace ozo {
+template <>
+struct to_binary_query_impl<demo::Query> {
+    template <typename OidMap, typename Alloc>
+    static binary_query apply(const demo::Query& query, const demo::OidMap& oid_map, const std::allocator<char>& alloc) {
+        return query.toBinaryQuery(oid_map, alloc);
+    }
+};
+} // namespace ozo
+ * @endcode
+ *
+ *
+ * @ingroup group-query-concepts
+ * @concept{ozo::BinaryQueryConvertible}
+ */
+//! @cond
+template <typename T>
+constexpr auto BinaryQueryConvertible = is_binary_query_convertible_v<std::decay_t<T>>;
+//! @endcond
+
+template <typename T>
+struct to_binary_query_impl<T, hana::when<Query<T>>> {
+    template <typename OidMap, typename Alloc>
+    static binary_query apply(const T& query, const OidMap& oid_map, const Alloc& allocator) {
+        return binary_query(get_query_text(query), get_query_params(query), oid_map, allocator);
+    }
+};
+
+template <>
+struct to_binary_query_impl<binary_query> {
+    template <typename OidMap, typename Alloc>
+    static binary_query apply(const binary_query& query, const OidMap&, const Alloc&) {
+        return query;
+    }
+};
+
+/**
+ * @brief Convert a query object to the binary representation.
+ *
+ * This function provides an ability to convert a query object to the protocol compatible
+ * binary representation to send it to the PostgreSQL database. A user may call this
+ * function to reuse the `binary_query` and eliminate unnecessarily conversion of the
+ * query object to its binary representation each operation. E.g., this may be useful
+ * with the `failover` micro-framework.
+ *
+ * @param query     --- a query object to convert to the binary representation.
+ * @param oid_map   --- `OidMap` to type OIDs for the binary representation.
+ * @param allocator --- allocator to use for the data of `ozo::binary_query`.
+ *
+ * @return `ozo::binary_query` --- the binary representation.
+ *
+ * @ingroup group-query-functions
+ */
+template <typename BinaryQueryConvertible, typename OidMap, typename Allocator = std::allocator<char>>
+inline binary_query to_binary_query(const BinaryQueryConvertible& query,
+        const OidMap& oid_map, const Allocator& allocator = Allocator{}) {
+    return to_binary_query_impl<BinaryQueryConvertible>::apply(query, oid_map, allocator);
+}
 
 } // namespace ozo
