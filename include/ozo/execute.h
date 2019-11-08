@@ -14,7 +14,7 @@ namespace ozo {
  * @note The function does not particitate in ADL since could be implemented via functional object.
  *
  * @param provider --- #ConnectionProvider object
- * @param query --- #Query to execute
+ * @param query --- #Query or `ozo::binary_query` to execute
  * @param time_constraint --- request #TimeConstraint; this time constrain <b>includes</b> time for getting connection from provider.
  * @param token --- operation #CompletionToken.
  * @return deduced from #CompletionToken.
@@ -32,7 +32,7 @@ decltype(auto) execute(ConnectionProvider&& provider, Query&& query, TimeConstra
  * @note The function does not particitate in ADL since could be implemented via functional object.
  *
  * @param provider --- #ConnectionProvider object
- * @param query --- #Query to execute
+ * @param query --- #Query or `ozo::binary_query` to execute
  * @param token --- operation #CompletionToken.
  * @return deduced from #CompletionToken.
  * @ingroup group-requests-functions

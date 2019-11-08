@@ -14,7 +14,7 @@ namespace ozo {
  * @note The function does not particitate in ADL since could be implemented via functional object.
  *
  * @param provider --- #ConnectionProvider to get connection from.
- * @param query --- #Query or `ozo::query_builder` object to request from a database.
+ * @param query --- #Query or `ozo::binary_query` object to request from a database.
  * @param time_constraint --- request #TimeConstraint; this time constrain <b>includes</b> time for getting connection from provider.
  * @param out --- output object like Iterator, #InsertIterator or `ozo::result`.
  * @param token --- operation #CompletionToken.
@@ -70,7 +70,7 @@ decltype(auto) request (ConnectionProvider&& provider, Query&& query, TimeConstr
  * @note The function does not particitate in ADL since could be implemented via functional object.
  *
  * @param provider --- #ConnectionProvider to get connection from.
- * @param query --- #Query or `ozo::query_builder` object to request from a database.
+ * @param query --- #Query or `ozo::binary_query` object to request from a database.
  * @param out --- output object like Iterator, #InsertIterator or `ozo::result`.
  * @param token --- operation #CompletionToken.
  * @return deduced from #CompletionToken.

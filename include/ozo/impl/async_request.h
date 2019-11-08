@@ -133,11 +133,6 @@ struct async_send_query_params_op {
     }
 };
 
-template <typename OidMap, typename Allocator, typename ...Ts>
-inline auto make_binary_query(const query_builder<Ts...>& builder, const OidMap& m, Allocator a) {
-    return binary_query(builder.build(), m, a);
-}
-
 template <typename T, typename M, typename Alloc, typename = Require<Query<T>>>
 inline auto make_binary_query(const T& query, const M& oid_map, const Alloc& allocator) {
     return binary_query(query, oid_map, allocator);
@@ -357,8 +352,8 @@ struct async_request_out_handler {
 template <typename P, typename Q, typename TimeConstraint, typename Out, typename Handler>
 inline void async_request(P&& provider, Q&& query, TimeConstraint t, Out&& out, Handler&& handler) {
     static_assert(ConnectionProvider<P>, "is not a ConnectionProvider");
-    static_assert(Query<Q> || QueryBuilder<Q> || std::is_same_v<std::decay_t<Q>, binary_query>,
-        "query should be binary_query type or model Query or QueryBuilder concept");
+    static_assert(Query<Q> || std::is_same_v<std::decay_t<Q>, binary_query>,
+        "query should be binary_query type or model Query concept");
     static_assert(ozo::TimeConstraint<TimeConstraint>, "should model TimeConstraint concept");
     async_get_connection(std::forward<P>(provider), deadline(t),
         async_request_op{

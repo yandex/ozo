@@ -246,6 +246,9 @@ static_assert(ozo::HanaSequence<decltype(ozo::get_query_params(query))>);
  * To adapt custom type as #Query for the library it is needed to customize
  * `ozo::get_query_text()` and `ozo::get_query_params()` via its' implementations.
  * See both functions description for more details.
+ *
+ * Query may be constructed via `ozo::make_query` function or `ozo::query_builder`.
+ *
  * @hideinitializer
  * @ingroup group-query-concepts
  */
