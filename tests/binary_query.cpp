@@ -30,7 +30,7 @@ TEST_F(binary_query_params_count, with_more_than_0_parameters_should_be_equal_to
 }
 
 TEST_F(binary_query_params_count, from_query_concept_with_more_than_0_parameters_should_be_equal_to_that_number) {
-    const auto query = ozo::binary_query(ozo::make_query("", true, 42, std::string("text")), ozo::empty_oid_map{});
+    const auto query = ozo::to_binary_query(ozo::make_query("", true, 42, std::string("text")), ozo::empty_oid_map{});
     EXPECT_EQ(query.params_count(), 3u);
 }
 

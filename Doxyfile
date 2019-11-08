@@ -226,6 +226,12 @@ TAB_SIZE               = 4
 # alias to insert a newline as if a physical newline was in the original file.
 
 ALIASES                =
+ALIASES                +=models{1}="@par Models^^`\1`\n"
+ALIASES                +=models{2}="@par Models^^`\1`, `\2`\n"
+ALIASES                +=models{3}="@par Models^^`\1`, `\2`, `\3`\n"
+ALIASES                +=models{4}="@par Models^^`\1`, `\2`, `\3`, `\4`\n"
+ALIASES                +=models{5}="@par Models^^`\1`, `\2`, `\3`, `\4`, `\5`\n"
+ALIASES                +=concept{1}="@interface \1 <>"
 
 # This tag can be used to specify a number of word-keyword mappings (TCL only).
 # A mapping has the form "name=value". For example adding "class=itcl::class"

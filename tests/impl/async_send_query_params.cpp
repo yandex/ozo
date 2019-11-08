@@ -23,7 +23,7 @@ struct fixture {
     execution_context cb_io;
     decltype(make_connection(connection, io, socket)) conn =
             make_connection(connection, io, socket);
-    ozo::binary_query query{fake_query {}, ozo::empty_oid_map_c};
+    ozo::binary_query query = ozo::to_binary_query(fake_query {}, ozo::empty_oid_map_c);
 
     auto make_operation_context() {
         EXPECT_CALL(callback, get_executor()).WillRepeatedly(Return(cb_io.get_executor()));

@@ -16,6 +16,12 @@
  */
 
 /**
+ * @defgroup group-query-types types
+ * @ingroup group-query
+ * @brief Query-related concepts.
+ */
+
+/**
  * @defgroup group-query-functions Functions
  * @ingroup group-query
  * @brief Query-related functions.

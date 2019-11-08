@@ -133,19 +133,9 @@ struct async_send_query_params_op {
     }
 };
 
-template <typename T, typename M, typename Alloc, typename = Require<Query<T>>>
-inline auto make_binary_query(const T& query, const M& oid_map, const Alloc& allocator) {
-    return binary_query(query, oid_map, allocator);
-}
-
-template <typename M, typename A>
-inline auto make_binary_query(binary_query query, M&&, A&&) {
-    return std::move(query);
-}
-
 template <typename Context, typename Query>
 void async_send_query_params(std::shared_ptr<Context> ctx, Query&& query) {
-    auto q = make_binary_query(std::forward<Query>(query),
+    auto q = to_binary_query(std::forward<Query>(query),
                         get_connection(ctx).oid_map(),
                         asio::get_associated_allocator(get_handler(ctx)));
 
@@ -352,8 +342,7 @@ struct async_request_out_handler {
 template <typename P, typename Q, typename TimeConstraint, typename Out, typename Handler>
 inline void async_request(P&& provider, Q&& query, TimeConstraint t, Out&& out, Handler&& handler) {
     static_assert(ConnectionProvider<P>, "is not a ConnectionProvider");
-    static_assert(Query<Q> || std::is_same_v<std::decay_t<Q>, binary_query>,
-        "query should be binary_query type or model Query concept");
+    static_assert(BinaryQueryConvertible<Q>, "query should be convertible to the binary_query");
     static_assert(ozo::TimeConstraint<TimeConstraint>, "should model TimeConstraint concept");
     async_get_connection(std::forward<P>(provider), deadline(t),
         async_request_op{
