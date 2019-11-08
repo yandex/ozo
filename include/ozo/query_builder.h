@@ -123,15 +123,6 @@ struct query_builder {
 };
 
 template <class T>
-struct is_query_builder : std::false_type {};
-
-template <class T>
-struct is_query_builder<query_builder<T>> : std::true_type {};
-
-template <class T>
-constexpr auto QueryBuilder = is_query_builder<std::decay_t<T>>::value;
-
-template <class T>
 constexpr auto make_query_text(T&& value) {
     return query_element<std::decay_t<T>, query_text_tag> {std::forward<T>(value)};
 }
@@ -176,6 +167,19 @@ constexpr auto operator +(query_element<LhsValueT, LhsTagT>&& lhs, RhsValueT&& r
     return make_query_builder(hana::make_tuple(std::move(lhs), make_query_param(std::forward<RhsValueT>(rhs))));
 }
 
+template <class ...Ts>
+struct get_query_text_impl<query_builder<Ts...>> {
+    static constexpr decltype(auto) apply(const query_builder<Ts...>& q) noexcept {
+        return q.text();
+    }
+};
+
+template <typename ...Ts>
+struct get_query_params_impl<query_builder<Ts...>> {
+    static constexpr decltype(auto) apply(const query_builder<Ts...>& q) noexcept {
+        return q.params();
+    }
+};
 
 namespace literals {
 

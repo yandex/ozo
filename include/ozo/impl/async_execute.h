@@ -8,7 +8,7 @@ namespace ozo::impl {
 template <typename P, typename Q, typename TimeConstraint, typename Handler>
 inline void async_execute(P&& provider, Q&& query, TimeConstraint t, Handler&& handler) {
     static_assert(ConnectionProvider<P>, "is not a ConnectionProvider");
-    static_assert(Query<Q> || QueryBuilder<Q>, "is neither Query nor QueryBuilder");
+    static_assert(Query<Q> || std::is_same_v<std::decay_t<Q>, binary_query>, "query should model Query concept");
     static_assert(ozo::TimeConstraint<TimeConstraint>, "should model TimeConstraint concept");
     async_get_connection(std::forward<P>(provider), deadline(t),
         async_request_op {
