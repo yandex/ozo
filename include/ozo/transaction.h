@@ -35,7 +35,7 @@ struct begin_op : base_async_operation <begin_op<Initiator, Options>, Initiator>
     }
 
     template <typename OtherOptions>
-    auto with_transaction_options(const OtherOptions& options) const {
+    constexpr auto with_transaction_options(const OtherOptions& options) const {
         return begin_op<Initiator, OtherOptions>{get_operation_initiator(*this), options};
     }
 
