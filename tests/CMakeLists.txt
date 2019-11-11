@@ -56,6 +56,7 @@ set(SOURCES
     failover/role_based.cpp
     detail/deadline.cpp
     impl/cancel.cpp
+    transaction.cpp
     main.cpp
 )
 
