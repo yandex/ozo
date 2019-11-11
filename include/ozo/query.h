@@ -63,7 +63,7 @@ struct to_const_char_impl<const char*> {
 /**
  * @brief Convert QueryText to const char*
  *
- * Convert #QueryText to `const char*` for futher transfer to a database. This function
+ * Convert `QueryText` to `const char*` for futher transfer to a database. This function
  * invokes `ozo::to_const_char_impl::apply()` and should be customized via
  * `ozo::to_const_char_impl` specialization. Built-in support for types:
  * * `const char*`,
@@ -116,10 +116,10 @@ struct is_query_text<T, std::void_t<
 >> : std::true_type {};
 
 /**
- * @brief Query text concept
+ * @brief %Query text concept
  *
- * The `QueryText` concept is very simple. Query text should be convertible into
- * a `const char*` representation. The conversion should not throw an exception.
+ * The `QueryText` concept is very simple. %Query text should be convertible into
+ * a `const char*` via `ozo::to_const_char()`. The conversion should not throw an exception.
  * It means that `query_text` models `QueryText` concept if this code is valid:
  *
  * @code
@@ -129,12 +129,15 @@ struct is_query_text<T, std::void_t<
  * To adapt a custom text representation as `QueryText` it is needed to customize
  * `ozo::to_const_char()` function via it's implementation. For more details see
  * the function documentation.
- * @hideinitializer
- * @sa ozo::to_const_char
+ *
+ * @sa ozo::to_const_char()
+ * @concept{QueryText}
  * @ingroup group-query-concepts
  */
+//! @cond
 template <typename T>
 constexpr auto QueryText = is_query_text<std::decay_t<T>>::value;
+//! @endcond
 
 template <typename T, typename = hana::when<true>>
 struct get_query_text_impl;
@@ -165,13 +168,13 @@ struct get_query_text_impl<my_ns::my_query> {
 } // namespace ozo
  * @endcode
  *
- * @param query --- #Query object
- * @return #QueryText --- query text with single SQL statement
+ * @param query --- query object
+ * @return `QueryText` --- query text with single SQL statement
  * @sa ozo::get_query_params
  * @ingroup group-query-functions
  */
-template <typename T>
-constexpr auto get_query_text(T&& query);
+template <typename Query>
+constexpr auto get_query_text(Query&& query);
 #else
 template <typename T>
 inline constexpr detail::result_of<get_query_text_impl, T> get_query_text(T&& query) {
@@ -207,13 +210,13 @@ struct get_query_params_impl<my_ns::my_query> {
 
 } // namespace ozo
  * @endcode
- * @param query --- #Query object
- * @return #HanaSequence --- tuple with query parameters for its' #QueryText
+ * @param query --- query object
+ * @return #HanaSequence --- tuple with query parameters
  * @sa ozo::get_query_text
  * @ingroup group-query-functions
  */
 template <typename T>
-constexpr auto get_query_params(T&& query);
+constexpr auto get_query_params(Query&& query);
 #else
 template <typename T>
 inline constexpr detail::result_of<get_query_params_impl, T> get_query_params(T&& query) {
@@ -234,11 +237,13 @@ struct is_query<T, std::void_t<
 > {};
 
 /**
- * @brief Query concept
+ * @brief %Query concept
  *
- * Query consists of two parts:
- * * text, which should models #QueryText concept,
+ * %Query consists of two parts:
+ * * text, which should models `QueryText` concept,
  * * parameters sequence, whish should models #HanaSequence.
+ *
+ * Type which models the `Query` concept automatically models `BinaryQueryConvertible`.
  *
  * This is very simple but powerful concept, which allows to use different
  * query representations with the library. Type `query` models `Query` concept
@@ -249,22 +254,24 @@ static_assert(ozo::QueryText<decltype(ozo::get_query_text(query))>);
 static_assert(ozo::HanaSequence<decltype(ozo::get_query_params(query))>);
  * @endcode
  *
- * To adapt custom type as #Query for the library it is needed to customize
+ * To adapt custom type as `Query` for the library it is needed to customize
  * `ozo::get_query_text()` and `ozo::get_query_params()` via its' implementations.
  * See both functions description for more details.
  *
- * Query may be constructed via `ozo::make_query` function or `ozo::query_builder`.
+ * %Query may be constructed via `ozo::make_query` function or `ozo::query_builder`.
  *
- * @hideinitializer
+ * @concept{Query}
  * @ingroup group-query-concepts
  */
+//! @cond
 template <typename T>
 constexpr auto Query = is_query<std::decay_t<T>>::value;
+//! @endcond
 
 /**
  * @brief Construct built-in Query implementation object
  *
- * Construct built-in #Query implementation object from specified text and
+ * Construct built-in `Query` implementation object from specified text and
  * variadic parameters.
  *
  * @note Currently no compile-time parameters validation provided by
@@ -278,13 +285,15 @@ auto query = ozo::make_query(
     min_credit, min_rating);
  * @endcode
  *
- * @param text --- #QueryText implementation
- * @param params --- variadic parameters of the query
- * @return #Query object
+ * @param text   --- query text implementation with PostgreSQL native markup with
+ *                   variable place holder format is `$n`, there n - parameter position
+ *                   in the `params` begining from `1`.
+ * @param params --- query parameters
+ * @return `Query` object
  * @ingroup group-query-functions
  */
-template <class Text, class ... ParamsT>
-inline constexpr auto make_query(Text&& text, ParamsT&& ... params);
+template <class QueryText , class ... Params>
+inline constexpr auto make_query(QueryText&& text, Params&& ...params);
 
 template <class ... ParamsT>
 inline constexpr auto make_query(const char* text, ParamsT&& ... params) {
