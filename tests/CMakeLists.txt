@@ -55,7 +55,6 @@ set(SOURCES
     failover/strategy.cpp
     failover/role_based.cpp
     detail/deadline.cpp
-    detail/call_once.cpp
     impl/cancel.cpp
     main.cpp
 )
@@ -100,7 +99,7 @@ if(OZO_COVERAGE AND CMAKE_COMPILER_IS_GNUCXX)
     set(COVERAGE_EXCLUDES "'.*/(tests|contrib|gmock|gtest)/.*'")
     SETUP_TARGET_FOR_COVERAGE_GCOVR(
         NAME ozo_coverage
-        EXECUTABLE ctest
+        EXECUTABLE ctest -V
         DEPENDENCIES ozo_tests
     )
 endif()

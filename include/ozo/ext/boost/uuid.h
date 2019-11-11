@@ -22,8 +22,8 @@ namespace ozo {
 
 template <>
 struct send_impl<boost::uuids::uuid> {
-    template <typename M>
-    static ostream& apply(ostream& out, const oid_map_t<M>&, const boost::uuids::uuid& in) {
+    template <typename OidMap>
+    static ostream& apply(ostream& out, const OidMap&, const boost::uuids::uuid& in) {
         out.write(reinterpret_cast<const char*>(in.data), std::size(in));
         return out;
     }
@@ -31,8 +31,8 @@ struct send_impl<boost::uuids::uuid> {
 
 template <>
 struct recv_impl<boost::uuids::uuid> {
-    template <typename M>
-    static istream& apply(istream& in, size_type size, const oid_map_t<M>&, const boost::uuids::uuid& out) {
+    template <typename OidMap>
+    static istream& apply(istream& in, size_type size, const OidMap&, const boost::uuids::uuid& out) {
         in.read(const_cast<char*>(reinterpret_cast<const char*>(out.data)), size);
         return in;
     }

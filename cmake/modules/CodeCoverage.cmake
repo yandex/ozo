@@ -261,11 +261,19 @@ function(SETUP_TARGET_FOR_COVERAGE_GCOVR)
         COMMAND mkdir -p ${Coverage_NAME}
 
         # Running gcovr
-        COMMAND python2 ${GCOVR_PATH}
+        COMMAND ${GCOVR_PATH}
             --html --html-details
             -e "${COVERAGE_EXCLUDES}"
             --root "${CMAKE_SOURCE_DIR}/"
             --output "${CMAKE_BINARY_DIR}/${Coverage_NAME}/index.html"
+
+        # Running gcovr
+        COMMAND ${GCOVR_PATH}
+            --xml
+            -e "${COVERAGE_EXCLUDES}"
+            --root "${CMAKE_SOURCE_DIR}/"
+            --output "${CMAKE_BINARY_DIR}/${Coverage_NAME}/coverage.xml"
+
         WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
         DEPENDS ${Coverage_DEPENDENCIES}
         COMMENT "Running gcovr to produce Cobertura code coverage report."

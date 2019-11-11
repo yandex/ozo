@@ -17,13 +17,10 @@ using callback_mock = callback_gmock<connection_ptr<>>;
 
 struct fixture {
     StrictMock<connection_gmock> connection{};
-    StrictMock<executor_gmock> callback_executor{};
     StrictMock<callback_mock> callback{};
-    StrictMock<executor_gmock> executor{};
-    StrictMock<strand_executor_service_gmock> strand_service{};
-    StrictMock<stream_descriptor_gmock> socket{};
-    io_context io{executor, strand_service};
-    execution_context cb_io {callback_executor};
+    StrictMock<stream_descriptor_mock> socket{};
+    io_context io;
+    execution_context cb_io;
     decltype(make_connection(connection, io, socket)) conn =
             make_connection(connection, io, socket);
 
@@ -154,7 +151,7 @@ TEST_F(async_get_result, should_wait_for_read_and_consume_input_while_is_busy_re
     // Wait for read while is_busy() returns true
     EXPECT_CALL(m.connection, is_busy()).InSequence(s).WillOnce(Return(true));
     EXPECT_CALL(m.socket, async_read_some(_)).InSequence(s).WillOnce(InvokeArgument<0>(error_code{}));
-    EXPECT_CALL(m.callback_executor, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(m.cb_io.executor_, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
 
     // Consume input
     EXPECT_CALL(m.connection, consume_input()).InSequence(s).WillOnce(Return(1));
@@ -172,7 +169,7 @@ TEST_F(async_get_result, should_post_callback_with_error_if_consume_input_failed
     // Wait for read while is_busy() returns true
     EXPECT_CALL(m.connection, is_busy()).InSequence(s).WillOnce(Return(true));
     EXPECT_CALL(m.socket, async_read_some(_)).InSequence(s).WillOnce(InvokeArgument<0>(error_code{}));
-    EXPECT_CALL(m.callback_executor, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(m.cb_io.executor_, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
 
     // Consume input
     EXPECT_CALL(m.connection, consume_input()).InSequence(s).WillOnce(Return(0));
@@ -268,7 +265,7 @@ TEST_F(async_get_result, should_process_data_and_post_callback_if_result_status_
     ozo::impl::async_get_result(m.ctx, process_f);
 }
 
-TEST_F(async_get_result, should_post_callback_and_consume_result_if_result_status_is_PGRES_COMMAND_OK) {
+TEST_F(async_get_result, should_process_data_and_post_callback_and_consume_result_if_result_status_is_PGRES_COMMAND_OK) {
     Sequence s;
 
     // Get result since is_busy() is false
@@ -282,6 +279,8 @@ TEST_F(async_get_result, should_post_callback_and_consume_result_if_result_statu
     EXPECT_CALL(m.connection, get_result())
         .InSequence(s)
         .WillOnce(Return(boost::none));
+
+    EXPECT_CALL(process, call()).InSequence(s).WillOnce(Return());
 
     // Post callback with no error since result is ok
     EXPECT_CALL(m.callback, call(error_code{}, _)).InSequence(s).WillOnce(Return());
@@ -373,10 +372,13 @@ TEST_F(async_get_result, should_consume_tail_data_asynchronously) {
     // Consume result with calling get_result until it returns nothing
     EXPECT_CALL(m.connection, is_busy()).InSequence(s).WillOnce(Return(true));
     EXPECT_CALL(m.socket, async_read_some(_)).InSequence(s).WillOnce(InvokeArgument<0>(error_code{}));
-    EXPECT_CALL(m.callback_executor, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(m.cb_io.executor_, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(m.connection, consume_input()).InSequence(s).WillOnce(Return(1));
     EXPECT_CALL(m.connection, is_busy()).InSequence(s).WillOnce(Return(false));
     EXPECT_CALL(m.connection, get_result()).InSequence(s).WillOnce(Return(boost::none));
+
+    // Processing result
+    EXPECT_CALL(process, call()).InSequence(s).WillOnce(Return());
 
     // Post callback with no error since result is ok
     EXPECT_CALL(m.callback, call(error_code{}, _)).InSequence(s).WillOnce(Return());
@@ -396,8 +398,11 @@ TEST_F(async_get_result, should_post_callback_with_result_on_consume_input_error
     // Consume result with calling get_result until it returns nothing
     EXPECT_CALL(m.connection, is_busy()).InSequence(s).WillOnce(Return(true));
     EXPECT_CALL(m.socket, async_read_some(_)).InSequence(s).WillOnce(InvokeArgument<0>(error_code{}));
-    EXPECT_CALL(m.callback_executor, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(m.cb_io.executor_, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(m.connection, consume_input()).InSequence(s).WillOnce(Return(0));
+
+    // Processing result
+    EXPECT_CALL(process, call()).InSequence(s).WillOnce(Return());
 
     // Post callback with error and cancel all io
     EXPECT_CALL(m.callback, call(error_code{}, _)).InSequence(s).WillOnce(Return());

@@ -6,6 +6,8 @@
 #include <ozo/detail/float.h>
 #include <ozo/detail/typed_buffer.h>
 
+#include <boost/hana/for_each.hpp>
+
 namespace ozo::impl {
 
 using detail::istream;
@@ -23,10 +25,11 @@ inline Require<RawDataWritable<T>, istream&> read(istream& in, T& out) {
 
 template <typename T>
 inline Require<Integral<T> && sizeof(T) == 1, istream&> read(istream& in, T& out) {
-    out = in.get();
+    istream::traits_type::int_type c = in.get();
     if (!in) {
         throw system_error(error::unexpected_eof);
     }
+    out = istream::traits_type::to_char_type(c);
     return in;
 }
 
@@ -54,8 +57,10 @@ inline istream& read(istream& in, bool& out) {
 }
 
 template <typename T>
-inline Require<FusionSequence<T>, istream&> read(istream& in, T& out) {
-    fusion::for_each(out, [&in](auto& member) { read(in, member); });
+inline Require<HanaStruct<T>, istream&> read(istream& in, T& out) {
+    hana::for_each(hana::keys(out), [&in, &out](auto key) {
+        read(in, hana::at_key(out, key));
+    });
     return in;
 }
 

@@ -79,7 +79,7 @@ TEST(cancel, should_stop_cancel_operation_on_zero_timeout) {
             }
         });
         ozo::execute(conn, "SELECT pg_sleep(1000000)"_SQL, 2s, yield[ec]);
-        EXPECT_EQ(ec, boost::asio::error::operation_aborted);
+        EXPECT_EQ(ec, boost::asio::error::timed_out);
     });
 
     io.run();

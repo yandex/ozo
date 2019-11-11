@@ -31,12 +31,10 @@ struct connection_wrapper {
     connection_mock& mock_;
     OidMap oid_map_;
 
-    friend OidMap& get_oid_map(connection_wrapper& conn) {
-        return conn.oid_map_;
-    }
+    using oid_map_type = OidMap;
 
-    friend OidMap& get_oid_map(connection_wrapper&& conn) {
-        return conn.oid_map_;
+    OidMap& oid_map() {
+        return oid_map_;
     }
 
     template <typename Handler>

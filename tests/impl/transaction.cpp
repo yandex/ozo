@@ -13,10 +13,8 @@ using namespace ozo::tests;
 
 struct impl_transaction : Test {
     StrictMock<connection_gmock> connection {};
-    StrictMock<executor_gmock> executor {};
-    StrictMock<strand_executor_service_gmock> strand_service {};
-    StrictMock<stream_descriptor_gmock> socket {};
-    io_context io {executor, strand_service};
+    StrictMock<stream_descriptor_mock> socket {};
+    io_context io;
     decltype(make_connection(connection, io, socket)) conn = make_connection(connection, io, socket);
     decltype(ozo::make_options()) options = ozo::make_options();
 };

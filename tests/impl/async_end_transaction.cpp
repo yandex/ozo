@@ -16,20 +16,19 @@ using ozo::time_traits;
 
 struct async_end_transaction : Test {
     StrictMock<connection_gmock> connection {};
-    StrictMock<executor_gmock> callback_executor{};
+    StrictMock<executor_mock> callback_executor{};
     StrictMock<callback_gmock<connection_ptr<>>> callback {};
-    StrictMock<executor_gmock> executor {};
-    StrictMock<executor_gmock> strand {};
-    StrictMock<strand_executor_service_gmock> strand_service {};
-    StrictMock<stream_descriptor_gmock> socket {};
-    io_context io {executor, strand_service};
-    decltype(make_connection(connection, io, socket)) conn = make_connection(connection, io, socket);
+    StrictMock<executor_mock> strand {};
+    StrictMock<stream_descriptor_mock> socket {};
+    io_context io;
+    StrictMock<PGconn_mock> handle;
+    decltype(make_connection(connection, io, socket)) conn = make_connection(connection, io, socket, handle, ozo::empty_oid_map{});
     decltype(ozo::make_options()) options = ozo::make_options();
     time_traits::duration timeout {42};
 };
 
 TEST_F(async_end_transaction, should_call_async_execute) {
-    *conn->handle_ = native_handle::good;
+    EXPECT_CALL(handle, PQstatus()).WillRepeatedly(Return(CONNECTION_OK));
 
     auto transaction = ozo::impl::transaction<decltype(conn), decltype(options)>(std::move(conn), options);
 

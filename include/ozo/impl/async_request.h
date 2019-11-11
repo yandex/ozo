@@ -21,9 +21,6 @@ struct request_operation_context {
     std::decay_t<Handler> handler;
     query_state state = query_state::send_in_progress;
 
-    using result_type = std::decay_t<decltype(get_result(conn))>;
-    result_type result;
-
     request_operation_context(Connection conn, Handler handler)
       : conn(std::forward<Connection>(conn)),
         handler(std::forward<Handler>(handler)) {}
@@ -54,17 +51,6 @@ template <typename ...Ts>
 inline void set_query_state(const request_operation_context_ptr<Ts...>& ctx,
         query_state state) noexcept {
     ctx->state = state;
-}
-
-template <typename ...Ts>
-inline auto& get_request_result(const request_operation_context_ptr<Ts...>& ctx) noexcept {
-    return ctx->result;
-}
-
-template <typename ...Ts>
-inline void set_request_result(const request_operation_context_ptr<Ts...>& ctx,
-        typename request_operation_context<Ts...>::result_type value) noexcept {
-    ctx->result = std::move(value);
 }
 
 template <typename ... Ts>
@@ -147,8 +133,8 @@ struct async_send_query_params_op {
     }
 };
 
-template <typename T, typename Allocator, typename ...Ts>
-inline auto make_binary_query(const query_builder<Ts...>& builder, const oid_map_t<T>& m, Allocator a) {
+template <typename OidMap, typename Allocator, typename ...Ts>
+inline auto make_binary_query(const query_builder<Ts...>& builder, const OidMap& m, Allocator a) {
     return binary_query(builder.build(), m, a);
 }
 
@@ -165,7 +151,7 @@ inline auto make_binary_query(binary_query<Ts...> query, M&&, A&&) {
 template <typename Context, typename Query>
 void async_send_query_params(std::shared_ptr<Context> ctx, Query&& query) {
     auto q = make_binary_query(std::forward<Query>(query),
-                        get_oid_map(get_connection(ctx)),
+                        get_connection(ctx).oid_map(),
                         asio::get_associated_allocator(get_handler(ctx)));
 
     async_send_query_params_op op{std::move(ctx), std::move(q)};
@@ -178,6 +164,8 @@ template <typename Context, typename ResultProcessor>
 struct async_get_result_op : boost::asio::coroutine {
     Context ctx_;
     ResultProcessor process_;
+    using result_type = std::decay_t<decltype(get_result(get_connection(ctx_)))>;
+    result_type result_;
 
     async_get_result_op(Context ctx, ResultProcessor process)
     : ctx_(ctx), process_(process) {}
@@ -192,7 +180,7 @@ struct async_get_result_op : boost::asio::coroutine {
 
     void done(error_code ec) {
         if (std::empty(get_error_context(get_connection(ctx_)))) {
-            set_error_context(get_connection(ctx_), "error while get request result");
+            get_connection(ctx_).set_error_context("error while get request result");
         }
         return impl::done(ctx_, ec);
     }
@@ -221,13 +209,13 @@ struct async_get_result_op : boost::asio::coroutine {
                 }
             }
 
-            set_request_result(ctx_, get_result(get_connection(ctx_)));
+            result_ = get_result(get_connection(ctx_));
 
-            if (!get_request_result(ctx_)) {
+            if (!result_) {
                 return done();
             }
 
-            if (result_status(*get_request_result(ctx_)) != PGRES_SINGLE_TUPLE) {
+            if (result_status(*result_) != PGRES_SINGLE_TUPLE) {
                 do {
                     while (is_busy(get_connection(ctx_))) {
                         yield get_connection(ctx_).async_wait_read(std::move(*this));
@@ -243,16 +231,12 @@ struct async_get_result_op : boost::asio::coroutine {
     }
 
     void handle_result() {
-        const auto status = result_status(*get_request_result(ctx_));
+        const auto status = result_status(*result_);
         switch (status) {
             case PGRES_SINGLE_TUPLE:
-                process_and_done(std::move(get_request_result(ctx_)));
-                return;
             case PGRES_TUPLES_OK:
-                process_and_done(std::move(get_request_result(ctx_)));
-                return;
             case PGRES_COMMAND_OK:
-                done();
+                process_and_done(std::move(result_));
                 return;
             case PGRES_BAD_RESPONSE:
                 done(error::result_status_bad_response);
@@ -261,7 +245,7 @@ struct async_get_result_op : boost::asio::coroutine {
                 done(error::result_status_empty_query);
                 return;
             case PGRES_FATAL_ERROR:
-                done(result_error(*get_request_result(ctx_)));
+                done(result_error(*result_));
                 return;
             case PGRES_COPY_OUT:
             case PGRES_COPY_IN:
@@ -270,7 +254,7 @@ struct async_get_result_op : boost::asio::coroutine {
                 break;
         }
 
-        set_error_context(get_connection(ctx_), get_result_status_name(status));
+        get_connection(ctx_).set_error_context(get_result_status_name(status));
         done(error::result_status_unexpected);
     }
 
@@ -279,7 +263,7 @@ struct async_get_result_op : boost::asio::coroutine {
         try {
             process_(std::forward<Result>(res), get_connection(ctx_));
         } catch (const std::exception& e) {
-            set_error_context(get_connection(ctx_), e.what());
+            get_connection(ctx_).set_error_context(e.what());
             return done(error::bad_result_process);
         }
         done();
@@ -316,17 +300,13 @@ struct async_request_op {
     async_request_op(Query query, TimeConstraint time_constrain, OutHandler out, Handler handler)
     : out_(std::move(out)), query_(std::move(query)), time_constraint_(time_constrain), handler_(std::move(handler)) {}
 
-    template <typename Connection>
-    auto apply_time_constaint_or_strand (Connection& conn, Handler handler) const {
+    template <typename Connection, typename SourceHandler>
+    auto apply_time_constaint_or_strand (Connection& conn, SourceHandler&& handler) const {
         if constexpr (IsNone<TimeConstraint>) {
-            return detail::wrap_executor {
-                detail::make_strand_executor(ozo::get_executor(conn)),
-                std::move(handler)
-            };
+            return std::forward<SourceHandler>(handler);
         } else {
-            return detail::deadline_handler {
-                ozo::get_executor(conn), time_constraint_, std::move(handler),
-                detail::cancel_io(unwrap_connection(conn), get_allocator())
+            return detail::io_deadline_handler<std::decay_t<decltype(unwrap_connection(conn))>, std::decay_t<SourceHandler>, Connection> {
+                unwrap_connection(conn), time_constraint_, std::forward<SourceHandler>(handler)
             };
         }
     }
@@ -337,7 +317,11 @@ struct async_request_op {
             return handler_(ec, std::move(conn));
         }
 
-        auto handler = apply_time_constaint_or_strand(conn, std::move(handler_));
+        auto handler = apply_time_constaint_or_strand(conn, detail::wrap_executor {
+            detail::make_strand_executor(ozo::get_executor(conn)),
+            std::move(handler_)
+        });
+
         auto ctx = make_request_operation_context(std::move(conn), std::move(handler));
 
         async_send_query_params(ctx, std::move(query_));
@@ -366,7 +350,7 @@ struct async_request_out_handler {
     template <typename Handle, typename Conn>
     void operator() (Handle&& h, Conn& conn) {
         auto res = ozo::make_result(std::forward<Handle>(h));
-        ozo::recv_result(res, get_oid_map(conn), out);
+        ozo::recv_result(res, ozo::unwrap_connection(conn).oid_map(), out);
     }
 };
 

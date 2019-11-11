@@ -15,6 +15,7 @@
 #include <boost/hana/map.hpp>
 #include <boost/hana/pair.hpp>
 #include <boost/hana/type.hpp>
+#include <boost/hana/not_equal.hpp>
 
 #include <memory>
 #include <string>
@@ -434,15 +435,26 @@ OZO_PG_DEFINE_CUSTOM_TYPE(smtp::message, "code.message")
 
 namespace ozo {
 
+namespace detail {
+
+template <typename ... T>
+constexpr decltype(auto) register_types() noexcept {
+    return hana::make_map(
+        hana::make_pair(hana::type_c<T>, null_oid()) ...
+    );
+}
+
+} // namespace detail
+
 /**
  * @brief OidMap implementation type.
  * @ingroup group-type_system-types
  *
  * This type implements OidMap concept based on `boost::hana::map`.
  */
-template <typename ImplT>
+template <typename ...Ts>
 struct oid_map_t {
-    using impl_type = ImplT;
+    using impl_type = decltype(detail::register_types<Ts...>());
 
     impl_type impl;
 };
@@ -451,8 +463,8 @@ struct oid_map_t {
 template <typename T>
 struct is_oid_map : std::false_type {};
 
-template <typename T>
-struct is_oid_map<oid_map_t<T>> : std::true_type {};
+template <typename ...Ts>
+struct is_oid_map<oid_map_t<Ts...>> : std::true_type {};
 
 /**
  * @brief Map of C++ types to corresponding PostgreSQL types OIDs
@@ -490,17 +502,6 @@ bool res = empty(map);
 template <typename T>
 constexpr auto OidMap = is_oid_map<std::decay_t<T>>::value;
 
-namespace detail {
-
-template <typename ... T>
-constexpr decltype(auto) register_types() noexcept {
-    return hana::make_map(
-        hana::make_pair(hana::type_c<T>, null_oid()) ...
-    );
-}
-
-} // namespace detail
-
 /**
  * @brief Provides #OidMap implementation for user-defined types.
  *
@@ -526,10 +527,9 @@ const auto conn_source = ozo::make_connection_info("...", regiter_types<custom_t
  *
  * @return `oid_map_t` object.
  */
-template <typename ... T>
-constexpr decltype(auto) register_types() noexcept {
-    using impl_type = decltype(detail::register_types<T ...>());
-    return oid_map_t<impl_type> {detail::register_types<T ...>()};
+template <typename ...Ts>
+constexpr oid_map_t<Ts...> register_types() noexcept {
+    return {};
 }
 
 /**
@@ -538,6 +538,8 @@ constexpr decltype(auto) register_types() noexcept {
  */
 using empty_oid_map = std::decay_t<decltype(register_types<>())>;
 
+constexpr empty_oid_map empty_oid_map_c;
+
 /**
 * Function sets oid for a type in #OidMap.
 * @ingroup group-type_system-functions
@@ -545,8 +547,8 @@ using empty_oid_map = std::decay_t<decltype(register_types<>())>;
 * @param map --- #OidMap to modify.
 * @param oid --- OID to set.
 */
-template <typename T, typename MapImplT>
-inline void set_type_oid(oid_map_t<MapImplT>& map, oid_t oid) noexcept {
+template <typename T, typename ...Ts>
+inline void set_type_oid(oid_map_t<Ts...>& map, oid_t oid) noexcept {
     static_assert(!is_built_in<T>::value, "type must not be built-in");
     map.impl[hana::type_c<T>] = oid;
 }
@@ -562,15 +564,19 @@ inline void set_type_oid(oid_map_t<MapImplT>& map, oid_t oid) noexcept {
 template <typename T, typename OidMap>
 oid_t type_oid(const OidMap& map) noexcept;
 #else
-template <typename T, typename MapImplT>
-inline auto type_oid(const oid_map_t<MapImplT>& map) noexcept
+template <typename T, typename ...Ts>
+inline auto type_oid(const oid_map_t<Ts...>& map) noexcept
         -> Require<!BuiltIn<T>, oid_t> {
-    return map.impl[hana::type_c<unwrap_type<T>>];
+    constexpr auto key = hana::type_c<unwrap_type<T>>;
+    static_assert(decltype(hana::find(map.impl, key) != hana::nothing)::value,
+        "type OID for T can not be found in the OidMap, it should be registered via register_type()");
+    return map.impl[key];
 }
 
-template <typename T, typename MapImplT>
-constexpr auto type_oid(const oid_map_t<MapImplT>&) noexcept
+template <typename T, typename OidMap>
+constexpr auto type_oid(const OidMap&) noexcept
         -> Require<BuiltIn<T>, oid_t> {
+    static_assert(ozo::OidMap<OidMap>, "map should model OidMap concept");
     return typename type_traits<T>::oid();
 }
 #endif
@@ -586,8 +592,9 @@ constexpr auto type_oid(const oid_map_t<MapImplT>&) noexcept
 template <typename T, typename OidMap>
 oid_t type_oid(const OidMap& map, const T& v) noexcept
 #else
-template <typename T, typename MapImplT>
-inline auto type_oid(const oid_map_t<MapImplT>& map, const T&) noexcept{
+template <typename T, typename OidMap>
+inline auto type_oid(const OidMap& map, const T&) noexcept{
+    static_assert(ozo::OidMap<OidMap>, "map should model OidMap concept");
     return type_oid<std::decay_t<T>>(map);
 }
 #endif
@@ -600,8 +607,9 @@ inline auto type_oid(const oid_map_t<MapImplT>& map, const T&) noexcept{
 * @param map --- #OidMap to get type OID from
 * @param oid --- OID to check for compatibility
 */
-template <typename T, typename MapImplT>
-inline bool accepts_oid(const oid_map_t<MapImplT>& map, oid_t oid) noexcept {
+template <typename T, typename OidMap>
+inline bool accepts_oid(const OidMap& map, oid_t oid) noexcept {
+    static_assert(ozo::OidMap<OidMap>, "map should model OidMap concept");
     return type_oid<T>(map) == oid;
 }
 
@@ -613,8 +621,8 @@ inline bool accepts_oid(const oid_map_t<MapImplT>& map, oid_t oid) noexcept {
 * @param const T& --- type to examine
 * @param oid --- OID to check for compatibility
 */
-template <typename T, typename MapImplT>
-inline bool accepts_oid(const oid_map_t<MapImplT>& map, const T& , oid_t oid) noexcept {
+template <typename T, typename OidMap>
+inline bool accepts_oid(const OidMap& map, const T& , oid_t oid) noexcept {
     return accepts_oid<std::decay_t<T>>(map, oid);
 }
 
@@ -631,8 +639,8 @@ static_assert(empty(ozo::empty_oid_map{}));
  * @return `true` --- if map contains no items
  * @return `false` --- if contains items.
  */
-template <typename MapImplT>
-inline constexpr bool empty(const oid_map_t<MapImplT>& map) noexcept {
+template <typename ...Ts>
+inline constexpr bool empty(const oid_map_t<Ts...>& map) noexcept {
     return hana::length(map.impl) == hana::size_c<0>;
 }
 

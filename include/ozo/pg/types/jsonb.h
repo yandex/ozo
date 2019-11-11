@@ -44,8 +44,8 @@ struct size_of_impl<pg::jsonb> {
 
 template <>
 struct send_impl<pg::jsonb> {
-    template <typename M>
-    static ostream& apply(ostream& out, const oid_map_t<M>&, const pg::jsonb& in) {
+    template <typename OidMap>
+    static ostream& apply(ostream& out, const OidMap&, const pg::jsonb& in) {
         const std::int8_t version = 1;
         write(out, version);
         return write(out, in.value);
@@ -54,8 +54,8 @@ struct send_impl<pg::jsonb> {
 
 template <>
 struct recv_impl<pg::jsonb> {
-    template <typename M>
-    static istream& apply(istream& in, size_type size, const oid_map_t<M>&, pg::jsonb& out) {
+    template <typename OidMap>
+    static istream& apply(istream& in, size_type size, const OidMap&, pg::jsonb& out) {
         if (size < 1) {
             throw std::range_error("data size " + std::to_string(size) + " is too small to read jsonb");
         }

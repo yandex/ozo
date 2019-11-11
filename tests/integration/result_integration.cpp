@@ -115,24 +115,24 @@ TEST(result, for_raw_result_should_move_in_to_out) {
     auto result = execute_query("SELECT 1");
     auto oid_map = ozo::empty_oid_map();
     ozo::result out;
-    const auto handle = result.handle().get();
+    const auto handle = result.native_handle();
 
     ozo::recv_result(result, oid_map, out);
 
-    EXPECT_EQ(result.handle(), nullptr);
-    EXPECT_EQ(out.handle().get(), handle);
+    EXPECT_EQ(result.native_handle(), nullptr);
+    EXPECT_EQ(out.native_handle(), handle);
 }
 
 TEST(result, for_result_and_reference_wrapper_of_result_should_move_in_to_out) {
     auto result = execute_query("SELECT 1");
     auto oid_map = ozo::empty_oid_map();
     ozo::result out;
-    const auto handle = result.handle().get();
+    const auto handle = result.native_handle();
 
     ozo::recv_result(result, oid_map, std::ref(out));
 
-    EXPECT_EQ(result.handle(), nullptr);
-    EXPECT_EQ(out.handle().get(), handle);
+    EXPECT_EQ(result.native_handle(), nullptr);
+    EXPECT_EQ(out.native_handle(), handle);
 }
 
 TEST(result, should_convert_in_rows_of_tuple_rows_of_records) {

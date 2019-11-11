@@ -28,7 +28,7 @@ namespace ozo {
  * @brief Database connection concept definition
  */
 
-using no_statistics = decltype(hana::make_map());
+using no_statistics = ozo::none_t;
 
 template <typename T>
 struct unwrap_connection_impl : unwrap_recursive_impl<T> {};
@@ -42,7 +42,7 @@ struct unwrap_connection_impl : unwrap_recursive_impl<T> {};
  *
  * This is customization point for the Connection enhancement. To customize it
  * it is better to specialize `ozo::unwrap_connection_impl` template for custom type.
- * E.g. such overload is used for the `ozo::impl::pooled_connection` of this library.
+ * E.g. such overload is used for the `ozo::pooled_connection` of this library.
  * The deafult implementation of the function is perfect forwarding. And may look like
  * this (*for exposition only - actual implementation may be different*):
  * @code
@@ -76,83 +76,11 @@ inline constexpr decltype(auto) unwrap_connection(T&& conn) noexcept {
     return detail::apply<unwrap_connection_impl>(std::forward<T>(conn));
 }
 
-template <typename T, typename = std::void_t<>>
-struct get_connection_oid_map_impl {
-    template <typename Conn>
-    constexpr static auto apply(Conn&& c) -> decltype((c.oid_map_)) {
-        return c.oid_map_;
-    }
-};
-
-template <typename T>
-constexpr detail::result_of<get_connection_oid_map_impl, T> get_connection_oid_map(T&& conn) {
-    return detail::apply<get_connection_oid_map_impl>(std::forward<T>(conn));
-}
-
-template <typename T, typename = std::void_t<>>
-struct get_connection_socket_impl {
-    template <typename Conn>
-    constexpr static auto apply(Conn&& c) -> decltype((c.socket_)) {
-        return c.socket_;
-    }
-};
-template <typename T>
-constexpr detail::result_of<get_connection_socket_impl, T> get_connection_socket(T&& conn) {
-    return detail::apply<get_connection_socket_impl>(std::forward<T>(conn));
-}
-
-template <typename T, typename = hana::when<true>>
-struct get_connection_executor_impl;
-
-template <typename T>
-struct get_connection_executor_impl<T,
-    hana::when_valid<decltype(std::declval<const T&>().get_executor())>
-> {
-    constexpr static auto apply(const T& c) {
-        return c.get_executor();
-    }
-};
-
-template <typename T>
-constexpr detail::result_of<get_connection_executor_impl, T> get_connection_executor(T&& conn) {
-    return detail::apply<get_connection_executor_impl>(std::forward<T>(conn));
-}
-
-template <typename T, typename = std::void_t<>>
-struct get_connection_handle_impl {
-    template <typename Conn>
-    constexpr static auto apply(Conn&& c) -> decltype((c.handle_)) {
-        return c.handle_;
-    }
-};
-
-template <typename T>
-constexpr detail::result_of<get_connection_handle_impl, T> get_connection_handle(T&& conn) {
-    return detail::apply<get_connection_handle_impl>(std::forward<T>(conn));
-}
-
-template <typename T, typename = std::void_t<>>
-struct get_connection_error_context_impl {
-    template <typename Conn>
-    constexpr static auto apply(Conn&& c) -> decltype((c.error_context_)) {
-        return c.error_context_;
-    }
-};
-
-template <typename T>
-constexpr detail::result_of<get_connection_error_context_impl, T> get_connection_error_context(T&& conn) {
-    return detail::apply<get_connection_error_context_impl>(std::forward<T>(conn));
-}
-
-namespace detail {
-template <typename Connection, typename Executor>
-inline error_code bind_connection_executor(Connection&, const Executor&);
-}
-
 /**
  * @brief Default model for `Connection` concept
  *
  * `Connection` concept model which is used by the library as default model.
+ * The class object is non-copyable.
  *
  * @tparam OidMap --- oid map of types are used with connection
  * @tparam Statistics --- statistics of the connection (not supported yet)
@@ -170,7 +98,7 @@ class connection {
 public:
     using native_handle_type = native_conn_handle::pointer; //!< Native connection handle type
     using oid_map_type = OidMap; //!< Oid map of types that are used with the connection
-    using error_context = std::string; //!< Additional error context which could provide context depended information for errors
+    using error_context_type = std::string; //!< Additional error context which could provide context depended information for errors
     using executor_type = io_context::executor_type; //!< The type of the executor associated with the object.
 
     /**
@@ -193,6 +121,7 @@ public:
 
     /**
      * Get a reference to an oid map object for types that are used with the connection.
+     * This method is used after connection establishing process to update the map.
      *
      * @return oid_map_type& --- reference on oid map object.
      */
@@ -204,22 +133,25 @@ public:
      */
     const oid_map_type& oid_map() const noexcept { return oid_map_;}
 
-    Statistics& statistics() noexcept { return statistics_;}
+    template <typename Key, typename Value>
+    void update_statistics(const Key&, const Value&) noexcept {
+        static_assert(std::is_void_v<Key>, "update_statistics is not supperted");
+    }
     const Statistics& statistics() const noexcept { return statistics_;}
 
     /**
      * Get the additional context object for an error that occurred during the last operation on the connection.
      *
-     * @return const error_context& --- additional context for the error
+     * @return const error_context_type& --- additional context for the error
      */
-    const error_context& get_error_context() const noexcept { return error_context_; }
+    const error_context_type& get_error_context() const noexcept { return error_context_; }
     /**
      * Set the additional error context object. This function may be used to provide additional context-depended
      * data that is related to the current operation error.
      *
      * @param v --- new error context.
      */
-    void set_error_context(error_context v = error_context{}) { error_context_ = std::move(v); }
+    void set_error_context(error_context_type v = error_context_type{}) { error_context_ = std::move(v); }
 
     /**
      * Get the executor associated with the object.
@@ -227,22 +159,6 @@ public:
      * @return executor_type --- executor object.
      */
     executor_type get_executor() const noexcept { return io_->get_executor(); }
-
-    /**
-     * Set the new executor for the object.
-     *
-     * This function may be used to migrate the object between different execution contexts.
-     *
-     * Typically this function is used by the library in the connection pool implementation.
-     * Users should not use it directly other than for a special purpose (e.g., own connection pool
-     * implementation and so on).
-     *
-     * @note The function shall not be called while any active operation executes on the object.
-     *
-     * @param ex --- new executor object.
-     * @return error_code --- error code of the function call.
-     */
-    error_code set_executor(const executor_type& ex);
 
     /**
      * Assign an existing native connection handle to the object.
@@ -257,6 +173,19 @@ public:
      * @return error_code --- error code of the function call.
      */
     error_code assign(native_conn_handle&& handle);
+
+    /**
+     * Release ownership of the native connection handle object.
+     *
+     * This function may be used to obtain the underlying representation of the descriptor.
+     * After calling this function, is_open() returns false. The caller is the owner for
+     * the connection descriptor. All outstanding asynchronous read or write operations will
+     * finish immediately, and the handlers for cancelled operations will be passed the
+     * `boost::asio::error::operation_aborted` error.
+     *
+     * @return native_conn_handle --- native connection handle object
+     */
+    native_conn_handle release();
 
     /**
      * Asynchronously wait for the connection socket to become ready to write or to have pending error conditions.
@@ -320,18 +249,24 @@ public:
      */
     operator bool () const noexcept { return !is_bad();}
 
+    /**
+     * Determine whether the connection is open.
+     *
+     * @return false --- connection is closed and no native handle associated with.
+     * @return true  --- connection is open and there is a native handle associated with.
+     */
+    bool is_open() const noexcept { return native_handle() != nullptr;};
+
+    ~connection();
 private:
     using stream_type = asio::posix::stream_descriptor;
-
-    template <typename Connection, typename Executor>
-    friend error_code ozo::detail::bind_connection_executor(Connection&, const Executor&);
 
     native_conn_handle handle_;
     io_context* io_ = nullptr;
     stream_type socket_;
     oid_map_type oid_map_;
     Statistics statistics_;
-    error_context error_context_;
+    error_context_type error_context_;
 };
 
 /**
@@ -371,17 +306,16 @@ struct is_connection<connection<Ts...>> : std::true_type {};
 * | Expression | Type | Description |
 * |------------|------|-------------|
 * | <PRE>as_const(c).native_handle()</PRE> | `C::native_handle_type` | Should return native handle type of PostgreSQL connection. In the current implementation it should be `PGconn*` type. Shall not throw an exception. |
-* | <PRE>c.oid_map()<sup>[1]</sup><br/>as_const(c).oid_map()<sup>[2]</sup></PRE> | `C::oid_map_type` | Should return a reference<sup>[1]</sup> or a const reference<sup>[2]</sup> on `OidMap` which is used by the connection, the library may update this map during connection establishing. Shall not throw an exception. |
+* | <PRE>as_const(c).oid_map()</PRE> | `C::oid_map_type` | Should return a const reference on `OidMap` which is used by the library for custom types introspection for the connection IO. Shall not throw an exception. |
 * | <PRE>as_const(c).%get_error_context()</PRE> | `C::error_context_type` | Should return a const reference on an additional error context is related to at least the last error. In the current implementation, the type supported is `std::string`. Shall not throw an exception. |
-* | <PRE>c.set_error_context(error_context)<sup>[1]</sup><br/>%c.set_error_context()<sup>[2]</sup></PRE> | | Should set<sup>[1]</sup> or reset<sup>[2]</sup> additional error context. |
+* | <PRE>c.set_error_context(error_context_type)<sup>[1]</sup><br/>%c.set_error_context()<sup>[2]</sup></PRE> | | Should set<sup>[1]</sup> or reset<sup>[2]</sup> additional error context. |
 * | <PRE>as_const(c).%get_executor()</PRE> | `C::executor_type` | Should provide an executor object that is useful for IO-related operations, like timer and so on. In the current implementation `boost::asio::io_context::executor_type` is only applicable. Shall not throw an exception. |
-* | <PRE>c.set_executor(executor)</PRE> | `error_code` | Should change the executor for the specified one. This operation is used by `ozo::connection_pool` to provide connection migration between different instances of `boost::asio::io_service`. The call of the function during the active operation on connection is UB. The error should be indicated via the result. |
-* | <PRE>c.assign(move(native_conn_handle))</PRE> | `error_code` | Should assign `ozo::native_conn_handle` to the connection object. If success - the previous handle should be destroyed. The error should be indicated via the result. |
 * | <PRE>c.async_wait_write(WaitHandler)</PRE> | | Should asynchronously wait for write ready state of the connection socket. |
 * | <PRE>c.async_wait_read(WaitHandler)</PRE> | | Should asynchronously wait for read ready state of the connection socket. |
 * | <PRE>c.close()</PRE> | `error_code` | Should close connection socket and cancel all IO operation on the connection (like `async_wait_write`, `async_wait_read`). Shall not throw an exception. |
 * | <PRE>%c.cancel()</PRE> | | Should cancel all IO operation on the connection (like `async_wait_write`, `async_wait_read`). Should not throw an exception. |
 * | <PRE>%c.is_bad()</PRE> | bool | Should return `false` for the established connection that can perform operations. Shall not throw an exception. |
+* | <PRE>%c.is_open()</PRE> | bool | Should return `true` for the object with valid native connection handle attached. Shall not throw an exception. |
 * | <PRE>%bool(as_const(c))</PRE> | bool | Should return `true` for the established connection that can perform operations. In fact it should be the negation of `c.is_bad()`. Shall not throw an exception. |
 * | <PRE>ozo::get_connection(c, t, Handler)</PRE> | | Should reset the additional error context. This behaviour is performed in default implementation of `ozo::get_connection()` via `%c.set_error_context()` call. |
 * | <PRE>ozo::is_connection<C></PRE> | `std::true_type` | The template `ozo::is_connection` should be specialized for the connection type via inheritance from `std::true_type`. |
@@ -407,37 +341,31 @@ constexpr auto Connection = is_connection<std::decay_t<decltype(unwrap_connectio
 ///@{
 
 /**
- * @brief PostgreSQL native connection handle
+ * @brief Get native connection handle object.
  *
- * In common cases you do not need this function.
- * It's purpose is to support extention and customization of the library. So if you
- * want do extend or customize some behaviour via original libpq calls this is what
- * you really need. In other cases this is not the function what you are looking for.
+ * Alias to `unwrap_connection(conn).native_handle()`. See. `Connection` documentation for more details.
  *
- * @param conn --- #Connection object
- * @return native handle
+ * @param conn --- #Connection object.
+ * @return native connection handle.
  */
 template <typename Connection>
 inline auto get_native_handle(const Connection& conn) noexcept;
 
 /**
- * @brief Executor for connection related asynchronous operations
+ * @brief Get the executor associated with the object.
  *
- * This executor must be used to schedule all the asynchronous operations
- * related to #Connection to allow timer-based timeouts works for all of the
- * operations.
- *
- * @param conn --- #Connection object
- * @return `executor` of socket stream object of the connection
+ * @param conn --- #Connection object.
+ * @return executor associated with the object.
  */
 template <typename Connection>
 inline auto get_executor(const Connection& conn) noexcept;
 
 /**
- * @brief Indicates if connection state is bad
+ * @brief Determine whether the connection is in bad state.
  *
- * If conn is #Nullable - checks for null state first via `operator !()`.
- * @param conn --- #Connection object to check
+ * Alias to `unwrap_connection(conn).is_bad()`. See. `Connection` documentation for more details.
+ *
+ * @param conn --- #Connection object.
  * @return `true` if connection is in bad or null state, `false` - otherwise.
  */
 template <typename T>
@@ -446,97 +374,38 @@ inline bool connection_bad(const T& conn) noexcept;
 /**
  * @brief Indicates if connection state is not bad.
  *
- * See `ozo::connection_bad` for details.
+ * Alias to `!ozo::connection_bad(conn)`.
  *
- * @param conn --- #Connection to check
+ * @param conn --- #Connection object.
  * @return `false` if connection is in bad state, `true` - otherwise
  */
-template <typename T>
-inline bool connection_good(const T& conn) noexcept {
-    static_assert(Connection<T>, "T must be a Connection");
+template <typename Connection>
+inline bool connection_good(const Connection& conn) noexcept {
     return !connection_bad(conn);
 }
 
 /**
- * @brief Gives native libpq error message
+ * @brief Get native libpq error message
  *
  * Underlying libpq provides additional textual context for different errors which
  * can be while interacting via connection. This function gives access for such messages.
  *
- * @param conn --- #Connection to get message from
- * @return `std::string_view` contains a message
+ * @param conn --- #Connection to get message from.
+ * @return `std::string_view` with a message.
  */
 template <typename Connection>
 inline std::string_view error_message(const Connection& conn);
 
 /**
- * @brief Additional error context getter
+ * @brief Get additional error context.
  *
- * In addition to libpq OZO provides its own error context. This is
- * a getter for such a context. Please be sure that the connection
- * is not in the null state via `ozo::is_null_recursive()` function.
+ * Alias to `unwrap_connection(conn).get_error_context()`. See. `Connection` documentation for more details.
  *
- * @sa ozo::set_error_context(), ozo::reset_error_context(), ozo::is_null_recursive()
- * @param conn --- #Connection to get context from, should not be in null state
- * @return `std::string` contains a context
+ * @param conn --- #Connection object which is not in null recursive state
+ * @return reference on additional context
  */
-template <typename T>
-inline const auto& get_error_context(const T& conn);
-
-/**
- * @brief Additional error context setter
- *
- * In addition to libpq OZO provides its own error context. This is
- * a setter for such a context. Please be sure that the connection
- * is not in the null state via `ozo::is_null_recursive()` function.
- *
- * @sa ozo::get_error_context(), ozo::reset_error_context(), ozo::is_null_recursive()
- * @param conn --- #Connection to set context to
- * @param ctx --- context to set, now only `std::string` is supported
- */
-template <typename T, typename Ctx>
-inline void set_error_context(T& conn, Ctx&& ctx);
-
-/**
- * @brief Reset additional error context
- *
- * This function resets additional error context to its default value.
- * Please be sure that the connection  is not in the null state via
- * `ozo::is_null_recursive()` function.
- *
- * @sa ozo::set_error_context(), ozo::get_error_context(), ozo::is_null_recursive()
- * @param conn --- #Connection to reset context, should not be in null state
- */
-template <typename T>
-inline void reset_error_context(T& conn);
-
-/**
- * @brief Access to a connection OID map
- *
- * This function gives access to a connection OID map, which represents mapping
- * of custom types to its' OIDs in a database connected to.
- * Please be sure that the connection  is not in the null state via
- * `ozo::is_null_recursive()` function.
- *
- * @param conn --- #Connection to access OID map, should not be in null state
- * @return OID map of the Connection
- */
-template <typename T>
-inline decltype(auto) get_oid_map(T&& conn) noexcept;
-
-/**
- * @brief Access to a Connection statistics
- *
- * @note This feature is not implemented yet
- *
- * Please be sure that the connection  is not in the null state via
- * `ozo::is_null_recursive()` function.
- *
- * @param conn --- #Connection to access statistics, should not be in null state
- * @return statistics of the Connection
- */
-template <typename T>
-inline decltype(auto) get_statistics(T&& conn) noexcept;
+template <typename Connection>
+inline const auto& get_error_context(const Connection& conn);
 
 /**
  * @brief Get the database name of the active connection
@@ -713,8 +582,8 @@ struct forward_connection {
     template <typename Conn, typename TimeConstraint, typename Handler>
     static constexpr void apply(Conn&& c, TimeConstraint, Handler&& h) {
         static_assert(ozo::TimeConstraint<TimeConstraint>, "should model TimeConstraint concept");
-        reset_error_context(c);
-        auto ex = get_executor(c);
+        unwrap_connection(c).set_error_context();
+        auto ex = unwrap_connection(c).get_executor();
         asio::dispatch(ex, detail::bind(std::forward<Handler>(h), error_code{}, std::forward<Conn>(c)));
     }
 };

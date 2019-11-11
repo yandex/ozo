@@ -184,27 +184,9 @@ TEST(get_error_context, should_returns_reference_to_error_context) {
     );
 }
 
-TEST(set_error_context, should_set_error_context) {
-    io_context io;
-    auto conn = std::make_shared<connection<>>(io);
-    ozo::set_error_context(conn, "brand new super context");
-
-    EXPECT_EQ(conn->error_context_, "brand new super context");
-}
-
-TEST(reset_error_context, should_resets_error_context) {
-    io_context io;
-    auto conn = std::make_shared<connection<>>(io);
-    conn->error_context_ = "brand new super context";
-    ozo::reset_error_context(conn);
-    EXPECT_TRUE(conn->error_context_.empty());
-}
-
 struct async_get_connection : Test {
-    StrictMock<executor_gmock> executor;
-    StrictMock<executor_gmock> callback_executor;
-    io_context io {executor};
-    execution_context cb_io {callback_executor};
+    io_context io;
+    execution_context cb_io;
 };
 
 TEST_F(async_get_connection, should_pass_through_the_connection_to_handler) {
@@ -214,8 +196,8 @@ TEST_F(async_get_connection, should_pass_through_the_connection_to_handler) {
     const InSequence s;
 
     EXPECT_CALL(cb_mock, get_executor()).WillOnce(Return(cb_io.get_executor()));
-    EXPECT_CALL(executor, dispatch(_)).WillOnce(InvokeArgument<0>());
-    EXPECT_CALL(callback_executor, dispatch(_)).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(io.executor_, dispatch(_)).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(cb_io.executor_, dispatch(_)).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(cb_mock, call(error_code{}, conn)).WillOnce(Return());
 
     ozo::async_get_connection(conn, ozo::none, wrap(cb_mock));
@@ -225,41 +207,11 @@ TEST_F(async_get_connection, should_reset_connection_error_context) {
     auto conn = std::make_shared<connection<>>(io);
     conn->error_context_ = "some context here";
 
-    EXPECT_CALL(executor, dispatch(_)).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(io.executor_, dispatch(_)).WillOnce(InvokeArgument<0>());
 
     ozo::async_get_connection(conn, ozo::none, [](error_code, auto conn) {
         EXPECT_TRUE(conn->error_context_.empty());
     });
-}
-
-TEST(bind_connection_executor, should_leave_same_io_context_and_socket_when_address_of_new_io_is_equal_to_old) {
-    io_context io;
-    connection<> conn(io);
-    EXPECT_EQ(ozo::detail::bind_connection_executor(conn, io.get_executor()), error_code());
-    EXPECT_EQ(ozo::get_executor(conn), io.get_executor());
-}
-
-TEST(bind_connection_executor, should_change_socket_when_address_of_new_io_is_not_equal_to_old) {
-    io_context old_io;
-    connection<> conn(old_io);
-    io_context new_io;
-
-    EXPECT_CALL(*conn.socket_.native_handle(), assign(_)).WillOnce(Return());
-    EXPECT_CALL(*conn.socket_.native_handle(), release()).WillOnce(Return());
-
-    EXPECT_EQ(ozo::detail::bind_connection_executor(conn, new_io.get_executor()), error_code());
-    EXPECT_EQ(ozo::get_executor(conn), new_io.get_executor());
-}
-
-TEST(bind_connection_executor, should_return_error_when_socket_assign_fails_with_error) {
-    io_context old_io;
-    connection<> conn(old_io);
-    io_context new_io;
-
-    EXPECT_CALL(*conn.socket_.native_handle(), assign(_))
-        .WillOnce(SetArgReferee<0>(error_code(error::code::error)));
-
-    EXPECT_EQ(ozo::detail::bind_connection_executor(conn, new_io.get_executor()), error_code(error::code::error));
 }
 
 struct fake_native_pq_handle {
@@ -305,8 +257,8 @@ TEST(ConnectionProvider, should_return_false_for_non_connection_provider_type){
     EXPECT_FALSE(ozo::ConnectionProvider<int>);
 }
 
-static const char* PQdb(const native_handle*) {
-    return "PQdb";
+static const char* PQdb(const native_handle* h) {
+    return h ? "PQdb" : nullptr;
 }
 
 TEST(get_database, should_return_PQdb_call_result){
@@ -314,8 +266,15 @@ TEST(get_database, should_return_PQdb_call_result){
     EXPECT_EQ(std::string(ozo::get_database(connection<>{io})), "PQdb");
 }
 
-static const char* PQhost(const native_handle*) {
-    return "PQhost";
+TEST(get_database, should_return_empty_string_view_for_null_handle){
+    io_context io;
+    connection<> conn{io};
+    conn.handle_.reset();
+    EXPECT_TRUE(ozo::get_database(conn).empty());
+}
+
+static const char* PQhost(const native_handle* h) {
+    return h ? "PQhost" : nullptr;
 }
 
 TEST(get_host, should_return_PQhost_call_result){
@@ -323,8 +282,15 @@ TEST(get_host, should_return_PQhost_call_result){
     EXPECT_EQ(std::string(ozo::get_host(connection<>{io})), "PQhost");
 }
 
-static const char* PQport(const native_handle*) {
-    return "PQport";
+TEST(get_host, should_return_empty_string_view_for_null_handle){
+    io_context io;
+    connection<> conn{io};
+    conn.handle_.reset();
+    EXPECT_TRUE(ozo::get_host(conn).empty());
+}
+
+static const char* PQport(const native_handle* h) {
+    return h ? "PQport" : nullptr;
 }
 
 TEST(get_port, should_return_PQport_call_result){
@@ -332,8 +298,15 @@ TEST(get_port, should_return_PQport_call_result){
     EXPECT_EQ(std::string(ozo::get_port(connection<>{io})), "PQport");
 }
 
-static const char* PQuser(const native_handle*) {
-    return "PQuser";
+TEST(get_port, should_return_empty_string_view_for_null_handle){
+    io_context io;
+    connection<> conn{io};
+    conn.handle_.reset();
+    EXPECT_TRUE(ozo::get_port(conn).empty());
+}
+
+static const char* PQuser(const native_handle* h) {
+    return h ? "PQuser" : nullptr;
 }
 
 TEST(get_user, should_return_PQport_call_result){
@@ -341,13 +314,27 @@ TEST(get_user, should_return_PQport_call_result){
     EXPECT_EQ(std::string(ozo::get_user(connection<>{io})), "PQuser");
 }
 
-static const char* PQpass(const native_handle*) {
-    return "PQpass";
+TEST(get_user, should_return_empty_string_view_for_null_handle){
+    io_context io;
+    connection<> conn{io};
+    conn.handle_.reset();
+    EXPECT_TRUE(ozo::get_user(conn).empty());
+}
+
+static const char* PQpass(const native_handle* h) {
+    return h ? "PQpass" : nullptr;
 }
 
 TEST(get_password, should_return_PQport_call_result){
     io_context io;
     EXPECT_EQ(std::string(ozo::get_password(connection<>{io})), "PQpass");
+}
+
+TEST(get_password, should_return_empty_string_view_for_null_handle){
+    io_context io;
+    connection<> conn{io};
+    conn.handle_.reset();
+    EXPECT_TRUE(ozo::get_password(conn).empty());
 }
 
 } //namespace

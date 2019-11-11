@@ -1,94 +1,50 @@
 #pragma once
 
 #include <ozo/connection.h>
-#include <ozo/transaction_status.h>
 #include <yamail/resource_pool/async/pool.hpp>
 #include <ozo/asio.h>
 #include <ozo/ext/std/shared_ptr.h>
 #include <ozo/detail/make_copyable.h>
 
-namespace ozo::impl {
 
-template <typename Source>
-struct get_connection_pool {
-    using type = yamail::resource_pool::async::pool<connection_type<Source>>;
-};
+namespace ozo::detail {
 
-template <typename Source>
-using connection_pool = typename get_connection_pool<Source>::type;
+template <typename Allocator, typename Executor, typename Rep>
+auto create_pooled_connection(const Allocator& alloc, const Executor& ex, Rep&& rep) {
+    return std::allocate_shared<pooled_connection<std::decay_t<Rep>, Executor>>(alloc, ex, std::forward<Rep>(rep));
+}
 
-template <typename Source>
-struct pooled_connection {
-    using handle_type = typename connection_pool<Source>::handle;
-    using underlying_type = typename handle_type::value_type;
-
-    handle_type handle_;
-
-    pooled_connection(handle_type&& handle) : handle_(std::move(handle)) {}
-
-    bool empty() const {return handle_.empty();}
-
-    void reset(underlying_type&& v) {
-        handle_.reset(std::move(v));
-    }
-
-    ~pooled_connection() {
-        if (!empty() && (connection_bad(*this)
-                || get_transaction_status(*this) != transaction_status::idle)) {
-            handle_.waste();
-        }
-    }
-};
-template <typename Source>
-using pooled_connection_ptr = std::shared_ptr<pooled_connection<Source>>;
-
-} // namespace ozo::impl
-namespace ozo {
-template <typename T>
-struct unwrap_impl<impl::pooled_connection<T>> {
-    template <typename Conn>
-    static constexpr decltype(auto) apply(Conn&& conn) noexcept {
-        return ozo::unwrap(*conn.handle_);
-    }
-};
-
-template <typename T>
-struct is_nullable<impl::pooled_connection<T>> : std::true_type {};
-
-template <typename T>
-struct is_null_impl<impl::pooled_connection<T>> {
-    static bool apply(const impl::pooled_connection<T>& conn) {
-        return conn.empty() ? true : ozo::is_null(ozo::unwrap(conn));
-    }
-};
-} // namespace ozo
-
-namespace ozo::impl {
-
-template <typename IoContext, typename Source, typename Handler, typename TimeConstraint>
+template <typename Source, typename Handler, typename TimeConstraint>
 struct pooled_connection_wrapper {
-    IoContext& io_;
+    using connection_ptr = typename connection_pool<Source>::connection_type;
+    using connection = typename connection_ptr::element_type;
+    using handle_type = typename connection::rep_type;
+
+    typename connection::executor_type io_executor_;
     Source source_;
     detail::make_copyable_t<Handler> handler_;
     TimeConstraint time_constrain_;
 
-    using connection = pooled_connection<Source>;
-    using connection_ptr = pooled_connection_ptr<Source>;
-
     struct wrapper {
         Handler handler_;
-        connection_ptr conn_;
+        handle_type handle_;
 
         template <typename Conn>
         void operator () (error_code ec, Conn&& conn) {
             static_assert(std::is_same_v<connection_type<Source>, std::decay_t<Conn>>,
                 "Conn should be connection type of Source");
-            if (conn) {
-                conn_->reset(std::move(conn));
+            if (!is_null(conn)) {
+                auto& target = ozo::unwrap_connection(conn);
+
+                handle_.reset({target.release(), target.oid_map(), target.get_error_context()});
+                auto res = create_pooled_connection(
+                    get_allocator(), target.get_executor(), std::move(handle_)
+                );
+
+                handler_(std::move(ec), std::move(res));
             } else {
-                conn_ = nullptr;
+                handler_(std::move(ec), connection_ptr{});
             }
-            handler_(std::move(ec), std::move(conn_));
         }
 
         using executor_type = decltype(asio::get_associated_executor(handler_));
@@ -104,19 +60,17 @@ struct pooled_connection_wrapper {
         }
     };
 
-    template <typename Handle>
-    void operator ()(error_code ec, Handle&& handle) {
+    void operator ()(error_code ec, handle_type&& handle) {
         if (ec) {
             return handler_(std::move(ec), connection_ptr{});
         }
 
-        auto conn = std::allocate_shared<connection>(get_allocator(), std::forward<Handle>(handle));
-        if (connection_good(conn)) {
-            ec = unwrap_connection(conn).set_executor(io_.get_executor());
+        if (!handle.empty() && !connection_status_bad(handle->safe_native_handle().get())) {
+            auto conn = create_pooled_connection(get_allocator(), io_executor_, std::move(handle));
             return handler_(std::move(ec), std::move(conn));
         }
 
-        source_(io_, time_constrain_, wrapper{std::move(handler_), std::move(conn)});
+        source_(io_executor_.context(), time_constrain_, wrapper{std::move(handler_), std::move(handle)});
     }
 
     using executor_type = decltype(asio::get_associated_executor(handler_));
@@ -132,19 +86,96 @@ struct pooled_connection_wrapper {
     }
 };
 
-template <typename Source, typename IoContext, typename TimeConstraint, typename Handler>
-auto wrap_pooled_connection_handler(IoContext& io, Source&& source, TimeConstraint t, Handler&& handler) {
+template <typename Source, typename Executor, typename TimeConstraint, typename Handler>
+auto wrap_pooled_connection_handler(const Executor& ex, Source&& source, TimeConstraint t, Handler&& handler) {
     static_assert(ConnectionSource<Source>, "is not a ConnectionSource");
 
-    return pooled_connection_wrapper<IoContext, std::decay_t<Source>, std::decay_t<Handler>, TimeConstraint> {
-        io, std::forward<Source>(source), std::forward<Handler>(handler), t
+    return pooled_connection_wrapper<std::decay_t<Source>, std::decay_t<Handler>, TimeConstraint> {
+        ex, std::forward<Source>(source), std::forward<Handler>(handler), t
     };
 }
 
-static_assert(Connection<pooled_connection_ptr<connection<empty_oid_map, no_statistics>>>,
-    "pooled_connection_ptr is not a Connection concept");
+} // namespace ozo::detail
 
-static_assert(ConnectionProvider<pooled_connection_ptr<connection<empty_oid_map, no_statistics>>>,
-    "pooled_connection_ptr is not a ConnectionProvider concept");
+namespace ozo {
 
-} // namespace ozo::impl
+template <typename Pool>
+struct unwrap_impl<yamail::resource_pool::handle<Pool>> {
+    template <typename T>
+    static constexpr decltype(auto) apply(T&& handle) {
+        return *handle;
+    }
+};
+
+template <typename Source>
+template <typename TimeConstraint, typename Handler>
+void connection_pool<Source>::operator ()(io_context& io, TimeConstraint t, Handler&& handler) {
+    static_assert(ozo::TimeConstraint<TimeConstraint>, "should model TimeConstraint concept");
+    impl_.get_auto_recycle(
+        io,
+        detail::wrap_pooled_connection_handler(
+            io.get_executor(),
+            source_,
+            t,
+            std::forward<Handler>(handler)
+        ),
+        queue_timeout(t)
+    );
+}
+
+template <typename Rep, typename Executor>
+pooled_connection<Rep, Executor>::pooled_connection(const Executor& ex, Rep&& rep)
+: rep_(std::move(rep)), ex_(ex), stream_(get_executor().context()) {
+    if (auto fd = PQsocket(native_handle()); fd != -1) {
+        stream_.assign(fd);
+    }
+}
+
+template <typename Rep, typename Executor>
+typename pooled_connection<Rep, Executor>::native_handle_type
+pooled_connection<Rep, Executor>::native_handle() const noexcept {
+    if (rep_.empty()) {
+        return {};
+    }
+    return ozo::unwrap(rep_).safe_native_handle().get();
+}
+
+template <typename Rep, typename Executor>
+template <typename WaitHandler>
+void pooled_connection<Rep, Executor>::async_wait_write(WaitHandler&& h) {
+    stream_.async_write_some(asio::null_buffers(), std::forward<WaitHandler>(h));
+}
+
+template <typename Rep, typename Executor>
+template <typename WaitHandler>
+void pooled_connection<Rep, Executor>::async_wait_read(WaitHandler&& h) {
+    stream_.async_read_some(asio::null_buffers(), std::forward<WaitHandler>(h));
+}
+
+template <typename Rep, typename Executor>
+error_code pooled_connection<Rep, Executor>::close() noexcept {
+    stream_.release();
+    ozo::unwrap(rep_).safe_native_handle().reset();
+    return error_code{};
+}
+
+template <typename Rep, typename Executor>
+void pooled_connection<Rep, Executor>::cancel() noexcept {
+    error_code _;
+    stream_.cancel(_);
+}
+
+template <typename Rep, typename Executor>
+bool pooled_connection<Rep, Executor>::is_bad() const noexcept {
+    return detail::connection_status_bad(native_handle());
+}
+
+template <typename Rep, typename Executor>
+pooled_connection<Rep, Executor>::~pooled_connection() {
+    stream_.release();
+    if (!rep_.empty() && (is_bad() || get_transaction_status(*this) != transaction_status::idle)) {
+        rep_.waste();
+    }
+}
+
+} // namespace ozo

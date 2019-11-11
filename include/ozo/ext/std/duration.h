@@ -3,7 +3,8 @@
 #include <ozo/io/send.h>
 #include <ozo/io/recv.h>
 #include <ozo/type_traits.h>
-#include <boost/fusion/adapted/struct/define_struct.hpp>
+
+#include <boost/hana/adapt_struct.hpp>
 
 #include <chrono>
 #include <cstdint>
@@ -18,20 +19,22 @@
  *@endcode
  *
  * `std::chrono::microseconds` is mapped as `interval` PostgreSQL type.
- * 
+ *
  * @note Supported 64-bit microseconds representation values only.
  * @note In case of overflow (underflow) maximum (minimum) valid value is used.
  */
 
-BOOST_FUSION_DEFINE_STRUCT((ozo)(detail), pg_interval,
-    (std::int64_t, microseconds)
-    (std::int32_t, days)
-    (std::int32_t, months)
-)
-
 namespace ozo::detail {
 
-inline detail::pg_interval from_chrono_duration(const std::chrono::microseconds& in) {
+struct pg_interval {
+    BOOST_HANA_DEFINE_STRUCT(pg_interval,
+        (std::int64_t, microseconds),
+        (std::int32_t, days),
+        (std::int32_t, months)
+    );
+};
+
+inline pg_interval from_chrono_duration(const std::chrono::microseconds& in) {
     static_assert(
         std::chrono::microseconds::min().count() == std::numeric_limits<std::int64_t>::min() &&
         std::chrono::microseconds::max().count() == std::numeric_limits<std::int64_t>::max(),
@@ -40,7 +43,7 @@ inline detail::pg_interval from_chrono_duration(const std::chrono::microseconds&
 
     using days = std::chrono::duration<std::int32_t, std::ratio<24 * std::chrono::hours::period::num>>;
 
-    return detail::pg_interval{(in % days(1)).count(), std::chrono::duration_cast<days>(in).count(), 0};
+    return pg_interval{(in % days(1)).count(), std::chrono::duration_cast<days>(in).count(), 0};
 }
 
 inline std::chrono::microseconds to_chrono_duration(const pg_interval& interval) {

@@ -1,2 +1,5 @@
 ignore:
+  - "include/ozo/error.h"
+  - "include/ozo/detail/do_nothing.h"
   - "include/ozo/impl/result_status.h"
+  - "tests/.*"

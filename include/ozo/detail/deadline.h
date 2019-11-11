@@ -9,56 +9,82 @@
 
 namespace ozo::detail {
 
-template <typename Executor, typename Continuation>
-class deadline_handler {
+template <typename Stream, typename Handler, typename Result>
+class io_deadline_handler {
 public:
-    template <typename TimeConstraint, typename TimerHandler>
-    deadline_handler(const Executor& ex, TimeConstraint t, Continuation handler, TimerHandler on_deadline)
-    : timer_(ozo::detail::get_operation_timer(ex, t)), handler_(std::move(handler)),
-            executor_(ozo::detail::make_strand_executor(ex)) {
-        timer_.async_wait(wrapper<TimerHandler>{std::move(on_deadline), get_executor()});
+    template <typename TimeConstraint>
+    io_deadline_handler (Stream& stream, const TimeConstraint& t, Handler handler)
+    : timer_(ozo::detail::get_operation_timer(stream.get_executor(), t)) {
+        auto allocator = asio::get_associated_allocator(handler);
+        ctx_ = std::allocate_shared<context>(allocator, stream, std::move(handler));
+        timer_.async_wait(timer_handler{ctx_});
     }
 
-    template <typename ...Args>
-    void operator() (error_code ec, Args&& ...args) {
-        timer_.cancel();
-        asio::dispatch(ozo::detail::bind(std::move(handler_), std::move(ec), std::forward<Args>(args)...));
+    void operator() (error_code ec, Result result) {
+        if (--ctx_->first_call) {
+            timer_.cancel();
+            ctx_->ec = std::move(ec);
+            ctx_->result = std::move(result);
+            ctx_.reset();
+        } else {
+            auto handler = std::move(ctx_->handler);
+            auto ec = std::move(ctx_->ec);
+            ctx_.reset();
+            handler(std::move(ec), std::move(result));
+        }
     }
 
-    using timer_type = typename ozo::detail::operation_timer<Executor>::type;
+    using executor_type = asio::associated_executor_t<Handler>;
 
-    using executor_type = ozo::detail::strand<Executor>;
+    executor_type get_executor() const noexcept { return asio::get_associated_executor(ctx_->handler);}
 
-    executor_type get_executor() const noexcept { return executor_;}
+    using allocator_type = asio::associated_allocator_t<Handler>;
 
-    using allocator_type = asio::associated_allocator_t<Continuation>;
-
-    allocator_type get_allocator() const noexcept { return asio::get_associated_allocator(handler_);}
+    allocator_type get_allocator() const noexcept { return asio::get_associated_allocator(ctx_->handler);}
 
 private:
-    template <typename Target>
-    struct wrapper {
-        using executor_type = deadline_handler::executor_type;
+    using timer_type = typename ozo::detail::operation_timer<typename Stream::executor_type>::type;
 
-        executor_type get_executor() const noexcept { return executor_;}
+    struct context {
+        Stream& stream;
+        Handler handler;
+        Result result;
+        error_code ec;
+        std::atomic<long int> first_call{2};
 
-        using allocator_type = asio::associated_allocator_t<Target>;
-
-        allocator_type get_allocator() const noexcept { return asio::get_associated_allocator(target_);}
-
-        void operator() (error_code ec) {
-            if (ec != asio::error::operation_aborted) {
-                asio::dispatch(ozo::detail::bind(std::move(target_), std::move(ec)));
-            }
+        context(Stream& stream, Handler&& handler)
+        : stream(stream), handler(std::move(handler)) {
         }
-
-        Target target_;
-        executor_type executor_;
     };
 
     timer_type timer_;
-    Continuation handler_;
-    executor_type executor_;
+    std::shared_ptr<context> ctx_;
+
+    struct timer_handler {
+        using executor_type = asio::associated_executor_t<Handler>;
+
+        executor_type get_executor() const noexcept { return asio::get_associated_executor(ctx_->handler);}
+
+        using allocator_type = asio::associated_allocator_t<Handler>;
+
+        allocator_type get_allocator() const noexcept { return asio::get_associated_allocator(ctx_->handler);}
+
+        void operator() (error_code) {
+            if (--ctx_->first_call) {
+                ctx_->stream.cancel();
+                ctx_->ec = asio::error::timed_out;
+                ctx_.reset();
+            } else {
+                auto handler = std::move(ctx_->handler);
+                auto ec = std::move(ctx_->ec);
+                auto result = std::move(ctx_->result);
+                ctx_.reset();
+                handler(std::move(ec), std::move(result));
+            }
+        }
+
+        std::shared_ptr<context> ctx_;
+    };
 };
 
 } // namespace ozo::detail

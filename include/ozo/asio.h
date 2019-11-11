@@ -4,6 +4,7 @@
 #include <boost/asio/executor.hpp>
 #include <boost/asio/strand.hpp>
 #include <boost/asio/steady_timer.hpp>
+#include <boost/asio/posix/stream_descriptor.hpp>
 
 namespace ozo {
 
@@ -93,6 +94,36 @@ inline auto get_operation_timer(const Executior& ex, TimeConstraint t) {
 template <typename Executor>
 inline auto get_operation_timer(const Executor& ex) {
     return operation_timer<Executor>::get(ex);
+}
+
+
+template <typename ExecutionContext>
+struct connection_stream {
+    static_assert(std::is_same_v<ExecutionContext, connection_stream>,
+        "No connection_stream<> specialization found for specified type");
+};
+
+template <>
+struct connection_stream<asio::io_context::executor_type> {
+    using type = asio::posix::stream_descriptor;
+
+    static type get(const asio::io_context::executor_type& ex, type::native_handle_type fd) {
+        return type{ex.context(), fd};
+    }
+
+    static type get(const asio::io_context::executor_type& ex) {
+        return type{ex.context()};
+    }
+};
+
+template <typename Executior, typename NativeHandle>
+inline auto get_connection_stream(const Executior& ex, NativeHandle fd) {
+    return connection_stream<Executior>::get(ex, fd);
+}
+
+template <typename Executor>
+inline auto get_connection_stream(const Executor& ex) {
+    return connection_stream<Executor>::get(ex);
 }
 
 } // namespace detail

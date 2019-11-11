@@ -52,13 +52,6 @@ inline ostream& write(ostream& out, bool in) {
 }
 
 template <typename T>
-inline Require<FusionSequence<T> && !HanaSequence<T> && !HanaStruct<T>, ostream&>
-write(ostream& out, const T& in) {
-    fusion::for_each(in, [&out](auto& member) { write(out, member); });
-    return out;
-}
-
-template <typename T>
 inline Require<HanaSequence<T>, ostream&> write(ostream& out, const T& in) {
     hana::for_each(in, [&out](auto& item) { write(out, item); });
     return out;

@@ -17,13 +17,10 @@ using callback_mock = callback_gmock<connection_ptr<>>;
 
 struct fixture {
     StrictMock<connection_gmock> connection{};
-    StrictMock<executor_gmock> callback_executor{};
     StrictMock<callback_mock> callback{};
-    StrictMock<executor_gmock> executor{};
-    StrictMock<strand_executor_service_gmock> strand_service{};
-    StrictMock<stream_descriptor_gmock> socket{};
-    io_context io{executor, strand_service};
-    execution_context cb_io {callback_executor};
+    StrictMock<stream_descriptor_mock> socket{};
+    io_context io;
+    execution_context cb_io;
     decltype(make_connection(connection, io, socket)) conn =
             make_connection(connection, io, socket);
 
@@ -174,7 +171,7 @@ TEST_F(async_send_query_params_op, should_wait_for_write_in_strand) {
     EXPECT_CALL(m.connection, flush_output()).InSequence(s)
         .WillOnce(Return(ozo::impl::query_state::send_in_progress));
     EXPECT_CALL(m.socket, async_write_some(_)).InSequence(s).WillOnce(InvokeArgument<0>(error_code{}));
-    EXPECT_CALL(m.callback_executor, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
+    EXPECT_CALL(m.cb_io.executor_, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(m.connection, flush_output()).InSequence(s)
         .WillOnce(Return(ozo::impl::query_state::send_finish));
 

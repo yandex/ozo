@@ -4,7 +4,7 @@
 #include <ozo/request.h>
 #include <ozo/execute.h>
 #include <ozo/shortcuts.h>
-#include <ozo/pg/jsonb.h>
+#include <ozo/pg/types/jsonb.h>
 
 #include <boost/asio/spawn.hpp>
 
@@ -189,7 +189,7 @@ TEST(request, should_fill_oid_map_when_oid_map_is_not_empty) {
         ozo::request(conn, "CREATE TYPE custom_type AS ()"_SQL, std::ref(result), yield[ec]);
         ASSERT_REQUEST_OK(ec, conn);
         auto conn_with_oid_map = ozo::get_connection(conn_info_with_oid_map[io], yield);
-        EXPECT_NE(ozo::type_oid<custom_type>(ozo::get_oid_map(conn_with_oid_map)), ozo::null_oid);
+        EXPECT_NE(ozo::type_oid<custom_type>(ozo::unwrap_connection(conn_with_oid_map).oid_map()), ozo::null_oid);
     });
 
     io.run();
@@ -226,7 +226,7 @@ TEST(request, should_call_handler_with_error_for_zero_timeout) {
     ozo::request(conn_info[io], "SELECT 1"_SQL, timeout, std::ref(res),
             [&](ozo::error_code ec, auto conn) {
         EXPECT_FALSE(called.test_and_set());
-        EXPECT_EQ(ec, boost::system::error_condition(boost::system::errc::operation_canceled));
+        EXPECT_EQ(ec, boost::asio::error::timed_out);
         EXPECT_FALSE(ozo::connection_bad(conn));
     });
 
