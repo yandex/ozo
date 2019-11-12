@@ -1,0 +1,67 @@
+#include <ozo/connection_info.h>
+#include <ozo/request.h>
+#include <ozo/shortcuts.h>
+#include <ozo/failover/retry.h>
+
+#include <boost/asio/io_service.hpp>
+#include <boost/asio/spawn.hpp>
+
+#include <iostream>
+
+namespace asio = boost::asio;
+
+const auto print_error = [](ozo::error_code ec, const auto& conn) {
+    std::cout << "error code message: \"" << ec.message();
+    if (!ozo::is_null_recursive(conn)) {
+        std::cout << "\", libpq error message: \"" << ozo::error_message(conn)
+            << "\", error context: \"" << ozo::get_error_context(conn);
+    }
+    std::cout << "\"" << std::endl;
+};
+
+int main(int argc, char **argv) {
+    std::cout << "OZO request example" << std::endl;
+
+    if (argc < 2) {
+        std::cerr << "Usage: " << argv[0] << " <connection string>\n";
+        return 1;
+    }
+
+    asio::io_context io;
+
+    auto conn_info = ozo::connection_info(argv[1]);
+
+    asio::spawn(io, [&] ([[maybe_unused]] asio::yield_context yield) {
+        [[maybe_unused]] ozo::rows_of<int, double, char> result;
+        [[maybe_unused]] ozo::error_code ec;
+        using namespace ozo::literals;
+        using namespace std::chrono_literals;
+        namespace failover = ozo::failover;
+        using retry_options = failover::retry_options;
+
+#if defined(METABENCH)
+<% n.times do %>
+        {
+            auto retry = 3*failover::retry(ozo::errc::connection_error)
+                            .set(retry_options::on_retry = print_error);
+            auto conn = ozo::request[retry](conn_info[io], "SELECT <%= n %>"_SQL + std::int64_t(42), 1s, ozo::into(result), yield[ec]);
+
+            if (ec) {
+                std::cout << "Request failed; ";
+                print_error(ec, conn);
+                return;
+            }
+
+            std::cout << "Selected:" << std::endl;
+            for (auto value : result) {
+                std::cout << std::get<0>(value) << std::endl;
+            }
+        }
+<% end %>
+#endif
+    });
+
+    io.run();
+
+    return 0;
+}
