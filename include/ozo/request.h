@@ -14,7 +14,7 @@ namespace ozo {
  * @note The function does not particitate in ADL since could be implemented via functional object.
  *
  * @param provider --- #ConnectionProvider to get connection from.
- * @param query --- #Query or `ozo::query_builder` object to request from a database.
+ * @param query --- query object to request from a database.
  * @param time_constraint --- request #TimeConstraint; this time constrain <b>includes</b> time for getting connection from provider.
  * @param out --- output object like Iterator, #InsertIterator or `ozo::result`.
  * @param token --- operation #CompletionToken.
@@ -58,8 +58,8 @@ int main() {
  * @endcode
  * @ingroup group-requests-functions
  */
-template <typename ConnectionProvider, typename Query, typename TimeConstraint, typename Out, typename CompletionToken>
-decltype(auto) request (ConnectionProvider&& provider, Query&& query, TimeConstraint time_constraint, Out out, CompletionToken&& token);
+template <typename ConnectionProvider, typename BinaryQueryConvertible, typename TimeConstraint, typename Out, typename CompletionToken>
+decltype(auto) request (ConnectionProvider&& provider, BinaryQueryConvertible&& query, TimeConstraint time_constraint, Out out, CompletionToken&& token);
 
 /**
  * @brief Request query from a database
@@ -70,14 +70,14 @@ decltype(auto) request (ConnectionProvider&& provider, Query&& query, TimeConstr
  * @note The function does not particitate in ADL since could be implemented via functional object.
  *
  * @param provider --- #ConnectionProvider to get connection from.
- * @param query --- #Query or `ozo::query_builder` object to request from a database.
+ * @param query --- query object to request from a database.
  * @param out --- output object like Iterator, #InsertIterator or `ozo::result`.
  * @param token --- operation #CompletionToken.
  * @return deduced from #CompletionToken.
  * @ingroup group-requests-functions
  */
-template <typename ConnectionProvider, typename Query, typename Out, typename CompletionToken>
-decltype(auto) request (ConnectionProvider&& provider, Query&& query, Out out, CompletionToken&& token);
+template <typename ConnectionProvider, typename BinaryQueryConvertible, typename Out, typename CompletionToken>
+decltype(auto) request (ConnectionProvider&& provider, BinaryQueryConvertible&& query, Out out, CompletionToken&& token);
 
 #else
 
