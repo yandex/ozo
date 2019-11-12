@@ -1,5 +1,6 @@
 #include "result_mock.h"
 #include <ozo/ext/std/tuple.h>
+#include <ozo/ext/std/pair.h>
 #include <ozo/io/composite.h>
 #include <ozo/pg/types/integer.h>
 #include <ozo/pg/types/text.h>
@@ -42,6 +43,7 @@ static std::ostream& operator << (std::ostream& s, const hana_test_struct& v) {
 namespace {
 
 using namespace ::testing;
+using namespace std::string_literals;
 
 TEST(size_of, should_calculate_size_of_fusion_adapted_structure_with_counter_size) {
     fusion_test_struct v{"TEST", 0};
@@ -109,6 +111,23 @@ TEST_F(send_composite, should_store_hana_adapted_structure_with_number_of_fields
 
 TEST_F(send_composite, should_store_std_tuple_with_number_of_fields_and_fields_frames) {
     const auto v = std::make_tuple(std::string("TEST"), std::int64_t(0x0001020304050607));
+    ozo::send(os, oid_map, v);
+    EXPECT_EQ(buffer, std::vector<char>({
+        0x00, 0x00, 0x00, 0x02, // Number of members
+                                // ---- v.string frame ---
+        0x00, 0x00, 0x00, 0x19, //   Oid:  TEXTOID
+        0x00, 0x00, 0x00, 0x04, //   size: 4
+        'T' , 'E' , 'S' , 'T' , //   data: "TEST"
+                                // ---- v.number frame ---
+        0x00, 0x00, 0x00, 0x14, //   Oid:  INT8OID
+        0x00, 0x00, 0x00, 0x08, //   size: 8
+        0x00, 0x01, 0x02, 0x03, //   data: 00 01 02 03
+        0x04, 0x05, 0x06, 0x07, //         04 05 06 07
+    }));
+}
+
+TEST_F(send_composite, should_store_std_pair_with_number_of_fields_and_fields_frames) {
+    const auto v = std::make_pair("TEST"s, std::int64_t(0x0001020304050607));
     ozo::send(os, oid_map, v);
     EXPECT_EQ(buffer, std::vector<char>({
         0x00, 0x00, 0x00, 0x02, // Number of members
@@ -206,6 +225,32 @@ TEST_F(recv_composite, should_receive_std_tuple) {
     ozo::recv(value, oid_map, got);
     const auto expected = std::make_tuple("TEST", 0x0001020304050607);
     EXPECT_EQ(got, expected);
+}
+
+TEST_F(recv_composite, should_receive_std_pair) {
+    const char bytes[] = {
+        0x00, 0x00, 0x00, 0x02, // Number of members
+                                // ---- v.string frame ---
+        0x00, 0x00, 0x00, 0x19, //   Oid:  TEXTOID
+        0x00, 0x00, 0x00, 0x04, //   size: 4
+        'T' , 'E' , 'S' , 'T' , //   data: "TEST"
+                                // ---- v.number frame ---
+        0x00, 0x00, 0x00, 0x14, //   Oid:  INT8OID
+        0x00, 0x00, 0x00, 0x08, //   size: 8
+        0x00, 0x01, 0x02, 0x03, //   data: 00 01 02 03
+        0x04, 0x05, 0x06, 0x07, //         04 05 06 07
+    };
+
+    EXPECT_CALL(mock, field_type(_)).WillRepeatedly(Return(0x08C9));
+    EXPECT_CALL(mock, get_value(_, _)).WillRepeatedly(Return(bytes));
+    EXPECT_CALL(mock, get_length(_, _)).WillRepeatedly(Return(sizeof(bytes)));
+    EXPECT_CALL(mock, get_isnull(_, _)).WillRepeatedly(Return(false));
+
+    std::pair<std::string, std::int64_t> got;
+    ozo::set_type_oid<hana_test_struct>(oid_map, 0x10);
+    ozo::recv(value, oid_map, got);
+    const auto expected = std::make_pair("TEST"s, 0x0001020304050607);
+    EXPECT_THAT(got, expected);
 }
 
 

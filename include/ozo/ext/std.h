@@ -15,6 +15,7 @@
 #include <ozo/ext/std/shared_ptr.h>
 #include <ozo/ext/std/string.h>
 #include <ozo/ext/std/tuple.h>
+#include <ozo/ext/std/pair.h>
 #include <ozo/ext/std/unique_ptr.h>
 #include <ozo/ext/std/vector.h>
 #include <ozo/ext/std/weak_ptr.h>

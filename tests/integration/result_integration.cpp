@@ -150,4 +150,19 @@ TEST(result, should_convert_in_rows_of_tuple_rows_of_records) {
     ));
 }
 
+TEST(result, should_convert_rows_of_records_in_rows_of_std_pairs) {
+    auto result = execute_query("SELECT * FROM (VALUES ((1, 'one'::text)), ((2, 'two'::text)), ((3, 'three'::text))) AS t (tuple);");
+    auto oid_map = ozo::empty_oid_map();
+
+    ozo::rows_of<std::pair<int, std::string>> out;
+
+    ozo::recv_result(result, oid_map, ozo::into(out));
+
+    EXPECT_THAT(out, ElementsAre(
+        std::make_tuple(std::make_pair(int(1), "one")),
+        std::make_tuple(std::make_pair(int(2), "two")),
+        std::make_tuple(std::make_pair(int(3), "three"))
+    ));
+}
+
 } // namespace
