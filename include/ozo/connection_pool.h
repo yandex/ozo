@@ -4,8 +4,8 @@
 #include <ozo/transaction_status.h>
 #include <ozo/asio.h>
 #include <ozo/connector.h>
-
-#include <yamail/resource_pool/async/pool.hpp>
+#include <ozo/core/thread_safety.h>
+#include <ozo/detail/connection_pool.h>
 
 namespace ozo {
 
@@ -258,9 +258,9 @@ private:
 template <typename ...Ts>
 struct is_connection<pooled_connection<Ts...>> : std::true_type {};
 
-template <typename Pool>
-struct connection_traits<yamail::resource_pool::handle<Pool>> :
-    connection_traits<typename yamail::resource_pool::handle<Pool>::value_type> {};
+template <typename T>
+struct connection_traits<yamail::resource_pool::handle<T>> :
+    connection_traits<typename yamail::resource_pool::handle<T>::value_type> {};
 
 /**
  * @brief Connection pool implementation
@@ -281,6 +281,8 @@ struct connection_traits<yamail::resource_pool::handle<Pool>> :
  * `connection_pool` models `ConnectionSource` concept itself using underlying `ConnectionSource`.
  *
  * @tparam Source --- underlying `ConnectionSource` which is being used to create connection to a database.
+ * @tparam ThreadSafety --- admissibility to use in multithreaded environment without additional synchronization.
+ * Thread safe by default.
  *
  * ###Example
  *
@@ -295,28 +297,30 @@ struct connection_traits<yamail::resource_pool::handle<Pool>> :
  * @ingroup group-connection-types
  * @models{ConnectionSource}
  */
-template <typename Source>
+template <typename Source, typename ThreadSafety = std::decay_t<decltype(thread_safe)>>
 class connection_pool {
     static_assert(ConnectionSource<Source>, "should model ConnectionSource concept");
 
 public:
     using connection_rep_type = ozo::connection_rep<typename ozo::unwrap_type<ozo::connection_type<Source>>::oid_map_type>;
 
-    using impl_type = yamail::resource_pool::async::pool<connection_rep_type>;
+    using impl_type = detail::get_connection_pool_impl_t<connection_rep_type, ThreadSafety>;
     /**
      * Construct a new connection pool object
      *
      * @param source --- `ConnectionSource` object which is being used to create connection to a database.
      * @param config --- pool configuration.
+     * @param thread_safety -- admissibility to use in multithreaded environment without additional synchronization.
+     * Thread safe by default (`ozo::thread_safety<true>`).
      */
-    connection_pool(Source source, const connection_pool_config& config)
+    connection_pool(Source source, const connection_pool_config& config, const ThreadSafety& /*thread_safety*/ = ThreadSafety{})
     : impl_(config.capacity, config.queue_capacity, config.idle_timeout),
       source_(std::move(source)) {}
 
     /**
      * Type of connection depends on connection type of Source. The definition is used to model `ConnectionSource`
      */
-    using connection_type = std::shared_ptr<pooled_connection<typename impl_type::handle>>;
+    using connection_type = std::shared_ptr<pooled_connection<yamail::resource_pool::handle<connection_rep_type>>>;
 
     /**
      * Get connection is bound to the given `io_context` object.
@@ -387,14 +391,19 @@ constexpr auto ConnectionPool = is_connection_pool<std::decay_t<T>>::value;
  *
  * @param source --- connection source object which is being used to create connection to a database.
  * @param config --- pool configuration.
+ * @param thread_safety --- admissibility to use in multithreaded environment without additional synchronization.
+ * Thread safe by default (`ozo::thread_safety<true>`).
+ *
  * @return `ozo::connection_pool` object.
  * @ingroup group-connection-functions
  * @relates ozo::connection_pool
  */
-template <typename ConnectionSource>
-auto make_connection_pool(ConnectionSource&& source, const connection_pool_config& config) {
+template <typename ConnectionSource, typename ThreadSafety = decltype(thread_safe)>
+auto make_connection_pool(ConnectionSource&& source, const connection_pool_config& config,
+                          const ThreadSafety& thread_safety = ThreadSafety{}) {
     static_assert(ozo::ConnectionSource<ConnectionSource>, "source should model ConnectionSource concept");
-    return connection_pool<std::decay_t<ConnectionSource>>{std::forward<ConnectionSource>(source), config};
+    return connection_pool<std::decay_t<ConnectionSource>, std::decay_t<ThreadSafety>>{
+        std::forward<ConnectionSource>(source), config, thread_safety};
 }
 
 } // namespace ozo
