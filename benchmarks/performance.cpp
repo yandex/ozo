@@ -230,7 +230,7 @@ benchmark_report use_connection_pool(const benchmark_params& params, Query query
     ozo::connection_pool_config config;
     config.capacity = params.coroutines + 1;
     config.queue_capacity = params.queue_capacity;
-    ozo::connection_pool pool(connection_info, config);
+    ozo::connection_pool pool(connection_info, config, !ozo::thread_safe);
 
     for (std::size_t token = 0; token < params.coroutines; ++token) {
         spawn(io, token, [&, token] (asio::yield_context yield) {
