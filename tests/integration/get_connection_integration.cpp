@@ -7,7 +7,7 @@ namespace {
 
 TEST(get_connection, should_return_timeout_error_for_zero_connect_timeout) {
     ozo::io_context io;
-    const ozo::connection_info<> conn_info(OZO_PG_TEST_CONNINFO);
+    const ozo::connection_info conn_info(OZO_PG_TEST_CONNINFO);
     const std::chrono::seconds timeout(0);
 
     std::atomic_flag called {};
@@ -23,7 +23,7 @@ TEST(get_connection, should_return_timeout_error_for_zero_connect_timeout) {
 
 TEST(get_connection, should_return_connection_for_max_connect_timeout) {
     ozo::io_context io;
-    const ozo::connection_info<> conn_info(OZO_PG_TEST_CONNINFO);
+    const ozo::connection_info conn_info(OZO_PG_TEST_CONNINFO);
     const auto timeout = ozo::time_traits::duration::max();
 
     std::atomic_flag called {};

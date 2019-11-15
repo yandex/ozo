@@ -28,7 +28,7 @@ TEST(cancel, should_cancel_operation) {
     boost::asio::steady_timer timer(io);
 
     boost::asio::spawn(io, [&io, &timer](auto yield){
-        const auto conn_info = ozo::make_connection_info(OZO_PG_TEST_CONNINFO);
+        const ozo::connection_info conn_info(OZO_PG_TEST_CONNINFO);
         ozo::error_code ec;
         auto conn = ozo::get_connection(conn_info[io], yield[ec]);
         EXPECT_FALSE(ec);
@@ -61,7 +61,7 @@ TEST(cancel, should_stop_cancel_operation_on_zero_timeout) {
     boost::asio::steady_timer timer(io);
 
     boost::asio::spawn(io, [&io, &timer, &dummy_io](auto yield){
-        const auto conn_info = ozo::make_connection_info(OZO_PG_TEST_CONNINFO);
+        const ozo::connection_info conn_info(OZO_PG_TEST_CONNINFO);
         ozo::error_code ec;
         auto conn = ozo::get_connection(conn_info[io], yield[ec]);
         EXPECT_FALSE(ec);

@@ -39,7 +39,7 @@ int main() {
     ozo::rows_of<std::int64_t, std::optional<std::string>> rows;
 
     // Connection info with host and port to connect to
-    auto conn_info = ozo::make_connection_info("host=... port=...");
+    ozo::connection_info conn_info("host=... port=...");
 
     // For _SQL literal
     using namespace ozo::literals;
@@ -94,7 +94,7 @@ Note that in the example, the table is defined with the first (id) and third (am
 Note that it's acceptable to provide an `std::optional` for a _NOT NULL_ field, but it is not acceptable to omit the `std::optional` for a field that is not _NOT NULL_, unless you can gaurentee the retrieved data will not be _NULL_. Failure to properly use `std::optional` will lead to a run-time error in case of a _NULL_ value received from a database.
 
 ```cpp
-auto conn_info = ozo::make_connection_info("host=... port=...");
+ozo::connection_info conn_info("host=... port=...");
 ```
 
 Now we need to create a connection information for database to connect to. This is our connection source which can create a connection for us as it will be needed (you can learn more about ConnectionSource and ConnectionProvider concepts from the documentation). It's also acceptable to provide a connection URI string, instead of the comma seperated version.

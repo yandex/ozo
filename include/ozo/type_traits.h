@@ -522,7 +522,7 @@ OZO_PG_DEFINE_CUSTOM_TYPE(custom_type, "code.custom_type")
 
 //...
 // Creating ConnectionSource for futher requests to a database
-const auto conn_source = ozo::make_connection_info("...", regiter_types<custom_type>());
+const ozo::connection_info conn_source("...", register_types<custom_type>());
  * @endcode
  *
  * @return `oid_map_t` object.

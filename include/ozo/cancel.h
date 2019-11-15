@@ -106,7 +106,7 @@ ozo::io_context io;
 boost::asio::steady_timer timer(io);
 
 boost::asio::spawn(io, [&io, &timer](auto yield){
-    const auto conn_info = ozo::make_connection_info(OZO_PG_TEST_CONNINFO);
+    const ozo::connection_info conn_info(OZO_PG_TEST_CONNINFO);
     ozo::error_code ec;
     auto conn = ozo::get_connection(conn_info[io], yield[ec]);
     assert(!ec);

@@ -24,7 +24,7 @@ int main(int argc, char **argv) {
     //! [Creating Connection Pool]
 
     // To make a connection to a database we need to make a ConnectionSource.
-    auto connection_info = ozo::make_connection_info(argv[1]);
+    const ozo::connection_info connection_info(argv[1]);
 
     ozo::connection_pool_config connection_pool_config;
 

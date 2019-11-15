@@ -40,7 +40,7 @@ void reuse_connection_info(const std::string& conn_string, Query query) {
 
     benchmark_t<1> benchmark;
     asio::io_context io(1);
-    ozo::connection_info<> connection_info(conn_string);
+    ozo::connection_info connection_info(conn_string);
 
     spawn(io, 0, [&] (asio::yield_context yield) {
         while (true) {
@@ -61,7 +61,7 @@ void reuse_connection_info_and_parse_result(const std::string& conn_string, Quer
 
     benchmark_t<1> benchmark;
     asio::io_context io(1);
-    ozo::connection_info<> connection_info(conn_string);
+    ozo::connection_info connection_info(conn_string);
 
     spawn(io, 0, [&] (asio::yield_context yield) {
         while (true) {
@@ -82,7 +82,7 @@ void reuse_connection(const std::string& conn_string, Query query) {
 
     benchmark_t<1> benchmark;
     asio::io_context io(1);
-    ozo::connection_info<> connection_info(conn_string);
+    ozo::connection_info connection_info(conn_string);
 
     spawn(io, 0, [&] (asio::yield_context yield) {
         auto connection = ozo::get_connection(connection_info[io], connect_timeout, yield);
@@ -104,7 +104,7 @@ void reuse_connection_and_parse_result(const std::string& conn_string, Query que
 
     benchmark_t<1> benchmark;
     asio::io_context io(1);
-    ozo::connection_info<> connection_info(conn_string);
+    ozo::connection_info connection_info(conn_string);
 
     spawn(io, 0, [&] (asio::yield_context yield) {
         auto connection = ozo::get_connection(connection_info[io], connect_timeout, yield);
@@ -126,7 +126,7 @@ void use_connection_pool(const std::string& conn_string, Query query) {
 
     benchmark_t<1> benchmark;
     asio::io_context io(1);
-    const ozo::connection_info<> connection_info(conn_string);
+    const ozo::connection_info connection_info(conn_string);
     ozo::connection_pool_config config;
     config.capacity = 2;
     config.queue_capacity = 0;
@@ -151,7 +151,7 @@ void use_connection_pool_and_parse_result(const std::string& conn_string, Query 
 
     benchmark_t<1> benchmark;
     asio::io_context io(1);
-    const ozo::connection_info<> connection_info(conn_string);
+    const ozo::connection_info connection_info(conn_string);
     ozo::connection_pool_config config;
     config.capacity = 2;
     config.queue_capacity = 0;
@@ -176,7 +176,7 @@ void use_connection_pool_mult_connection(const std::string& conn_string, Query q
 
     benchmark_t<coroutines> benchmark;
     asio::io_context io(1);
-    const ozo::connection_info<> connection_info(conn_string);
+    const ozo::connection_info connection_info(conn_string);
     ozo::connection_pool_config config;
     config.capacity = coroutines + 1;
     config.queue_capacity = 0;
@@ -203,7 +203,7 @@ void use_connection_pool_and_parse_result_mult_connection(const std::string& con
 
     benchmark_t<coroutines> benchmark;
     asio::io_context io(1);
-    const ozo::connection_info<> connection_info(conn_string);
+    const ozo::connection_info connection_info(conn_string);
     ozo::connection_pool_config config;
     config.capacity = coroutines + 1;
     config.queue_capacity = 0;
@@ -242,7 +242,7 @@ void use_connection_pool_mult_threads(const std::string& conn_string, Query quer
         << " queue_capacity=" << queue_capacity << std::endl;
 
     benchmark_t<coroutines * threads_number> benchmark;
-    const ozo::connection_info<> connection_info(conn_string);
+    const ozo::connection_info connection_info(conn_string);
     ozo::connection_pool_config config;
     config.capacity = connections;
     config.queue_capacity = queue_capacity;
