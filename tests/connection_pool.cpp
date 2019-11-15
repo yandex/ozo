@@ -11,7 +11,7 @@ namespace {
 
 TEST(make_connection_pool, should_not_throw) {
     boost::asio::io_context io;
-    ozo::connection_info<> conn_info("conn info string");
+    ozo::connection_info conn_info("conn info string");
     const ozo::connection_pool_config config;
     EXPECT_NO_THROW(ozo::make_connection_pool(conn_info, config));
 }

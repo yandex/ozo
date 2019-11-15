@@ -22,7 +22,7 @@ int main(int argc, char *argv[]) {
 
     rows_count_limit_benchmark benchmark(10000000);
     asio::io_context io(1);
-    ozo::connection_info<> connection_info(argv[1]);
+    ozo::connection_info connection_info(argv[1]);
     const auto query = ("SELECT typname, typnamespace, typowner, typlen, typbyval, typcategory, "_SQL +
                         "typispreferred, typisdefined, typdelim, typrelid, typelem, typarray "_SQL +
                         "FROM pg_type WHERE typtypmod = "_SQL +

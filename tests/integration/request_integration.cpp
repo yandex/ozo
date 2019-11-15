@@ -97,7 +97,7 @@ TEST(request, should_return_error_and_bad_connect_for_invalid_connection_info) {
     using namespace hana::literals;
 
     ozo::io_context io;
-    ozo::connection_info<> conn_info("invalid connection info");
+    ozo::connection_info conn_info("invalid connection info");
 
     ozo::result res;
     ozo::request(conn_info[io], "SELECT 1"_SQL + " + 1"_SQL, std::ref(res),
@@ -114,7 +114,7 @@ TEST(request, should_return_selected_variable) {
     using namespace hana::literals;
 
     ozo::io_context io;
-    ozo::connection_info<> conn_info(OZO_PG_TEST_CONNINFO);
+    ozo::connection_info conn_info(OZO_PG_TEST_CONNINFO);
 
     ozo::result res;
     const std::string foo = "foo";
@@ -135,7 +135,7 @@ TEST(request, should_return_selected_string_array) {
     using namespace hana::literals;
 
     ozo::io_context io;
-    ozo::connection_info<> conn_info(OZO_PG_TEST_CONNINFO);
+    ozo::connection_info conn_info(OZO_PG_TEST_CONNINFO);
 
     const std::vector<std::string> foos = {"foo", "buzz", "bar"};
 
@@ -156,7 +156,7 @@ TEST(request, should_return_selected_int_array) {
     using namespace hana::literals;
 
     ozo::io_context io;
-    ozo::connection_info<> conn_info(OZO_PG_TEST_CONNINFO);
+    ozo::connection_info conn_info(OZO_PG_TEST_CONNINFO);
 
     const std::vector<int32_t> foos = {1, 22, 333};
 
@@ -178,7 +178,7 @@ TEST(request, should_fill_oid_map_when_oid_map_is_not_empty) {
 
     ozo::io_context io;
     constexpr const auto oid_map = ozo::register_types<custom_type>();
-    ozo::connection_info<> conn_info(OZO_PG_TEST_CONNINFO);
+    ozo::connection_info conn_info(OZO_PG_TEST_CONNINFO);
     ozo::connection_info<std::decay_t<decltype(oid_map)>> conn_info_with_oid_map(OZO_PG_TEST_CONNINFO);
 
     asio::spawn(io, [&] (asio::yield_context yield) {
@@ -200,7 +200,7 @@ TEST(request, should_request_with_connection_pool) {
     namespace asio = boost::asio;
 
     ozo::io_context io;
-    ozo::connection_info<> conn_info(OZO_PG_TEST_CONNINFO);
+    ozo::connection_info conn_info(OZO_PG_TEST_CONNINFO);
     const ozo::connection_pool_config config;
     ozo::connection_pool pool(conn_info, config);
     asio::spawn(io, [&] (asio::yield_context yield) {
@@ -218,7 +218,7 @@ TEST(request, should_call_handler_with_error_for_zero_timeout) {
     namespace asio = boost::asio;
 
     ozo::io_context io;
-    const ozo::connection_info<> conn_info(OZO_PG_TEST_CONNINFO);
+    const ozo::connection_info conn_info(OZO_PG_TEST_CONNINFO);
     const ozo::time_traits::duration timeout(0);
 
     ozo::result res;
@@ -238,7 +238,7 @@ TEST(request, should_return_result_for_max_timeout) {
     namespace asio = boost::asio;
 
     ozo::io_context io;
-    const ozo::connection_info<> conn_info(OZO_PG_TEST_CONNINFO);
+    const ozo::connection_info conn_info(OZO_PG_TEST_CONNINFO);
     const auto timeout = ozo::time_traits::duration::max();
 
     rows_of<std::int32_t> res;
@@ -262,7 +262,7 @@ TEST(request, should_return_custom_composite) {
 
     asio::spawn(io, [&] (asio::yield_context yield) {
         [&] {
-            const auto conn_info = ozo::make_connection_info(OZO_PG_TEST_CONNINFO);
+            const ozo::connection_info conn_info(OZO_PG_TEST_CONNINFO);
             ozo::error_code ec{};
             auto conn = ozo::execute(conn_info[io],
                 "DROP TYPE IF EXISTS custom_type"_SQL, yield[ec]);
@@ -271,7 +271,7 @@ TEST(request, should_return_custom_composite) {
             ASSERT_REQUEST_OK(ec, conn);
         }();
 
-        const auto conn_info = ozo::make_connection_info(
+        const ozo::connection_info conn_info(
             OZO_PG_TEST_CONNINFO,
             ozo::register_types<custom_type>());
 
@@ -301,7 +301,7 @@ TEST(request, should_send_custom_composite) {
 
     asio::spawn(io, [&] (asio::yield_context yield) {
         [&] {
-            const auto conn_info = ozo::make_connection_info(OZO_PG_TEST_CONNINFO);
+            const ozo::connection_info conn_info(OZO_PG_TEST_CONNINFO);
             ozo::error_code ec{};
             auto conn = ozo::execute(conn_info[io],
                 "DROP TYPE IF EXISTS custom_type"_SQL, yield[ec]);
@@ -310,7 +310,7 @@ TEST(request, should_send_custom_composite) {
             ASSERT_REQUEST_OK(ec, conn);
         }();
 
-        const auto conn_info = ozo::make_connection_info(
+        const ozo::connection_info conn_info(
             OZO_PG_TEST_CONNINFO,
             ozo::register_types<custom_type>());
 
@@ -338,7 +338,7 @@ TEST(result, should_send_bytea_properly) {
     using namespace boost::hana::literals;
 
     ozo::io_context io;
-    ozo::connection_info<> conn_info(OZO_PG_TEST_CONNINFO);
+    ozo::connection_info conn_info(OZO_PG_TEST_CONNINFO);
 
     std::vector<std::tuple<ozo::pg::bytea>> res;
     const std::string foo = "foo";
@@ -362,7 +362,7 @@ TEST(request, should_send_empty_optional) {
     namespace asio = boost::asio;
 
     ozo::io_context io;
-    const ozo::connection_info<> conn_info(OZO_PG_TEST_CONNINFO);
+    const ozo::connection_info conn_info(OZO_PG_TEST_CONNINFO);
     const auto timeout = ozo::time_traits::duration::max();
     OZO_STD_OPTIONAL<std::int32_t> value;
 
@@ -386,7 +386,7 @@ TEST(request, should_send_and_receive_empty_optional) {
     namespace asio = boost::asio;
 
     ozo::io_context io;
-    const ozo::connection_info<> conn_info(OZO_PG_TEST_CONNINFO);
+    const ozo::connection_info conn_info(OZO_PG_TEST_CONNINFO);
     const auto timeout = ozo::time_traits::duration::max();
     OZO_STD_OPTIONAL<std::int32_t> value;
 
@@ -409,7 +409,7 @@ TEST(request, should_send_and_receive_interval) {
     const auto interval = ozo::pg::interval(239278272013014LL);
 
     ozo::io_context io;
-    const ozo::connection_info<> conn_info(OZO_PG_TEST_CONNINFO);
+    const ozo::connection_info conn_info(OZO_PG_TEST_CONNINFO);
 
     ozo::rows_of<ozo::pg::interval> result;
     auto query = "SELECT '2769 days 10 hours 11 minutes 12 seconds 13014 microseconds'::interval + "_SQL + interval;
@@ -430,7 +430,7 @@ TEST(request, should_send_and_receive_composite_with_empty_optional) {
 
     asio::spawn(io, [&] (asio::yield_context yield) {
         [&] {
-            const auto conn_info = ozo::make_connection_info(OZO_PG_TEST_CONNINFO);
+            const ozo::connection_info conn_info(OZO_PG_TEST_CONNINFO);
             ozo::error_code ec;
             auto conn = ozo::execute(conn_info[io],
                 "DROP TYPE IF EXISTS with_optional"_SQL, yield[ec]);
@@ -439,7 +439,7 @@ TEST(request, should_send_and_receive_composite_with_empty_optional) {
             ASSERT_REQUEST_OK(ec, conn);
         } ();
 
-        const auto conn_info = ozo::make_connection_info(
+        const ozo::connection_info conn_info(
             OZO_PG_TEST_CONNINFO,
             ozo::register_types<with_optional>()
         );
@@ -465,7 +465,7 @@ TEST(request, should_send_and_receive_jsonb) {
     namespace asio = boost::asio;
 
     ozo::io_context io;
-    const ozo::connection_info<> conn_info(OZO_PG_TEST_CONNINFO);
+    const ozo::connection_info conn_info(OZO_PG_TEST_CONNINFO);
     const auto timeout = ozo::time_traits::duration::max();
     std::string value = R"({"foo": "bar"})";
 
@@ -492,7 +492,7 @@ TEST(request, should_send_and_receive_composite_with_jsonb_field) {
 
     asio::spawn(io, [&] (asio::yield_context yield) {
         [&] {
-            const auto conn_info = ozo::make_connection_info(OZO_PG_TEST_CONNINFO);
+            const ozo::connection_info conn_info(OZO_PG_TEST_CONNINFO);
             ozo::error_code ec;
             auto conn = ozo::execute(conn_info[io],
                 "DROP TYPE IF EXISTS with_jsonb"_SQL, yield[ec]);
@@ -501,7 +501,7 @@ TEST(request, should_send_and_receive_composite_with_jsonb_field) {
             ASSERT_REQUEST_OK(ec, conn);
         } ();
 
-        const auto conn_info = ozo::make_connection_info(
+        const ozo::connection_info conn_info(
             OZO_PG_TEST_CONNINFO,
             ozo::register_types<with_jsonb>()
         );

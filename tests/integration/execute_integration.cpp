@@ -12,7 +12,7 @@ TEST(execute, should_perform_operation_without_result) {
     using namespace ozo::literals;
 
     ozo::io_context io;
-    ozo::connection_info<> conn_info(OZO_PG_TEST_CONNINFO);
+    ozo::connection_info conn_info(OZO_PG_TEST_CONNINFO);
 
     ozo::execute(conn_info[io], "BEGIN"_SQL,
         [&](ozo::error_code ec, auto conn) {

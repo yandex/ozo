@@ -19,7 +19,7 @@ TEST(transaction, create_schema_in_transaction_and_commit_then_table_should_exis
     using namespace ozo::literals;
 
     ozo::io_context io;
-    ozo::connection_info<> conn_info(OZO_PG_TEST_CONNINFO);
+    ozo::connection_info conn_info(OZO_PG_TEST_CONNINFO);
 
     asio::spawn(io, [&] (asio::yield_context yield) {
         auto transaction = ozo::begin(conn_info[io], yield);
@@ -38,7 +38,7 @@ TEST(transaction, create_schema_in_transaction_and_rollback_then_table_should_no
     using namespace ozo::literals;
 
     ozo::io_context io;
-    ozo::connection_info<> conn_info(OZO_PG_TEST_CONNINFO);
+    ozo::connection_info conn_info(OZO_PG_TEST_CONNINFO);
 
     asio::spawn(io, [&] (asio::yield_context yield) {
         auto transaction = ozo::begin(conn_info[io], yield);
@@ -56,7 +56,7 @@ TEST(transaction, create_schema_in_transaction_and_rollback_then_table_should_no
 
 TEST(transaction, transaction_level_options_should_not_cause_sql_syntax_errors) {
     ozo::io_context io;
-    ozo::connection_info<> conn_info(OZO_PG_TEST_CONNINFO);
+    ozo::connection_info conn_info(OZO_PG_TEST_CONNINFO);
 
     asio::spawn(io, [&] (asio::yield_context yield) {
         auto level = ozo::isolation_level::serializable;
@@ -123,7 +123,7 @@ TEST(transaction, transaction_level_options_should_not_cause_sql_syntax_errors) 
 
 TEST(transaction, transaction_mode_options_should_not_cause_sql_syntax_errors) {
     ozo::io_context io;
-    ozo::connection_info<> conn_info(OZO_PG_TEST_CONNINFO);
+    ozo::connection_info conn_info(OZO_PG_TEST_CONNINFO);
 
     asio::spawn(io, [&] (asio::yield_context yield) {
         auto mode = ozo::transaction_mode::read_write;
@@ -161,7 +161,7 @@ TEST(transaction, transaction_mode_options_should_not_cause_sql_syntax_errors) {
 TEST(transaction, transaction_deferrability_options_should_not_generate_syntax_errors) {
     using ozo::transaction_options;
     ozo::io_context io;
-    ozo::connection_info<> conn_info(OZO_PG_TEST_CONNINFO);
+    ozo::connection_info conn_info(OZO_PG_TEST_CONNINFO);
 
     asio::spawn(io, [&] (asio::yield_context yield) {
         auto defer = ozo::deferrable;
