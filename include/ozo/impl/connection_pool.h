@@ -99,17 +99,17 @@ auto wrap_pooled_connection_handler(const Executor& ex, Source&& source, TimeCon
 
 namespace ozo {
 
-template <typename Pool>
-struct unwrap_impl<yamail::resource_pool::handle<Pool>> {
+template <typename V>
+struct unwrap_impl<yamail::resource_pool::handle<V>> {
     template <typename T>
     static constexpr decltype(auto) apply(T&& handle) {
         return *handle;
     }
 };
 
-template <typename Source>
+template <typename Source, typename ThreadSafety>
 template <typename TimeConstraint, typename Handler>
-void connection_pool<Source>::operator ()(io_context& io, TimeConstraint t, Handler&& handler) {
+void connection_pool<Source, ThreadSafety>::operator ()(io_context& io, TimeConstraint t, Handler&& handler) {
     static_assert(ozo::TimeConstraint<TimeConstraint>, "should model TimeConstraint concept");
     impl_.get_auto_recycle(
         io,
