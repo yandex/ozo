@@ -3,12 +3,12 @@
 Here are some examples of how to use OZO API.
 
 <!-- TOC -->
-- [How to](#How-to)
-  - [How To Make A Very Simple Request](#How-To-Make-A-Very-Simple-Request)
-  - [How To Handle Error Properly](#How-To-Handle-Error-Properly)
-  - [How To Map Column Names to Column Numbers At Compile Time](#How-To-Map-Column-Names-to-Column-Numbers-At-Compile-Time)
-  - [How To Determine Which Type Do I Need To Use For The PostgreSQL Type](#How-To-Determine-Which-Type-Do-I-Need-To-Use-For-The-PostgreSQL-Type)
-  - [How To Bind One More PostgreSQL Type For C++ Type With Existing Binding](#How-To-Bind-One-More-PostgreSQL-Type-For-C-Type-With-Existing-Binding)
+- [How to](#how-to)
+  - [How To Make A Very Simple Request](#how-to-make-a-very-simple-request)
+  - [How To Handle Error Properly](#how-to-handle-error-properly)
+  - [How To Map Column Names to Column Numbers At Compile Time](#how-to-map-column-names-to-column-numbers-at-compile-time)
+  - [How To Determine Which Type Do I Need To Use For The PostgreSQL Type](#how-to-determine-which-type-do-i-need-to-use-for-the-postgresql-type)
+  - [How To Bind One More PostgreSQL Type For C++ Type With Existing Binding](#how-to-bind-one-more-postgresql-type-for-c-type-with-existing-binding)
 
 ## How To Make A Very Simple Request
 
@@ -173,10 +173,12 @@ const auto query = "SELECT id, name FROM users_info WHERE amount>="_SQL + std::i
 If we interchange `id` and `name` in the query text we will get a run-time error. To be more robust to changes in the ordering of columns returned from the database, we can use Boost.Fusion to map column names to positions.
 
 ```cpp
-BOOST_FUSION_DEFINE_STRUCT((), my_row,
-    (std::int64_t, id)
-    (std::optional<std::string>, name)
-)
+struct my_row {
+    std::int64_t id;
+    std::optional<std::string> name;
+};
+
+BOOST_HANA_ADAPT_STRUCT(my_row, id, name);
 
 int main() {
 
@@ -197,6 +199,8 @@ int main() {
 ```
 
 In this example, you can change the order of the fields in either `my_row` or your database query freely, as the fields are identified based on their name, and not based on their index in the tuple.
+
+ > **Note:** you may use `BOOST_FUSION_ADAPT_STRUCT` and all of the `Boost.Fusion` adaptation mechanisms for structures, but it is recommended to use `Boost.Hana` for a faster and more modern approach.
 
 ---
 
