@@ -68,9 +68,9 @@ static std::ostream& operator <<(std::ostream& s, const with_jsonb& v) {
 
 } // namespace ozo::tests
 
-BOOST_FUSION_ADAPT_STRUCT(ozo::tests::custom_type, number, text)
-BOOST_FUSION_ADAPT_STRUCT(ozo::tests::with_optional, value)
-BOOST_FUSION_ADAPT_STRUCT(ozo::tests::with_jsonb, value)
+BOOST_HANA_ADAPT_STRUCT(ozo::tests::custom_type, number, text);
+BOOST_HANA_ADAPT_STRUCT(ozo::tests::with_optional, value);
+BOOST_HANA_ADAPT_STRUCT(ozo::tests::with_jsonb, value);
 
 OZO_PG_DEFINE_CUSTOM_TYPE(ozo::tests::custom_type, "custom_type")
 OZO_PG_DEFINE_CUSTOM_TYPE(ozo::tests::with_optional, "with_optional")

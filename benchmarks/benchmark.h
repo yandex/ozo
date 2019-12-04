@@ -271,6 +271,6 @@ struct pg_type {
 
 } // namespace ozo::benchmark
 
-BOOST_FUSION_ADAPT_STRUCT(ozo::benchmark::pg_type,
+BOOST_HANA_ADAPT_STRUCT(ozo::benchmark::pg_type,
     typname, typnamespace, typowner, typlen, typbyval, typcategory,
-    typispreferred, typisdefined, typdelim, typrelid, typelem, typarray)
+    typispreferred, typisdefined, typdelim, typrelid, typelem, typarray);
