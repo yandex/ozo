@@ -255,7 +255,7 @@ public:
      * @return false --- connection is closed and no native handle associated with.
      * @return true  --- connection is open and there is a native handle associated with.
      */
-    bool is_open() const noexcept { return native_handle() != nullptr;};
+    bool is_open() const noexcept { return native_handle() != nullptr;}
 
     ~connection();
 private:
