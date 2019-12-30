@@ -71,7 +71,7 @@ struct has_operator_not<T, std::void_t<decltype(!std::declval<T>())>>
  * @hideinitializer
  */
 template <typename T>
-constexpr auto OperatorNot = has_operator_not<std::decay_t<T>>::value;
+inline constexpr auto OperatorNot = has_operator_not<std::decay_t<T>>::value;
 
 template <typename T, typename Enable = void>
 struct is_output_iterator : std::false_type {};
@@ -93,7 +93,7 @@ struct is_output_iterator<T, typename std::enable_if<
  * @hideinitializer
  */
 template <typename T>
-constexpr auto OutputIterator = is_output_iterator<T>::value;
+inline constexpr auto OutputIterator = is_output_iterator<T>::value;
 
 template <typename T, typename Enable = void>
 struct is_forward_iterator : std::false_type {};
@@ -115,7 +115,7 @@ struct is_forward_iterator<T, typename std::enable_if<
  * @hideinitializer
  */
 template <typename T>
-constexpr auto ForwardIterator = is_forward_iterator<T>::value;
+inline constexpr auto ForwardIterator = is_forward_iterator<T>::value;
 
 template <typename T, typename Enable = void>
 struct is_iterable : std::false_type {};
@@ -135,7 +135,7 @@ struct is_iterable<T, typename std::enable_if<
  * @hideinitializer
  */
 template <typename T>
-constexpr auto Iterable = is_iterable<T>::value;
+inline constexpr auto Iterable = is_iterable<T>::value;
 
 template <typename T, typename Enable = void>
 struct is_insert_iterator : std::false_type {};
@@ -154,7 +154,7 @@ struct is_insert_iterator<T, typename std::enable_if<
  * @hideinitializer
  */
 template <typename T>
-constexpr auto InsertIterator = is_insert_iterator<T>::value;
+inline constexpr auto InsertIterator = is_insert_iterator<T>::value;
 
 /**
  * @brief Boost.Fusion Sequence concept
@@ -164,7 +164,7 @@ constexpr auto InsertIterator = is_insert_iterator<T>::value;
  * @hideinitializer
  */
 template <typename T>
-constexpr auto FusionSequence = boost::fusion::traits::is_sequence<std::decay_t<T>>::value;
+inline constexpr auto FusionSequence = boost::fusion::traits::is_sequence<std::decay_t<T>>::value;
 
 /**
  * @brief Boost.Hana Sequence concept
@@ -174,7 +174,7 @@ constexpr auto FusionSequence = boost::fusion::traits::is_sequence<std::decay_t<
  * @hideinitializer
  */
 template <typename T>
-constexpr auto HanaSequence = boost::hana::Sequence<std::decay_t<T>>::value;
+inline constexpr auto HanaSequence = boost::hana::Sequence<std::decay_t<T>>::value;
 
 /**
  * @brief Boost.Hana Structure concept
@@ -184,7 +184,7 @@ constexpr auto HanaSequence = boost::hana::Sequence<std::decay_t<T>>::value;
  * @hideinitializer
  */
 template <typename T>
-constexpr auto HanaStruct = boost::hana::Struct<std::decay_t<T>>::value;
+inline constexpr auto HanaStruct = boost::hana::Struct<std::decay_t<T>>::value;
 
 /**
  * @brief Boost.Hana String concept
@@ -194,7 +194,7 @@ constexpr auto HanaStruct = boost::hana::Struct<std::decay_t<T>>::value;
  * @hideinitializer
  */
 template <typename T>
-constexpr auto HanaString = decltype(boost::hana::is_a<boost::hana::string_tag>(std::declval<T>()))::value;
+inline constexpr auto HanaString = decltype(boost::hana::is_a<boost::hana::string_tag>(std::declval<T>()))::value;
 
 /**
  * @brief Boost.Hana Tuple concept
@@ -204,7 +204,7 @@ constexpr auto HanaString = decltype(boost::hana::is_a<boost::hana::string_tag>(
  * @hideinitializer
  */
 template <typename T>
-constexpr auto HanaTuple = decltype(boost::hana::is_a<boost::hana::tuple_tag>(std::declval<T>()))::value;
+inline constexpr auto HanaTuple = decltype(boost::hana::is_a<boost::hana::tuple_tag>(std::declval<T>()))::value;
 
 
 template <typename T, typename = std::void_t<>>
@@ -227,7 +227,7 @@ struct is_fusion_adapted_struct<T, std::enable_if_t<
  * @hideinitializer
  */
 template <typename T>
-constexpr auto FusionAdaptedStruct = is_fusion_adapted_struct<std::decay_t<T>>::value;
+inline constexpr auto FusionAdaptedStruct = is_fusion_adapted_struct<std::decay_t<T>>::value;
 
 /**
  * @brief Integral concept
@@ -237,7 +237,7 @@ constexpr auto FusionAdaptedStruct = is_fusion_adapted_struct<std::decay_t<T>>::
  * @hideinitializer
  */
 template <typename T>
-constexpr auto Integral = std::is_integral_v<std::decay_t<T>>;
+inline constexpr auto Integral = std::is_integral_v<std::decay_t<T>>;
 
 /**
  * @brief Floating Point concept
@@ -247,7 +247,7 @@ constexpr auto Integral = std::is_integral_v<std::decay_t<T>>;
  * @hideinitializer
  */
 template <typename T>
-constexpr auto FloatingPoint = std::is_floating_point_v<std::decay_t<T>>;
+inline constexpr auto FloatingPoint = std::is_floating_point_v<std::decay_t<T>>;
 
 template <typename T, std::size_t Size, typename = std::void_t<>>
 struct has_mutable_data : std::false_type {};
@@ -331,7 +331,7 @@ struct is_raw_data_readable : std::bool_constant<
  * @hideinitializer
  */
 template <typename T>
-constexpr auto RawDataWritable = is_raw_data_writable<T>::value;
+inline constexpr auto RawDataWritable = is_raw_data_writable<T>::value;
 
 /**
  * @brief `RawDataReadable` concept
@@ -355,7 +355,7 @@ constexpr auto RawDataWritable = is_raw_data_writable<T>::value;
  * @hideinitializer
  */
 template <typename T>
-constexpr auto RawDataReadable = is_raw_data_readable<T>::value;
+inline constexpr auto RawDataReadable = is_raw_data_readable<T>::value;
 
 template <typename T, typename = std::void_t<>>
 struct is_emplaceable : std::false_type {};
@@ -371,7 +371,7 @@ struct is_emplaceable<T, std::void_t<decltype(std::declval<T&>().emplace())>> : 
  * @hideinitializer
  */
 template <typename T>
-constexpr auto Emplaceable = is_emplaceable<std::decay_t<T>>::value;
+inline constexpr auto Emplaceable = is_emplaceable<std::decay_t<T>>::value;
 
 template <typename T>
 struct is_time_constraint : std::false_type {};
@@ -386,7 +386,7 @@ struct is_time_constraint : std::false_type {};
  * * `ozo::none` --- operation is not restricted in time.
  */
 template <typename T>
-constexpr auto TimeConstraint = is_time_constraint<std::decay_t<T>>::value;
+inline constexpr auto TimeConstraint = is_time_constraint<std::decay_t<T>>::value;
 
 /**
  * @brief Completion token concept
@@ -438,7 +438,7 @@ ozo::connection_type<ConnectionProvider> async_io(
  */
 #ifdef OZO_DOCUMENTATION
 template <typename T>
-constexpr auto CompletionToken = std::false_type;
+inline constexpr auto CompletionToken = std::false_type;
 #endif
 
 /**
@@ -494,7 +494,7 @@ auto Handler = [&] (ozo::error_code ec, auto connection) {
  */
 #ifdef OZO_DOCUMENTATION
 template <typename T>
-constexpr auto Handler = std::false_type;
+inline constexpr auto Handler = std::false_type;
 #endif
 ///@}
 

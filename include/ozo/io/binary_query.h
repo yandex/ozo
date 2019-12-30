@@ -216,7 +216,7 @@ template <typename T>
 using is_binary_query_convertible = typename std::negation<typename std::is_base_of<detail::no_binary_query_conversion, T>::type>::type;
 
 template <typename T>
-constexpr auto is_binary_query_convertible_v = is_binary_query_convertible<T>::value;
+inline constexpr auto is_binary_query_convertible_v = is_binary_query_convertible<T>::value;
 
 /**
  * @brief Concept of a type that is convertible to `ozo::binary_query`
@@ -275,7 +275,7 @@ struct to_binary_query_impl<demo::Query> {
  */
 //! @cond
 template <typename T>
-constexpr auto BinaryQueryConvertible = is_binary_query_convertible_v<std::decay_t<T>>;
+inline constexpr auto BinaryQueryConvertible = is_binary_query_convertible_v<std::decay_t<T>>;
 //! @endcond
 
 template <typename T>

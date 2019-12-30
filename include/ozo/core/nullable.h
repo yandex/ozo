@@ -62,7 +62,7 @@ struct allocate_nullable_impl<T*> {
  * @hideinitializer
  */
 template <typename T>
-constexpr auto Nullable = is_nullable<std::decay_t<T>>::value;
+inline constexpr auto Nullable = is_nullable<std::decay_t<T>>::value;
 
 template <typename T>
 struct is_null_impl : std::conditional_t<Nullable<T>,
