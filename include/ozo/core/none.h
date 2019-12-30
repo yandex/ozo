@@ -19,7 +19,7 @@ struct none_t {
 };
 
 template <>
-struct is_time_constrain<none_t> : std::true_type {};
+struct is_time_constraint<none_t> : std::true_type {};
 
 template <typename T>
 using is_none = std::is_same<T, none_t>;

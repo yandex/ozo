@@ -23,9 +23,9 @@ struct time_traits {
 };
 
 template <typename ...Ts>
-struct is_time_constrain<std::chrono::duration<Ts...>> : std::true_type {};
+struct is_time_constraint<std::chrono::duration<Ts...>> : std::true_type {};
 
 template <typename ...Ts>
-struct is_time_constrain<std::chrono::time_point<Ts...>> : std::true_type {};
+struct is_time_constraint<std::chrono::time_point<Ts...>> : std::true_type {};
 
 } // namespace ozo
