@@ -33,4 +33,7 @@ struct wrap_executor {
     allocator_type get_allocator() const noexcept { return asio::get_associated_allocator(handler);}
 };
 
+template <typename Executor, typename Handler>
+wrap_executor(const Executor&, Handler) -> wrap_executor<Executor, Handler>;
+
 } // namespace ozo::detail

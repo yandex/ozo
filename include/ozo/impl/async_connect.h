@@ -94,6 +94,9 @@ struct async_connect_op {
 };
 
 template <typename Connection, typename Handler>
+async_connect_op(Connection, Handler) -> async_connect_op<Connection, Handler>;
+
+template <typename Connection, typename Handler>
 inline void request_oid_map(Connection&& conn, Handler&& handler) {
     ozo::impl::request_oid_map_op op{std::forward<Handler>(handler)};
     op.perform(std::forward<Connection>(conn));
