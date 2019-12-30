@@ -331,7 +331,7 @@ struct is_connection<connection<Ts...>> : std::true_type {};
 * @hideinitializer
 */
 template <typename T>
-constexpr auto Connection = is_connection<std::decay_t<decltype(unwrap_connection(std::declval<T>()))>>::value;
+inline constexpr auto Connection = is_connection<std::decay_t<decltype(unwrap_connection(std::declval<T>()))>>::value;
 
 /**
  * @defgroup group-connection-functions Related functions
@@ -681,7 +681,7 @@ struct connection_source_traits {
  * @ingroup group-connection-concepts
  */
 template <typename T>
-constexpr auto ConnectionSource = is_connection_source<std::decay_t<T>>::value;
+inline constexpr auto ConnectionSource = is_connection_source<std::decay_t<T>>::value;
 
 template <typename Provider, typename TimeConstraint, typename Handler>
 constexpr auto async_get_connection(Provider&& p, TimeConstraint t, Handler&& h) ->
@@ -757,7 +757,7 @@ struct connection_provider_traits {
  * @ingroup group-connection-concepts
  */
 template <typename T>
-constexpr auto ConnectionProvider = is_connection_provider<std::decay_t<T>>::value;
+inline constexpr auto ConnectionProvider = is_connection_provider<std::decay_t<T>>::value;
 
 #ifdef OZO_DOCUMENTATION
 /**
@@ -851,7 +851,7 @@ struct initiate_async_get_connection {
 };
 } // namespace detail
 
-constexpr get_connection_op<detail::initiate_async_get_connection> get_connection;
+inline constexpr get_connection_op<detail::initiate_async_get_connection> get_connection;
 #endif
 
 

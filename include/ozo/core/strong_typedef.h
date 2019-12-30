@@ -55,7 +55,7 @@ template <typename T, typename Tag>
 struct is_strong_typedef<strong_typedef_wrapper<T, Tag>> : std::true_type {};
 
 template <typename T>
-constexpr auto StrongTypedef = is_strong_typedef<std::decay_t<T>>::value;
+inline constexpr auto StrongTypedef = is_strong_typedef<std::decay_t<T>>::value;
 
 } // namespace ozo
 
