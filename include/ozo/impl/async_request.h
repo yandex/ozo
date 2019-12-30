@@ -133,6 +133,9 @@ struct async_send_query_params_op {
     }
 };
 
+template <typename Context>
+async_send_query_params_op(Context, binary_query) -> async_send_query_params_op<Context>;
+
 template <typename Context, typename Query>
 void async_send_query_params(std::shared_ptr<Context> ctx, Query&& query) {
     auto q = to_binary_query(std::forward<Query>(query),
@@ -267,6 +270,9 @@ struct async_get_result_op : boost::asio::coroutine {
     }
 };
 
+template <typename Context, typename ResultProcessor>
+async_get_result_op(Context, ResultProcessor) -> async_get_result_op<Context, ResultProcessor>;
+
 #include <boost/asio/unyield.hpp>
 
 template <typename Context, typename ResultProcessor>
@@ -326,6 +332,9 @@ struct async_request_op {
     }
 };
 
+template <typename OutHandler, typename Query, typename TimeConstraint, typename Handler>
+async_request_op(Query, TimeConstraint, OutHandler, Handler) -> async_request_op<OutHandler, Query, TimeConstraint, Handler>;
+
 template <typename T>
 struct async_request_out_handler {
     T out;
@@ -338,6 +347,9 @@ struct async_request_out_handler {
         ozo::recv_result(res, ozo::unwrap_connection(conn).oid_map(), out);
     }
 };
+
+template <typename T>
+async_request_out_handler(T) -> async_request_out_handler<T>;
 
 template <typename P, typename Q, typename TimeConstraint, typename Out, typename Handler>
 inline void async_request(P&& provider, Q&& query, TimeConstraint t, Out&& out, Handler&& handler) {

@@ -73,6 +73,9 @@ public:
     }
 };
 
+template<typename OidMap, typename Statistics>
+connection_info(std::string, const OidMap&, Statistics statistics) -> connection_info<OidMap, Statistics>;
+
 //[[DEPRECATED]] for backward compatibility only
 template <typename ...Ts>
 [[deprecated]] auto make_connector(const connection_info<Ts...>& source, io_context& io, time_traits::duration timeout) {
