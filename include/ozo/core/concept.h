@@ -374,7 +374,7 @@ template <typename T>
 constexpr auto Emplaceable = is_emplaceable<std::decay_t<T>>::value;
 
 template <typename T>
-struct is_time_constrain : std::false_type {};
+struct is_time_constraint : std::false_type {};
 
 /**
  * @brief Time constrain concept
@@ -386,7 +386,7 @@ struct is_time_constrain : std::false_type {};
  * * `ozo::none` --- operation is not restricted in time.
  */
 template <typename T>
-constexpr auto TimeConstraint = is_time_constrain<std::decay_t<T>>::value;
+constexpr auto TimeConstraint = is_time_constraint<std::decay_t<T>>::value;
 
 /**
  * @brief Completion token concept
