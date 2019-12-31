@@ -66,6 +66,7 @@ matrix:
     osx_image: xcode10
     install:
     - brew update
+    - brew unlink python@2
     - brew upgrade boost
     #- brew upgrade postgresql
     - brew upgrade cmake
