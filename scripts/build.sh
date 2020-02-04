@@ -34,6 +34,10 @@ build_clang() {
             CMAKE_CXX_FLAGS_RELWITHDEBINFO='-g -O2 -fno-omit-frame-pointer -fsanitize=thread'
             build
         ;;
+        chart)
+            CMAKE_BUILD_TYPE=RelWithDebInfo
+            build_chart
+        ;;
         *) usage "bad clang target '$TARGET'";;
     esac
 }
@@ -61,12 +65,41 @@ build_gcc() {
             OZO_COVERAGE=ON
             build
         ;;
+        chart)
+            CMAKE_BUILD_TYPE=RelWithDebInfo
+            build_chart
+        ;;
         *) usage "bad gcc target '$TARGET'";;
     esac
 }
 
 build_docs() {
     doxygen
+}
+
+build_chart() {
+    echo "BASE_BUILD_DIR: ${BASE_BUILD_DIR}"
+    if ! [[ "${BASE_BUILD_DIR}" ]]; then
+        BASE_BUILD_DIR=build
+    fi
+    SOURCE_DIR=${PWD}
+    BUILD_DIR=${BASE_BUILD_DIR}/${COMPILER}_${TARGET}
+    mkdir -p ${BUILD_DIR}
+    cd ${BUILD_DIR}
+    cmake \
+        -DCMAKE_C_COMPILER="${CC_COMPILER}" \
+        -DCMAKE_CXX_COMPILER="${CXX_COMPILER}" \
+        -DCMAKE_CXX_FLAGS="$CMAKE_CXX_FLAGS"\
+        -DCMAKE_CXX_FLAGS_RELWITHDEBINFO="$CMAKE_CXX_FLAGS_RELWITHDEBINFO" \
+        -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
+        -DOZO_BUILD_TESTS=ON \
+        -DOZO_BUILD_EXAMPLES=ON \
+        -DOZO_BUILD_BENCHMARKS=ON \
+        -DOZO_COVERAGE=$OZO_COVERAGE \
+        -DOZO_BUILD_PG_TESTS=$OZO_BUILD_PG_TESTS \
+        -DOZO_PG_TEST_CONNINFO="host=${POSTGRES_HOST} port=5432 dbname=${POSTGRES_DB} user=${POSTGRES_USER} password=${POSTGRES_PASSWORD}" \
+        ${SOURCE_DIR}
+    make chart
 }
 
 usage() {
