@@ -232,6 +232,7 @@ ALIASES                +=models{3}="@par Models^^`\1`, `\2`, `\3`\n"
 ALIASES                +=models{4}="@par Models^^`\1`, `\2`, `\3`, `\4`\n"
 ALIASES                +=models{5}="@par Models^^`\1`, `\2`, `\3`, `\4`, `\5`\n"
 ALIASES                +=concept{1}="@interface \1 <>"
+ALIASES                +=thread_safety{2}="@par Thread safety^^<b>Distinct objects</b>: `\1`\n<b>Shared objects</b>: `\2`\n"
 
 # This tag can be used to specify a number of word-keyword mappings (TCL only).
 # A mapping has the form "name=value". For example adding "class=itcl::class"

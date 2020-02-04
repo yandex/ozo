@@ -94,44 +94,62 @@ using null_oid_t = oid_constant<0>;
  */
 inline constexpr null_oid_t null_oid;
 
-/**
- * @brief Indicates if type is PostgreSQL array representation.
- * @ingroup group-type_system-types
- * Representation means that you can obtain PostgreSQL array into the supported
- * container.
- * Array by default can be represented via next containers:
- *   * @ref group-ext-std-vector
- *   * @ref group-ext-std-list
- *   * @ref group-ext-std-array
- *
- * @tparam T --- type to examine.
- *
- * ### Customization point
- *
- * User can add representation of `Array` by defining specialization of
- * `ozo::is_array` for the desired container like this:
- *
- * @code
-template <typename ...Ts>
-struct is_array<std::vector<Ts...>> : std::true_type {};
- * @endcode
- * @hideinitializer
- */
 template <typename T>
 struct is_array : std::false_type {};
 
 /**
- * @brief Indicates if type is PostgreSQL array representation.
+ * @brief %Array concept represents PostgreSQL array.
+ *
+ * `%Array` is a Range or Container with fixed or dynamic size.
+ * For the type or template which supposed to represent an array `ozo::is_array<>`
+ * should be specialized as `std::true_type`.
+ *
+ * @par Requirements
+ *
+ * `#include <ozo/io/array.h>` should be included for arrays support.
+ *
+ * @par Concrete models
+ *
+ * @ref group-ext-std-vector, @ref group-ext-std-list, @ref group-ext-std-array
+ *
+ * @par Example
+ *
+ * The `std::vector<>` is a dynamic size array and its definition may look like this.
+ *
+ * @code
+namespace ozo {
+template <typename ...Ts>
+struct is_array<std::vector<Ts...>> : std::true_type {};
+} // namespace ozo
+ * @endcode
+ *
+ * For the `std::array<>` the definition is slightely different. The `std::array<>`
+ * is a fixed-size container, so it should be pointed via `ozo::fit_array_size_impl`
+ * specialization.
+ *
+ * @code
+namespace ozo {
+template <typename T, std::size_t size>
+struct is_array<std::array<T, size>> : std::true_type {};
+
+template <typename T, std::size_t S>
+struct fit_array_size_impl<std::array<T, S>> {
+    static void apply(const std::array<T, S>& array, size_type size) {
+        if (size != static_cast<size_type>(array.size())) {
+            throw system_error(error::bad_array_size);
+        }
+    }
+};
+} // namespace ozo
+ * @endcode
+ *
+ * @concept{Array}
  * @ingroup group-type_system-concepts
- *
- * Representation means that you can obtain PostgreSQL array into the type.
- * See `ozo::is_array` for the list of supported array representation.
- * @tparam T --- type to examine.
- *
- * @hideinitializer
  */
+//! @cond
 template <typename T>
 inline constexpr auto Array = is_array<std::decay_t<T>>::value;
+//! @endcond
 
 namespace definitions {
 template <typename T>
@@ -200,12 +218,13 @@ using type_traits = decltype(detail::get_type_traits(std::declval<T>()));
 /**
  * @brief Condition indicates if type has corresponding type traits for PostgreSQL
  *
- * @tparam T --- type to examine
+ * @concept{HasDefinition}
  * @ingroup group-core-concepts
- * @hideinitializer
  */
+//! @cond
 template <typename T>
 inline constexpr auto HasDefinition = !std::is_void_v<type_traits<T>>;
+//! @endcond
 
 template <typename T>
 struct is_composite : std::bool_constant<
@@ -213,19 +232,31 @@ struct is_composite : std::bool_constant<
 > {};
 
 /**
- * @brief Indicates if type is PostgreSQL composite representation.
- * @ingroup group-type_system-concepts
+ * @brief %Composite concept represents PostgreSQL composite types.
  *
  * Representation means that you can obtain PostgreSQL composite into the type.
- * The library treats as `Composite` Boost.Hana or Boost.Fusion adapted structures or
- * `std::tuple` as record.
  *
- * @tparam T --- type to examine.
+ * @par Definition
  *
- * @hideinitializer
+ * Any `Boost.Hana` or `Boost.Fusion` adapted structure or class is a composite.
+ * Any `HanaSequence` or `FusionSequence` may be represented as a composite if
+ * `ozo::is_composite<>` is specialized for this type as `std::true_type`.
+ *
+ * @par Requirements
+ *
+ * `#include <ozo/io/composite.h>` should be included for the composite support.
+ *
+ * @par Concrete models
+ *
+ * @ref group-ext-std-tuple, @ref group-ext-std-pair, @ref group-ext-boost-tuple .
+ *
+ * @concept{Composite}
+ * @ingroup group-type_system-concepts
  */
+//! @cond
 template <typename T>
 inline constexpr auto Composite = is_composite<std::decay_t<T>>::value;
+//! @endcond
 
 /**
  * @brief PostgreSQL size type
@@ -507,7 +538,7 @@ inline constexpr auto OidMap = is_oid_map<std::decay_t<T>>::value;
  *
  * @ingroup group-type_system-functions
  * This function have to be used to provide information about custom types are being used
- * within requests for a #ConnectionSource.
+ * within requests for a `ConnectionSource`.
  *
  * ###Example
  *
