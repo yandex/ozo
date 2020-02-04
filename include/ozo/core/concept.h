@@ -64,14 +64,16 @@ struct has_operator_not<T, std::void_t<decltype(!std::declval<T>())>>
     : std::true_type {};
 
 /**
- * @brief Operator Not concept
+ * @brief Negation operator support concept
  *
- * Return true if T has operator !(), false in other case
- * @tparam T - type to examine
- * @hideinitializer
+ * Type T models `%OperatorNot` concept if for its object `t` valid `static_assert(std::is_same_v<decltyp(!t), bool>,"")`.
+ *
+ * @concept{OperatorNot}
  */
+//! @cond
 template <typename T>
 inline constexpr auto OperatorNot = has_operator_not<std::decay_t<T>>::value;
+//! @endcond
 
 template <typename T, typename Enable = void>
 struct is_output_iterator : std::false_type {};
@@ -88,12 +90,14 @@ struct is_output_iterator<T, typename std::enable_if<
 /**
  * @brief Output Iterator concept
  *
- * Returns true if T is output iterator
- * @tparam T - type to examine
- * @hideinitializer
+ * Type Iterator models `%OutputIterator` concept if for its iterator category is based on `std::output_iterator_tag`.
+ *
+ * @concept{OutputIterator}
  */
+//! @cond
 template <typename T>
 inline constexpr auto OutputIterator = is_output_iterator<T>::value;
+//! @endcond
 
 template <typename T, typename Enable = void>
 struct is_forward_iterator : std::false_type {};
@@ -110,12 +114,14 @@ struct is_forward_iterator<T, typename std::enable_if<
 /**
  * @brief Forward Iterator concept
  *
- * Returns true if T meets forward_iterator conditions
- * @tparam T - type to examine
- * @hideinitializer
+ * Type `Iterator` models `%ForwardIterator` concept if for its iterator category is based on `std::forward_iterator_tag`.
+ *
+ * @concept{ForwardIterator}
  */
+//! @cond
 template <typename T>
 inline constexpr auto ForwardIterator = is_forward_iterator<T>::value;
+//! @endcond
 
 template <typename T, typename Enable = void>
 struct is_iterable : std::false_type {};
@@ -130,12 +136,19 @@ struct is_iterable<T, typename std::enable_if<
 /**
  * @brief Iterable concept
  *
- * Determines whether T can be iterated through via begin() end() functions
- * @tparam T - type to examine
- * @hideinitializer
+ * Type `T` models `%Iterable` concept if for its object `t` these requirements are valid.
+ *
+ * | Expression | Type | Description |
+ * |------------|------|-------------|
+ * | <PRE>begin(t)</PRE> | ForwardIterator | Should return iterator object that models ForwardIterator concept. |
+ * | <PRE>end(t)</PRE> | ForwardIterator | Should return iterator object that models ForwardIterator concept. |
+ *
+ * @concept{Iterable}
  */
+//! @cond
 template <typename T>
 inline constexpr auto Iterable = is_iterable<T>::value;
+//! @endcond
 
 template <typename T, typename Enable = void>
 struct is_insert_iterator : std::false_type {};
@@ -150,61 +163,70 @@ struct is_insert_iterator<T, typename std::enable_if<
  * @brief Insert Iterator concept
  *
  * This trait determines whether T is an insert iterator bound with some container
- * @tparam T - type to examine
- * @hideinitializer
+ * Type `Iterator` models `%InsertIterator` concept if it models `OutputIterator` or
+ * has `container_type` member type which is class.
+ *
+ * @concept{InsertIterator}
  */
+//! @cond
 template <typename T>
 inline constexpr auto InsertIterator = is_insert_iterator<T>::value;
+//! @endcode
 
 /**
  * @brief Boost.Fusion Sequence concept
  *
- * Indicates if T is a Boost.Fusion Sequence type
- * @tparam T - type to examine
- * @hideinitializer
+ * Type `T` models `%FusionSequence` concept if `boost::fusion::traits::is_sequence<std::decay_t<T>>::value` is `true`.
+ * @concept{FusionSequence}
  */
+//! @cond
 template <typename T>
 inline constexpr auto FusionSequence = boost::fusion::traits::is_sequence<std::decay_t<T>>::value;
+//! @endcode
 
 /**
  * @brief Boost.Hana Sequence concept
  *
- * Indicates if T is a Boost.Hana Sequence type
- * @tparam T - type to examine
- * @hideinitializer
+ * Shortcut for [boost::hana::Sequence](https://www.boost.org/doc/libs/1_67_0/libs/hana/doc/html/group__group-Sequence.html) concept.
+ * @concept{HanaSequence}
  */
+//! @cond
 template <typename T>
 inline constexpr auto HanaSequence = boost::hana::Sequence<std::decay_t<T>>::value;
+//! @endcode
 
 /**
  * @brief Boost.Hana Structure concept
  *
- * Indicates if T is a Boost.Hana Structure type
- * @tparam T - type to examine
- * @hideinitializer
+ * Shortcut for [boost::hana::Struct](https://www.boost.org/doc/libs/1_67_0/libs/hana/doc/html/group__group-Struct.html) concept.
+ * @concept{HanaStruct}
  */
+//! @cond
 template <typename T>
 inline constexpr auto HanaStruct = boost::hana::Struct<std::decay_t<T>>::value;
+//! @endcode
 
 /**
  * @brief Boost.Hana String concept
  *
- * Indicates if T is a Boost.Hana String type
- * @tparam T - type to examine
- * @hideinitializer
+ * `HanaString` the only concrete model is [boost::hana::string](https://www.boost.org/doc/libs/1_67_0/libs/hana/doc/html/structboost_1_1hana_1_1string.html).
+ * @concept{HanaString}
  */
+//! @cond
 template <typename T>
 inline constexpr auto HanaString = decltype(boost::hana::is_a<boost::hana::string_tag>(std::declval<T>()))::value;
+//! @endcode
 
 /**
  * @brief Boost.Hana Tuple concept
  *
- * Indicates if T is a Boost.Hana Tuple type
- * @tparam T - type to examine
- * @hideinitializer
+ * `HanaTuple` the only concrete model is [boost::hana::tuple](https://www.boost.org/doc/libs/1_67_0/libs/hana/doc/html/structboost_1_1hana_1_1tuple.html).
+ * @concept{HanaTuple}
  */
+//! @cond
 template <typename T>
 inline constexpr auto HanaTuple = decltype(boost::hana::is_a<boost::hana::tuple_tag>(std::declval<T>()))::value;
+//! @endcode
 
 
 template <typename T, typename = std::void_t<>>
@@ -222,32 +244,37 @@ struct is_fusion_adapted_struct<T, std::enable_if_t<
 /**
  * @brief Boost.Fusion Adapted Structure concept
  *
- * Indicates it T is a Boost.Fusion adapted structure via BOOST_FUSION_ADAPT_STRUCT or similar.
- * @tparam T - type to examine
- * @hideinitializer
+ * Type `T` models `%FusionAdaptedStruct` if `T` is a structure adapted via
+ * the [Boost.Fusion](https://www.boost.org/doc/libs/1_67_0/libs/fusion/doc/html/fusion/adapted.html)
+ * adaptation mechanisms.
+ * @concept{FusionAdaptedStruct}
  */
+//! @cond
 template <typename T>
 inline constexpr auto FusionAdaptedStruct = is_fusion_adapted_struct<std::decay_t<T>>::value;
+//! @endcode
 
 /**
  * @brief Integral concept
  *
- * Indicates if T is an integral type
- * @tparam T - type to examine
- * @hideinitializer
+ * Integral type concept, shortcut to `std::is_integral_v`.
+ * @concept{Integral}
  */
+//! @cond
 template <typename T>
 inline constexpr auto Integral = std::is_integral_v<std::decay_t<T>>;
+//! @endcode
 
 /**
  * @brief Floating Point concept
  *
- * Indicates if T is a floating point type
- * @tparam T - type to examine
- * @hideinitializer
+ * Floating point type concept, shortcut to `std::is_floating_point_v`.
+ * @concept{FloatingPoint}
  */
+//! @cond
 template <typename T>
 inline constexpr auto FloatingPoint = std::is_floating_point_v<std::decay_t<T>>;
+//! @endcode
 
 template <typename T, std::size_t Size, typename = std::void_t<>>
 struct has_mutable_data : std::false_type {};
@@ -377,16 +404,22 @@ template <typename T>
 struct is_time_constraint : std::false_type {};
 
 /**
- * @brief Time constrain concept
+ * @brief Time constraint concept
  *
- * `TimeConstraint` is a type which provides information about time restrictions for an operation.
- * Currently supported constrains:
+ * `%TimeConstraint` is a type which provides information about time restrictions for an operation.
+ *
+ * @par Concrete models
+ *
  * * `std::chrono::duration` --- operation time-out duration,
  * * `std::chrono::time_point` --- operation deadline time point,
  * * `ozo::none` --- operation is not restricted in time.
+ *
+ * @concept{TimeConstraint}
  */
+//! @cond
 template <typename T>
 inline constexpr auto TimeConstraint = is_time_constraint<std::decay_t<T>>::value;
+//! @endcond
 
 /**
  * @brief Completion token concept
@@ -421,7 +454,7 @@ std::future<ozo::connection_type<ConnectionProvider>> async_io(
  *
  * * <a href="https://www.boost.org/doc/libs/1_66_0/doc/html/boost_asio/reference/basic_yield_context.html">
  * `boost::asio::yield_context`</a> - to use async operation with Boost.Coroutine.
- * Asynchronous function in this case will return #Connection.
+ * Asynchronous function in this case will return `Connection`.
  * In this case the equivalent function signature will be:
  * @code
 template <typename ConnectionProvider>
@@ -434,12 +467,8 @@ ozo::connection_type<ConnectionProvider> async_io(
  * Asynchronous function in this case will return a type is depends on
  * <a href="https://www.boost.org/doc/libs/1_66_0/doc/html/boost_asio/reference/async_completion/result.html">
  * `boost::asio::async_completion::result`</a>.
- * @hideinitializer
+ * @concept{CompletionToken}
  */
-#ifdef OZO_DOCUMENTATION
-template <typename T>
-inline constexpr auto CompletionToken = std::false_type;
-#endif
 
 /**
  * @brief Handler concept
@@ -471,31 +500,27 @@ auto Handler = [&] (ozo::error_code ec, auto connection) {
 };
  *@endcode
  *
- * `Handler` has to handle an `ozo::error_code` object as first argument, and #Connection implementation
+ * `Handler` has to handle an `ozo::error_code` object as first argument, and the `Connection` implementation
  * object as a second one. It is better to define second argument as a template parameter because the
  * implementation depends on a numerous of compile-time options but if it is really needed - real type
  * can be obtained with `ozo::connection_type`.
  *
  * `Handler` has to be invoked according to `ec` state:
- * * **false** --- operation succeeded, #Connection should be in good state and can be used for an operation.
- * * **true** --- operation failed and `ec` contains error, #Connection could be in these states:
- *   * #Connection is in **null-state** --- `ozo::is_null_recursive()` returns `true`, object is useless;
- *   * #Connection is in **bad state** --- `ozo::is_null_recursive()` returns `false`,
+ * * **false** --- operation succeeded, `Connection` should be in good state and can be used for an operation.
+ * * **true** --- operation failed and `ec` contains error, `Connection` could be in these states:
+ *   * `Connection` is in **null-state** --- `ozo::is_null_recursive()` returns `true`, object is useless;
+ *   * `Connection` is in **bad state** --- `ozo::is_null_recursive()` returns `false`,
  *                   `ozo::connection_bad()` returns true or
  *                   `ozo::get_transaction_status()` returns not `ozo::transaction_status::idle`,
  *                    object may not be used for further operations but it may provide additional
  *                    error context via `ozo::error_message()` and `ozo::get_error_context()` functions.
- *   * #Connection is in **good state** --- `ozo::is_null_recursive()` returns `false`,
+ *   * `Connection` is in **good state** --- `ozo::is_null_recursive()` returns `false`,
  *                   `ozo::connection_bad()` returns true and
  *                   `ozo::get_transaction_status()` returns `ozo::transaction_status::idle`,
  *                    object may be used for further operations and may provide additional error context via
  *                   `ozo::error_message()` and `ozo::get_error_context()` functions.
- * @hideinitializer
+ * @concept{Handler}
  */
-#ifdef OZO_DOCUMENTATION
-template <typename T>
-inline constexpr auto Handler = std::false_type;
-#endif
 ///@}
 
 } // namespace ozo

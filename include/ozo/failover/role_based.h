@@ -207,15 +207,16 @@ struct connection_source_supports_role <
 } // namespace detail
 
 /**
- * #ConnectionProvider implementation for the role-based failover strategy.
+ * `ConnectionProvider` implementation for the role-based failover strategy.
  *
- * This is the role-based implementation of the #ConnectionProvider concept. It binds
- * `io_context` and role to a #ConnectionSource implementation object. It requires from
- * the underlying #ConnectionSource an ability to be bound to a certain role via `bind_role(role)`
+ * This is the role-based implementation of the `ConnectionProvider` concept. It binds
+ * `io_context` and role to the `ConnectionSource` implementation object. It requires from
+ * the underlying `ConnectionSource` an ability to be bound to a certain role via `bind_role(role)`
  * method.
  *
- * @tparam Source --- #ConnectionSource implementation
+ * @tparam Source --- `ConnectionSource` implementation
  * @ingroup group-failover-role_based
+ * @models{ConnectionProvider}
  */
 template <typename Source>
 class role_based_connection_provider {
@@ -231,10 +232,10 @@ public:
     using source_type = std::decay_t<Source>;
 
     /**
-     * #Connection implementation type according to #ConnectionProvider requirements.
-     * Specifies the #Connection implementation type which can be obtained from this provider.
+     * `Connection` implementation type according to `ConnectionProvider` requirements.
+     * Specifies the `Connection` implementation type which can be obtained from this provider.
      *
-     * @note #Connection type depends on role type via `source_type` and maybe different for a different role.
+     * @note `Connection` type depends on role type via `source_type` and maybe different for a different role.
      */
     using connection_type = typename connection_source_traits<source_type>::connection_type;
 
@@ -252,7 +253,7 @@ public:
     /**
      * Construct a new `role_based_connection_provider` object
      *
-     * @param source --- #ConnectionSource implementation
+     * @param source --- `ConnectionSource` implementation
      * @param io --- `io_context` for asynchronous IO
      */
     template <typename T>
@@ -261,10 +262,10 @@ public:
     }
 
     /**
-     * @brief Rebind the #ConnectionProvider to an other role
+     * @brief Rebind the `ConnectionProvider` to an other role
      *
      * @param r --- other role to rebind to
-     * @return new #ConnectionProvider object
+     * @return new `ConnectionProvider` object
      */
     template <typename OtherRole>
     constexpr decltype(auto) rebind_role(OtherRole r) const & {
@@ -274,10 +275,10 @@ public:
     }
 
     /**
-     * @brief Rebind the #ConnectionProvider to an other role
+     * @brief Rebind the `ConnectionProvider` to an other role
      *
      * @param r --- other role to rebind to
-     * @return new #ConnectionProvider object
+     * @return new `ConnectionProvider` object
      */
     template <typename OtherRole>
     constexpr decltype(auto) rebind_role(OtherRole r) & {
@@ -287,10 +288,10 @@ public:
     }
 
     /**
-     * @brief Rebind the #ConnectionProvider to an other role
+     * @brief Rebind the `ConnectionProvider` to an other role
      *
      * @param r --- other role to rebind to
-     * @return new #ConnectionProvider object
+     * @return new `ConnectionProvider` object
      */
     template <typename OtherRole>
     constexpr decltype(auto) rebind_role(OtherRole r) && {
@@ -328,6 +329,7 @@ role_based_connection_provider(T&& source, io_context& io) -> role_based_connect
  *
  * @sa `ozo::failover::make_role_based_connection_source()`
  * @ingroup group-failover-role_based
+ * @models{ConnectionSource}
  */
 template <typename SourcesMap, typename Role>
 struct role_based_connection_source {
@@ -339,8 +341,8 @@ struct role_based_connection_source {
 
     using source_type = std::decay_t<decltype(sources_[role_])>;
     /**
-     * #Connection implementation type according to #ConnectionSource requirements.
-     * Specifies the #Connection implementation type which can be obtained from this source.
+     * `Connection` implementation type according to `ConnectionSource` requirements.
+     * Specifies the `Connection` implementation type which can be obtained from this source.
      */
     using connection_type = typename connection_source_traits<source_type>::connection_type;
 
@@ -470,7 +472,7 @@ public:
      * Get the operation context.
      *
      * @return `boost::hana::tuple` --- operation initiation context for the try with proper
-     *                                  #ConnectionProvider and time constraint;
+     *                                  `ConnectionProvider` and time constraint;
      */
     auto get_context() const {
         return hana::concat(
@@ -511,7 +513,7 @@ public:
      * `ozo::fallback::get_next_try()` for details.
      *
      * @param ec --- error code which should be examined for retry ability.
-     * @param conn --- #Connection object which should be closed anyway.
+     * @param conn --- `Connection` object which should be closed anyway.
      * @return `std::optional<role_based_try>` --- initialized with role_based_try object if retry is possible.
      * @return `std::nullopt` --- retry is not possible due to `ec` value or tries remain
      *                            count.
@@ -600,7 +602,7 @@ public:
  * @return `ozo::failover::role_based_strategy` specialization.
  *
  * @note This strategy works only with `ozo::failover::role_based_connection_provider`
- * #ConnectionProvider implementation.
+ * `ConnectionProvider` implementation.
  *
  * ### Time Constraint
  *

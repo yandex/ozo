@@ -50,8 +50,7 @@ template <typename T, std::size_t S>
 struct fit_array_size_impl<std::array<T, S>> {
     static void apply(const std::array<T, S>& array, size_type size) {
         if (size != array.size()) {
-            throw ozo::system_error(ozo::error::bad_array_size,
-                "requested size does not match array size");
+            throw ozo::system_error(ozo::error::bad_array_size);
         }
     }
 };

@@ -52,7 +52,7 @@ struct is_null_recursive_impl : is_null_impl<T> {};
  * @brief Indicates if one of unwrapped values is in null state
  *
  * This utility function recursively examines the value for a null state.
- * The function is useful to examine #Connection object for a null state
+ * The function is useful to examine `Connection` object for a null state
  * because it is normal for such object to be wrapped.
  *
  * The function is equal to this pesudo-code:

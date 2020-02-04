@@ -13,7 +13,7 @@ namespace ozo {
  *
  * @note The function does not particitate in ADL since could be implemented via functional object.
  *
- * @param provider --- #ConnectionProvider object
+ * @param provider --- connection provider object
  * @param query --- query object to execute
  * @param time_constraint --- request #TimeConstraint; this time constrain <b>includes</b> time for getting connection from provider.
  * @param token --- operation #CompletionToken.
@@ -31,14 +31,14 @@ decltype(auto) execute(ConnectionProvider&& provider, BinaryQueryConvertible&& q
  *
  * @note The function does not particitate in ADL since could be implemented via functional object.
  *
- * @param provider --- #ConnectionProvider object
+ * @param provider --- connection provider object
  * @param query --- query object to execute
  * @param token --- operation #CompletionToken.
  * @return deduced from #CompletionToken.
  * @ingroup group-requests-functions
  */
-template <typename P, typename BinaryQueryConvertible, typename CompletionToken>
-decltype(auto) execute(P&& provider, BinaryQueryConvertible&& query, CompletionToken&& token);
+template <typename ConnectionProvider, typename BinaryQueryConvertible, typename CompletionToken>
+decltype(auto) execute(ConnectionProvider&& provider, BinaryQueryConvertible&& query, CompletionToken&& token);
 #else
 
 template <typename Initiator>
