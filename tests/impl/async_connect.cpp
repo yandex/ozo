@@ -25,11 +25,11 @@ using ozo::empty_oid_map;
 
 struct fixture {
     StrictMock<connection_gmock> connection{};
+    StrictMock<PGconn_mock> native_handle{};
     StrictMock<executor_mock> strand{};
     StrictMock<steady_timer_mock> timer{};
     io_context io;
-    decltype(make_connection(connection, io)) conn =
-            make_connection(connection, io);
+    connection_ptr<> conn = make_connection(connection, io, native_handle);
     StrictMock<executor_mock> callback_executor{};
     StrictMock<callback_gmock<decltype(conn)>> callback{};
     StrictMock<PGconn_mock> handle;
@@ -302,7 +302,7 @@ TEST_F(async_connect, should_cancel_connection_operations_on_timeout) {
 }
 
 TEST_F(async_connect, should_request_oid_map_when_oid_map_is_not_empty) {
-    auto conn = make_connection(f.connection, f.io, ozo::register_types<custom_type>());
+    auto conn = make_connection(f.connection, f.io, f.native_handle, ozo::register_types<custom_type>());
     StrictMock<callback_gmock<decltype(conn)>> callback {};
 
     execution_context cb_io;

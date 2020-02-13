@@ -22,13 +22,13 @@ using ozo::time_traits;
 
 struct async_request_op : Test {
     StrictMock<connection_gmock> connection {};
+    StrictMock<PGconn_mock> native_handle{};
     StrictMock<callback_mock> callback {};
     StrictMock<executor_mock> strand {};
     StrictMock<steady_timer_mock> timer {};
     io_context io;
     execution_context cb_io;
-    decltype(make_connection(connection, io)) conn =
-            make_connection(connection, io);
+    connection_ptr<> conn = make_connection(connection, io, native_handle);
     time_traits::duration timeout {42};
 };
 

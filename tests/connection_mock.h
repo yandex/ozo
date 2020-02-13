@@ -319,20 +319,9 @@ static_assert(ozo::Connection<connection_ptr<>>,
 
 template <typename OidMap = empty_oid_map>
 inline auto make_connection(connection_mock& mock, io_context& io,
-        PGconn_mock& handle, OidMap oid_map) {
+        PGconn_mock& handle, OidMap oid_map = OidMap{}) {
     return std::make_shared<connection<OidMap>>(connection<OidMap>{
             std::addressof(handle),
-            oid_map,
-            std::addressof(mock),
-            "",
-            std::addressof(io)
-        });
-}
-
-template <typename OidMap = empty_oid_map>
-inline auto make_connection(connection_mock& mock, io_context& io, OidMap oid_map = OidMap{}) {
-    return std::make_shared<connection<OidMap>>(connection<OidMap>{
-            nullptr,
             oid_map,
             std::addressof(mock),
             "",

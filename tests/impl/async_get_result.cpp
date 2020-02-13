@@ -17,11 +17,11 @@ using callback_mock = callback_gmock<connection_ptr<>>;
 
 struct fixture {
     StrictMock<connection_gmock> connection{};
+    StrictMock<PGconn_mock> native_handle{};
     StrictMock<callback_mock> callback{};
     io_context io;
     execution_context cb_io;
-    decltype(make_connection(connection, io)) conn =
-            make_connection(connection, io);
+    connection_ptr<> conn = make_connection(connection, io, native_handle);
 
     auto make_operation_context() {
         EXPECT_CALL(callback, get_executor()).WillRepeatedly(Return(cb_io.get_executor()));

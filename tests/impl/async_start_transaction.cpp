@@ -22,7 +22,7 @@ struct async_start_transaction : Test {
     StrictMock<executor_mock> strand {};
     io_context io;
     StrictMock<PGconn_mock> handle;
-    decltype(make_connection(connection, io)) conn = make_connection(connection, io, handle, ozo::empty_oid_map{});
+    connection_ptr<> conn = make_connection(connection, io, handle);
     time_traits::duration timeout {42};
 };
 
