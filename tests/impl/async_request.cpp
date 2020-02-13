@@ -24,12 +24,11 @@ struct async_request_op : Test {
     StrictMock<connection_gmock> connection {};
     StrictMock<callback_mock> callback {};
     StrictMock<executor_mock> strand {};
-    StrictMock<stream_descriptor_mock> socket {};
     StrictMock<steady_timer_mock> timer {};
     io_context io;
     execution_context cb_io;
-    decltype(make_connection(connection, io, socket)) conn =
-            make_connection(connection, io, socket);
+    decltype(make_connection(connection, io)) conn =
+            make_connection(connection, io);
     time_traits::duration timeout {42};
 };
 
@@ -92,7 +91,7 @@ TEST_F(async_request_op, should_send_query_params_and_get_result_and_call_handle
     ozo::impl::async_request_op{fake_query {}, ozo::none, ozo::none, wrap(callback)}(error_code {}, conn);
 }
 
-TEST_F(async_request_op, should_cancel_socket_on_timeout) {
+TEST_F(async_request_op, should_cancel_connection_io_on_timeout) {
     Sequence s;
 
     EXPECT_CALL(io.strand_service_, get_executor()).InSequence(s).WillOnce(ReturnRef(strand));
@@ -102,7 +101,7 @@ TEST_F(async_request_op, should_cancel_socket_on_timeout) {
     EXPECT_CALL(timer, async_wait(_)).InSequence(s).WillOnce(InvokeArgument<0>(error_code {}));
 
     EXPECT_CALL(strand, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
-    EXPECT_CALL(socket, cancel(_)).InSequence(s).WillOnce(Return());
+    EXPECT_CALL(connection, cancel()).InSequence(s).WillOnce(Return());
 
     // Send query params
     EXPECT_CALL(connection, set_nonblocking()).InSequence(s).WillOnce(Return(0));
@@ -111,7 +110,7 @@ TEST_F(async_request_op, should_cancel_socket_on_timeout) {
 
 
     EXPECT_CALL(connection, is_busy()).InSequence(s).WillOnce(Return(true));
-    EXPECT_CALL(socket, async_read_some(_)).InSequence(s).WillOnce(InvokeArgument<0>(error_code {}));
+    EXPECT_CALL(connection, async_wait_read(_)).InSequence(s).WillOnce(InvokeArgument<0>(error_code {}));
     EXPECT_CALL(strand, post(_)).InSequence(s).WillOnce(Return());
 
     ozo::impl::async_request_op{fake_query {}, timeout, ozo::none, wrap(callback)}(error_code {}, conn);

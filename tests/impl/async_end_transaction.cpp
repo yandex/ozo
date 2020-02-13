@@ -19,10 +19,9 @@ struct async_end_transaction : Test {
     StrictMock<executor_mock> callback_executor{};
     StrictMock<callback_gmock<connection_ptr<>>> callback {};
     StrictMock<executor_mock> strand {};
-    StrictMock<stream_descriptor_mock> socket {};
     io_context io;
     StrictMock<PGconn_mock> handle;
-    decltype(make_connection(connection, io, socket)) conn = make_connection(connection, io, socket, handle, ozo::empty_oid_map{});
+    decltype(make_connection(connection, io)) conn = make_connection(connection, io, handle, ozo::empty_oid_map{});
     decltype(ozo::make_options()) options = ozo::make_options();
     time_traits::duration timeout {42};
 };

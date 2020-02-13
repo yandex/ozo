@@ -26,11 +26,10 @@ using ozo::empty_oid_map;
 struct fixture {
     StrictMock<connection_gmock> connection{};
     StrictMock<executor_mock> strand{};
-    StrictMock<stream_descriptor_mock> socket{};
     StrictMock<steady_timer_mock> timer{};
     io_context io;
-    decltype(make_connection(connection, io, socket)) conn =
-            make_connection(connection, io, socket);
+    decltype(make_connection(connection, io)) conn =
+            make_connection(connection, io);
     StrictMock<executor_mock> callback_executor{};
     StrictMock<callback_gmock<decltype(conn)>> callback{};
     StrictMock<PGconn_mock> handle;
@@ -59,7 +58,7 @@ TEST_F(async_connect_op, should_start_connection_assign_and_wait_for_compile) {
     EXPECT_CALL(f.connection, start_connection("conninfo")).WillOnce(Return(std::addressof(f.handle)));
     EXPECT_CALL(f.handle, PQstatus()).WillRepeatedly(Return(CONNECTION_OK));
     EXPECT_CALL(f.connection, assign()).WillOnce(Return(error_code{}));
-    EXPECT_CALL(f.socket, async_write_some(_)).WillOnce(Return());
+    EXPECT_CALL(f.connection, async_wait_write(_)).WillOnce(Return());
 
     f.async_connect_op().perform("conninfo");
 }
@@ -107,12 +106,12 @@ TEST_F(async_connect_op, should_wait_for_write_complete_if_connect_poll_returns_
     EXPECT_CALL(f.handle, PQstatus()).WillRepeatedly(Return(CONNECTION_OK));
     EXPECT_CALL(f.connection, assign()).WillOnce(Return(error_code{}));
 
-    EXPECT_CALL(f.socket, async_write_some(_)).WillOnce(InvokeArgument<0>(error_code{}));
+    EXPECT_CALL(f.connection, async_wait_write(_)).WillOnce(InvokeArgument<0>(error_code{}));
 
     EXPECT_CALL(f.strand, post(_)).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(f.connection, connect_poll()).WillOnce(Return(PGRES_POLLING_WRITING));
 
-    EXPECT_CALL(f.socket, async_write_some(_)).WillOnce(Return());
+    EXPECT_CALL(f.connection, async_wait_write(_)).WillOnce(Return());
 
     f.async_connect_op().perform("conninfo");
 }
@@ -124,13 +123,13 @@ TEST_F(async_connect_op, should_wait_for_read_complete_if_connect_poll_returns_P
     EXPECT_CALL(f.handle, PQstatus()).WillRepeatedly(Return(CONNECTION_OK));
     EXPECT_CALL(f.connection, assign()).WillOnce(Return(error_code{}));
 
-    EXPECT_CALL(f.socket, async_write_some(_)).WillOnce(InvokeArgument<0>(error_code{}));
+    EXPECT_CALL(f.connection, async_wait_write(_)).WillOnce(InvokeArgument<0>(error_code{}));
 
     EXPECT_CALL(f.strand, post(_)).WillOnce(InvokeArgument<0>());
 
     EXPECT_CALL(f.connection, connect_poll()).WillOnce(Return(PGRES_POLLING_READING));
 
-    EXPECT_CALL(f.socket, async_read_some(_)).WillOnce(Return());
+    EXPECT_CALL(f.connection, async_wait_read(_)).WillOnce(Return());
 
     f.async_connect_op().perform("conninfo");
 }
@@ -142,7 +141,7 @@ TEST_F(async_connect_op, should_call_handler_with_no_error_if_connect_poll_retur
     EXPECT_CALL(f.handle, PQstatus()).WillRepeatedly(Return(CONNECTION_OK));
     EXPECT_CALL(f.connection, assign()).WillOnce(Return(error_code{}));
 
-    EXPECT_CALL(f.socket, async_write_some(_)).WillOnce(InvokeArgument<0>(error_code{}));
+    EXPECT_CALL(f.connection, async_wait_write(_)).WillOnce(InvokeArgument<0>(error_code{}));
 
     EXPECT_CALL(f.strand, post(_)).WillOnce(InvokeArgument<0>());
 
@@ -160,7 +159,7 @@ TEST_F(async_connect_op, should_call_handler_with_pq_connect_poll_failed_if_conn
     EXPECT_CALL(f.handle, PQstatus()).WillRepeatedly(Return(CONNECTION_OK));
     EXPECT_CALL(f.connection, assign()).WillOnce(Return(error_code{}));
 
-    EXPECT_CALL(f.socket, async_write_some(_)).WillOnce(InvokeArgument<0>(error_code{}));
+    EXPECT_CALL(f.connection, async_wait_write(_)).WillOnce(InvokeArgument<0>(error_code{}));
 
     EXPECT_CALL(f.strand, post(_)).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(f.connection, connect_poll()).WillOnce(Return(PGRES_POLLING_FAILED));
@@ -178,7 +177,7 @@ TEST_F(async_connect_op, should_call_handler_with_pq_connect_poll_failed_if_conn
     EXPECT_CALL(f.handle, PQstatus()).WillRepeatedly(Return(CONNECTION_OK));
     EXPECT_CALL(f.connection, assign()).WillOnce(Return(error_code{}));
 
-    EXPECT_CALL(f.socket, async_write_some(_)).WillOnce(InvokeArgument<0>(error_code{}));
+    EXPECT_CALL(f.connection, async_wait_write(_)).WillOnce(InvokeArgument<0>(error_code{}));
 
     EXPECT_CALL(f.strand, post(_)).WillOnce(InvokeArgument<0>());
 
@@ -197,7 +196,7 @@ TEST_F(async_connect_op, should_call_handler_with_the_error_if_polling_operation
     EXPECT_CALL(f.handle, PQstatus()).WillRepeatedly(Return(CONNECTION_OK));
     EXPECT_CALL(f.connection, assign()).WillOnce(Return(error_code{}));
 
-    EXPECT_CALL(f.socket, async_write_some(_)).WillOnce(InvokeArgument<0>(error::error));
+    EXPECT_CALL(f.connection, async_wait_write(_)).WillOnce(InvokeArgument<0>(error::error));
 
     EXPECT_CALL(f.strand, post(_)).WillOnce(InvokeArgument<0>());
 
@@ -254,7 +253,7 @@ TEST_F(async_connect, should_cancel_timer_when_operation_is_done_before_timeout)
     EXPECT_CALL(f.connection, assign()).InSequence(s).WillOnce(Return(error_code{}));
 
 
-    EXPECT_CALL(f.socket, async_write_some(_)).InSequence(s).WillOnce(SaveArg<0>(&on_async_write_some));
+    EXPECT_CALL(f.connection, async_wait_write(_)).InSequence(s).WillOnce(SaveArg<0>(&on_async_write_some));
     EXPECT_CALL(f.strand, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
 
     EXPECT_CALL(f.connection, connect_poll()).InSequence(s).WillOnce(Return(PGRES_POLLING_OK));
@@ -272,7 +271,7 @@ TEST_F(async_connect, should_cancel_timer_when_operation_is_done_before_timeout)
     on_timer_expired(boost::asio::error::operation_aborted);
 }
 
-TEST_F(async_connect, should_cancel_socket_on_timeout) {
+TEST_F(async_connect, should_cancel_connection_operations_on_timeout) {
     StrictMock<callback_gmock<decltype(f.conn)>> callback{};
     execution_context cb_io;
     std::function<void (error_code)> on_timer_expired;
@@ -288,9 +287,9 @@ TEST_F(async_connect, should_cancel_socket_on_timeout) {
     EXPECT_CALL(f.connection, start_connection("conninfo")).InSequence(s).WillOnce(Return(std::addressof(f.handle)));
     EXPECT_CALL(f.handle, PQstatus()).WillRepeatedly(Return(CONNECTION_OK));
     EXPECT_CALL(f.connection, assign()).InSequence(s).WillOnce(Return(error_code{}));
-    EXPECT_CALL(f.socket, async_write_some(_)).InSequence(s).WillOnce(SaveArg<0>(&on_async_write_some));
+    EXPECT_CALL(f.connection, async_wait_write(_)).InSequence(s).WillOnce(SaveArg<0>(&on_async_write_some));
     EXPECT_CALL(f.strand, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
-    EXPECT_CALL(f.socket, cancel(_)).InSequence(s).WillOnce(Return());
+    EXPECT_CALL(f.connection, cancel()).InSequence(s).WillOnce(Return());
 
     EXPECT_CALL(f.strand, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(cb_io.executor_, dispatch(_)).InSequence(s).WillOnce(InvokeArgument<0>());
@@ -303,7 +302,7 @@ TEST_F(async_connect, should_cancel_socket_on_timeout) {
 }
 
 TEST_F(async_connect, should_request_oid_map_when_oid_map_is_not_empty) {
-    auto conn = make_connection(f.connection, f.io, f.socket, ozo::register_types<custom_type>());
+    auto conn = make_connection(f.connection, f.io, ozo::register_types<custom_type>());
     StrictMock<callback_gmock<decltype(conn)>> callback {};
 
     execution_context cb_io;
@@ -318,7 +317,7 @@ TEST_F(async_connect, should_request_oid_map_when_oid_map_is_not_empty) {
     EXPECT_CALL(f.handle, PQstatus()).WillRepeatedly(Return(CONNECTION_OK));
     EXPECT_CALL(f.connection, assign()).InSequence(s).WillOnce(Return(error_code{}));
 
-    EXPECT_CALL(f.socket, async_write_some(_)).InSequence(s).WillOnce(InvokeArgument<0>(error_code{}));
+    EXPECT_CALL(f.connection, async_wait_write(_)).InSequence(s).WillOnce(InvokeArgument<0>(error_code{}));
 
     EXPECT_CALL(f.strand, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
 

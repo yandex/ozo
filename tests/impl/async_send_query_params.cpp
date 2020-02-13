@@ -18,11 +18,10 @@ using callback_mock = callback_gmock<connection_ptr<>>;
 struct fixture {
     StrictMock<connection_gmock> connection{};
     StrictMock<callback_mock> callback{};
-    StrictMock<stream_descriptor_mock> socket{};
     io_context io;
     execution_context cb_io;
-    decltype(make_connection(connection, io, socket)) conn =
-            make_connection(connection, io, socket);
+    decltype(make_connection(connection, io)) conn =
+            make_connection(connection, io);
     ozo::binary_query query = ozo::to_binary_query(fake_query {}, ozo::empty_oid_map_c);
 
     auto make_operation_context() {
@@ -49,7 +48,7 @@ TEST_F(async_send_query_params_op, should_set_non_blocking_mode_and_send_query_p
     EXPECT_CALL(m.connection, send_query_params()).WillOnce(Return(1));
     EXPECT_CALL(m.connection, flush_output())
         .WillOnce(Return(ozo::impl::query_state::send_in_progress));
-    EXPECT_CALL(m.socket, async_write_some(_))
+    EXPECT_CALL(m.connection, async_wait_write(_))
         .WillOnce(Return());
 
     ozo::impl::async_send_query_params_op(m.ctx, m.query).perform();
@@ -61,7 +60,7 @@ TEST_F(async_send_query_params_op, should_set_error_state_and_cancel_io_and_invo
     const InSequence s;
 
     EXPECT_CALL(m.connection, set_nonblocking()).WillOnce(Return(-1));
-    EXPECT_CALL(m.socket, cancel(_)).WillOnce(Return());
+    EXPECT_CALL(m.connection, cancel()).WillOnce(Return());
     EXPECT_CALL(m.callback, call(error_code{ozo::error::pg_set_nonblocking_failed}, _))
         .WillOnce(Return());
 
@@ -74,7 +73,7 @@ TEST_F(async_send_query_params_op, should_call_handler_with_error_if_send_query_
     Sequence s;
     EXPECT_CALL(m.connection, set_nonblocking()).InSequence(s).WillOnce(Return(0));
     EXPECT_CALL(m.connection, send_query_params()).InSequence(s).WillOnce(Return(0));
-    EXPECT_CALL(m.socket, cancel(_)).InSequence(s).WillOnce(Return());
+    EXPECT_CALL(m.connection, cancel()).InSequence(s).WillOnce(Return());
     EXPECT_CALL(m.callback, call(error_code{ozo::error::pg_send_query_params_failed}, _))
         .InSequence(s).WillOnce(Return());
 
@@ -118,7 +117,7 @@ TEST_F(async_send_query_params_op, should_exit_immediately_if_query_state_is_sen
 TEST_F(async_send_query_params_op, should_invoke_callback_with_given_error_if_called_with_error_and_query_state_is_send_in_progress) {
     const InSequence s;
 
-    EXPECT_CALL(m.socket, cancel(_)).WillOnce(Return());
+    EXPECT_CALL(m.connection, cancel()).WillOnce(Return());
     EXPECT_CALL(m.callback, call(error_code{error::error}, _))
         .WillOnce(Return());
 
@@ -143,7 +142,7 @@ TEST_F(async_send_query_params_op, should_invoke_callback_with_pg_flush_failed_i
 
     EXPECT_CALL(m.connection, flush_output())
         .WillOnce(Return(ozo::impl::query_state::error));
-    EXPECT_CALL(m.socket, cancel(_)).WillOnce(Return());
+    EXPECT_CALL(m.connection, cancel()).WillOnce(Return());
     EXPECT_CALL(m.callback, call(error_code{ozo::error::pg_flush_failed}, _))
         .WillOnce(Return());
 
@@ -158,7 +157,7 @@ TEST_F(async_send_query_params_op, should_wait_for_write_if_flush_output_returns
 
     EXPECT_CALL(m.connection, flush_output())
         .WillOnce(Return(ozo::impl::query_state::send_in_progress));
-    EXPECT_CALL(m.socket, async_write_some(_))
+    EXPECT_CALL(m.connection, async_wait_write(_))
         .WillOnce(Return());
 
     m.ctx->state = ozo::impl::query_state::send_in_progress;
@@ -171,7 +170,7 @@ TEST_F(async_send_query_params_op, should_wait_for_write_in_strand) {
     Sequence s;
     EXPECT_CALL(m.connection, flush_output()).InSequence(s)
         .WillOnce(Return(ozo::impl::query_state::send_in_progress));
-    EXPECT_CALL(m.socket, async_write_some(_)).InSequence(s).WillOnce(InvokeArgument<0>(error_code{}));
+    EXPECT_CALL(m.connection, async_wait_write(_)).InSequence(s).WillOnce(InvokeArgument<0>(error_code{}));
     EXPECT_CALL(m.cb_io.executor_, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
     EXPECT_CALL(m.connection, flush_output()).InSequence(s)
         .WillOnce(Return(ozo::impl::query_state::send_finish));

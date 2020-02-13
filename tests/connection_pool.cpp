@@ -256,7 +256,7 @@ struct pooled_connection_wrapper : Test {
 
     auto make_connection() {
         return std::make_shared<ozo::tests::connection<>>(connection<>{
-            std::addressof(native_handle), {io, stream}, {}, &connection_mock, {}, &io});
+            std::addressof(native_handle), {}, &connection_mock, {}, &io});
     }
 };
 
