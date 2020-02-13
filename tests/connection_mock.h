@@ -90,6 +90,12 @@ struct connection_mock {
     MOCK_METHOD0(send_query_params, int());
     MOCK_METHOD0(consume_input, int());
     MOCK_CONST_METHOD0(is_busy, bool());
+    MOCK_METHOD0(cancel, void());
+    MOCK_CONST_METHOD0(is_bad, bool());
+    MOCK_METHOD0(close, ozo::error_code());
+    MOCK_METHOD1(async_wait_write, void(std::function<void(error_code)>));
+    MOCK_METHOD1(async_wait_read, void(std::function<void(error_code)>));
+
     MOCK_METHOD0(flush_output, ozo::impl::query_state());
     MOCK_METHOD0(get_result, boost::optional<pg_result>());
 
@@ -141,32 +147,32 @@ template <typename OidMap = empty_oid_map>
 struct connection {
     using handle_type = ozo::tests::native_conn_handle;
     using native_handle_type = ozo::tests::PGconn_mock*;
-    using error_context = std::string;
+    using error_context_type = std::string;
     using oid_map_type = OidMap;
     using executor_type = io_context::executor_type;
 
     handle_type handle_;
-    stream_descriptor socket_;
     OidMap oid_map_;
     connection_mock* mock_ = nullptr;
-    error_context error_context_;
+    error_context_type error_context_;
     io_context* io_;
+
+    connection(handle_type handle, OidMap oid_map, connection_mock* mock, error_context_type error_context_type, io_context* io)
+    : handle_(std::move(handle)), oid_map_(oid_map), mock_(mock), error_context_(error_context_type), io_(io) {}
 
     executor_type get_executor() const { return io_->get_executor(); }
 
     auto native_handle() const noexcept { return handle_.get(); }
 
-    const error_context& get_error_context() const noexcept { return error_context_; }
+    const error_context_type& get_error_context() const noexcept { return error_context_; }
 
-    void set_error_context(error_context v = error_context{}) { error_context_ = std::move(v); }
+    void set_error_context(error_context_type v = error_context_type{}) { error_context_ = std::move(v); }
 
     oid_map_type& oid_map() noexcept { return oid_map_;}
 
     const oid_map_type& oid_map() const noexcept { return oid_map_;}
 
-    bool is_bad() const noexcept {
-        return ozo::detail::connection_status_bad(native_handle());
-    }
+    bool is_bad() const noexcept { return mock_->is_bad();}
 
     operator bool () const noexcept { return !is_bad();}
 
@@ -212,20 +218,13 @@ struct connection {
         return ec;
     }
 
-    ozo::error_code close() {
-        error_code ec;
-        socket_.close(ec);
-        return ec;
-    }
+    ozo::error_code close() { return mock_->close(); }
 
     native_conn_handle release() {
         return std::move(handle_);
     }
 
-    void cancel() {
-        ozo::error_code _;
-        socket_.cancel(_);
-    }
+    void cancel() { mock_->cancel(); }
 
     friend decltype(auto) get_cancel_handle(connection& c) {
         return c.mock_->get_cancel_handle();
@@ -256,12 +255,16 @@ struct connection {
 
     template <typename WaitHandler>
     void async_wait_write(WaitHandler&& h) {
-        socket_.async_write_some(asio::null_buffers(), std::forward<WaitHandler>(h));
+        mock_->async_wait_write([h = std::forward<WaitHandler>(h)] (auto e) {
+            asio::post(ozo::detail::bind(std::move(h), std::move(e)));
+        });
     }
 
     template <typename WaitHandler>
     void async_wait_read(WaitHandler&& h) {
-        socket_.async_read_some(asio::null_buffers(), std::forward<WaitHandler>(h));
+        mock_->async_wait_read([h = std::forward<WaitHandler>(h)] (auto e) {
+            asio::post(ozo::detail::bind(std::move(h), std::move(e)));
+        });
     }
 };
 
@@ -288,10 +291,9 @@ static_assert(ozo::Connection<connection_ptr<>>,
 
 template <typename OidMap = empty_oid_map>
 inline auto make_connection(connection_mock& mock, io_context& io,
-        stream_descriptor_mock& socket_mock, PGconn_mock& handle, OidMap oid_map) {
+        PGconn_mock& handle, OidMap oid_map) {
     return std::make_shared<connection<OidMap>>(connection<OidMap>{
             std::addressof(handle),
-            stream_descriptor{io, socket_mock},
             oid_map,
             std::addressof(mock),
             "",
@@ -300,11 +302,9 @@ inline auto make_connection(connection_mock& mock, io_context& io,
 }
 
 template <typename OidMap = empty_oid_map>
-inline auto make_connection(connection_mock& mock, io_context& io,
-        stream_descriptor_mock& socket_mock, OidMap oid_map = OidMap{}) {
+inline auto make_connection(connection_mock& mock, io_context& io, OidMap oid_map = OidMap{}) {
     return std::make_shared<connection<OidMap>>(connection<OidMap>{
             nullptr,
-            stream_descriptor{io, socket_mock},
             oid_map,
             std::addressof(mock),
             "",
