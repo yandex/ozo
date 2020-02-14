@@ -109,7 +109,7 @@ TEST_F(async_connect_op, should_wait_for_write_complete_if_connect_poll_returns_
     EXPECT_CALL(f.connection, async_wait_write(_)).WillOnce(InvokeArgument<0>(error_code{}));
 
     EXPECT_CALL(f.strand, post(_)).WillOnce(InvokeArgument<0>());
-    EXPECT_CALL(f.connection, connect_poll()).WillOnce(Return(PGRES_POLLING_WRITING));
+    EXPECT_CALL(f.handle, PQconnectPoll()).WillOnce(Return(PGRES_POLLING_WRITING));
 
     EXPECT_CALL(f.connection, async_wait_write(_)).WillOnce(Return());
 
@@ -127,7 +127,7 @@ TEST_F(async_connect_op, should_wait_for_read_complete_if_connect_poll_returns_P
 
     EXPECT_CALL(f.strand, post(_)).WillOnce(InvokeArgument<0>());
 
-    EXPECT_CALL(f.connection, connect_poll()).WillOnce(Return(PGRES_POLLING_READING));
+    EXPECT_CALL(f.handle, PQconnectPoll()).WillOnce(Return(PGRES_POLLING_READING));
 
     EXPECT_CALL(f.connection, async_wait_read(_)).WillOnce(Return());
 
@@ -145,7 +145,7 @@ TEST_F(async_connect_op, should_call_handler_with_no_error_if_connect_poll_retur
 
     EXPECT_CALL(f.strand, post(_)).WillOnce(InvokeArgument<0>());
 
-    EXPECT_CALL(f.connection, connect_poll()).WillOnce(Return(PGRES_POLLING_OK));
+    EXPECT_CALL(f.handle, PQconnectPoll()).WillOnce(Return(PGRES_POLLING_OK));
 
     EXPECT_CALL(f.callback, call(error_code{}, f.conn)).WillOnce(Return());
 
@@ -162,7 +162,7 @@ TEST_F(async_connect_op, should_call_handler_with_pq_connect_poll_failed_if_conn
     EXPECT_CALL(f.connection, async_wait_write(_)).WillOnce(InvokeArgument<0>(error_code{}));
 
     EXPECT_CALL(f.strand, post(_)).WillOnce(InvokeArgument<0>());
-    EXPECT_CALL(f.connection, connect_poll()).WillOnce(Return(PGRES_POLLING_FAILED));
+    EXPECT_CALL(f.handle, PQconnectPoll()).WillOnce(Return(PGRES_POLLING_FAILED));
 
     EXPECT_CALL(f.callback, call(error_code{ozo::error::pq_connect_poll_failed}, f.conn))
         .WillOnce(Return());
@@ -181,7 +181,7 @@ TEST_F(async_connect_op, should_call_handler_with_pq_connect_poll_failed_if_conn
 
     EXPECT_CALL(f.strand, post(_)).WillOnce(InvokeArgument<0>());
 
-    EXPECT_CALL(f.connection, connect_poll()).WillOnce(Return(PGRES_POLLING_ACTIVE));
+    EXPECT_CALL(f.handle, PQconnectPoll()).WillOnce(Return(PGRES_POLLING_ACTIVE));
 
     EXPECT_CALL(f.callback, call(error_code{ozo::error::pq_connect_poll_failed}, f.conn))
         .WillOnce(Return());
@@ -256,7 +256,7 @@ TEST_F(async_connect, should_cancel_timer_when_operation_is_done_before_timeout)
     EXPECT_CALL(f.connection, async_wait_write(_)).InSequence(s).WillOnce(SaveArg<0>(&on_async_write_some));
     EXPECT_CALL(f.strand, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
 
-    EXPECT_CALL(f.connection, connect_poll()).InSequence(s).WillOnce(Return(PGRES_POLLING_OK));
+    EXPECT_CALL(f.handle, PQconnectPoll()).InSequence(s).WillOnce(Return(PGRES_POLLING_OK));
 
     EXPECT_CALL(f.timer, cancel()).InSequence(s).WillOnce(Return(1));
 
@@ -321,7 +321,7 @@ TEST_F(async_connect, should_request_oid_map_when_oid_map_is_not_empty) {
 
     EXPECT_CALL(f.strand, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
 
-    EXPECT_CALL(f.connection, connect_poll()).InSequence(s).WillOnce(Return(PGRES_POLLING_OK));
+    EXPECT_CALL(f.handle, PQconnectPoll()).InSequence(s).WillOnce(Return(PGRES_POLLING_OK));
 
     EXPECT_CALL(f.connection, request_oid_map()).InSequence(s).WillOnce(Return());
 

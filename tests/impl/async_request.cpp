@@ -46,14 +46,14 @@ TEST_F(async_request_op, should_set_timer_and_send_query_params_and_get_result_a
     EXPECT_CALL(timer, async_wait(_)).InSequence(s).WillOnce(SaveArg<0>(&on_timer_expired));
 
     // Send query params
-    EXPECT_CALL(connection, set_nonblocking()).InSequence(s).WillOnce(Return(0));
-    EXPECT_CALL(connection, send_query_params()).InSequence(s).WillOnce(Return(1));
+    EXPECT_CALL(native_handle, PQsetnonblocking(1)).InSequence(s).WillOnce(Return(0));
+    EXPECT_CALL(native_handle, PQsendQueryParams(_, _, _, _, _, _, _)).InSequence(s).WillOnce(Return(1));
 
-    EXPECT_CALL(connection, flush_output()).InSequence(s).WillOnce(Return(ozo::impl::query_state::send_finish));
+    EXPECT_CALL(native_handle, PQflush()).InSequence(s).WillOnce(Return(0));
 
     // Get result
-    EXPECT_CALL(connection, is_busy()).InSequence(s).WillOnce(Return(false));
-    EXPECT_CALL(connection, get_result()).InSequence(s).WillOnce(Return(boost::none));
+    EXPECT_CALL(native_handle, PQisBusy()).InSequence(s).WillOnce(Return(0));
+    EXPECT_CALL(native_handle, PQgetResult()).InSequence(s).WillOnce(Return(nullptr));
 
     // Cancel timer
     EXPECT_CALL(timer, cancel()).InSequence(s).WillOnce(Return(1));
@@ -75,14 +75,14 @@ TEST_F(async_request_op, should_send_query_params_and_get_result_and_call_handle
     Sequence s;
 
     // Send query params
-    EXPECT_CALL(connection, set_nonblocking()).InSequence(s).WillOnce(Return(0));
-    EXPECT_CALL(connection, send_query_params()).InSequence(s).WillOnce(Return(1));
+    EXPECT_CALL(native_handle, PQsetnonblocking(1)).InSequence(s).WillOnce(Return(0));
+    EXPECT_CALL(native_handle, PQsendQueryParams(_, _, _, _, _, _, _)).InSequence(s).WillOnce(Return(1));
 
-    EXPECT_CALL(connection, flush_output()).InSequence(s).WillOnce(Return(ozo::impl::query_state::send_finish));
+    EXPECT_CALL(native_handle, PQflush()).InSequence(s).WillOnce(Return(0));
 
     // Get result
-    EXPECT_CALL(connection, is_busy()).InSequence(s).WillOnce(Return(false));
-    EXPECT_CALL(connection, get_result()).InSequence(s).WillOnce(Return(boost::none));
+    EXPECT_CALL(native_handle, PQisBusy()).InSequence(s).WillOnce(Return(0));
+    EXPECT_CALL(native_handle, PQgetResult()).InSequence(s).WillOnce(Return(nullptr));
 
     // Call client handler
     EXPECT_CALL(cb_io.executor_, dispatch(_)).InSequence(s).WillOnce(InvokeArgument<0>());
@@ -104,12 +104,12 @@ TEST_F(async_request_op, should_cancel_connection_io_on_timeout) {
     EXPECT_CALL(connection, cancel()).InSequence(s).WillOnce(Return());
 
     // Send query params
-    EXPECT_CALL(connection, set_nonblocking()).InSequence(s).WillOnce(Return(0));
-    EXPECT_CALL(connection, send_query_params()).InSequence(s).WillOnce(Return(1));
-    EXPECT_CALL(connection, flush_output()).InSequence(s).WillOnce(Return(ozo::impl::query_state::send_finish));
+    EXPECT_CALL(native_handle, PQsetnonblocking(1)).InSequence(s).WillOnce(Return(0));
+    EXPECT_CALL(native_handle, PQsendQueryParams(_, _, _, _, _, _, _)).InSequence(s).WillOnce(Return(1));
+    EXPECT_CALL(native_handle, PQflush()).InSequence(s).WillOnce(Return(0));
 
 
-    EXPECT_CALL(connection, is_busy()).InSequence(s).WillOnce(Return(true));
+    EXPECT_CALL(native_handle, PQisBusy()).InSequence(s).WillOnce(Return(1));
     EXPECT_CALL(connection, async_wait_read(_)).InSequence(s).WillOnce(InvokeArgument<0>(error_code {}));
     EXPECT_CALL(strand, post(_)).InSequence(s).WillOnce(Return());
 
