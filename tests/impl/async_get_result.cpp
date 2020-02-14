@@ -147,16 +147,16 @@ struct async_get_result : Test {
 TEST_F(async_get_result, should_wait_for_read_and_consume_input_while_is_busy_returns_true) {
     Sequence s;
 
-    // Wait for read while is_busy() returns true
-    EXPECT_CALL(m.connection, is_busy()).InSequence(s).WillOnce(Return(true));
+    // Wait for read while PQisBusy() returns 1
+    EXPECT_CALL(m.native_handle, PQisBusy()).InSequence(s).WillOnce(Return(1));
     EXPECT_CALL(m.connection, async_wait_read(_)).InSequence(s).WillOnce(InvokeArgument<0>(error_code{}));
     EXPECT_CALL(m.cb_io.executor_, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
 
     // Consume input
-    EXPECT_CALL(m.connection, consume_input()).InSequence(s).WillOnce(Return(1));
+    EXPECT_CALL(m.native_handle, PQconsumeInput()).InSequence(s).WillOnce(Return(1));
 
-    // Wait for read while is_busy() which returns true
-    EXPECT_CALL(m.connection, is_busy()).InSequence(s).WillOnce(Return(true));
+    // Wait for read while PQisBusy() which returns 1
+    EXPECT_CALL(m.native_handle, PQisBusy()).InSequence(s).WillOnce(Return(1));
     EXPECT_CALL(m.connection, async_wait_read(_)).InSequence(s).WillOnce(Return());
 
     ozo::impl::async_get_result(m.ctx, process_f);
@@ -165,13 +165,13 @@ TEST_F(async_get_result, should_wait_for_read_and_consume_input_while_is_busy_re
 TEST_F(async_get_result, should_post_callback_with_error_if_consume_input_failed) {
     Sequence s;
 
-    // Wait for read while is_busy() returns true
-    EXPECT_CALL(m.connection, is_busy()).InSequence(s).WillOnce(Return(true));
+    // Wait for read while PQisBusy() returns 1
+    EXPECT_CALL(m.native_handle, PQisBusy()).InSequence(s).WillOnce(Return(1));
     EXPECT_CALL(m.connection, async_wait_read(_)).InSequence(s).WillOnce(InvokeArgument<0>(error_code{}));
     EXPECT_CALL(m.cb_io.executor_, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
 
     // Consume input
-    EXPECT_CALL(m.connection, consume_input()).InSequence(s).WillOnce(Return(0));
+    EXPECT_CALL(m.native_handle, PQconsumeInput()).InSequence(s).WillOnce(Return(0));
 
     // Cancel all io
     EXPECT_CALL(m.connection, cancel()).InSequence(s).WillOnce(Return());
@@ -186,11 +186,11 @@ TEST_F(async_get_result, should_post_callback_with_error_if_consume_input_failed
 TEST_F(async_get_result, should_process_data_and_post_callback_if_result_is_empty) {
     Sequence s;
 
-    // Get result since is_busy() is false
-    EXPECT_CALL(m.connection, is_busy()).InSequence(s).WillOnce(Return(false));
-    EXPECT_CALL(m.connection, get_result())
+    // Get result since PQisBusy() is 0
+    EXPECT_CALL(m.native_handle, PQisBusy()).InSequence(s).WillOnce(Return(0));
+    EXPECT_CALL(m.native_handle, PQgetResult())
         .InSequence(s)
-        .WillOnce(Return(boost::none));
+        .WillOnce(Return(nullptr));
 
     // Post callback with no error since result is empty
     EXPECT_CALL(m.callback, call(error_code{}, _)).InSequence(s).WillOnce(Return());
@@ -201,17 +201,18 @@ TEST_F(async_get_result, should_process_data_and_post_callback_if_result_is_empt
 TEST_F(async_get_result, should_post_callback_with_error_and_consume_if_process_data_throws) {
     Sequence s;
 
-    // Get result since is_busy() is false
-    EXPECT_CALL(m.connection, is_busy()).InSequence(s).WillOnce(Return(false));
-    EXPECT_CALL(m.connection, get_result())
+    // Get result since PQisBusy() is false
+    EXPECT_CALL(m.native_handle, PQisBusy()).InSequence(s).WillOnce(Return(0));
+    ozo::tests::pg_result result{PGRES_TUPLES_OK, nullptr};
+    EXPECT_CALL(m.native_handle, PQgetResult())
         .InSequence(s)
-        .WillOnce(Return(make_pg_result(PGRES_TUPLES_OK, error_code{})));
+        .WillOnce(Return(&result));
 
     // Consume result with calling get_result until it returns nothing
-    EXPECT_CALL(m.connection, is_busy()).InSequence(s).WillOnce(Return(false));
-    EXPECT_CALL(m.connection, get_result())
+    EXPECT_CALL(m.native_handle, PQisBusy()).InSequence(s).WillOnce(Return(0));
+    EXPECT_CALL(m.native_handle, PQgetResult())
         .InSequence(s)
-        .WillOnce(Return(boost::none));
+        .WillOnce(Return(nullptr));
 
     EXPECT_CALL(process, call()).InSequence(s).WillOnce(Invoke([]{ throw std::runtime_error("");}));
 
@@ -226,17 +227,18 @@ TEST_F(async_get_result, should_post_callback_with_error_and_consume_if_process_
 TEST_F(async_get_result, should_process_data_and_post_callback_and_consume_if_result_status_is_PGRES_TUPLES_OK) {
     Sequence s;
 
-    // Get result since is_busy() is false
-    EXPECT_CALL(m.connection, is_busy()).InSequence(s).WillOnce(Return(false));
-    EXPECT_CALL(m.connection, get_result())
+    // Get result since PQisBusy() is 0
+    EXPECT_CALL(m.native_handle, PQisBusy()).InSequence(s).WillOnce(Return(0));
+    ozo::tests::pg_result result{PGRES_TUPLES_OK, nullptr};
+    EXPECT_CALL(m.native_handle, PQgetResult())
         .InSequence(s)
-        .WillOnce(Return(make_pg_result(PGRES_TUPLES_OK, error_code{})));
+        .WillOnce(Return(&result));
 
     // Consume result with calling get_result until it returns nothing
-    EXPECT_CALL(m.connection, is_busy()).InSequence(s).WillOnce(Return(false));
-    EXPECT_CALL(m.connection, get_result())
+    EXPECT_CALL(m.native_handle, PQisBusy()).InSequence(s).WillOnce(Return(0));
+    EXPECT_CALL(m.native_handle, PQgetResult())
         .InSequence(s)
-        .WillOnce(Return(boost::none));
+        .WillOnce(Return(nullptr));
 
     EXPECT_CALL(process, call()).InSequence(s).WillOnce(Return());
 
@@ -249,11 +251,12 @@ TEST_F(async_get_result, should_process_data_and_post_callback_and_consume_if_re
 TEST_F(async_get_result, should_process_data_and_post_callback_if_result_status_is_PGRES_SINGLE_TUPLE) {
     Sequence s;
 
-    // Get result since is_busy() is false
-    EXPECT_CALL(m.connection, is_busy()).InSequence(s).WillOnce(Return(false));
-    EXPECT_CALL(m.connection, get_result())
+    // Get result since PQisBusy() is 0
+    EXPECT_CALL(m.native_handle, PQisBusy()).InSequence(s).WillOnce(Return(0));
+    ozo::tests::pg_result result{PGRES_SINGLE_TUPLE, nullptr};
+    EXPECT_CALL(m.native_handle, PQgetResult())
         .InSequence(s)
-        .WillOnce(Return(make_pg_result(PGRES_SINGLE_TUPLE, error_code{})));
+        .WillOnce(Return(&result));
 
     // Process result
     EXPECT_CALL(process, call()).InSequence(s).WillOnce(Return());
@@ -267,17 +270,18 @@ TEST_F(async_get_result, should_process_data_and_post_callback_if_result_status_
 TEST_F(async_get_result, should_process_data_and_post_callback_and_consume_result_if_result_status_is_PGRES_COMMAND_OK) {
     Sequence s;
 
-    // Get result since is_busy() is false
-    EXPECT_CALL(m.connection, is_busy()).InSequence(s).WillOnce(Return(false));
-    EXPECT_CALL(m.connection, get_result())
+    // Get result since PQisBusy() is 0
+    EXPECT_CALL(m.native_handle, PQisBusy()).InSequence(s).WillOnce(Return(0));
+    ozo::tests::pg_result result{PGRES_COMMAND_OK, nullptr};
+    EXPECT_CALL(m.native_handle, PQgetResult())
         .InSequence(s)
-        .WillOnce(Return(make_pg_result(PGRES_COMMAND_OK, error_code{})));
+        .WillOnce(Return(&result));
 
     // Consume result with calling get_result until it returns nothing
-    EXPECT_CALL(m.connection, is_busy()).InSequence(s).WillOnce(Return(false));
-    EXPECT_CALL(m.connection, get_result())
+    EXPECT_CALL(m.native_handle, PQisBusy()).InSequence(s).WillOnce(Return(0));
+    EXPECT_CALL(m.native_handle, PQgetResult())
         .InSequence(s)
-        .WillOnce(Return(boost::none));
+        .WillOnce(Return(nullptr));
 
     EXPECT_CALL(process, call()).InSequence(s).WillOnce(Return());
 
@@ -290,17 +294,18 @@ TEST_F(async_get_result, should_process_data_and_post_callback_and_consume_resul
 TEST_F(async_get_result, should_post_callback_with_error_and_consume_result_if_result_status_is_PGRES_BAD_RESPONSE) {
     Sequence s;
 
-    // Get result since is_busy() is false
-    EXPECT_CALL(m.connection, is_busy()).InSequence(s).WillOnce(Return(false));
-    EXPECT_CALL(m.connection, get_result())
+    // Get result since PQisBusy() is 0
+    EXPECT_CALL(m.native_handle, PQisBusy()).InSequence(s).WillOnce(Return(0));
+    ozo::tests::pg_result result{PGRES_BAD_RESPONSE, nullptr};
+    EXPECT_CALL(m.native_handle, PQgetResult())
         .InSequence(s)
-        .WillOnce(Return(make_pg_result(PGRES_BAD_RESPONSE, error_code{})));
+        .WillOnce(Return(&result));
 
     // Consume result with calling get_result until it returns nothing
-    EXPECT_CALL(m.connection, is_busy()).InSequence(s).WillOnce(Return(false));
-    EXPECT_CALL(m.connection, get_result())
+    EXPECT_CALL(m.native_handle, PQisBusy()).InSequence(s).WillOnce(Return(0));
+    EXPECT_CALL(m.native_handle, PQgetResult())
         .InSequence(s)
-        .WillOnce(Return(boost::none));
+        .WillOnce(Return(nullptr));
 
     // Post callback with error and cancel all io
     EXPECT_CALL(m.connection, cancel()).WillOnce(Return());
@@ -314,17 +319,18 @@ TEST_F(async_get_result, should_post_callback_with_error_and_consume_result_if_r
 TEST_F(async_get_result, should_post_callback_with_error_and_consume_result_if_result_status_is_PGRES_EMPTY_QUERY) {
     Sequence s;
 
-    // Get result since is_busy() is false
-    EXPECT_CALL(m.connection, is_busy()).InSequence(s).WillOnce(Return(false));
-    EXPECT_CALL(m.connection, get_result())
+    // Get result since PQisBusy() is 0
+    EXPECT_CALL(m.native_handle, PQisBusy()).InSequence(s).WillOnce(Return(0));
+    ozo::tests::pg_result result{PGRES_EMPTY_QUERY, nullptr};
+    EXPECT_CALL(m.native_handle, PQgetResult())
         .InSequence(s)
-        .WillOnce(Return(make_pg_result(PGRES_EMPTY_QUERY, error_code{})));
+        .WillOnce(Return(&result));
 
     // Consume result with calling get_result until it returns nothing
-    EXPECT_CALL(m.connection, is_busy()).InSequence(s).WillOnce(Return(false));
-    EXPECT_CALL(m.connection, get_result())
+    EXPECT_CALL(m.native_handle, PQisBusy()).InSequence(s).WillOnce(Return(0));
+    EXPECT_CALL(m.native_handle, PQgetResult())
         .InSequence(s)
-        .WillOnce(Return(boost::none));
+        .WillOnce(Return(nullptr));
 
     // Post callback with error and cancel all io
     EXPECT_CALL(m.connection, cancel()).WillOnce(Return());
@@ -340,21 +346,22 @@ TEST_F(async_get_result, should_post_callback_with_error_from_result_and_consume
 
     // Post self to strand
 
-    // Get result since is_busy() is false
-    EXPECT_CALL(m.connection, is_busy()).InSequence(s).WillOnce(Return(false));
-    EXPECT_CALL(m.connection, get_result())
+    // Get result since PQisBusy() is 0
+    EXPECT_CALL(m.native_handle, PQisBusy()).InSequence(s).WillOnce(Return(0));
+    ozo::tests::pg_result result{PGRES_FATAL_ERROR, nullptr};
+    EXPECT_CALL(m.native_handle, PQgetResult())
         .InSequence(s)
-        .WillOnce(Return(make_pg_result(PGRES_FATAL_ERROR, error_code{error::error})));
+        .WillOnce(Return(&result));
 
     // Consume result with calling get_result until it returns nothing
-    EXPECT_CALL(m.connection, is_busy()).InSequence(s).WillOnce(Return(false));
-    EXPECT_CALL(m.connection, get_result())
+    EXPECT_CALL(m.native_handle, PQisBusy()).InSequence(s).WillOnce(Return(0));
+    EXPECT_CALL(m.native_handle, PQgetResult())
         .InSequence(s)
-        .WillOnce(Return(boost::none));
+        .WillOnce(Return(nullptr));
 
     // Post callback with error and cancel all io
     EXPECT_CALL(m.connection, cancel()).WillOnce(Return());
-    EXPECT_CALL(m.callback, call(error_code{error::error}, _)).InSequence(s).WillOnce(Return());
+    EXPECT_CALL(m.callback, call(error_code{ozo::error::no_sql_state_found}, _)).InSequence(s).WillOnce(Return());
 
     ozo::impl::async_get_result(m.ctx, process_f);
 }
@@ -362,19 +369,20 @@ TEST_F(async_get_result, should_post_callback_with_error_from_result_and_consume
 TEST_F(async_get_result, should_consume_tail_data_asynchronously) {
     Sequence s;
 
-    // Get result since is_busy() is false
-    EXPECT_CALL(m.connection, is_busy()).InSequence(s).WillOnce(Return(false));
-    EXPECT_CALL(m.connection, get_result())
+    // Get result since PQisBusy() is 0
+    EXPECT_CALL(m.native_handle, PQisBusy()).InSequence(s).WillOnce(Return(0));
+    ozo::tests::pg_result result{PGRES_COMMAND_OK, nullptr};
+    EXPECT_CALL(m.native_handle, PQgetResult())
         .InSequence(s)
-        .WillOnce(Return(make_pg_result(PGRES_COMMAND_OK, error_code{})));
+        .WillOnce(Return(&result));
 
     // Consume result with calling get_result until it returns nothing
-    EXPECT_CALL(m.connection, is_busy()).InSequence(s).WillOnce(Return(true));
+    EXPECT_CALL(m.native_handle, PQisBusy()).InSequence(s).WillOnce(Return(1));
     EXPECT_CALL(m.connection, async_wait_read(_)).InSequence(s).WillOnce(InvokeArgument<0>(error_code{}));
     EXPECT_CALL(m.cb_io.executor_, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
-    EXPECT_CALL(m.connection, consume_input()).InSequence(s).WillOnce(Return(1));
-    EXPECT_CALL(m.connection, is_busy()).InSequence(s).WillOnce(Return(false));
-    EXPECT_CALL(m.connection, get_result()).InSequence(s).WillOnce(Return(boost::none));
+    EXPECT_CALL(m.native_handle, PQconsumeInput()).InSequence(s).WillOnce(Return(1));
+    EXPECT_CALL(m.native_handle, PQisBusy()).InSequence(s).WillOnce(Return(0));
+    EXPECT_CALL(m.native_handle, PQgetResult()).InSequence(s).WillOnce(Return(nullptr));
 
     // Processing result
     EXPECT_CALL(process, call()).InSequence(s).WillOnce(Return());
@@ -388,17 +396,18 @@ TEST_F(async_get_result, should_consume_tail_data_asynchronously) {
 TEST_F(async_get_result, should_post_callback_with_result_on_consume_input_error) {
     Sequence s;
 
-    // Get result since is_busy() is false
-    EXPECT_CALL(m.connection, is_busy()).InSequence(s).WillOnce(Return(false));
-    EXPECT_CALL(m.connection, get_result())
+    // Get result since PQisBusy()() is false
+    EXPECT_CALL(m.native_handle, PQisBusy()).InSequence(s).WillOnce(Return(0));
+    ozo::tests::pg_result result{PGRES_COMMAND_OK, nullptr};
+    EXPECT_CALL(m.native_handle, PQgetResult())
         .InSequence(s)
-        .WillOnce(Return(make_pg_result(PGRES_COMMAND_OK, error_code{})));
+        .WillOnce(Return(&result));
 
     // Consume result with calling get_result until it returns nothing
-    EXPECT_CALL(m.connection, is_busy()).InSequence(s).WillOnce(Return(true));
+    EXPECT_CALL(m.native_handle, PQisBusy()).InSequence(s).WillOnce(Return(1));
     EXPECT_CALL(m.connection, async_wait_read(_)).InSequence(s).WillOnce(InvokeArgument<0>(error_code{}));
     EXPECT_CALL(m.cb_io.executor_, post(_)).InSequence(s).WillOnce(InvokeArgument<0>());
-    EXPECT_CALL(m.connection, consume_input()).InSequence(s).WillOnce(Return(0));
+    EXPECT_CALL(m.native_handle, PQconsumeInput()).InSequence(s).WillOnce(Return(0));
 
     // Processing result
     EXPECT_CALL(process, call()).InSequence(s).WillOnce(Return());
@@ -416,17 +425,18 @@ struct async_get_result_ : async_get_result,
 TEST_P(async_get_result_, should_post_callback_with_error_from_result_and_consume_result) {
     Sequence s;
 
-    // Get result since is_busy() is false
-    EXPECT_CALL(m.connection, is_busy()).InSequence(s).WillOnce(Return(false));
-    EXPECT_CALL(m.connection, get_result())
+    // Get result since PQisBusy() is false
+    EXPECT_CALL(m.native_handle, PQisBusy()).InSequence(s).WillOnce(Return(0));
+    ozo::tests::pg_result result{GetParam(), nullptr};
+    EXPECT_CALL(m.native_handle, PQgetResult())
         .InSequence(s)
-        .WillOnce(Return(make_pg_result(GetParam(), error_code{})));
+        .WillOnce(Return(&result));
 
     // Consume result with calling get_result until it returns nothing
-    EXPECT_CALL(m.connection, is_busy()).InSequence(s).WillOnce(Return(false));
-    EXPECT_CALL(m.connection, get_result())
+    EXPECT_CALL(m.native_handle, PQisBusy()).InSequence(s).WillOnce(Return(0));
+    EXPECT_CALL(m.native_handle, PQgetResult())
         .InSequence(s)
-        .WillOnce(Return(boost::none));
+        .WillOnce(Return(nullptr));
 
     // Post callback with error and cancel all io
     EXPECT_CALL(m.connection, cancel()).WillOnce(Return());
