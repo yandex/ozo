@@ -165,25 +165,23 @@ struct connection_mock {
 
 using connection_gmock = connection_mock;
 
-struct fake_query {
-    hana::tuple<> params;
-};
+struct empty_query {};
 
 } // namespace ozo::tests
 
 namespace ozo {
 
 template <>
-struct get_query_text_impl<tests::fake_query> {
-    static constexpr decltype(auto) apply(const tests::fake_query&) noexcept {
-        return "fake query";
+struct get_query_text_impl<tests::empty_query> {
+    static constexpr decltype(auto) apply(const tests::empty_query&) noexcept {
+        return "";
     }
 };
 
 template <>
-struct get_query_params_impl<tests::fake_query> {
-    static constexpr decltype(auto) apply(const tests::fake_query& q) noexcept {
-        return q.params;
+struct get_query_params_impl<tests::empty_query> {
+    static constexpr decltype(auto) apply(const tests::empty_query&) noexcept {
+        return hana::make_tuple();
     }
 };
 
@@ -198,7 +196,7 @@ struct safe_handle<ozo::tests::pg_result> {
 
 namespace ozo::tests {
 
-static_assert(Query<fake_query>, "fake_query is not a Query");
+static_assert(Query<empty_query>, "empty_query is not a Query");
 
 template <typename OidMap = empty_oid_map>
 struct connection {

@@ -35,7 +35,7 @@ TEST_F(async_end_transaction, should_call_async_execute) {
 
     EXPECT_CALL(connection, async_execute()).WillOnce(Return());
 
-    ozo::detail::async_end_transaction(std::move(transaction), fake_query {}, timeout, wrap(callback));
+    ozo::detail::async_end_transaction(std::move(transaction), empty_query {}, timeout, wrap(callback));
 }
 
 } // namespace
