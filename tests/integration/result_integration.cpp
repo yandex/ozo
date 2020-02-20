@@ -20,7 +20,7 @@ auto execute_query(const char* query_text, int binary = 1) {
     auto connection = scoped_connection(PQconnectdb(OZO_PG_TEST_CONNINFO), PQfinish);
     EXPECT_TRUE(connection != nullptr);
 
-    ozo::native_result_handle result(PQexecParams(connection.get(),
+    auto result = ozo::pg::make_safe(PQexecParams(connection.get(),
                         query_text,
                         0,
                         nullptr,

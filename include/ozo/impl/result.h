@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ozo/native_result_handle.h>
+#include <ozo/pg/handle.h>
 #include <ozo/type_traits.h>
 #include <libpq-fe.h>
 
