@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ozo/native_conn_handle.h>
+#include <ozo/pg/handle.h>
 #include <ozo/connection.h>
 #include <ozo/error.h>
 #include <ozo/io/binary_query.h>
@@ -34,9 +34,9 @@ inline decltype(auto) pq_connect_poll(T& conn) {
 }
 
 template <typename T>
-inline native_conn_handle pq_start_connection(const T&, const std::string& conninfo) {
+inline auto pq_start_connection(const T&, const std::string& conninfo) {
     static_assert(Connection<T>, "T must be a Connection");
-    return native_conn_handle(PQconnectStart(conninfo.c_str()));
+    return ozo::pg::make_safe(PQconnectStart(conninfo.c_str()));
 }
 
 template <typename T, typename ...Ts>
@@ -78,9 +78,9 @@ inline query_state pq_flush_output(T& conn) noexcept {
 }
 
 template <typename T>
-inline native_result_handle pq_get_result(T& conn) noexcept {
+inline auto pq_get_result(T& conn) noexcept {
     static_assert(Connection<T>, "T must be a Connection");
-    return native_result_handle(PQgetResult(get_native_handle(conn)));
+    return ozo::pg::make_safe(PQgetResult(get_native_handle(conn)));
 }
 
 inline ExecStatusType pq_result_status(const PGresult& res) noexcept {
