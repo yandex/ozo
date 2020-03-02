@@ -4,7 +4,7 @@ include(ExternalProject)
 ExternalProject_Add(
     GoogleTest
     GIT_REPOSITORY "https://github.com/google/googletest.git"
-    GIT_TAG release-1.8.0
+    GIT_TAG release-1.10.0
     CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}
     UPDATE_COMMAND ""
     LOG_DOWNLOAD ON

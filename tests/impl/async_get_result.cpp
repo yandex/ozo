@@ -52,7 +52,7 @@ TEST_P(async_get_result_op_call, when_query_state_is_error_should_exit_and_prese
     EXPECT_EQ(m.ctx->state, query_state::error);
 }
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     with_any_error_code,
     async_get_result_op_call,
     Values(error_code{}, error_code{error::error}));
@@ -124,7 +124,7 @@ TEST_P(async_get_result_op_call_with_error, should_preserve_not_empty_connection
     EXPECT_EQ(m.conn->error_context_, "my error");
 }
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     with_query_state_NOT_error,
     async_get_result_op_call_with_error,
     Values(query_state::send_in_progress, query_state::send_finish));
@@ -438,7 +438,7 @@ TEST_P(async_get_result_, should_post_callback_with_error_from_result_and_consum
     ozo::impl::async_get_result(m.ctx, process_f);
 }
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     with_unexpected_result_status,
     async_get_result_,
     Values(PGRES_COPY_OUT, PGRES_COPY_IN, PGRES_COPY_BOTH, PGRES_NONFATAL_ERROR));

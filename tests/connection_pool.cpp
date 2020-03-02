@@ -187,7 +187,7 @@ TEST_P(pooled_connection, should_call_handle_waste_on_destruction_if_connection_
     }
 }
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     with_not_PQTRANS_IDLE_transaction_status,
     pooled_connection,
     testing::Values(
