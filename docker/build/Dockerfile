@@ -1,10 +1,16 @@
-FROM ubuntu:18.10
+FROM ubuntu:18.04
+
+RUN apt-get update && \
+    apt-get install -y apt-transport-https ca-certificates gnupg software-properties-common wget
+
+RUN wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | apt-key add -
+
+RUN apt-add-repository 'deb https://apt.kitware.com/ubuntu/ bionic main'
 
 RUN apt-get update && \
     apt-get install -y \
         ccache \
         clang-7 \
-        cmake \
         curl \
         g++-8 \
         git \
@@ -16,7 +22,7 @@ RUN apt-get update && \
         python-openssl \
         python-pip \
         python-yaml \
-        wget \
+        cmake \
         doxygen \
         && \
     rm -rf /var/lib/apt/lists/*
