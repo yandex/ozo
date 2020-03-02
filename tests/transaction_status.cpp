@@ -48,7 +48,7 @@ TEST_P(get_transaction_status, should_return_status_for_connection){
     EXPECT_EQ(std::get<1>(GetParam()), ozo::get_transaction_status(conn));
 }
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     with_any_PGTransactionStatusType,
     get_transaction_status,
     testing::Values(
