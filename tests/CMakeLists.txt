@@ -77,6 +77,7 @@ endif()
 
 add_executable(ozo_tests ${SOURCES})
 add_dependencies(ozo_tests GoogleTest)
+target_link_libraries(ozo_tests gtest)
 target_link_libraries(ozo_tests gmock)
 target_link_libraries(ozo_tests ozo)
 add_test(ozo_tests ozo_tests)
