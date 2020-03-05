@@ -31,6 +31,7 @@ RUN update-alternatives --install /usr/bin/clang clang /usr/bin/clang-7 100 && \
     update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-7 100 && \
     update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 100 && \
     update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-8 100 && \
+    update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-8 100 && \
     update-alternatives --install /usr/bin/llvm-symbolizer llvm-symbolizer /usr/bin/llvm-symbolizer-7 100
 
 RUN wget -qO boost_1_66_0.tar.gz https://dl.bintray.com/boostorg/release/1.66.0/source/boost_1_66_0.tar.gz && \
