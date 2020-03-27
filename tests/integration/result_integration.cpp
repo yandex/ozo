@@ -14,6 +14,7 @@
 namespace {
 
 using namespace ::testing;
+using namespace std::string_literals;
 
 auto execute_query(const char* query_text, int binary = 1) {
     using scoped_connection = std::unique_ptr<PGconn, void(*)(PGconn*)>;
@@ -43,6 +44,23 @@ TEST(result, should_convert_into_tuple_integer_and_text) {
     ASSERT_EQ(r.size(), 1u);
     EXPECT_EQ(std::get<0>(r[0]), 1);
     EXPECT_EQ(std::get<1>(r[0]), "2");
+}
+
+TEST(result, should_not_be_valid_after_share_call) {
+    auto result = execute_query("select 1::int4, '2'::text;");
+    ASSERT_TRUE(result.valid());
+    ozo::shared_result(std::move(result));
+    EXPECT_FALSE(result.valid());
+}
+
+TEST(shared_result, should_convert_into_tuple_integer_and_text) {
+    ozo::shared_result result;
+    std::vector<std::tuple<int32_t, std::string>> r;
+    result = execute_query("select 1::int4, '2'::text;");
+    ozo::recv_result(result, ozo::empty_oid_map_c, std::back_inserter(r));
+
+    ASSERT_EQ(r.size(), 1u);
+    EXPECT_EQ(r[0], std::make_tuple(1, "2"s));
 }
 
 TEST(result, should_convert_into_tuple_time_point_and_text) {

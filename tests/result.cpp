@@ -186,6 +186,15 @@ struct basic_result : Test {
     ozo::basic_result<pg_result_mock*> result{&mock};
 };
 
+TEST_F(basic_result, valid_should_return_true_for_constructed_with_handle) {
+    EXPECT_TRUE(result.valid());
+}
+
+TEST_F(basic_result, valid_should_return_false_for_constructed_with_null_handle) {
+    ozo::basic_result<pg_result_mock*> result{nullptr};
+    EXPECT_FALSE(result.valid());
+}
+
 TEST_F(basic_result, empty_should_return_true_if_pg_ntuples_returns_0) {
     EXPECT_CALL(mock, ntuples()).WillOnce(Return(0));
 

@@ -351,8 +351,8 @@ basic_result<T>& recv_result(basic_result<T>& in, const OidMap&, basic_result<T>
     return out;
 }
 
-template <typename T, typename OidMap>
-basic_result<T>& recv_result(basic_result<T>& in, const OidMap& oid_map, std::reference_wrapper<basic_result<T>> out) {
+template <typename T, typename OidMap, typename Out>
+basic_result<T>& recv_result(basic_result<T>& in, const OidMap& oid_map, std::reference_wrapper<Out> out) {
     return recv_result(in, oid_map, out.get());
 }
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <libpq-fe.h>
+#include <boost/hana/core/to.hpp>
 #include <memory>
 
 namespace ozo::pg {
@@ -36,4 +37,17 @@ using conn = safe_handle_t<::PGconn>;
 
 using result = pg::safe_handle_t<::PGresult>;
 
+using shared_result = std::shared_ptr<::PGresult>;
+
 } // namespace ozo::pg
+
+namespace boost::hana {
+
+template <>
+struct to_impl<ozo::pg::shared_result, ozo::pg::result> {
+    static ozo::pg::shared_result apply(ozo::pg::result x) {
+        return {x.release(), x.get_deleter()};
+    }
+};
+
+} // namespace boost::hana
