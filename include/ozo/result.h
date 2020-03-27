@@ -316,14 +316,22 @@ public:
 
     basic_result() = default;
     basic_result(handle_type res) noexcept(noexcept(handle_type(std::move(res))))
-    : res_(std::move(res)) {}
+    : handle_(std::move(res)) {}
+
+    template <typename Other, typename = hana::when<
+        hana::is_convertible<Other, T>::value && !std::is_same_v<T, Other>
+    >>
+    basic_result(basic_result<Other>&& x) noexcept(
+        noexcept(handle_type{hana::to<T>(std::move(x.release()))}))
+    : handle_(hana::to<T>(std::move(x.release()))) {
+    }
 
     /**
      * Iterator on the first row of the result.
      *
      * @return const_iterator --- iterator on the first row
      */
-    const_iterator begin() const noexcept { return {{std::addressof(*res_), 0, 0}}; }
+    const_iterator begin() const noexcept { return {{native_handle(), 0, 0}}; }
 
     /**
      * Iterator on end of row sequence.
@@ -337,12 +345,12 @@ public:
      *
      * @return `std::size_t` --- count of rows.
      */
-    std::size_t size() const noexcept { return impl::ntuples(*res_);}
+    std::size_t size() const noexcept { return impl::ntuples(*native_handle());}
 
     /**
      * Determine whether the result is empty.
      *
-     * @return `true` --- no ros in the result, `size() == 0`, `begin() == end()`.
+     * @return `true` --- no rows in the result, `size() == 0`, `begin() == end()`.
      * @return `false` --- row is not empty, `size() > 0`, `begin() != end()`.
      */
     [[nodiscard]] bool empty() const noexcept { return size() == 0; }
@@ -382,12 +390,48 @@ public:
      * @return native_handle_type --- native handle representation
      */
     native_handle_type native_handle() const noexcept {
-        return std::addressof(*res_);
+        return std::addressof(*handle_);
+    }
+
+    /**
+     * Checks if object contains result handle.
+     */
+    bool valid() const noexcept { return bool(handle_); }
+
+    /**
+     * Releases ownership of the native connection handle object.
+     *
+     * This function may be used to obtain the underlying result handle.
+     * After calling this function, `valid()` returns false.
+     *
+     * @return handle_type --- result handle object
+     */
+    handle_type release() noexcept(std::is_nothrow_move_constructible_v<handle_type>) {
+        return std::move(handle_);
     }
 
 private:
-    handle_type res_;
+
+    handle_type handle_;
 };
+
+/**
+ * @brief Database raw result representation
+ *
+ * Copyable version of `ozo::result`. The result object is useful then it needs to get an access
+ * to raw data representation or the underlying `libpq` handle.
+ *
+ * Get this type of result may be obtained from `ozo::result`:
+ *
+ * @code
+ozo::result res;
+//...
+ozo::share_result shared_res(std::move(res));
+ * @endcode
+ *
+ * @ingroup group-requests-types
+ */
+using shared_result = basic_result<pg::shared_result>;
 
 /**
  * @brief Database raw result representation
@@ -397,7 +441,7 @@ private:
  *
  * @ingroup group-requests-types
  */
-using result = basic_result<ozo::pg::result>;
+using result = basic_result<pg::result>;
 
 template <typename T>
 auto make_result(T&& handle) {
