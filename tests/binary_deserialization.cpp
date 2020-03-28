@@ -30,8 +30,7 @@ using namespace ozo::tests;
 using namespace std::literals;
 
 struct read : Test {
-    struct badbuf_t : std::streambuf{} badbuf;
-    ozo::istream bad_istream{&badbuf};
+    ozo::istream bad_istream{nullptr, 0};
 };
 
 TEST_F(read, with_single_byte_type_and_bad_istream_should_throw) {

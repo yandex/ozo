@@ -247,7 +247,7 @@ inline istream& recv_frame(istream& in, const OidMap& oids, Out& out) {
 
 template <typename T, typename OidMap, typename Out>
 void recv(const value<T>& in, const OidMap& oids, Out& out) {
-    detail::istreambuf_view sbuf(in.data(), in.size());
+    istreambuf sbuf(in.data(), in.size());
     istream s(&sbuf);
     recv(s, in.oid(), (in.is_null() ? null_state_size : in.size()), oids, out);
 }
