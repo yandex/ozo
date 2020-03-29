@@ -14,28 +14,10 @@ using namespace testing;
 
 struct send : Test {
     std::vector<char> buffer;
-    ozo::detail::ostreambuf obuf{buffer};
-    ozo::ostream os{&obuf};
-
-    struct badbuf_t : std::streambuf{} badbuf;
-    ozo::ostream bad_ostream{&badbuf};
+    ozo::ostream os{buffer};
 
     ozo::empty_oid_map oid_map;
 };
-
-TEST_F(send, with_single_byte_type_and_bad_ostream_should_throw) {
-    EXPECT_THROW(
-        ozo::send(bad_ostream, oid_map, char(42)),
-        ozo::system_error
-    );
-}
-
-TEST_F(send, with_multi_byte_type_and_bad_ostream_should_throw) {
-    EXPECT_THROW(
-        ozo::send(bad_ostream, oid_map, std::int64_t(42)),
-        ozo::system_error
-    );
-}
 
 TEST_F(send, with_std_int8_t_should_store_it_as_is) {
     ozo::send(os, oid_map, char(42));
@@ -115,8 +97,7 @@ TEST_F(send, should_send_nothing_for_std_nullopt_t) {
 
 TEST(send_impl, should_send_nothing_for_std_nullptr_t) {
     std::vector<char> buffer;
-    ozo::detail::ostreambuf obuf{buffer};
-    ozo::ostream os{&obuf};
+    ozo::ostream os{buffer};
     ozo::empty_oid_map oid_map;
 
     ozo::send_impl<std::nullptr_t>::apply(os, oid_map, nullptr);
@@ -125,8 +106,7 @@ TEST(send_impl, should_send_nothing_for_std_nullptr_t) {
 
 TEST(send_impl, should_send_nothing_for_std_nullopt_t) {
     std::vector<char> buffer;
-    ozo::detail::ostreambuf obuf{buffer};
-    ozo::ostream os{&obuf};
+    ozo::ostream os{buffer};
     ozo::empty_oid_map oid_map;
 
     ozo::send_impl<OZO_NULLOPT_T>::apply(os, oid_map, OZO_NULLOPT);
@@ -136,8 +116,7 @@ TEST(send_impl, should_send_nothing_for_std_nullopt_t) {
 struct send_frame : Test {
     using buffer_t = std::vector<char>;
     buffer_t buffer;
-    ozo::detail::ostreambuf obuf{buffer};
-    ozo::ostream os{&obuf};
+    ozo::ostream os{buffer};
 
     ozo::empty_oid_map oid_map;
     auto buffer_range(int pos, int count) {

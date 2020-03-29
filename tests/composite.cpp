@@ -72,8 +72,7 @@ TEST(size_of, should_calculate_size_of_hana_adapted_structure_with_counter_size)
 
 struct send_composite : Test {
     std::vector<char> buffer;
-    ozo::detail::ostreambuf obuf{buffer};
-    ozo::ostream os{&obuf};
+    ozo::ostream os{buffer};
 
     decltype(ozo::register_types<fusion_test_struct, hana_test_struct>()) oid_map;
 };

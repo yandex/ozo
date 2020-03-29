@@ -5,29 +5,25 @@
 
 namespace ozo::detail {
 
-struct ostream : std::ostream {
-    using std::ostream::ostream;
-};
-
-class ostreambuf : public std::streambuf {
-    std::vector<char_type>& buf_;
-
+class ostream {
 public:
-    ostreambuf(std::vector<char_type>& buf) : buf_(buf) {}
+    using traits_type = std::ostream::traits_type;
+    using char_type = std::ostream::char_type;
 
-protected:
-    std::streamsize xsputn(const char_type* s, std::streamsize n) override {
+    ostream(std::vector<char_type>& buf) : buf_(buf) {}
+
+    ostream& write(const char_type* s, std::streamsize n) {
         buf_.insert(buf_.end(), s, s + n);
-        return n;
+        return *this;
     }
 
-    int_type overflow(int_type ch) override {
-        using traits = std::char_traits<char_type>;
-        if (!traits::eq_int_type(ch, traits::eof())) {
-            buf_.push_back(static_cast<char_type>(ch));
-        }
-        return ch;
+    ostream& put(char_type ch) {
+        buf_.push_back(ch);
+        return *this;
     }
+
+private:
+    std::vector<char_type>& buf_;
 };
 
 } // namespace ozo::detail
