@@ -276,65 +276,59 @@ template <typename T>
 inline constexpr auto FloatingPoint = std::is_floating_point_v<std::decay_t<T>>;
 //! @endcode
 
-template <typename T, std::size_t Size, typename = std::void_t<>>
-struct has_mutable_data : std::false_type {};
-
-template <typename T, std::size_t Size>
-struct has_mutable_data<T, Size, std::void_t<decltype(std::declval<T&>().data())>> : std::bool_constant<
-    !std::is_const_v<std::remove_pointer_t<decltype(std::declval<T&>().data())>>
-    && sizeof(std::remove_pointer_t<decltype(std::declval<T&>().data())>) == Size
-> {};
-
-template <typename T, std::size_t Size, typename = std::void_t<>>
-struct has_const_data : std::false_type {};
-
-template <typename T, std::size_t Size>
-struct has_const_data<T, Size, std::void_t<decltype(std::declval<const T&>().data())>> : std::bool_constant<
-    std::is_const_v<std::remove_pointer_t<decltype(std::declval<const T&>().data())>>
-    && sizeof(std::remove_pointer_t<decltype(std::declval<const T&>().data())>) == Size
-> {};
-
-template <typename T, std::size_t Size, typename = std::void_t<>>
-struct has_friend_mutable_data : std::false_type {};
-
-template <typename T, std::size_t Size>
-struct has_friend_mutable_data<T, Size, std::void_t<decltype(data(std::declval<T&>()))>> : std::bool_constant<
-    !std::is_const_v<std::remove_pointer_t<decltype(data(std::declval<T&>()))>>
-    && sizeof(std::remove_pointer_t<decltype(data(std::declval<T&>()))>) == Size
-> {};
-
-template <typename T, std::size_t Size, typename = std::void_t<>>
-struct has_friend_const_data : std::false_type {};
-
-template <typename T, std::size_t Size>
-struct has_friend_const_data<T, Size, std::void_t<decltype(data(std::declval<const T&>()))>> : std::bool_constant<
-    std::is_const_v<std::remove_pointer_t<decltype(data(std::declval<const T&>()))>>
-    && sizeof(std::remove_pointer_t<decltype(data(std::declval<const T&>()))>) == Size
-> {};
+namespace detail {
 
 template <typename T, typename = std::void_t<>>
-struct has_size : std::false_type {};
+struct std_size_data_compatible {
+    static constexpr bool value = false;
+};
 
 template <typename T>
-struct has_size<T, std::void_t<decltype(std::declval<T>().size())>> : std::true_type {};
+struct std_size_data_compatible<T, std::void_t<
+    decltype(std::data(std::declval<T&>())+std::size(std::declval<T&>()))>
+> {
+    static constexpr bool value = !std::is_const_v<std::remove_pointer_t<decltype(std::data(std::declval<T&>()))>> || std::is_const_v<T>;
+};
 
 template <typename T, typename = std::void_t<>>
-struct has_friend_size : std::false_type {};
+struct adl_size_data_compatible {
+    static constexpr bool value = false;
+};
 
 template <typename T>
-struct has_friend_size<T, std::void_t<decltype(size(std::declval<T>()))>> : std::true_type {};
+struct adl_size_data_compatible<T, std::void_t<
+    decltype(data(std::declval<T&>())+size(std::declval<T&>()))>
+> {
+    static constexpr bool value = !std::is_const_v<std::remove_pointer_t<decltype(data(std::declval<T&>()))>> || std::is_const_v<T>;
+};
 
 template <typename T>
-struct is_raw_data_writable : std::bool_constant<
-    (has_mutable_data<T, 1>::value && has_size<T>::value) ||
-    (has_friend_mutable_data<T, 1>::value && has_friend_size<T>::value)
-> {};
+constexpr auto sizeof_value_type(T& v) {
+    if constexpr (std_size_data_compatible<T>::value) {
+        return std::integral_constant<std::size_t, sizeof(decltype(*std::data(v)))>{};
+    } else if constexpr (adl_size_data_compatible<T>::value) {
+        return std::integral_constant<std::size_t, sizeof(decltype(*data(v)))>{};
+    } else {
+        return std::integral_constant<std::size_t, 0>{};
+    }
+}
 
 template <typename T>
-struct is_raw_data_readable : std::bool_constant<
-    ((has_const_data<T, 1>::value || has_mutable_data<T, 1>::value) && has_size<T>::value) ||
-    ((has_friend_const_data<T, 1>::value || has_friend_mutable_data<T, 1>::value) && has_friend_size<T>::value)
-> {};
+constexpr std::size_t sizeof_value_type() {
+    return decltype(sizeof_value_type(std::declval<T&>()))::value;
+}
+
+} // namespace detail
+
+template <typename T>
+using is_raw_data_writable = std::bool_constant<
+    !std::is_const_v<T> && detail::sizeof_value_type<T>() == 1
+>;
+
+template <typename T>
+using is_raw_data_readable = std::bool_constant<
+    detail::sizeof_value_type<std::add_const_t<T>>() == 1
+>;
 
 /**
  * @brief `RawDataWritable` concept
@@ -342,23 +336,23 @@ struct is_raw_data_readable : std::bool_constant<
  * Indicates if `T` can be written as a sequence of bytes without endian conversion.
  * `RawDataWritable<T>` is `true` if for object `v` of type `T` applicable one of this code:
  * @code
-    auto raw = v.data();              // has_mutable_data<T,
+    auto raw = std::data(v);          // std_size_data_compatible<T,
     *raw = 1;                         //
     static_assert(sizeof(*raw) == 1); //                  1>
-    auto n = v.size();                // has_size<T>
+    auto n = std::size(v);            // support_std_size<T>
  * @endcode
  * or
  * @code
-    auto raw = data(v);               // has_friend_mutable_data<T,
+    auto raw = data(v);               // adl_size_data_compatible<T,
     *raw = 1;                         //
     static_assert(sizeof(*raw) == 1); //                         1>
-    auto n = size(v);                 // has_friend_size<T>
+    auto n = size(v);                 // support_external_size<T>
  * @endcode
  * @tparam T - type to examine
  * @hideinitializer
  */
 template <typename T>
-inline constexpr auto RawDataWritable = is_raw_data_writable<T>::value;
+inline constexpr auto RawDataWritable = is_raw_data_writable<std::remove_reference_t<T>>::value;
 
 /**
  * @brief `RawDataReadable` concept
@@ -366,23 +360,23 @@ inline constexpr auto RawDataWritable = is_raw_data_writable<T>::value;
  * Indicates if `T` can be read as a sequence of bytes without endian conversion.
  * `RawDataReadable<T>` is `true` if for object `v` of type `T` applicable one of this code:
  * @code
-    auto raw = v.data(std::as_const(v)); // has_const_data<T,
-    auto v = *raw;                       //
-    static_assert(sizeof(v) == 1);       //                1>
-    auto n = v.size();                   // has_size<T>
+    auto raw = std::data(std::as_const(v)); // std_size_data_compatible<const T,
+    auto v = *raw;                          //
+    static_assert(sizeof(v) == 1);          //                1>
+    auto n = std::size(v);                  // support_std_size<T>
  * @endcode
  * or
  * @code
-    auto raw = data(std::as_const(v));   // has_friend_const_data<T,
+    auto raw = data(std::as_const(v));   // adl_size_data_compatible<const T,
     auto v = *raw;                       //
     static_assert(sizeof(v) == 1);       //                       1>
-    auto n = size(v);                    // has_friend_size<T>
+    auto n = size(v);                    // support_external_size<T>
  * @endcode
  * @tparam T - type to examine
  * @hideinitializer
  */
 template <typename T>
-inline constexpr auto RawDataReadable = is_raw_data_readable<T>::value;
+inline constexpr auto RawDataReadable = is_raw_data_readable<std::remove_reference_t<T>>::value;
 
 template <typename T, typename = std::void_t<>>
 struct is_emplaceable : std::false_type {};
