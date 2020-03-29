@@ -157,8 +157,7 @@ private:
 
             buffer_.reserve(hana::unpack(lengths_, [](auto ...x) {return (x + ... + 0);}));
 
-            ozo::detail::ostreambuf osbuf(buffer_);
-            ozo::ostream os(&osbuf);
+            ozo::ostream os(buffer_);
 
             hana::for_each(params, [&] (auto& param) { send(os, oid_map, param);});
 

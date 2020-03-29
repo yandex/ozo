@@ -17,22 +17,14 @@ using detail::ostream;
 template <typename T>
 inline Require<Integral<T> && sizeof(T) == 1, ostream&>
 write(ostream& out, T in) {
-    out.put(static_cast<char>(in));
-    if (!out) {
-        throw system_error(error::unexpected_eof);
-    }
-    return out;
+    return out.put(static_cast<ostream::char_type>(in));
 }
 
 template <typename T>
 inline Require<RawDataReadable<T>, ostream&> write(ostream& out, const T& in) {
     using std::data;
     using std::size;
-    out.write(data(in), size(in));
-    if (!out) {
-        throw system_error(error::unexpected_eof);
-    }
-    return out;
+    return out.write(data(in), size(in));
 }
 
 template <typename T>
