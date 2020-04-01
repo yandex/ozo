@@ -13,7 +13,8 @@ namespace ozo {
 #include <ozo/ext/std/vector.h>
  *@endcode
  *
- * `std::vector<T, Allocator>` is defined as an one dimensional #Array representation type.
+ * `std::vector<T, Allocator>` is declared as the one dimensional array representation type.
+ * @models{Array}
  */
 ///@{
 template <typename ...Ts>

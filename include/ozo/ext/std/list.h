@@ -13,7 +13,8 @@ namespace ozo {
 #include <ozo/ext/std/list.h>
  *@endcode
  *
- * `std::list<T, Allocator>` is defined as an one dimensional #Array representation type.
+ * `std::list<T, Allocator>` is declared as an one dimensional array representation type.
+ * @models{Array}
  */
 ///@{
 template <typename ...Ts>

@@ -68,8 +68,8 @@ struct unwrap_connection_impl : unwrap_recursive_impl<T> {};
  * @endcode
  * Function overload works as well, but it is safer to specialize the template.
  *
- * @param conn --- wrapped or unwrapped Connection
- * @return unwrapped #Connection object reference
+ * @param conn --- wrapped or unwrapped `Connection`
+ * @return unwrapped `Connection` object reference
 */
 template <typename T>
 inline constexpr decltype(auto) unwrap_connection(T&& conn) noexcept {
@@ -85,13 +85,9 @@ inline constexpr decltype(auto) unwrap_connection(T&& conn) noexcept {
  * @tparam OidMap --- oid map of types are used with connection
  * @tparam Statistics --- statistics of the connection (not supported yet)
  *
- * ### Thread safety
- *
- * *Distinct objects*: Safe.
- *
- * *Shared objects*: Unsafe.
- *
+ * @thread_safety{Safe,Unsafe}
  * @ingroup group-connection-types
+ * @models{Connection}
  */
 template <typename OidMap, typename Statistics>
 class connection {
@@ -114,6 +110,9 @@ public:
      *
      * This function may be used to obtain the underlying representation of the connection.
      * This is intended to allow access to native `libpq` functionality that is not otherwise provided.
+     *
+     * @warning Don't use the function with the `PQfinish` function. Use the `close()` member
+     *          function instead.
      *
      * @return native_handle_type --- native connection handle.
      */
@@ -167,7 +166,7 @@ public:
      * Users should not use it directly other than for a special purpose (e.g., special connection pool
      * implementation and so on).
      *
-     * @note The function shall not be called while any active operation executes on the object.
+     * @warning Don't call this function during any active operation executed on the object.
      *
      * @param handle --- rvalue reference on a new handle.
      * @return error_code --- error code of the function call.
@@ -193,6 +192,8 @@ public:
      * Typically this function is used by the library within the connection establishing process and operation execution.
      * Users should not use it directly other than for custom `libpq`-based opeartions.
      *
+     * @warning The function is designated to the library operations use only. Don't call this function directly.
+     *
      * @param handler --- wait handler with `void(ozo::error_code, int=0)` signature.
      */
     template <typename WaitHandler>
@@ -203,6 +204,8 @@ public:
      *
      * Typically this function is used by the library within the connection establishing process and operation execution.
      * Users should not use it directly other than for custom `libpq`-based opeartions.
+     *
+     * @warning The function is designated to the library operations use only. Don't call this function directly.
      *
      * @param handler --- wait handler with `void(ozo::error_code, int=0)` signature.
      */
@@ -286,22 +289,24 @@ struct is_connection<connection<Ts...>> : std::true_type {};
 * @ingroup group-connection-concepts
 * @brief Database connection concept
 *
-* `Connection` concept represents a minimum set of attributes and functions that are required
-* by the library to establish communication and execute operations. `Connection` should provide:
+* `%Connection` concept represents a minimum set of attributes and functions that are required
+* by the library to execute operations on a database. `%Connection` should provide:
 * * the native PostgreSQL connection handle from `libpq`,
 * * an executor to perform IO-related operation (according to the current version of Boost.Asio
 *   it should be `boost::asio::io_context::executor_type` object),
 * * an additional error context to provide context-depended information for errors,
 * * IO functions that are necessary to perform operations.
 *
-* The default implementation of the concept is `ozo::connection`.
+* @par Concrete models
 *
-* ### Requirements
+* `ozo::connection`, `ozo::pooled_connection`, `ozo::transaction`
 *
-* Any wrapper object, which may be unwrapped to the underlying `Connection` model via
-* `ozo::unwrap_connection` is valid `Connection` model.
+* @par Definition
 *
-* Connection `c` is an object of type `C` for which these next requirements are valid:
+* Any wrapper object, which may be unwrapped to the underlying `%Connection` model via
+* `ozo::unwrap_connection` is valid `%Connection` model.
+*
+* %Connection `c` is an object of type `C` for which these next requirements are valid:
 *
 * | Expression | Type | Description |
 * |------------|------|-------------|
@@ -316,7 +321,7 @@ struct is_connection<connection<Ts...>> : std::true_type {};
 * | <PRE>%c.cancel()</PRE> | | Should cancel all IO operation on the connection (like `async_wait_write`, `async_wait_read`). Should not throw an exception. |
 * | <PRE>%c.is_bad()</PRE> | bool | Should return `false` for the established connection that can perform operations. Shall not throw an exception. |
 * | <PRE>%c.is_open()</PRE> | bool | Should return `true` for the object with valid native connection handle attached. Shall not throw an exception. |
-* | <PRE>%bool(as_const(c))</PRE> | bool | Should return `true` for the established connection that can perform operations. In fact it should be the negation of `c.is_bad()`. Shall not throw an exception. |
+* | <PRE>%bool(as_const(c))</PRE> | bool | Should return `true` for the established connection that can perform operations. Should return `false` at least if `c.is_bad()` returns `true`. Shall not throw an exception. |
 * | <PRE>ozo::get_connection(c, t, Handler)</PRE> | | Should reset the additional error context. This behaviour is performed in default implementation of `ozo::get_connection()` via `%c.set_error_context()` call. |
 * | <PRE>ozo::is_connection<C></PRE> | `std::true_type` | The template `ozo::is_connection` should be specialized for the connection type via inheritance from `std::true_type`. |
 *
@@ -324,14 +329,15 @@ struct is_connection<connection<Ts...>> : std::true_type {};
 * * `Handler` is callable with `template <typename Connection> void(ozo::error_code, Connection&&)` signature,
 * * `WaitHandler` is callable with `void(ozo::error_code, int = 0)` signature,
 * * `t` is a `TimeConstraint` model object,
-* * `as_const()` is `std::as_const()`,
-* * `move()` is `std::move()`.
+* * `as_const()` is `std::as_const()`.
 *
-* @sa ozo::connection, ozo::get_connection(), ozo::is_connection
-* @hideinitializer
+* @sa ozo::get_connection(), ozo::is_connection
+* @concept{Connection}
 */
+//! @cond
 template <typename T>
 inline constexpr auto Connection = is_connection<std::decay_t<decltype(unwrap_connection(std::declval<T>()))>>::value;
+//! @endcond
 
 /**
  * @defgroup group-connection-functions Related functions
@@ -343,9 +349,9 @@ inline constexpr auto Connection = is_connection<std::decay_t<decltype(unwrap_co
 /**
  * @brief Get native connection handle object.
  *
- * Alias to `unwrap_connection(conn).native_handle()`. See. `Connection` documentation for more details.
+ * Alias to `unwrap_connection(conn).native_handle()`. See the `Connection` documentation for more details.
  *
- * @param conn --- #Connection object.
+ * @param conn --- `Connection` object.
  * @return native connection handle.
  */
 template <typename Connection>
@@ -354,7 +360,9 @@ inline auto get_native_handle(const Connection& conn) noexcept;
 /**
  * @brief Get the executor associated with the object.
  *
- * @param conn --- #Connection object.
+ * Alias to `unwrap_connection(conn).get_executor()`. See the `Connection` documentation for more details.
+ *
+ * @param conn --- `Connection` object.
  * @return executor associated with the object.
  */
 template <typename Connection>
@@ -363,9 +371,9 @@ inline auto get_executor(const Connection& conn) noexcept;
 /**
  * @brief Determine whether the connection is in bad state.
  *
- * Alias to `unwrap_connection(conn).is_bad()`. See. `Connection` documentation for more details.
+ * Alias to `unwrap_connection(conn).is_bad()`. See the `Connection` documentation for more details.
  *
- * @param conn --- #Connection object.
+ * @param conn --- `Connection` object.
  * @return `true` if connection is in bad or null state, `false` - otherwise.
  */
 template <typename T>
@@ -376,7 +384,7 @@ inline bool connection_bad(const T& conn) noexcept;
  *
  * Alias to `!ozo::connection_bad(conn)`.
  *
- * @param conn --- #Connection object.
+ * @param conn --- `Connection` object.
  * @return `false` if connection is in bad state, `true` - otherwise
  */
 template <typename Connection>
@@ -390,7 +398,7 @@ inline bool connection_good(const Connection& conn) noexcept {
  * Underlying libpq provides additional textual context for different errors which
  * can be while interacting via connection. This function gives access for such messages.
  *
- * @param conn --- #Connection to get message from.
+ * @param conn --- `Connection` to get message from.
  * @return `std::string_view` with a message.
  */
 template <typename Connection>
@@ -401,7 +409,7 @@ inline std::string_view error_message(const Connection& conn);
  *
  * Alias to `unwrap_connection(conn).get_error_context()`. See. `Connection` documentation for more details.
  *
- * @param conn --- #Connection object which is not in null recursive state
+ * @param conn --- `Connection` object which is not in null recursive state
  * @return reference on additional context
  */
 template <typename Connection>
@@ -482,7 +490,6 @@ inline std::string_view get_password(const Connection& conn);
  * @ingroup group-connection
  * @brief Connection related types.
  */
-///@{
 
 namespace detail {
 
@@ -503,15 +510,15 @@ struct get_connection_type_default<T, Require<ozo::Connection<T>>> {
 } // namespace detail
 
 /**
- * @brief Connection type getter
+ * @brief %Connection type getter
  *
- * This type describes connection type from a #ConnectionProvider.
+ * This type describes the connection type from `ConnectionProvider` or `ConnectionSource`.
  *
- * @tparam ConnectionProvider - #ConnectionProvider type to get #Connection type from.
+ * @tparam ConnectionProvider - connection provider type to get `Connection` type from.
  *
  * By default it assumes on `ConnectionProvider::connection_type` type, if no nested type
  * `connection_type` is found no inner type `type`.
- * Possible implementation may look like this (`exposition only`):
+ * The implementation example (exposition only):
  *
 @code
 template <typename T, typename = void>
@@ -529,8 +536,8 @@ struct get_connection_type : get_connection_type_default<T>{};
  *
  * ### Customization point
  *
- * Here you can specify how to obtain #Connection type from your own #ConnectionProvider.
- * E.g. for custom #Connection implementation which is used via pointer the specialization
+ * Here you can specify how to obtain `Connection` type from the custom `ConnectionProvider`.
+ * E.g. for custom `Connection` implementation which is used via pointer the specialization
  * can be:
 @code
 template <>
@@ -545,24 +552,24 @@ template <typename ConnectionProvider>
 struct get_connection_type
 #ifdef OZO_DOCUMENTATION
 {
-    using type = <implementation defined>; ///!< Type of #Connection object provided by the #ConnectionProvider specified
+    using type = <implementation defined>; ///!< Type of the `Connection` object provided by the `ConnectionProvider` specified
 };
 #else
  : detail::get_connection_type_default<ConnectionProvider>{};
 #endif
 
 /**
- * @brief Gives exact type of a connection object which #ConnectionProvider or #ConnectionSource provide
+ * @brief The connection object type that `ConnectionProvider` or `ConnectionSource` provide
  *
- * This type alias can be used to determine exact type of a #Connection object which can be obtained from a
- * #ConnectionSource or #ConnectionProvider. It uses `ozo::get_connection_type` metafunction
- * to get a #Connection type.
+ * This type alias can be used to determine exact type of a connection object which can be obtained from a
+ * `ConnectionSource` or `ConnectionProvider`. It uses `ozo::get_connection_type` metafunction
+ * to get a `Connection` type.
  *
- * @tparam ConnectionProvider - #ConnectionSource or #ConnectionProvider type.
+ * @tparam T - `ConnectionSource` or `ConnectionProvider` type.
  * @ingroup group-connection-types
  */
-template <typename ConnectionProvider>
-using connection_type = typename get_connection_type<std::decay_t<ConnectionProvider>>::type;
+template <typename T>
+using connection_type = typename get_connection_type<std::decay_t<T>>::type;
 
 template <typename T>
 using handler_signature = void (error_code, connection_type<T>);
@@ -628,60 +635,43 @@ struct connection_source_traits {
 };
 
 /**
- * @brief ConnectionSource concept
+ * @brief %Connection source concept
  *
- * Before all we need to connect to our database server. First of all we need to know
- * how to connect. Since we are smart enough, we know at least two possible ways - make
- * a connection or get a connection from a pool of ones. How to be? It depends on. But
- * we still need to know how to do it. So, the `ConnectionSource` is what we need! This entity
- * tell us how to do it. ConnectionSource is a concept of type which can construct and
- * establish connection to a database.
+ * `%ConnectionSource` concept represents a type that creates a connection object
+ * with an established connection to a database. The connection source is the IO
+ * execution context agnostic entity. `%ConnectionSource` is used by the
+ * `ozo::connection_provider` or other `%ConnectionSource` models like `ozo::connection_pool`.
+ * Typically there is no need to use it directly.
  *
- * ConnectionSource has provide information about #Connection type it constructs. This can
- * be done via `ozo::connection_type` and it's customization.
+ * @par Concrete models
  *
- * `ConnectionSource` should be a callable object with such signature:
- * @code
-    void (io_context& io, TimeConstarint t, Handler&& h);
- * @endcode
+ * `ozo::connection_info`, `ozo::connection_pool`, `ozo::failover::role_based_connection_source`.
  *
- * `ConnectionSource` must establish #Connection by means of `io_context` specified as first
- * argument. In case of connection has been established successful must dispatch
- * Handler with empty `error_code` as the first argument and established #Connection as the
- * second one. In case of failure --- error_code with appropriate value and allocated
- * Connection with additional error context if it possible.
+ * @par Definition
  *
- * Basic usage may looks like this:
- * @code
-    io_context io;
-    //...
-    ConnectionSource source;
-    //...
-    using std::chrono_literals;
-    source(io, 1s, [](error_code ec, connection_type<ConnectionSource> conn){
-    //...
-    });
- * @endcode
+ * %Connection source `s` is an object of type `S` for which these next requirements
+ * are valid:
  *
- * `ConnectionSource` is a part of #ConnectionProvider mechanism and typically it is no needs to
- * use it directly.
+ * | Expression | Type | Description |
+ * |------------|------|-------------|
+ * | <PRE>s(io, t, h)</PRE> | | Should invoke a continuation object `h` within time-limited by `t` (if not `ozo::none` specified) with a connection object associated with an executor object of the `io` execution context or/and `error_code` in case of failure. If there is no error_code code set, the connection object should be in a valid state. |
+ * | <PRE>ozo::connection_type<S></PRE> | deduced type | Should return the `Connection` object type that is produced by the source. |
+ * | <PRE>ozo::Connection<ozo::connection_type<S>></PRE> | `std::true_type` | Should provide a connection type that models the `Connection` concept. |
  *
- * ###Built-in Connection Sources
+ * Where:
+ * * `io` execution context object with type `ozo::io_context`,
+ * * `t` is the `TimeConstraint` model object,
+ * * `h` is callable with `void(ozo::error_code, ozo::connection_type<S>)` signature.
  *
- * `ozo::connection_info`, `ozo::connection_pool`.
+ * @note The connection source should be an IO execution context agnostic entity.
  *
- * ###Customization point
- *
- * This concept is a customization point for adding or modifying existing connection
- * sources to specify custom behaviour of connection establishing. Have fun and find
- * the best solution you want.
- *
- * @tparam T --- `ConnectionSource` to examine
- * @hideinitializer
  * @ingroup group-connection-concepts
+ * @concept{ConnectionSource}
  */
+//! @cond
 template <typename T>
 inline constexpr auto ConnectionSource = is_connection_source<std::decay_t<T>>::value;
+//! @endcond
 
 template <typename Provider, typename TimeConstraint, typename Handler>
 constexpr auto async_get_connection(Provider&& p, TimeConstraint t, Handler&& h) ->
@@ -724,58 +714,63 @@ struct connection_provider_traits {
 };
 
 /**
- * @brief ConnectionProvider concept
+ * @brief %Connection provider concept
  *
- * `ConnectionProvider` is an entity which provides ready-to-use #Connection by means of
- * `ozo::get_connection()` function call.
+ * `%ConnectionProvider` concept represents a type that creates a connection object with an
+ * established connection to a database. The connection provider is bound to the IO execution
+ * context object. `%ConnectionProvider` is used by the library operations to get a connection
+ * object.
  *
- * `ConnectionProvider` may provide #Connection via the #ConnectionSource
- * (see `ozo::connection_provider` as an example of such entity).
- * In case of #Connection has been provided successful `ConnectionProvider` should dispatch
- * #Handler with empty error_code as the first argument and the #Connection as the
- * second one. In case of failure --- `ozo::error_code` with appropriate value and allocated
- * #Connection with additional error context, but only if it possible. Overwise #Connection
- * should be in null state
+ * Typically it is enough to use the `ConnectionSource` model with `ozo::connection_provider`,
+ * but sometimes it is more convenient to model the `%ConnectionProvider` with type, e.g. a
+ * user has a special connection pool with deferred `io_context` binding algorithm. So, in
+ * this case, this type should conform to the concept definition.
  *
- * @note #Connection is a `ConnectionProvider` itself.
+ * @par Concrete models
  *
- * ###Customization point
+ * `ozo::connection_provider`, `Connection` model is a `%ConnectionProvider` by default.
  *
- * Typically it is enough to customize #ConnectionSource, but sometimes it is more convenient
- * to make a custom #ConnectionProvider, e.g. a user has a structure is binded to certain
- * `ozo::io_context`. So in this case these steps should be done.
+ * @par Definition
  *
- * * `ConnectionProvider` should deliver an information about connection type it provides.
- * It may be implemented via defining a `connection_type` nested type or specializing
- * `ozo::get_connection_type` template. See `ozo::get_connection_type` for details.
+ * %Connection provider `p` is an object of type `P` for which these next requirements
+ * are valid:
  *
- * * `ozo::get_connection()` needs to be supported. See `ozo::get_connection()` for details.
+ * | Expression | Type | Description |
+ * |------------|------|-------------|
+ * | <PRE>ozo::get_connection(p, t, h)</PRE> | | Should invoke a continuation object `h` within time-limited by `t` (if not `ozo::none` specified) with a connection object associated with an executor object or/and `error_code` in case of failure. If no `error_code` code is set the connection object should be in a valid state. |
+ * | <PRE>ozo::connection_type<P></PRE> | deduced type | Should return a type of the `Connection` object that is produced by the provider. |
+ * | <PRE>ozo::Connection<ozo::connection_type<P>></PRE> | `std::true_type` | Should provide a connection type that models the `Connection` concept. |
  *
- * See `ozo::connection_provider` class - the default implementation and `ozo::get_connection()` description for more details.
- * @tparam T - type to examine.
- * @hideinitializer
+ * Where:
+ * * `t` is the `TimeConstraint` model object,
+ * * `h` is callable with `void(ozo::error_code, ozo::connection_type<S>)` signature.
+ *
  * @ingroup group-connection-concepts
+ * @concept{ConnectionProvider}
  */
+//! @cond
 template <typename T>
 inline constexpr auto ConnectionProvider = is_connection_provider<std::decay_t<T>>::value;
+//! @endcond
 
 #ifdef OZO_DOCUMENTATION
 /**
- * @brief Get a #Connection from #ConnectionProvider
+ * @brief Get a connection object from connection provider with time constaint.
  *
- * Retrives #Connection from #ConnectionProvider. There is built-in customization
- * for #Connection which provides connection itself and resets it's error context.
+ * Retrives a connection object from connection provider within specified time constaint.
+ * The default implementation for the `Connection` object forwards this object and resets
+ * it's error context.
  *
  * @note The function does not particitate in ADL since could be implemented via functional object.
  *
- * @param provider --- #ConnectionProvider to get connection from.
+ * @param provider --- `ConnectionProvider` to get connection from.
  * @param time_constraint --- #TimeConstraint for the operation.
  * @param token --- operation #CompletionToken.
  * @return deduced from #CompletionToken.
  *
- * ###Customization point
+ * @par Customization point
  *
- * This is a customization point of #ConnectionProvider. By default #ConnectionProvider should have
+ * This is a customization point of `ConnectionProvider`. By default `ConnectionProvider` should have
  * `async_get_connection()` member function with signature:
  * @code
     template <typename TimeConstraint>
@@ -783,7 +778,7 @@ inline constexpr auto ConnectionProvider = is_connection_provider<std::decay_t<T
  * @endcode
  *
  * This behaviour can be customized via `async_get_connection_impl` specialization. E.g. for custom implementation
- * of #Connection customization may looks like this (*exposition only*):
+ * of `Connection` customization may looks like this (*exposition only*):
  *
  * @code
     template <typename TimeConstrain, typename ...Ts>
@@ -801,15 +796,15 @@ inline constexpr auto ConnectionProvider = is_connection_provider<std::decay_t<T
  */
 template <typename T, typename TimeConstraint, typename CompletionToken>
 decltype(auto) get_connection(T&& provider, TimeConstraint time_constraint, CompletionToken&& token);
+
 /**
- * @brief Get a connection from provider with no time constains
+ * @brief Get a connection from connection provider
  *
- * This function is time constrain free shortcut to `ozo::get_connection()` function.
- * Its call is equal to `ozo::get_connection(provider, ozo::none, token)` call.
+ * This function is a shortcut to `ozo::get_connection(provider, ozo::none, token)` call.
  *
  * @note The function does not particitate in ADL since could be implemented via functional object.
  *
- * @param provider --- #ConnectionProvider to get connection from.
+ * @param provider --- `ConnectionProvider` to get connection from.
  * @param token --- operation #CompletionToken.
  * @return deduced from #CompletionToken.
  * @ingroup group-connection-functions
@@ -866,7 +861,7 @@ inline constexpr get_connection_op<detail::initiate_async_get_connection> get_co
  * a work on server-side and consume resources. So it is better to use
  * `ozo::cancel()` function.
  *
- * @param conn --- #Connection to be closed
+ * @param conn --- `Connection` to be closed
  */
 template <typename Connection>
 inline error_code close_connection(Connection&& conn);
@@ -878,9 +873,9 @@ inline error_code close_connection(Connection&& conn);
  * at the end of its scope. If nullptr is passed as argument or connection is
  * null recursive no `ozo::close_connection()` would be made.
  *
- * @param conn --- pointer on a #Connection to be closed.
+ * @param conn --- pointer on a `Connection` to be closed.
  *
- * ###Example
+ * @par Example
  *
  * @code
 {
@@ -904,8 +899,6 @@ inline auto defer_close_connection(Connection* conn) {
 
     return std::unique_ptr<Connection, decltype(do_close)>{conn, do_close};
 }
-
-///@}
 
 } // namespace ozo
 

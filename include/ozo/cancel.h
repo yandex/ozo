@@ -11,7 +11,7 @@ namespace ozo {
 /**
  * @brief Cancel operation handle
  *
- * This class decoupling #Connection object from a cancel() operation to
+ * This class decoupling the `Connection` object from the `ozo::cancel()` operation to
  * be more concurrent-safe and thread-safe.
  *
  * @ingroup group-requests-types
@@ -40,7 +40,7 @@ private:
 /**
  * @brief Get cancel handle for the cancel operation
  *
- * @param connection --- #Connection with active operation to cancel.
+ * @param connection --- `Connection` with active operation to cancel.
  * @param executor   --- Executor on which the operation will be executed. Default executor is
  *                       `boost::asio::system_executor`.
  *
@@ -152,8 +152,7 @@ auto cancel(cancel_handle<Executor>&& handle, io_context& io, TimeConstraint tim
  * @param token --- valid `CancelCompletionToken` (see time constraint version of `ozo::cancel()` for details).
  * @return deduced from `CancelCompletionToken`.
  *
- * @note Use it very carefull because of libpq's synchronous implementation there is no way
- * to cancel IO via a #Connection socket. The only option is to stop wait.
+ * @warning Use it carefully because you can't cancel this `cancel()` operation. The only option is to stop wait.
  *
  * @ingroup group-requests-functions
  */

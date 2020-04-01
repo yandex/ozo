@@ -107,13 +107,9 @@ private:
  * @tparam Executor --- the type of the executor is used to perform IO; currently only
  *                      `boost::asio::io_context::executor_type` is supported.
  *
- * ### Thread safety
- *
- * *Distinct objects*: Safe.
- *
- * *Shared objects*: Unsafe.
- *
+ * @thread_safety{Safe,Unsafe}
  * @ingroup group-connection-types
+ * @models{Connection}
  */
 template <typename Rep, typename Executor = asio::io_context::executor_type>
 class pooled_connection {
@@ -182,6 +178,8 @@ public:
      * Typically this function is used by the library within the connection establishing process and operation execution.
      * Users should not use it directly other than for custom `libpq`-based opeartions.
      *
+     * @warning The function is designated to the library operations use only. Do not call this function directly.
+     *
      * @param handler --- wait handler with `void(ozo::error_code, int=0)` signature.
      */
     template <typename WaitHandler>
@@ -192,6 +190,8 @@ public:
      *
      * Typically this function is used by the library within the connection establishing process and operation execution.
      * Users should not use it directly other than for custom `libpq`-based opeartions.
+     *
+     * @warning The function is designated to the library operations use only. Do not call this function directly.
      *
      * @param handler --- wait handler with `void(ozo::error_code, int=0)` signature.
      */
@@ -264,24 +264,23 @@ struct connection_traits<yamail::resource_pool::handle<Pool>> :
 
 /**
  * @brief Connection pool implementation
- * @ingroup group-connection-types
  *
  * This is a simple implementation connection pool (<a href="https://en.wikipedia.org/wiki/Connection_pool">wikipedia</a>).
  * Connection pool allows to store established connections and reuse it to avoid a connect operation for each request.
  * It supports asynchronous request for connections using a queue with optional limits of capacity and wait time.
  * Also connection in the pool may be closed when it is not used for some time - idle timeout.
  *
- * This is how `connection_pool` handles user request to get a #Connection object:
+ * This is how `connection_pool` handles user request to get a `Connection` object:
  *
  * * If there is a free connection --- it will be provided for a user immediately.
- * * If all connections are busy but its number less than the limit --- a new connection will be created via the #ConnectionSource and provided for a user.
+ * * If all connections are busy but its number less than the limit, `ConnectionSource` creates a new connection and provides it to a user.
  * * If all connections are busy and there is no room to create a new one --- the request will be placed into the internal queue to wait for the free connection.
  *
  * The request may be limited by time via optional `connection_pool_timeouts` argument of the `connection_pool::operator()`.
  *
- * `connection_pool` models #ConnectionSource concept itself using underlying #ConnectionSource.
+ * `connection_pool` models `ConnectionSource` concept itself using underlying `ConnectionSource`.
  *
- * @tparam Source --- underlying #ConnectionSource which is being used to create connection to a database.
+ * @tparam Source --- underlying `ConnectionSource` which is being used to create connection to a database.
  *
  * ###Example
  *
@@ -293,6 +292,8 @@ struct connection_traits<yamail::resource_pool::handle<Pool>> :
  * Creating a ConnectionProvider from the connection_pool instance:
 @snippet examples/connection_pool.cpp Creating Connection Provider
  *
+ * @ingroup group-connection-types
+ * @models{ConnectionSource}
  */
 template <typename Source>
 class connection_pool {
@@ -303,9 +304,9 @@ public:
 
     using impl_type = yamail::resource_pool::async::pool<connection_rep_type>;
     /**
-     * @brief Construct a new connection pool object
+     * Construct a new connection pool object
      *
-     * @param source --- #ConnectionSource object which is being used to create connection to a database.
+     * @param source --- `ConnectionSource` object which is being used to create connection to a database.
      * @param config --- pool configuration.
      */
     connection_pool(Source source, const connection_pool_config& config)
@@ -313,23 +314,18 @@ public:
       source_(std::move(source)) {}
 
     /**
-     * @brief Type of connection depends on connection type of Source
-     *
-     * Type is used to model #ConnectionSource
+     * Type of connection depends on connection type of Source. The definition is used to model `ConnectionSource`
      */
     using connection_type = std::shared_ptr<pooled_connection<typename impl_type::handle>>;
 
     /**
-     * @brief Provides connection is binded to the given `io_context`
-     *
-     * In case of success --- the handler will be invoked as operation succeeded.
-     * In case of connection fail, queue timeout or queue full --- the handler will be invoked as operation failed.
+     * Get connection is bound to the given `io_context` object.
      * This operation has a time constrain and would be interrupted if the time
-     * constrain expired by cancelling IO on a #Connection's socket or wait operation in
+     * constrain expired by cancelling IO on a `Connection` or wait operation in
      * the pool's queue.
      *
      * @param io --- `io_context` for the connection IO.
-     * @param t --- operation time constrain.
+     * @param t --- operation time constraint.
      * @param handler --- #Handler.
      */
     template <typename TimeConstraint, typename Handler>
@@ -386,18 +382,19 @@ constexpr auto ConnectionPool = is_connection_pool<std::decay_t<T>>::value;
 
 /**
  * @brief Connection pool construct helper function
+ *
+ * Helper function which creates connection pool based on `ConnectionSource` and configuration parameters.
+ *
+ * @param source --- connection source object which is being used to create connection to a database.
+ * @param config --- pool configuration.
+ * @return `ozo::connection_pool` object.
  * @ingroup group-connection-functions
  * @relates ozo::connection_pool
- *
- * Helper function which creates connection pool based on #ConnectionSource and configuration parameters.
- *
- * @param source --- #ConnectionSource object which is being used to create connection to a database.
- * @param config --- pool configuration.
- * @return `ozo::connection_pool` object
  */
-template <typename Source>
-auto make_connection_pool(Source&& source, const connection_pool_config& config) {
-    return connection_pool<std::decay_t<Source>>{std::forward<Source>(source), config};
+template <typename ConnectionSource>
+auto make_connection_pool(ConnectionSource&& source, const connection_pool_config& config) {
+    static_assert(ozo::ConnectionSource<ConnectionSource>, "source should model ConnectionSource concept");
+    return connection_pool<std::decay_t<ConnectionSource>>{std::forward<ConnectionSource>(source), config};
 }
 
 } // namespace ozo

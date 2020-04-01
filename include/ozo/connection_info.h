@@ -10,13 +10,17 @@
 namespace ozo {
 
 /**
- * @brief Connection information
+ * @brief Connection source to a single host
  *
- * This type is a basic #ConnectionSource implementation. This source allows to establish connection
- * via [connection string](https://www.postgresql.org/docs/9.4/static/libpq-connect.html#LIBPQ-CONNSTRING) specified.
- * @tparam OidMap --- OidMap type which defines custom types should be used within this connection.
+ * This connection source establishes a connection to a single host using (or via) the specified
+ * [connection string](https://www.postgresql.org/docs/9.4/static/libpq-connect.html#LIBPQ-CONNSTRING).
+ *
+ * @warning Multi-host connection is not supported.
+ *
+ * @tparam OidMap --- oid map type with custom types that should be used within a connection.
  * @tparam Statistics --- statistics type which defines statistics is collected for this connection.
  * @ingroup group-connection-types
+ * @models{ConnectionSource}
  */
 template <
     typename OidMap = empty_oid_map,
@@ -26,14 +30,7 @@ class connection_info {
     Statistics statistics;
 
 public:
-    using connection = ozo::connection<OidMap, Statistics>;
-
-     /**
-     * @brief Type of connection depends on built-in implementation
-     *
-     * Type is used to model #ConnectionSource
-     */
-    using connection_type = std::shared_ptr<connection>;
+    using connection_type = std::shared_ptr<ozo::connection<OidMap, Statistics>>; //!< Type of connection which is produced by the source.
 
     /**
      * @brief Construct a new connection information object
@@ -53,7 +50,7 @@ public:
      * In case of success --- the handler will be invoked as operation succeeded.
      * In case of connection fail --- the handler will be invoked as operation failed.
      * This operation has a time constrain and would be interrupted if the time
-     * constrain expired by cancelling IO on a #Connection's socket.
+     * constrain expired by cancelling IO on a `Connection`'s socket.
      *
      * @param io --- `io_context` for the connection IO.
      * @param t --- #TimeConstraint for the operation.
@@ -63,7 +60,7 @@ public:
     void operator ()(io_context& io, TimeConstraint t, Handler&& handler) const {
         static_assert(ozo::TimeConstraint<TimeConstraint>, "should model TimeConstraint concept");
         auto allocator = asio::get_associated_allocator(handler);
-        impl::async_connect(conn_str, t, std::allocate_shared<connection>(allocator, io, statistics),
+        impl::async_connect(conn_str, t, std::allocate_shared<ozo::connection<OidMap, Statistics>>(allocator, io, statistics),
             std::forward<Handler>(handler));
     }
 
@@ -110,7 +107,7 @@ template <typename ...Ts>
 [[deprecated]] auto make_connector(connection_info<Ts...>&& source, io_context& io) { return source[io];}
 
 /**
- * @brief Constructs `ozo::connection_info` #ConnectionSource.
+ * @brief Constructs `ozo::connection_info` `ConnectionSource`.
  * @ingroup group-connection-functions
  * @relates ozo::connection_info
  *

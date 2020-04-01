@@ -138,7 +138,7 @@ namespace hana = boost::hana;
 /**
  * @brief Basic operation context
  *
- * @tparam ConnectionProvider --- #ConnectionProvider type.
+ * @tparam ConnectionProvider --- connection provider type.
  * @tparam TimeConstraint --- operation #TimeConstraint type.
  * @tparam Args --- other operation arguments' type.
  * @ingroup group-failover-strategy
@@ -151,14 +151,14 @@ struct basic_context {
     static_assert(ozo::TimeConstraint<TimeConstraint>, "TimeConstraint should models ozo::TimeConstraint");
     static_assert(ozo::ConnectionProvider<ConnectionProvider>, "ConnectionProvider should models ozo::ConnectionProvider");
 
-    std::decay_t<ConnectionProvider> provider; //!< #ConnectionProvider for an operation, typically deduced from operation's 1st argument.
+    std::decay_t<ConnectionProvider> provider; //!< connection provider for an operation, typically deduced from operation's 1st argument.
     TimeConstraint time_constraint; //!< #TimeConstraint for an operation, typically deduced from operation's 2nd argument.
     hana::tuple<std::decay_t<Args>...> args; //!< Other arguments of an operation except #CompletionToken.
 
     /**
-     * @brief Construct a new basic context object
+     * Construct a new basic context object
      *
-     * @param p --- #ConnectionProvider for an operation.
+     * @param p --- connection provider for an operation.
      * @param t --- #TimeConstraint for an operation.
      * @param args --- other arguments of an operation except #CompletionToken.
      */

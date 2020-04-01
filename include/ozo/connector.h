@@ -48,43 +48,43 @@ private:
 };
 
 /**
- * @brief Default implementation of ConnectionProvider
+ * @brief Default model for the `ConnectionProvider` concept
  *
- * This is the default implementation of the #ConnectionProvider concept. It binds
- * `io_context` to a #ConnectionSource implementation object.
+ * This is the default implementation of the `ConnectionProvider` concept. It binds
+ * `io_context` to a `ConnectionSource` implementation object.
  *
- * Thus `connection_provider` can create connection via #ConnectionSource object running its
+ * Thus `connection_provider` can create connection via `ConnectionSource` object running its
  * asynchronous connect operation on the `io_context` with additional parameters.
- * As a result, `connection_provider` provides a #Connection object bound to `io_context` via
+ * As a result, `connection_provider` provides a `Connection` object bound to `io_context` via
  * `ozo::get_connection()` function.
  *
- * @tparam Source --- #ConnectionSource implementation
+ * @tparam Source --- `ConnectionSource` implementation
  * @ingroup group-connection-types
+ * @models{ConnectionProvider}
  */
-template <typename Source>
+template <typename ConnectionSource>
 class connection_provider {
 public:
-    static_assert(ConnectionSource<Source>, "is not a ConnectionSource");
+    static_assert(ozo::ConnectionSource<ConnectionSource>, "ConnectionSource should model ConnectionSource concept");
 
     /**
-     * Source type according to #ConnectionProvider requirements
+     * Source type according to `ConnectionProvider` requirements
      */
-    using source_type = std::decay_t<Source>;
+    using source_type = std::decay_t<ConnectionSource>;
     /**
-     * #Connection implementation type according to #ConnectionProvider requirements.
-     * Specifies the #Connection implementation type which can be obtained from this provider.
+     * `Connection` implementation type according to `ConnectionProvider` requirements.
+     * Specifies the `Connection` implementation type which can be obtained from this provider.
      */
     using connection_type = typename connection_source_traits<source_type>::connection_type;
 
     /**
      * Construct a new `connection_provider` object
      *
-     * @param source --- #ConnectionSource implementation
+     * @param source --- `ConnectionSource` implementation
      * @param io --- `io_context` for asynchronous IO
      */
-    template <typename T>
-    connection_provider(T&& source, io_context& io)
-     : source_(std::forward<T>(source)), io_(io) {
+    connection_provider(ConnectionSource&& source, io_context& io)
+     : source_(std::forward<ConnectionSource>(source)), io_(io) {
     }
 
     template <typename TimeConstraint, typename Handler>
@@ -102,15 +102,16 @@ public:
     template <typename TimeConstraint, typename Handler>
     void async_get_connection(TimeConstraint t, Handler&& h) && {
         static_assert(ozo::TimeConstraint<TimeConstraint>, "should model TimeConstraint concept");
-        std::forward<Source>(source_)(io_, std::move(t), std::forward<Handler>(h));
+        std::move(source_)(io_, std::move(t), std::forward<Handler>(h));
     }
 
 private:
-    Source source_;
+    ConnectionSource source_;
     io_context& io_;
 };
 
-template <typename T>
-connection_provider(T&& source, io_context& io) -> connection_provider<T>;
+template <typename ConnectionSource>
+connection_provider(ConnectionSource&& source, io_context& io)
+    -> connection_provider<ConnectionSource>;
 
 } // namespace ozo

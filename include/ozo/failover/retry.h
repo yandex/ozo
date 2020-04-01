@@ -104,7 +104,7 @@ public:
      * `ozo::fallback::get_next_try()` for details.
      *
      * @param ec --- error code which should be examined for retry ability.
-     * @param conn --- #Connection object which should be closed anyway.
+     * @param conn --- `Connection` object which should be closed in any case.
      * @return `std::optional<basic_try>` --- initialized with basic_try object if retry is possible.
      * @return `std::nullopt` --- retry is not possible due to `ec` value or tries remain
      *                            count.

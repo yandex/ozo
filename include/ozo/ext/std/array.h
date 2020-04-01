@@ -13,12 +13,14 @@ namespace ozo {
 #include <ozo/ext/std/array.h>
  *@endcode
  *
- * `std::array<T, N>` is defined as an one dimensional #Array representation type
+ * `std::array<T, N>` is declared as an one dimensional array representation type
  * with fixed size.
  *
  * The `ozo::fit_array_size()` function throws `ozo::system_error` exception,
  * with `ozo::error::bad_array_size` error code, if it's size argument does not
  * equal to the array size.
+ *
+ * @models{Array}
  */
 ///@{
 template <typename T, std::size_t size>
