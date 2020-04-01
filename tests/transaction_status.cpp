@@ -11,14 +11,13 @@ using namespace testing;
 
 struct get_transaction_status : Test {
     ozo::tests::io_context io;
-    StrictMock<ozo::tests::stream_descriptor_mock> stream;
     StrictMock<ozo::tests::PGconn_mock> handle;
     auto make_connection() {
         using namespace ozo::tests;
         EXPECT_CALL(handle, PQstatus()).WillRepeatedly(Return(CONNECTION_OK));
         return std::make_shared<connection<>>(connection<>{
             std::addressof(handle),
-            ozo::tests::stream_descriptor{io, stream}, {}, nullptr, "", nullptr
+            {}, nullptr, "", nullptr
         });
     }
 };
@@ -48,7 +47,7 @@ TEST_P(get_transaction_status, should_return_status_for_connection){
     EXPECT_EQ(std::get<1>(GetParam()), ozo::get_transaction_status(conn));
 }
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     with_any_PGTransactionStatusType,
     get_transaction_status,
     testing::Values(

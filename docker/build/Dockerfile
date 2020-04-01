@@ -1,10 +1,16 @@
-FROM ubuntu:18.10
+FROM ubuntu:18.04
+
+RUN apt-get update && \
+    apt-get install -y apt-transport-https ca-certificates gnupg software-properties-common wget
+
+RUN wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | apt-key add -
+
+RUN apt-add-repository 'deb https://apt.kitware.com/ubuntu/ bionic main'
 
 RUN apt-get update && \
     apt-get install -y \
         ccache \
         clang-7 \
-        cmake \
         curl \
         g++-8 \
         git \
@@ -16,7 +22,7 @@ RUN apt-get update && \
         python-openssl \
         python-pip \
         python-yaml \
-        wget \
+        cmake \
         doxygen \
         && \
     rm -rf /var/lib/apt/lists/*
@@ -25,6 +31,7 @@ RUN update-alternatives --install /usr/bin/clang clang /usr/bin/clang-7 100 && \
     update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-7 100 && \
     update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 100 && \
     update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-8 100 && \
+    update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-8 100 && \
     update-alternatives --install /usr/bin/llvm-symbolizer llvm-symbolizer /usr/bin/llvm-symbolizer-7 100
 
 RUN wget -qO boost_1_66_0.tar.gz https://dl.bintray.com/boostorg/release/1.66.0/source/boost_1_66_0.tar.gz && \

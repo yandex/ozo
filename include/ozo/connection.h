@@ -7,7 +7,7 @@
 #include <ozo/core/recursive.h>
 #include <ozo/core/none.h>
 #include <ozo/deadline.h>
-#include <ozo/native_conn_handle.h>
+#include <ozo/pg/handle.h>
 
 #include <ozo/detail/bind.h>
 #include <ozo/detail/functional.h>
@@ -96,7 +96,7 @@ inline constexpr decltype(auto) unwrap_connection(T&& conn) noexcept {
 template <typename OidMap, typename Statistics>
 class connection {
 public:
-    using native_handle_type = native_conn_handle::pointer; //!< Native connection handle type
+    using native_handle_type = ozo::pg::conn::pointer; //!< Native connection handle type
     using oid_map_type = OidMap; //!< Oid map of types that are used with the connection
     using error_context_type = std::string; //!< Additional error context which could provide context depended information for errors
     using executor_type = io_context::executor_type; //!< The type of the executor associated with the object.
@@ -172,7 +172,7 @@ public:
      * @param handle --- rvalue reference on a new handle.
      * @return error_code --- error code of the function call.
      */
-    error_code assign(native_conn_handle&& handle);
+    error_code assign(ozo::pg::conn&& handle);
 
     /**
      * Release ownership of the native connection handle object.
@@ -183,9 +183,9 @@ public:
      * finish immediately, and the handlers for cancelled operations will be passed the
      * `boost::asio::error::operation_aborted` error.
      *
-     * @return native_conn_handle --- native connection handle object
+     * @return ozo::pg::conn --- native connection handle object
      */
-    native_conn_handle release();
+    ozo::pg::conn release();
 
     /**
      * Asynchronously wait for the connection socket to become ready to write or to have pending error conditions.
@@ -261,7 +261,7 @@ public:
 private:
     using stream_type = asio::posix::stream_descriptor;
 
-    native_conn_handle handle_;
+    ozo::pg::conn handle_;
     io_context* io_ = nullptr;
     stream_type socket_;
     oid_map_type oid_map_;
@@ -331,7 +331,7 @@ struct is_connection<connection<Ts...>> : std::true_type {};
 * @hideinitializer
 */
 template <typename T>
-constexpr auto Connection = is_connection<std::decay_t<decltype(unwrap_connection(std::declval<T>()))>>::value;
+inline constexpr auto Connection = is_connection<std::decay_t<decltype(unwrap_connection(std::declval<T>()))>>::value;
 
 /**
  * @defgroup group-connection-functions Related functions
@@ -681,7 +681,7 @@ struct connection_source_traits {
  * @ingroup group-connection-concepts
  */
 template <typename T>
-constexpr auto ConnectionSource = is_connection_source<std::decay_t<T>>::value;
+inline constexpr auto ConnectionSource = is_connection_source<std::decay_t<T>>::value;
 
 template <typename Provider, typename TimeConstraint, typename Handler>
 constexpr auto async_get_connection(Provider&& p, TimeConstraint t, Handler&& h) ->
@@ -757,7 +757,7 @@ struct connection_provider_traits {
  * @ingroup group-connection-concepts
  */
 template <typename T>
-constexpr auto ConnectionProvider = is_connection_provider<std::decay_t<T>>::value;
+inline constexpr auto ConnectionProvider = is_connection_provider<std::decay_t<T>>::value;
 
 #ifdef OZO_DOCUMENTATION
 /**
@@ -851,7 +851,7 @@ struct initiate_async_get_connection {
 };
 } // namespace detail
 
-constexpr get_connection_op<detail::initiate_async_get_connection> get_connection;
+inline constexpr get_connection_op<detail::initiate_async_get_connection> get_connection;
 #endif
 
 

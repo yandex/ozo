@@ -807,7 +807,7 @@ TEST_P(to_duration, should_convert_pg_interval_to_chrono_microseconds) {
     EXPECT_EQ(result, expected);
 }
 
-INSTANTIATE_TEST_CASE_P(convert_success, to_duration, Values(
+INSTANTIATE_TEST_SUITE_P(convert_success, to_duration, Values(
     std::make_tuple(ozo::detail::pg_interval{       36672013014LL,         9,          92}, 239278272013014us),
     std::make_tuple(ozo::detail::pg_interval{      -49727986986LL,       -20,          93}, 239278272013014us),
     std::make_tuple(ozo::detail::pg_interval{   239278272013014LL,         0,           0}, 239278272013014us),
@@ -825,7 +825,7 @@ INSTANTIATE_TEST_CASE_P(convert_success, to_duration, Values(
     std::make_tuple(ozo::detail::pg_interval{9223370740854775807LL,  555555555, -18518518}, std::chrono::microseconds::max())
 ));
 
-INSTANTIATE_TEST_CASE_P(convert_success_with_overflow, to_duration, Values(
+INSTANTIATE_TEST_SUITE_P(convert_success_with_overflow, to_duration, Values(
     std::make_tuple(ozo::detail::pg_interval{-14454775809LL, -106751991, 0}, std::chrono::microseconds::min()),
     std::make_tuple(ozo::detail::pg_interval{ 14454775808LL,  106751991, 0}, std::chrono::microseconds::max()),
 

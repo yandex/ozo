@@ -265,7 +265,7 @@ private:
  *
  * This class provides access to the raw representation of a database request result. It
  * models range of rows. Each row can be accessed via index or iterator.
- * @tparam T --- underlying native result handler type, in common case `ozo::native_result_handle`.
+ * @tparam T --- underlying native result handler type, in common case `ozo::pg::result`.
  *
  * @ingroup group-requests-types
  */
@@ -406,7 +406,7 @@ private:
  *
  * @ingroup group-requests-types
  */
-using result = basic_result<native_result_handle>;
+using result = basic_result<ozo::pg::result>;
 
 template <typename T>
 auto make_result(T&& handle) {

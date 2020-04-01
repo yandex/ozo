@@ -13,9 +13,9 @@ using namespace ozo::tests;
 
 struct impl_transaction : Test {
     StrictMock<connection_gmock> connection {};
-    StrictMock<stream_descriptor_mock> socket {};
+    StrictMock<PGconn_mock> handle;
     io_context io;
-    decltype(make_connection(connection, io, socket)) conn = make_connection(connection, io, socket);
+    decltype(make_connection(connection, io, handle)) conn = make_connection(connection, io, handle);
     decltype(ozo::make_options()) options = ozo::make_options();
 };
 
@@ -24,13 +24,13 @@ TEST_F(impl_transaction, should_be_able_to_construct_default) {
 }
 
 TEST_F(impl_transaction, when_destruct_last_copy_with_connection_should_close_connection) {
-    EXPECT_CALL(socket, close(_)).WillOnce(Return());
+    EXPECT_CALL(connection, close()).WillOnce(Return(ozo::error_code{}));
 
     ozo::impl::make_transaction(std::move(conn), options);
 }
 
 TEST_F(impl_transaction, when_destruct_last_copy_without_connection_should_not_close_connection) {
-    EXPECT_CALL(socket, close(_)).Times(0);
+    EXPECT_CALL(connection, close()).Times(0);
 
     ozo::impl::make_transaction(std::move(conn), options).take_connection(conn);
 }
@@ -41,13 +41,13 @@ TEST_F(impl_transaction, should_be_able_to_convert_to_bool) {
 }
 
 TEST_F(impl_transaction, has_connection_when_constructed_with) {
-    EXPECT_CALL(socket, close(_)).WillOnce(Return());
+    EXPECT_CALL(connection, close()).WillOnce(Return(ozo::error_code{}));
 
     EXPECT_TRUE(ozo::impl::make_transaction(std::move(conn), options).has_connection());
 }
 
 TEST_F(impl_transaction, transaction_with_initialized_connection_is_not_null) {
-    EXPECT_CALL(socket, close(_)).WillOnce(Return());
+    EXPECT_CALL(connection, close()).WillOnce(Return(ozo::error_code{}));
 
     EXPECT_FALSE(ozo::is_null(ozo::impl::make_transaction(std::move(conn), options)));
 }

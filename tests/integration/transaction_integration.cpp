@@ -15,7 +15,7 @@ namespace asio = boost::asio;
 
 using namespace testing;
 
-TEST(transaction, create_schema_in_transaction_and_commit_then_table_should_exist) {
+TEST(transaction_integration, create_schema_in_transaction_and_commit_then_table_should_exist) {
     using namespace ozo::literals;
 
     ozo::io_context io;
@@ -34,7 +34,7 @@ TEST(transaction, create_schema_in_transaction_and_commit_then_table_should_exis
     io.run();
 }
 
-TEST(transaction, create_schema_in_transaction_and_rollback_then_table_should_not_exist) {
+TEST(transaction_integration, create_schema_in_transaction_and_rollback_then_table_should_not_exist) {
     using namespace ozo::literals;
 
     ozo::io_context io;
@@ -54,7 +54,7 @@ TEST(transaction, create_schema_in_transaction_and_rollback_then_table_should_no
     io.run();
 }
 
-TEST(transaction, transaction_level_options_should_not_cause_sql_syntax_errors) {
+TEST(transaction_integration, transaction_level_options_should_not_cause_sql_syntax_errors) {
     ozo::io_context io;
     ozo::connection_info conn_info(OZO_PG_TEST_CONNINFO);
 
@@ -121,7 +121,7 @@ TEST(transaction, transaction_level_options_should_not_cause_sql_syntax_errors) 
     io.run();
 }
 
-TEST(transaction, transaction_mode_options_should_not_cause_sql_syntax_errors) {
+TEST(transaction_integration, transaction_mode_options_should_not_cause_sql_syntax_errors) {
     ozo::io_context io;
     ozo::connection_info conn_info(OZO_PG_TEST_CONNINFO);
 
@@ -158,7 +158,7 @@ TEST(transaction, transaction_mode_options_should_not_cause_sql_syntax_errors) {
     io.run();
 }
 
-TEST(transaction, transaction_deferrability_options_should_not_generate_syntax_errors) {
+TEST(transaction_integration, transaction_deferrability_options_should_not_generate_syntax_errors) {
     using ozo::transaction_options;
     ozo::io_context io;
     ozo::connection_info conn_info(OZO_PG_TEST_CONNINFO);

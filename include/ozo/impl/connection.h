@@ -1,7 +1,7 @@
 #pragma once
 
 #include <ozo/error.h>
-#include <ozo/native_conn_handle.h>
+#include <ozo/pg/handle.h>
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/asio/steady_timer.hpp>
 
@@ -36,7 +36,7 @@ connection<OidMap, Statistics>::connection(io_context& io, Statistics statistics
 : io_(std::addressof(io)), socket_(*io_), statistics_(std::move(statistics)) {}
 
 template <typename OidMap, typename Statistics>
-error_code connection<OidMap, Statistics>::assign(native_conn_handle&& handle) {
+error_code connection<OidMap, Statistics>::assign(ozo::pg::conn&& handle) {
     int fd = PQsocket(handle.get());
     if (fd == -1) {
         return error::pq_socket_failed;
@@ -51,9 +51,9 @@ error_code connection<OidMap, Statistics>::assign(native_conn_handle&& handle) {
 }
 
 template <typename OidMap, typename Statistics>
-native_conn_handle connection<OidMap, Statistics>::release() {
+ozo::pg::conn connection<OidMap, Statistics>::release() {
     socket_.release();
-    native_conn_handle retval;
+    ozo::pg::conn retval;
     using std::swap;
     swap(retval, handle_);
     return retval;

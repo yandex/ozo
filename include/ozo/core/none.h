@@ -25,7 +25,7 @@ template <typename T>
 using is_none = std::is_same<T, none_t>;
 
 template <typename T>
-constexpr auto IsNone = is_none<T>::value;
+inline constexpr auto IsNone = is_none<T>::value;
 
 template <typename T>
 inline constexpr bool operator == (const none_t&, const T&) { return IsNone<T>;}

@@ -4,7 +4,7 @@ include(ExternalProject)
 ExternalProject_Add(
     GoogleTest
     GIT_REPOSITORY "https://github.com/google/googletest.git"
-    GIT_TAG release-1.8.0
+    GIT_TAG release-1.10.0
     CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}
     UPDATE_COMMAND ""
     LOG_DOWNLOAD ON
@@ -77,6 +77,7 @@ endif()
 
 add_executable(ozo_tests ${SOURCES})
 add_dependencies(ozo_tests GoogleTest)
+target_link_libraries(ozo_tests gtest)
 target_link_libraries(ozo_tests gmock)
 target_link_libraries(ozo_tests ozo)
 add_test(ozo_tests ozo_tests)

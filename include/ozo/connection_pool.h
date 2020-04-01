@@ -53,12 +53,12 @@ template <typename OidMap, typename Statistics = none_t>
 class connection_rep {
 public:
     using oid_map_type = OidMap;
-    using native_handle_type = typename native_conn_handle::pointer;
+    using native_handle_type = typename ozo::pg::conn::pointer;
     using statistics_type = Statistics;
     using error_context_type = std::string;
 
-    const native_conn_handle& safe_native_handle() const & {return safe_handle_;}
-    native_conn_handle& safe_native_handle() & {return safe_handle_;}
+    const ozo::pg::conn& safe_native_handle() const & {return safe_handle_;}
+    ozo::pg::conn& safe_native_handle() & {return safe_handle_;}
 
     const oid_map_type& oid_map() const & {return oid_map_;}
     oid_map_type& oid_map() & {return oid_map_;}
@@ -78,7 +78,7 @@ public:
     }
 
     connection_rep(
-        native_conn_handle&& safe_handle,
+        ozo::pg::conn&& safe_handle,
         OidMap oid_map = OidMap{},
         error_context_type error_context = {},
         Statistics statistics = Statistics{})
@@ -87,7 +87,7 @@ public:
       error_context_(std::move(error_context)),
       statistics_(std::move(statistics)) {}
 private:
-    native_conn_handle safe_handle_;
+    ozo::pg::conn safe_handle_;
     oid_map_type oid_map_;
     error_context_type error_context_;
     statistics_type statistics_;

@@ -136,7 +136,7 @@ struct is_query_text<T, std::void_t<
  */
 //! @cond
 template <typename T>
-constexpr auto QueryText = is_query_text<std::decay_t<T>>::value;
+inline constexpr auto QueryText = is_query_text<std::decay_t<T>>::value;
 //! @endcond
 
 template <typename T, typename = hana::when<true>>
@@ -265,7 +265,7 @@ static_assert(ozo::HanaSequence<decltype(ozo::get_query_params(query))>);
  */
 //! @cond
 template <typename T>
-constexpr auto Query = is_query<std::decay_t<T>>::value;
+inline constexpr auto Query = is_query<std::decay_t<T>>::value;
 //! @endcond
 
 /**
