@@ -101,16 +101,6 @@ private:
     coordinates v_;
 };
 
-template <typename T, typename Result>
-inline const T* data(const value<Result>& v) noexcept {
-    return reinterpret_cast<const T*>(v.data());
-}
-
-template <typename T, typename Result>
-inline std::size_t size(const value<Result>& v) noexcept {
-    return v.size();
-}
-
 /**
  * @brief Database request result row proxy
  *
