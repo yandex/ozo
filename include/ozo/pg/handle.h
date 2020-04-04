@@ -11,7 +11,7 @@ struct safe_handle;
 template<>
 struct safe_handle<::PGresult> {
     struct deleter {
-        void operator() (::PGresult *ptr) const { ::PQclear(ptr); }
+        void operator() (::PGresult *ptr) const noexcept { ::PQclear(ptr); }
     };
     using type = std::unique_ptr<::PGresult, deleter>;
 };
@@ -19,7 +19,7 @@ struct safe_handle<::PGresult> {
 template <>
 struct safe_handle<::PGconn> {
     struct deleter {
-        void operator() (::PGconn *ptr) const { ::PQfinish(ptr); }
+        void operator() (::PGconn *ptr) const noexcept { ::PQfinish(ptr); }
     };
     using type = std::unique_ptr<::PGconn, deleter>;
 };
@@ -28,7 +28,9 @@ template <typename T>
 using safe_handle_t = typename safe_handle<T>::type;
 
 template <typename T>
-safe_handle_t<T> make_safe(T* handle) { return safe_handle_t<T>{handle};}
+safe_handle_t<T> make_safe(T* handle) noexcept(noexcept(safe_handle_t<T>{handle})) {
+    return safe_handle_t<T>{handle};
+}
 
 using conn = safe_handle_t<::PGconn>;
 
