@@ -30,7 +30,7 @@ public:
         int col;
     };
 
-    value(const coordinates& v) : v_(v) {}
+    value(const coordinates& v) noexcept : v_(v) {}
 
     /**
      * Get value type OID
@@ -144,7 +144,7 @@ public:
     > {
     public:
         const_iterator() = default;
-        const_iterator(const coordinates& v) : v_{v} {}
+        const_iterator(const coordinates& v) noexcept : v_{v} {}
 
     private:
         value dereference() const noexcept { return {v_}; }
@@ -169,7 +169,7 @@ public:
      */
     using iterator = const_iterator;
 
-    row(const coordinates& first) : first_(first) {}
+    row(const coordinates& first) noexcept : first_(first) {}
 
     /**
      * Iterator on the first of row values sequence.
@@ -221,7 +221,7 @@ public:
      * @return `true` --- no values in the row, `size() == 0`, `begin() == end()`.
      * @return `false` --- row is not empty, `size() > 0`, `begin() != end()`.
      */
-    bool empty() const noexcept { return size() == 0; }
+    [[nodiscard]] bool empty() const noexcept { return size() == 0; }
 
     /**
      * Get value by field index with range check
@@ -298,7 +298,7 @@ public:
     > {
     public:
         const_iterator() = default;
-        const_iterator(const coordinates& v) : v_{v} {}
+        const_iterator(const coordinates& v) noexcept : v_{v} {}
 
     private:
         row dereference() const noexcept { return {v_}; }
@@ -325,7 +325,8 @@ public:
     using iterator = const_iterator;
 
     basic_result() = default;
-    basic_result(handle_type res) : res_(std::move(res)) {}
+    basic_result(handle_type res) noexcept(noexcept(handle_type(std::move(res))))
+    : res_(std::move(res)) {}
 
     /**
      * Iterator on the first row of the result.
@@ -354,7 +355,7 @@ public:
      * @return `true` --- no ros in the result, `size() == 0`, `begin() == end()`.
      * @return `false` --- row is not empty, `size() > 0`, `begin() != end()`.
      */
-    bool empty() const noexcept { return size() == 0; }
+    [[nodiscard]] bool empty() const noexcept { return size() == 0; }
 
     /**
      * Get row by index.
