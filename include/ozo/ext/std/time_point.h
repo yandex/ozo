@@ -29,7 +29,7 @@ struct send_impl<std::chrono::system_clock::time_point> {
     template <typename OidMap>
     static ostream& apply(ostream& out, const OidMap&, const std::chrono::system_clock::time_point& in) {
         int64_t value = std::chrono::duration_cast<std::chrono::microseconds>(in - detail::epoch).count();
-        return impl::write(out, value);
+        return write(out, value);
     }
 };
 
@@ -38,7 +38,7 @@ struct recv_impl<std::chrono::system_clock::time_point> {
     template <typename OidMap>
     static istream& apply(istream& in, size_type, const OidMap&, std::chrono::system_clock::time_point& out) {
         int64_t value;
-        impl::read(in, value);
+        read(in, value);
         out = detail::epoch + std::chrono::microseconds{ value };
         return in;
     }

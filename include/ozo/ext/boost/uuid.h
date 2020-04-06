@@ -24,17 +24,15 @@ template <>
 struct send_impl<boost::uuids::uuid> {
     template <typename OidMap>
     static ostream& apply(ostream& out, const OidMap&, const boost::uuids::uuid& in) {
-        out.write(reinterpret_cast<const char*>(in.data), std::size(in));
-        return out;
+        return write(out, in.data);
     }
 };
 
 template <>
 struct recv_impl<boost::uuids::uuid> {
     template <typename OidMap>
-    static istream& apply(istream& in, size_type size, const OidMap&, const boost::uuids::uuid& out) {
-        in.read(const_cast<char*>(reinterpret_cast<const char*>(out.data)), size);
-        return in;
+    static istream& apply(istream& in, size_type, const OidMap&, boost::uuids::uuid& out) {
+        return read(in, out.data);
     }
 };
 

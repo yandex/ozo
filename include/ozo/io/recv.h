@@ -247,8 +247,7 @@ inline istream& recv_frame(istream& in, const OidMap& oids, Out& out) {
 
 template <typename T, typename OidMap, typename Out>
 void recv(const value<T>& in, const OidMap& oids, Out& out) {
-    detail::istreambuf_view sbuf(in.data(), in.size());
-    istream s(&sbuf);
+    istream s(in.data(), in.size());
     recv(s, in.oid(), (in.is_null() ? null_state_size : in.size()), oids, out);
 }
 
@@ -352,8 +351,8 @@ basic_result<T>& recv_result(basic_result<T>& in, const OidMap&, basic_result<T>
     return out;
 }
 
-template <typename T, typename OidMap>
-basic_result<T>& recv_result(basic_result<T>& in, const OidMap& oid_map, std::reference_wrapper<basic_result<T>> out) {
+template <typename T, typename OidMap, typename Out>
+basic_result<T>& recv_result(basic_result<T>& in, const OidMap& oid_map, std::reference_wrapper<Out> out) {
     return recv_result(in, oid_map, out.get());
 }
 
