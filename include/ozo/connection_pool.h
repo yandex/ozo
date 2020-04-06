@@ -21,6 +21,7 @@ struct connection_pool_config {
     std::size_t capacity = 10; //!< maximum number of stored connections
     std::size_t queue_capacity = 128; //!< maximum number of queued requests to get available connection
     time_traits::duration idle_timeout = std::chrono::seconds(60); //!< time interval to close connection after last usage
+    time_traits::duration lifespan = std::chrono::hours(24); //!< time interval to keep connection open
 };
 
 /**
@@ -314,7 +315,7 @@ public:
      * Thread safe by default (`ozo::thread_safety<true>`).
      */
     connection_pool(Source source, const connection_pool_config& config, const ThreadSafety& /*thread_safety*/ = ThreadSafety{})
-    : impl_(config.capacity, config.queue_capacity, config.idle_timeout),
+    : impl_(config.capacity, config.queue_capacity, config.idle_timeout, config.lifespan),
       source_(std::move(source)) {}
 
     /**

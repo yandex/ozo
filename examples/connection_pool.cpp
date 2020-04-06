@@ -34,6 +34,8 @@ int main(int argc, char **argv) {
     connection_pool_config.queue_capacity = 10;
     // Maximum time duration to store unused open connection
     connection_pool_config.idle_timeout = std::chrono::seconds(60);
+    // Maximum time duration to keep connection open
+    connection_pool_config.lifespan = std::chrono::hours(24);
 
     // Creating connection pool from connection_info as the underlying ConnectionSource
     ozo::connection_pool connection_pool(connection_info, connection_pool_config);
