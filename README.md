@@ -42,7 +42,7 @@ First of all you need to satsfy requirements listed above. You can run tests usi
 ```bash
 mkdir -p build
 cd build
-cmake ..
+cmake .. -DOZO_BUILD_TESTS=ON
 make -j$(nproc)
 ctest -V
 ```
