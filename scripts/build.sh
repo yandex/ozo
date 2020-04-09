@@ -123,6 +123,9 @@ build() {
         -DOZO_COVERAGE=$OZO_COVERAGE \
         -DOZO_BUILD_PG_TESTS=$OZO_BUILD_PG_TESTS \
         -DOZO_PG_TEST_CONNINFO="host=${POSTGRES_HOST} port=5432 dbname=${POSTGRES_DB} user=${POSTGRES_USER} password=${POSTGRES_PASSWORD}" \
+        -DBoost_NO_SYSTEM_PATHS="${OZO_Boost_NO_SYSTEM_PATHS}" \
+        -DBOOST_ROOT="${OZO_BOOST_ROOT}" \
+        -DBOOST_LIBRARYDIR="${OZO_BOOST_LIBRARYDIR}" \
         ${SOURCE_DIR}
     make -j $(nproc || sysctl -n hw.ncpu)
     if [[ $OZO_BUILD_PG_TESTS == "ON" ]]; then
