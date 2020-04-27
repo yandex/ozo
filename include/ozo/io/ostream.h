@@ -48,7 +48,7 @@ public:
     Require<Integral<T> && sizeof(T) != 1, ostream&> write(T in) {
         detail::typed_buffer<T> buf;
         buf.typed = detail::convert_to_big_endian(in);
-        return write(buf);
+        return write(buf.raw);
     }
 
     template <typename T>
