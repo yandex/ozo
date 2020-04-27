@@ -69,7 +69,7 @@ public:
     template <typename T>
     Require<Integral<T> && sizeof(T) != 1, istream&> read(T& out) noexcept {
         detail::typed_buffer<T> buf;
-        read(buf);
+        read(buf.raw);
         out = detail::convert_from_big_endian(buf.typed);
         return *this;
     }
