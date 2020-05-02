@@ -2,7 +2,15 @@
 
 docker-compose build asyncpg aiopg ozo_build_with_pg_tests
 
-scripts/build.sh pg docker clang release
+if ! [[ "${OZO_BENCHMARK_COMPILER}" ]]; then
+    OZO_BENCHMARK_COMPILER=clang
+fi
+
+if ! [[ "${OZO_BENCHMARK_BUILD_TYPE}" ]]; then
+    OZO_BENCHMARK_BUILD_TYPE=release
+fi
+
+scripts/build.sh pg docker ${OZO_BENCHMARK_COMPILER} ${OZO_BENCHMARK_BUILD_TYPE}
 
 function run_benchmark {
     docker-compose run \
@@ -15,11 +23,11 @@ function run_benchmark {
 
 run_benchmark asyncpg benchmarks/asyncpg_benchmark.py '"postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}/${POSTGRES_DB}"'
 run_benchmark aiopg benchmarks/aiopg_benchmark.py '"host=${POSTGRES_HOST} user=${POSTGRES_USER} dbname=${POSTGRES_DB} password=${POSTGRES_PASSWORD}"'
-run_benchmark ozo_build_with_pg_tests '${BASE_BUILD_DIR}/clang_release/benchmarks/ozo_benchmark' \
+run_benchmark ozo_build_with_pg_tests "\${BASE_BUILD_DIR}/${OZO_BENCHMARK_COMPILER}_${OZO_BENCHMARK_BUILD_TYPE}/benchmarks/ozo_benchmark" \
     '"host=${POSTGRES_HOST} user=${POSTGRES_USER} dbname=${POSTGRES_DB} password=${POSTGRES_PASSWORD}"'
 
 function run_ozo_benchmark_performance {
-    run_benchmark ozo_build_with_pg_tests '${BASE_BUILD_DIR}/clang_release/benchmarks/ozo_benchmark_performance' \
+    run_benchmark ozo_build_with_pg_tests "\${BASE_BUILD_DIR}/${OZO_BENCHMARK_COMPILER}_${OZO_BENCHMARK_BUILD_TYPE}/benchmarks/ozo_benchmark_performance" \
         "${1:?} --conninfo=\"host=\${POSTGRES_HOST} user=\${POSTGRES_USER} dbname=\${POSTGRES_DB} password=\${POSTGRES_PASSWORD}\""
 }
 
