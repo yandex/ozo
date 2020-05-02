@@ -22,9 +22,6 @@ namespace asio = boost::asio;
 
 using benchmark_t = ozo::benchmark::time_limit_benchmark;
 
-constexpr const std::chrono::seconds connect_timeout(1);
-constexpr const std::chrono::seconds request_timeout(1);
-
 std::mutex cerr_mutex;
 
 template <typename T>
@@ -84,6 +81,10 @@ struct benchmark_params {
     std::size_t connections = 0;
     bool parse_result = false;
     bool verbose = false;
+    ozo::time_traits::duration connect_timeout = std::chrono::seconds(1);
+    ozo::time_traits::duration request_timeout = std::chrono::seconds(1);
+    ozo::time_traits::duration idle_timeout = std::chrono::seconds(1);
+    ozo::time_traits::duration lifespan = std::chrono::seconds(1);
 };
 
 struct benchmark_report {
@@ -141,7 +142,7 @@ benchmark_report reopen_connection(const benchmark_params& params, Query query) 
         while (true) {
             std::conditional_t<parse_result, std::vector<Row>, ozo::result> result;
             ozo::error_code ec;
-            const auto connection = ozo::request(connection_info[io], query, request_timeout, ozo::into(result), yield[ec]);
+            const auto connection = ozo::request(connection_info[io], query, params.request_timeout, ozo::into(result), yield[ec]);
             if (ec) {
                 std::cerr << ec.message() << '\n';
                 if (connection) {
@@ -182,11 +183,11 @@ benchmark_report reuse_connection(const benchmark_params& params, Query query) {
     ozo::connection_info connection_info(params.conn_string);
 
     spawn(io, 0, [&] (asio::yield_context yield) {
-        auto connection = ozo::get_connection(connection_info[io], connect_timeout, yield);
+        auto connection = ozo::get_connection(connection_info[io], params.connect_timeout, yield);
         while (true) {
             std::conditional_t<parse_result, std::vector<Row>, ozo::result> result;
             ozo::error_code ec;
-            connection = ozo::request(std::move(connection), query, request_timeout, ozo::into(result), yield[ec]);
+            connection = ozo::request(std::move(connection), query, params.request_timeout, ozo::into(result), yield[ec]);
             if (ec) {
                 std::cerr << ec.message() << '\n';
                 if (connection) {
@@ -237,7 +238,7 @@ benchmark_report use_connection_pool(const benchmark_params& params, Query query
             while (true) {
                 std::conditional_t<parse_result, std::vector<Row>, ozo::result> result;
                 ozo::error_code ec;
-                const auto connection = ozo::request(pool[io], query, request_timeout, ozo::into(result), yield[ec]);
+                const auto connection = ozo::request(pool[io], query, params.request_timeout, ozo::into(result), yield[ec]);
                 if (ec) {
                     std::cerr << ec.message() << '\n';
                     if (connection) {
@@ -308,7 +309,7 @@ benchmark_report use_connection_pool_mult_threads(const benchmark_params& params
                     std::conditional_t<parse_result, std::vector<Row>, ozo::result> result;
                     ozo::error_code ec;
                     {
-                        const auto connection = ozo::request(pool[io], query, request_timeout, ozo::into(result), yield[ec]);
+                        const auto connection = ozo::request(pool[io], query, params.request_timeout, ozo::into(result), yield[ec]);
                         if (ec) {
                             const std::lock_guard lock(cerr_mutex);
                             std::cerr << "coroutine " << token << ": " << ec.message() << '\n';
@@ -562,6 +563,15 @@ struct adl_serializer<benchmark_report> {
 
 } // namespace nlohmann
 
+namespace {
+
+ozo::time_traits::duration to_duration(const boost::program_options::variable_value& value) {
+    using double_seconds = std::chrono::duration<double>;
+    return std::chrono::duration_cast<ozo::time_traits::duration>(double_seconds(value.as<double>()));
+}
+
+}
+
 int main(int argc, char **argv) {
     using namespace ozo::benchmark;
 
@@ -581,8 +591,12 @@ int main(int argc, char **argv) {
             ("connections", po::value<std::size_t>(), "number of parallel coroutines (default: equal to coroutines + 1)")
             ("parse,p", "parse query result")
             ("verbose,v", "use verbose output")
-            ("duration,d", po::value<std::uint64_t>()->default_value(31), "benchmark duration in seconds")
+            ("duration,d", po::value<double>()->default_value(31), "benchmark duration in seconds")
             ("format,f", po::value<format>()->default_value(format::text), "benchmark report format (text, json)")
+            ("connect_timeout", po::value<double>()->default_value(1), "connect timeout in seconds")
+            ("request_timeout", po::value<double>()->default_value(1), "request timeout in seconds")
+            ("idle_timeout", po::value<double>()->default_value(1), "pooled connection idle timeout in seconds")
+            ("lifespan", po::value<double>()->default_value(1), "pooled connection lifespan in seconds")
         ;
 
         po::variables_map variables;
@@ -614,7 +628,11 @@ int main(int argc, char **argv) {
         }
         params.parse_result = variables.count("parse") > 0;
         params.verbose = variables.count("verbose") > 0;
-        params.duration = std::chrono::seconds(variables.at("duration").as<std::uint64_t>());
+        params.duration = to_duration(variables.at("duration"));
+        params.connect_timeout = to_duration(variables.at("connect_timeout"));
+        params.request_timeout = to_duration(variables.at("request_timeout"));
+        params.idle_timeout = to_duration(variables.at("idle_timeout"));
+        params.lifespan = to_duration(variables.at("lifespan"));
 
         const auto report = run_benchmark(name, params);
 
