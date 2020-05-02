@@ -18,27 +18,6 @@ struct none_t {
     static constexpr void apply (Args&& ...) noexcept {}
 };
 
-template <>
-struct is_time_constraint<none_t> : std::true_type {};
-
-template <typename T>
-using is_none = std::is_same<T, none_t>;
-
-template <typename T>
-inline constexpr auto IsNone = is_none<T>::value;
-
-template <typename T>
-inline constexpr bool operator == (const none_t&, const T&) { return IsNone<T>;}
-
-template <typename T, typename = Require<!IsNone<T>>>
-inline constexpr bool operator == (const T&, const none_t&) { return false;}
-
-template <typename T>
-inline constexpr bool operator != (const none_t&, const T&) { return !IsNone<T>;}
-
-template <typename T, typename = Require<!IsNone<T>>>
-inline constexpr bool operator != (const T&, const none_t&) { return true;}
-
 /**
  * @brief None object
  * @ingroup group-core-types
@@ -46,5 +25,30 @@ inline constexpr bool operator != (const T&, const none_t&) { return true;}
  * Instance of ozo::none_t type.
  */
 constexpr auto none = none_t{};
+
+template <>
+struct is_time_constraint<none_t> : std::true_type {};
+
+inline constexpr std::true_type operator == (const none_t&, const none_t&) { return {};}
+
+template <typename T>
+inline constexpr std::false_type operator == (const none_t&, const T&) { return {};}
+
+template <typename T>
+inline constexpr std::false_type operator == (const T&, const none_t&) { return {};}
+
+inline constexpr std::false_type operator != (const none_t&, const none_t&) { return {};}
+
+template <typename T>
+inline constexpr std::true_type operator != (const none_t&, const T&) { return {};}
+
+template <typename T>
+inline constexpr std::true_type operator != (const T&, const none_t&) { return {};}
+
+template <typename T>
+using is_none = decltype(std::declval<const T&>() == none);
+
+template <typename T>
+inline constexpr auto IsNone = is_none<std::decay_t<T>>::value;
 
 } // namespace ozo
