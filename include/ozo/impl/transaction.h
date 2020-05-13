@@ -17,6 +17,24 @@ struct is_null_impl<transaction<Ts...>> {
     }
 };
 
+template <typename ...Ts>
+struct unwrap_connection_impl<transaction<Ts...>>{
+    template <typename Conn>
+    static constexpr decltype(auto) apply(Conn&& conn) noexcept {
+        return conn.lowest_layer();
+    }
+};
+
+static_assert(!std::is_same_v<
+    decltype(ozo::unwrap_connection(std::declval<ozo::transaction<ozo::connection<ozo::empty_oid_map, ozo::no_statistics>, decltype(ozo::make_options())>>())),
+    decltype(std::declval<ozo::transaction<ozo::connection<ozo::empty_oid_map, ozo::no_statistics>, decltype(ozo::make_options())>>())>,
+    "ozo::unwrap_connection() should return underlying connection");
+
+static_assert(std::is_same_v<
+    decltype(ozo::unwrap_connection(std::declval<ozo::transaction<ozo::connection<ozo::empty_oid_map, ozo::no_statistics>, decltype(ozo::make_options())>>())),
+    decltype(std::declval<ozo::transaction<ozo::connection<ozo::empty_oid_map, ozo::no_statistics>, decltype(ozo::make_options())>>().lowest_layer())>,
+    "ozo::unwrap_connection() should return underlying connection");
+
 namespace detail {
 
 template <typename Handler, typename Options>
