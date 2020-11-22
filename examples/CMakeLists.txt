@@ -59,3 +59,14 @@ target_compile_options(ozo_connection_pool PRIVATE -Wall -Wextra -Wsign-compare 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     target_compile_options(ozo_connection_pool PRIVATE -Wno-ignored-optimization-argument)
 endif()
+
+add_executable(ozo_custom_binary_query custom_binary_query.cpp)
+target_link_libraries(ozo_custom_binary_query ozo)
+
+# enable a bunch of warnings and make them errors
+target_compile_options(ozo_custom_binary_query PRIVATE -Wall -Wextra -Wsign-compare -pedantic -Werror)
+
+# ignore specific errors for clang
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+    target_compile_options(ozo_custom_binary_query PRIVATE -Wno-ignored-optimization-argument)
+endif()
