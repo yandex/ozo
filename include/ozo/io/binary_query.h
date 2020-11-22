@@ -36,8 +36,57 @@ namespace ozo {
  */
 class binary_query {
 public:
+    static constexpr auto binary_format = 1;
+
+    struct implementation {
+        /**
+          * Get raw query text buffer.
+          *
+          * @return `const char*` --- pointer to the buffer.
+          */
+        virtual const char* text() const noexcept = 0;
+
+        /**
+          * Get query parameter types array.
+          *
+          * @return `const oid_t*` --- the query parameter types array.
+          */
+        virtual const oid_t* types() const noexcept = 0;
+
+        /**
+          * Get query parameter formats array. For the `binary_array` all the formats are `binary_format`.
+          *
+          * @return `const int*` --- the query parameter formats array.
+          */
+        virtual const int* formats() const noexcept = 0;
+
+        /**
+          * Get query parameter lengths array. Each element represents length of the respective parameter
+          * binary representation from `values()`.
+          *
+          * @return `const int*` --- the query parameter lengths array.
+          */
+        virtual const int* lengths() const noexcept = 0;
+
+        /**
+          * Get query parameter binary representations array.
+          *
+          * @return `const char* const*` --- an array with pointers to the binary representations.
+          */
+        virtual const char* const* values() const noexcept = 0;
+
+        /**
+          * Get query parameters count.
+          *
+          * @return `std::ptrdiff_t` --- the query parameters count.
+          */
+        virtual std::ptrdiff_t params_count() const noexcept = 0;
+
+        virtual ~implementation() = default;
+    };
+
     /**
-     * Construct a new binary query object.
+     * Construct a new binary query object with known parameters at compile time
      *
      * @param text      --- query text object, should model `QueryText` concept.
      * @param params    --- query parameters object, should model `HanaSequence` concept.
@@ -47,9 +96,17 @@ public:
      */
     template <class Text, class Params, class OidMap, class Allocator = std::allocator<char>>
     binary_query(Text text, const Params& params, const OidMap& oid_map, const Allocator& allocator = Allocator{})
-    : impl{std::allocate_shared<impl_type<Text, Params, OidMap, Allocator>>(
+    : impl{std::allocate_shared<fixed_params<Text, Params, OidMap, Allocator>>(
         allocator, std::move(text), params, oid_map, allocator
     )} {}
+
+    /**
+     * Construct a new binary query object with a user defined implementation
+     *
+     * @param impl --- binary query implementation
+     */
+    explicit binary_query(std::shared_ptr<const implementation> impl)
+    : impl(std::move(impl)) {}
 
     /**
      * Get raw query text buffer.
@@ -107,20 +164,8 @@ public:
     }
 
 private:
-    static constexpr auto binary_format = 1;
-
-    struct interface {
-        virtual const char* text() const noexcept = 0;
-        virtual const oid_t* types() const noexcept = 0;
-        virtual const int* formats() const noexcept = 0;
-        virtual const int* lengths() const noexcept = 0;
-        virtual const char* const* values() const noexcept = 0;
-        virtual std::ptrdiff_t params_count() const noexcept = 0;
-        virtual ~interface() = default;
-    };
-
     template <class Text, class Params, class OidMap, class Allocator = std::allocator<char>>
-    struct impl_type final : interface {
+    struct fixed_params final : implementation {
         static_assert(ozo::HanaSequence<Params>, "Params should be Hana.Sequence");
         static_assert(ozo::OidMap<OidMap>, "OidMap should model ozo::OidMap");
         static_assert(ozo::QueryText<Text>, "Text should model ozo::QueryText concept");
@@ -143,7 +188,7 @@ private:
         std::array<int, params_count_> lengths_;
         std::array<const char*, params_count_> values_;
 
-        impl_type(Text text, const Params& params,
+        fixed_params(Text text, const Params& params,
             const OidMap& oid_map, const Allocator& allocator)
         : text_(std::move(text)), buffer_(allocator) {
             formats_.fill(binary_format);
@@ -168,8 +213,8 @@ private:
             });
         }
 
-        impl_type(const impl_type&) = delete;
-        impl_type(impl_type&&) = delete;
+        fixed_params(const fixed_params&) = delete;
+        fixed_params(fixed_params&&) = delete;
 
         const char* text() const noexcept override {
             return to_const_char(text_);
@@ -196,7 +241,7 @@ private:
         }
     };
 
-    std::shared_ptr<const interface> impl;
+    std::shared_ptr<const implementation> impl;
 };
 
 namespace detail {
