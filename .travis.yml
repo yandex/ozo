@@ -63,13 +63,13 @@ matrix:
     env: BUILD_ARGS='pg docker clang tsan'
 
   - os: osx
-    osx_image: xcode10
+    osx_image: xcode11
     install:
-    - brew update
-    - brew unlink python@2
-    - brew upgrade boost
-    #- brew upgrade postgresql
-    - brew upgrade cmake
+    # - brew update
+    # - brew unlink python@2
+    # - brew upgrade boost
+    # - brew upgrade postgresql
+    # - brew upgrade cmake
     - brew install ccache
     env: BUILD_ARGS='clang debug'
 
