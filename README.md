@@ -17,6 +17,9 @@ Since the project is on early state of development it lacks of documentation. We
 * learn more about main use-cases from [unit tests](tests/integration/request_integration.cpp),
 * See our [C++Now'18 talk about OZO](https://youtu.be/-1zbaxuUsMA) with [presentation](https://github.com/boostcon/cppnow_presentations_2018/blob/master/05-09-2018_wednesday/design_and_implementation_of_dbms_asynchronous_client_library__roman_siromakha__cppnow_05092018.pdf).
 
+## Compatibilities
+
+For the time OZO is not compatible with new executors models that are used by default since Boost 1.74. The `BOOST_ASIO_USE_TS_EXECUTOR_AS_DEFAULT` macro needs to be defined. See Boost 1.74 [changelog](https://www.boost.org/doc/libs/1_74_0/doc/html/boost_asio/history.html#boost_asio.history.asio_1_18_0___boost_1_74) for the details.
 ## Dependencies
 
 These things are needed:

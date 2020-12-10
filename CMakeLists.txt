@@ -40,6 +40,9 @@ target_include_directories(ozo INTERFACE
 
 target_compile_definitions(ozo INTERFACE -DBOOST_COROUTINES_NO_DEPRECATION_WARNING)
 target_compile_definitions(ozo INTERFACE -DBOOST_HANA_CONFIG_ENABLE_STRING_UDL)
+# For the time OZO may not support Executor TS
+# See https://github.com/yandex/ozo/issues/266
+target_compile_definitions(ozo INTERFACE -DBOOST_ASIO_USE_TS_EXECUTOR_AS_DEFAULT)
 
 target_link_libraries(ozo INTERFACE Boost::coroutine)
 target_link_libraries(ozo INTERFACE PostgreSQL::PostgreSQL)
