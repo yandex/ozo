@@ -59,13 +59,18 @@ struct pool_handle_mock {
 
 struct connection_pool {
     struct handle {
-        pool_handle_mock* mock_;
+        pool_handle_mock* mock_ = nullptr;
         using value_type = pool_handle_mock::value_type;
         using native_handle_type = value_type::native_handle_type;
         using oid_map_type = value_type::oid_map_type;
         using error_context_type = value_type::error_context_type;
         using statistics_type = value_type::statistics_type;
 
+        handle(pool_handle_mock* mock)
+            : mock_(mock)
+        {
+        }
+        handle() = default;
         handle(const handle&) = delete;
         handle(handle&&) = default;
         handle& operator = (const handle& ) = delete;
