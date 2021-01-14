@@ -344,6 +344,13 @@ public:
         return connection_provider(*this, io);
     }
 
+    /**
+     * Invalidate all contained connections. It will prevent all available and currently used connections to be reused.
+     */
+    void invalidate() {
+        impl_.invalidate();
+    }
+
 private:
 
     auto queue_timeout(time_traits::time_point at) const {

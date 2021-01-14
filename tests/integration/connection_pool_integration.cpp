@@ -147,4 +147,93 @@ TEST(connection_pool_integration, should_serve_concurrent_requests) {
     EXPECT_THAT(results, Each(results.front()));
 }
 
+TEST(connection_pool_integration, invalidate_should_prevent_to_reuse_any_available_connection) {
+    using namespace ozo::literals;
+    using namespace std::chrono_literals;
+
+    ozo::io_context io;
+    ozo::connection_info conn_info(OZO_PG_TEST_CONNINFO);
+    ozo::connection_pool_config config;
+    config.capacity = 1;
+    config.queue_capacity = 0;
+    ozo::connection_pool pool(conn_info, config, !ozo::thread_safe);
+
+    asio::spawn(io, [&] (asio::yield_context yield) {
+        const auto get_pg_backend_pid = [&] (int& pg_backend_pid) {
+            ozo::rows_of<int> result;
+            ozo::error_code ec;
+            const auto conn = ozo::request(
+                pool[io],
+                "SELECT pg_backend_pid()"_SQL,
+                ozo::deadline(1s),
+                ozo::into(result),
+                yield[ec]
+            );
+
+            ASSERT_FALSE(ec) << ec.message();
+            ASSERT_FALSE(ozo::is_null_recursive(conn));
+            ASSERT_EQ(1u, result.size());
+
+            pg_backend_pid = std::get<0>(result[0]);
+        };
+
+        int pg_backend_pid1 = 0;
+        get_pg_backend_pid(pg_backend_pid1);
+
+        pool.invalidate();
+
+        int pg_backend_pid2 = 0;
+        get_pg_backend_pid(pg_backend_pid2);
+
+        ASSERT_NE(pg_backend_pid1, 0);
+        EXPECT_NE(pg_backend_pid1, pg_backend_pid2);
+    });
+
+    io.run();
+}
+
+TEST(connection_pool_integration, invalidate_should_prevent_to_reuse_any_used_connection) {
+    using namespace ozo::literals;
+    using namespace std::chrono_literals;
+
+    ozo::io_context io;
+    ozo::connection_info conn_info(OZO_PG_TEST_CONNINFO);
+    ozo::connection_pool_config config;
+    config.capacity = 1;
+    config.queue_capacity = 0;
+    ozo::connection_pool pool(conn_info, config, !ozo::thread_safe);
+
+    asio::spawn(io, [&] (asio::yield_context yield) {
+        const auto get_pg_backend_pid = [&] (int& pg_backend_pid) {
+            ozo::rows_of<int> result;
+            ozo::error_code ec;
+            const auto conn = ozo::request(
+                pool[io],
+                "SELECT pg_backend_pid()"_SQL,
+                ozo::deadline(1s),
+                ozo::into(result),
+                yield[ec]
+            );
+
+            ASSERT_FALSE(ec) << ec.message();
+            ASSERT_FALSE(ozo::is_null_recursive(conn));
+            ASSERT_EQ(1u, result.size());
+
+            pool.invalidate();
+
+            pg_backend_pid = std::get<0>(result[0]);
+        };
+
+        int pg_backend_pid1 = 0;
+        get_pg_backend_pid(pg_backend_pid1);
+        int pg_backend_pid2 = 0;
+        get_pg_backend_pid(pg_backend_pid2);
+
+        ASSERT_NE(pg_backend_pid1, 0);
+        EXPECT_NE(pg_backend_pid1, pg_backend_pid2);
+    });
+
+    io.run();
+}
+
 } // namespace
