@@ -1,0 +1,32 @@
+FROM ubuntu:18.04
+
+RUN apt-get update \
+ && apt-get install -y apt-transport-https ca-certificates gnupg software-properties-common wget
+
+RUN wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | apt-key add -
+
+RUN apt-add-repository 'deb https://apt.kitware.com/ubuntu/ bionic main'
+
+RUN apt-get update \
+ && apt-get install -y \
+        ccache \
+        clang-10 \
+        cmake \
+        python3-pip \
+ && rm -rf /var/lib/apt/lists/* \
+ && pip3 install conan
+
+ENV CONAN_USER_HOME=/conan/home
+
+RUN update-alternatives --install /usr/bin/clang clang /usr/bin/clang-10 100 \
+ && update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-10 100 \
+ && mkdir -p ${CONAN_USER_HOME} \
+ && CC=clang CXX=clang++ conan profile new default --detect \
+ && chmod -R 777 ${CONAN_USER_HOME}
+
+VOLUME /ccache
+VOLUME /code
+
+WORKDIR /code
+
+ENV CCACHE_DIR=/ccache
