@@ -17,7 +17,7 @@ services:
 - docker
 
 install:
-- pip3 install --user --upgrade pip
+- pip3 install --user --upgrade "pip>=20.3.4,<21.0"
 - pip3 install --user docker-compose
 
 matrix:
@@ -61,6 +61,10 @@ matrix:
   - os: linux
     dist: xenial
     env: BUILD_ARGS='pg docker clang tsan'
+
+  - os: linux
+    dist: xenial
+    env: BUILD_ARGS='docker_conan clang conan'
 
   - os: osx
     osx_image: xcode11
