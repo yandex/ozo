@@ -15,6 +15,11 @@ build_clang() {
             CMAKE_BUILD_TYPE=RelWithDebInfo
             build
         ;;
+        test_external_project)
+            CMAKE_BUILD_TYPE=Release
+            OZO_TEST_EXTERNAL_PROJECT=ON
+            build
+        ;;
         asan)
             export ASAN_OPTIONS='halt_on_error=1:strict_string_checks=1:detect_stack_use_after_return=1:check_initialization_order=1:strict_init_order=1'
             ASAN_CXX_FLAGS='-fno-omit-frame-pointer -fsanitize=address -fsanitize-address-use-after-scope -fsanitize-recover=address'
@@ -87,8 +92,8 @@ usage() {
         Build with specified compiler or target
         compiler : gcc | clang
         target   :
-            - for gcc   : debug | release | coverage | conan
-            - for clang : debug | release | asan | ubsan | tsan | conan
+            - for gcc   : debug | release | test_external_project | coverage | conan
+            - for clang : debug | release | test_external_project | asan | ubsan | tsan | conan
         '$NAME' docker [all | docs | <compiler> <target>]
         Build inside Docker
         '$NAME' pg [docker] [all | <compiler> <target>]
@@ -106,6 +111,7 @@ build_all() {
     $0 clang asan
     $0 clang ubsan
     $0 clang tsan
+    $0 clang test_external_project
 }
 
 build_conan() {

@@ -29,7 +29,7 @@ target_compile_features(ozo INTERFACE cxx_std_17)
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
     # disable warnings about a compiler-specific option used for gnu-compatible compilers
-    target_compile_options(ozo INTERFACE -Wno-gnu-string-literal-operator-template -Wno-gnu-zero-variadic-macro-arguments)
+    target_compile_options(ozo INTERFACE $<BUILD_INTERFACE:-Wno-gnu-string-literal-operator-template -Wno-gnu-zero-variadic-macro-arguments>)
 endif()
 
 
