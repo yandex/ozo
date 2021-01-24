@@ -64,7 +64,11 @@ matrix:
 
   - os: linux
     dist: xenial
-    env: BUILD_ARGS='docker_conan clang conan'
+    env: BUILD_ARGS='docker gcc conan'
+
+  - os: linux
+    dist: xenial
+    env: BUILD_ARGS='docker clang conan'
 
   - os: osx
     osx_image: xcode11

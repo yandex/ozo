@@ -15,7 +15,7 @@ def get_version():
 class Ozo(ConanFile):
     name = 'ozo'
     version = get_version()
-    license = 'MIT'
+    license = 'PostgreSQL'
     url = 'https://github.com/yandex/ozo'
     description = 'Conan package for yandex ozo'
 
