@@ -106,12 +106,14 @@ build_all() {
     $0 gcc release
     $0 gcc coverage
     $0 gcc test_external_project
+    $0 gcc conan
     $0 clang debug
     $0 clang release
     $0 clang asan
     $0 clang ubsan
     $0 clang tsan
     $0 clang test_external_project
+    $0 clang conan
 }
 
 build_conan() {
