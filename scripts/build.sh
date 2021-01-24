@@ -64,6 +64,9 @@ build_gcc() {
             OZO_COVERAGE=ON
             build
         ;;
+        conan)
+            build_conan
+        ;;
         *) usage "bad gcc target '$TARGET'";;
     esac
 }
@@ -84,12 +87,10 @@ usage() {
         Build with specified compiler or target
         compiler : gcc | clang
         target   :
-            - for gcc   : debug | release | coverage
+            - for gcc   : debug | release | coverage | conan
             - for clang : debug | release | asan | ubsan | tsan | conan
         '$NAME' docker [all | docs | <compiler> <target>]
         Build inside Docker
-        '$NAME' docker_conan [<compiler> <target>]
-        Build inside Docker with a conan image
         '$NAME' pg [docker] [all | <compiler> <target>]
         Build with PostgreSQL integration tests' 1>&2
     exit 1
@@ -108,6 +109,15 @@ build_all() {
 }
 
 build_conan() {
+    echo "CONAN_USER_HOME: ${CONAN_USER_HOME}"
+    if ! [[ "${CONAN_USER_HOME}" ]]; then
+        CONAN_USER_HOME=conanh
+    fi
+
+    mkdir -p "${CONAN_USER_HOME}"
+    export CONAN_USER_HOME="$(readlink -f "${CONAN_USER_HOME}")"
+    conan profile new default --detect --force
+
     conan create contrib/resource_pool
     conan create .
 }
@@ -170,16 +180,9 @@ build() {
     fi
 }
 
-launch_in_docker_conan() {
-    export OZO_BUILD_DOCKER_CONAN=ON
-    launch_in_docker $*
-}
-
 launch_in_docker() {
     if [[ "${OZO_BUILD_PG_TESTS}" == "ON" ]]; then
         SERVICE=ozo_build_with_pg_tests
-    elif [[ "${OZO_BUILD_DOCKER_CONAN}" == "ON" ]]; then
-        SERVICE=ozo_build_conan
     else
         SERVICE=ozo_build
     fi

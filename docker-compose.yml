@@ -10,17 +10,6 @@ services:
     volumes:
     - ~/.ccache:/ccache
     - .:/code
-  ozo_build_conan:
-    build:
-      context: docker/build
-      dockerfile: Dockerfile.conan
-    image: ozo_build_conan
-    privileged: true # https://github.com/google/sanitizers/issues/764
-    environment:
-      BASE_BUILD_DIR: build/docker
-    volumes:
-      - ~/.ccache:/ccache
-      - .:/code
   ozo_postgres:
     image: postgres:alpine
     environment:

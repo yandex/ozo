@@ -22,6 +22,7 @@ RUN apt-get update && \
         python-openssl \
         python-pip \
         python-yaml \
+        python3-pip \
         cmake \
         doxygen \
         && \
@@ -49,7 +50,8 @@ RUN wget -qO boost_1_66_0.tar.gz https://dl.bintray.com/boostorg/release/1.66.0/
         warnings=off \
     install
 
-RUN pip install gcovr
+RUN pip install gcovr && \
+    pip3 install conan
 
 RUN wget -qO /codecov.sh https://codecov.io/bash && chmod +x /codecov.sh
 
