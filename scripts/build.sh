@@ -223,9 +223,9 @@ case "$1" in
         build_${1}
         exit 0
     ;;
-    docker|docker_conan)
+    docker)
         set -x
-        launch_in_${1} $2 $3 $4 $5
+        launch_in_docker $2 $3 $4 $5
         exit 0
     ;;
     pg)
