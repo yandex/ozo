@@ -17,6 +17,11 @@ inline bool connection_status_bad(NativeHandle handle) noexcept {
     return !handle || PQstatus(handle) == CONNECTION_BAD;
 }
 
+template <typename NativeHandle>
+inline bool connection_status_ok(NativeHandle handle) noexcept {
+    return handle && PQstatus(handle) == CONNECTION_OK;
+}
+
 template <typename NativeHandleType>
 inline auto connection_error_message(NativeHandleType handle) {
     std::string_view v(PQerrorMessage(handle));
@@ -85,7 +90,7 @@ void connection<OidMap, Statistics>::cancel() noexcept {
 
 template <typename OidMap, typename Statistics>
 bool connection<OidMap, Statistics>::is_bad() const noexcept {
-    return detail::connection_status_bad(native_handle());
+    return !detail::connection_status_ok(native_handle());
 }
 
 template <typename OidMap, typename Statistics>
