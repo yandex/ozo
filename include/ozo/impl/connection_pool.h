@@ -167,7 +167,7 @@ void pooled_connection<Rep, Executor>::cancel() noexcept {
 
 template <typename Rep, typename Executor>
 bool pooled_connection<Rep, Executor>::is_bad() const noexcept {
-    return detail::connection_status_bad(native_handle());
+    return !detail::connection_status_ok(native_handle());
 }
 
 template <typename Rep, typename Executor>

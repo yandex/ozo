@@ -14,7 +14,7 @@ TEST(get_connection, should_return_timeout_error_for_zero_connect_timeout) {
     ozo::get_connection(conn_info[io], timeout, [&] (ozo::error_code ec, auto conn) {
         EXPECT_FALSE(called.test_and_set());
         EXPECT_EQ(ec, boost::asio::error::timed_out);
-        EXPECT_FALSE(ozo::connection_bad(conn));
+        EXPECT_TRUE(ozo::connection_bad(conn));
         EXPECT_EQ(ozo::get_error_context(conn), "error while connection polling");
     });
 
