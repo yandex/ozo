@@ -11,6 +11,8 @@
 #include <ozo/optional.h>
 #include <ozo/pg/types.h>
 
+#include <boost/core/allocator_access.hpp>
+
 #include <boost/hana/for_each.hpp>
 #include <boost/hana/tuple.hpp>
 #include <boost/hana/ext/std/array.hpp>
@@ -128,7 +130,7 @@ private:
         using allocator_type = std::conditional_t<
                                 std::is_same_v<typename Allocator::value_type, char>,
                                     Allocator,
-                                    typename Allocator::template rebind<char>::other>;
+                                    boost::allocator_rebind_t<Allocator, char>>;
         using buffer_type = std::vector<char, allocator_type>;
         using oid_map_type = OidMap;
         using text_type = std::decay_t<Text>;
