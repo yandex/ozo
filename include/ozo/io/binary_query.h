@@ -128,7 +128,7 @@ private:
         using allocator_type = std::conditional_t<
                                 std::is_same_v<typename Allocator::value_type, char>,
                                     Allocator,
-                                    typename Allocator::template rebind<char>::other>;
+                                    typename std::allocator_traits<Allocator>::template rebind_alloc<char>>;
         using buffer_type = std::vector<char, allocator_type>;
         using oid_map_type = OidMap;
         using text_type = std::decay_t<Text>;
