@@ -92,3 +92,14 @@ target_compile_options(ozo_retry_request_pool PRIVATE -Wall -Wextra -Wsign-compa
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     target_compile_options(ozo_retry_request_pool PRIVATE -Wno-ignored-optimization-argument)
 endif()
+
+add_executable(ozo_composite_types composite_types.cpp)
+target_link_libraries(ozo_composite_types ozo)
+
+# enable a bunch of warnings and make them errors
+target_compile_options(ozo_composite_types PRIVATE -Wall -Wextra -Wsign-compare -Werror)
+
+# ignore specific errors for clang
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+    target_compile_options(ozo_composite_types PRIVATE -Wno-ignored-optimization-argument)
+endif()

@@ -34,6 +34,7 @@ run_example ozo_transaction
 run_example ozo_request_future
 run_example ozo_request_callback
 run_example_proxy ozo_retry_request_pool
+run_example ozo_composite_types
 
 docker-compose stop ozo_postgres ozo_proxy
 docker-compose rm -f ozo_postgres ozo_proxy
