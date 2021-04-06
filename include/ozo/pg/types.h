@@ -21,3 +21,4 @@
 #include <ozo/pg/types/uuid.h>
 #include <ozo/pg/types/timestamp.h>
 #include <ozo/pg/types/interval.h>
+#include <ozo/pg/types/ltree.h>
