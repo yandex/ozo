@@ -5,6 +5,7 @@
 #include <ozo/execute.h>
 #include <ozo/shortcuts.h>
 #include <ozo/pg/types/jsonb.h>
+#include <ozo/pg/types/ltree.h>
 
 #include <boost/asio/spawn.hpp>
 
@@ -19,6 +20,10 @@ static bool operator ==(const pg::jsonb& lhs, const pg::jsonb& rhs) {
 
 static std::ostream& operator <<(std::ostream& s, const pg::jsonb& v) {
     return s << v.raw_string();
+}
+
+static std::ostream& operator <<(std::ostream& s, const pg::ltree& v) {
+  return s << v.raw_string();
 }
 
 } // namespace ozo::pg
@@ -66,15 +71,29 @@ static std::ostream& operator <<(std::ostream& s, const with_jsonb& v) {
     return s << v.value;
 }
 
+struct with_ltree {
+  ozo::pg::ltree value;
+};
+
+static bool operator ==(const with_ltree& lhs, const with_ltree& rhs) {
+  return lhs.value == rhs.value;
+}
+
+static std::ostream& operator <<(std::ostream& s, const with_ltree& v) {
+  return s << v.value;
+}
+
 } // namespace ozo::tests
 
 BOOST_HANA_ADAPT_STRUCT(ozo::tests::custom_type, number, text);
 BOOST_HANA_ADAPT_STRUCT(ozo::tests::with_optional, value);
 BOOST_HANA_ADAPT_STRUCT(ozo::tests::with_jsonb, value);
+BOOST_HANA_ADAPT_STRUCT(ozo::tests::with_ltree, value);
 
 OZO_PG_DEFINE_CUSTOM_TYPE(ozo::tests::custom_type, "custom_type")
 OZO_PG_DEFINE_CUSTOM_TYPE(ozo::tests::with_optional, "with_optional")
 OZO_PG_DEFINE_CUSTOM_TYPE(ozo::tests::with_jsonb, "with_jsonb")
+OZO_PG_DEFINE_CUSTOM_TYPE(ozo::tests::with_ltree, "with_ltree")
 
 
 #define ASSERT_REQUEST_OK(ec, conn)\
@@ -515,6 +534,98 @@ TEST(request, should_send_and_receive_composite_with_jsonb_field) {
         ASSERT_REQUEST_OK(ec, conn);
 
         EXPECT_THAT(result, ElementsAre(with_jsonb {{R"({"foo": "bar"})"}}));
+    });
+
+    io.run();
+}
+
+TEST(request, should_send_and_receive_ltree) {
+    using namespace ozo::literals;
+    using namespace std::string_literals;
+    using namespace std::string_view_literals;
+    namespace asio = boost::asio;
+
+    ozo::io_context io;
+
+    asio::spawn(io, [&] (asio::yield_context yield) {
+        [&] {
+            const ozo::connection_info conn_info(OZO_PG_TEST_CONNINFO);
+            ozo::error_code ec;
+            auto conn = ozo::execute(conn_info[io],
+                                     "DROP EXTENSION IF EXISTS ltree"_SQL, yield[ec]);
+            ASSERT_REQUEST_OK(ec, conn);
+            ozo::execute(conn, "CREATE EXTENSION ltree"_SQL, yield[ec]);
+            ASSERT_REQUEST_OK(ec, conn);
+        } ();
+
+        const ozo::connection_info conn_info(
+            OZO_PG_TEST_CONNINFO,
+            ozo::register_types<ozo::pg::ltree>()
+        );
+
+        const auto timeout = ozo::time_traits::duration::max();
+        std::string value = "1.2.3.4";
+
+        ozo::error_code ec;
+        ozo::rows_of<ozo::pg::ltree> result;
+        auto conn = ozo::request(conn_info[io], "SELECT "_SQL + value + "::ltree"_SQL,
+                                 timeout, ozo::into(result), yield[ec]);
+
+        ASSERT_REQUEST_OK(ec, conn);
+        EXPECT_THAT(result, ElementsAre(ozo::pg::ltree(value)));
+        EXPECT_FALSE(ozo::connection_bad(conn));
+    });
+
+    io.run();
+}
+
+TEST(request, should_send_and_receive_composite_with_ltree_field) {
+    using namespace ozo::literals;
+    using namespace std::string_literals;
+    using namespace std::string_view_literals;
+    namespace asio = boost::asio;
+
+    ozo::io_context io;
+
+    asio::spawn(io, [&] (asio::yield_context yield) {
+        [&] {
+            const ozo::connection_info conn_info(OZO_PG_TEST_CONNINFO);
+            ozo::error_code ec;
+            auto conn = ozo::execute(conn_info[io],
+                                     "DROP EXTENSION IF EXISTS ltree"_SQL, yield[ec]);
+            ASSERT_REQUEST_OK(ec, conn);
+            ozo::execute(conn, "CREATE EXTENSION ltree"_SQL, yield[ec]);
+            ASSERT_REQUEST_OK(ec, conn);
+        } ();
+
+        [&] {
+            const ozo::connection_info conn_info(
+                OZO_PG_TEST_CONNINFO,
+                ozo::register_types<ozo::pg::ltree>()
+            );
+
+            ozo::error_code ec;
+            auto conn = ozo::execute(conn_info[io],
+                                     "DROP TYPE IF EXISTS with_ltree"_SQL, yield[ec]);
+            ASSERT_REQUEST_OK(ec, conn);
+            ozo::execute(conn, "CREATE TYPE with_ltree AS (value ltree)"_SQL, yield[ec]);
+            ASSERT_REQUEST_OK(ec, conn);
+        } ();
+
+        const ozo::connection_info conn_info(
+            OZO_PG_TEST_CONNINFO,
+            ozo::register_types<ozo::pg::ltree, with_ltree>()
+        );
+
+        const with_ltree value {{"1.2.3.4"}};
+        ozo::rows_of<with_ltree> result;
+        ozo::error_code ec;
+        auto conn = ozo::request(conn_info[io], "SELECT "_SQL + value + "::with_ltree"_SQL,
+                                 ozo::into(result), yield[ec]);
+
+        ASSERT_REQUEST_OK(ec, conn);
+
+        EXPECT_THAT(result, ElementsAre(with_ltree {{"1.2.3.4"}}));
     });
 
     io.run();
