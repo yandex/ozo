@@ -57,6 +57,7 @@ set(SOURCES
     impl/cancel.cpp
     transaction.cpp
     main.cpp
+    ext/boost/asio_ip.cpp
 )
 
 if(OZO_BUILD_PG_TESTS)

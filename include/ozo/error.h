@@ -96,6 +96,7 @@ enum code {
     bad_composite_size, //!< a composite's fields number received does not equal to the expected or not supported by the type
     pq_cancel_failed, //!< libpq PQcancel function call failed, see `get_error_context()` for more information
     pq_get_cancel_failed, //!< libpq PQgetCancel function call failed, see `get_error_context()` for more information
+    bad_inet_type, //!< expected inet type does not match to the received data, e.g. ipv4 address is expected but network received
 };
 
 /**
@@ -493,6 +494,8 @@ public:
                 return "libpq PQcancel function call failed";
             case pq_get_cancel_failed:
                 return "libpq PQgetCancel function call failed";
+            case bad_inet_type:
+                return "expected inet type does not match to the received data";
         }
         return "no message for value: " + std::to_string(value);
     }

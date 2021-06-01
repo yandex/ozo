@@ -17,7 +17,7 @@ namespace ozo {
 #include <ozo/ext/boost/uuid.h>
  *@endcode
  *
- * `boost::uuids::uuid` is defined as Universally Unique Identifierss data type.
+ * `boost::uuids::uuid` is defined as Universally Unique Identifiers data type.
  */
 
 template <>
