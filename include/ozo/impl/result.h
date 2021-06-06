@@ -17,6 +17,11 @@ inline oid_t pq_field_type(const PGresult& res, int column) noexcept {
     return PQftype(std::addressof(res), column);
 }
 
+
+inline std::string_view pq_field_name(const PGresult& res, int column) noexcept {
+    return {PQfname(std::addressof(res), column)};
+}
+
 inline result_format pq_field_format(const PGresult& res, int column) noexcept {
     return static_cast<result_format>(PQfformat(std::addressof(res), column));
 }
@@ -51,6 +56,12 @@ template <typename T>
 inline oid_t field_type(T&& res, int column) noexcept {
     using pq::pq_field_type;
     return pq_field_type(std::forward<T>(res), column);
+}
+
+template <typename T>
+inline std::string_view field_name(T&& res, int column) noexcept {
+    using pq::pq_field_name;
+    return pq_field_name(std::forward<T>(res), column);
 }
 
 template <typename T>

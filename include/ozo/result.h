@@ -42,6 +42,15 @@ public:
     }
 
     /**
+     * Get value column name
+     *
+     * @return std::string_view --- column name
+     */
+    std::string_view name() const noexcept {
+        return impl::field_name(res(), column());
+    }
+
+    /**
      * Determine whether the value is in text format. Should be always false for current
      * implementation.
      *

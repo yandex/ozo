@@ -102,12 +102,19 @@ private:
     bool unexpected_eof_ = false;
 };
 
-template <typename ...Ts>
-inline istream& read(istream& in, Ts&& ...vs) {
-    if (!in.read(std::forward<Ts>(vs)...)) {
+template <typename T, typename ...Ts>
+inline istream& read(istream& in, T&& v, Ts&& ...vs) {
+    if (!in.read(std::forward<T>(v), std::forward<Ts>(vs)...)) {
         throw system_error(error::unexpected_eof);
     }
     return in;
+}
+
+template <typename T>
+inline T read(istream& in) {
+    T v;
+    read(in, v);
+    return v;
 }
 
 } // namespace ozo
