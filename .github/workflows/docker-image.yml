@@ -14,5 +14,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+      with:
+        submodules: 'recursive'
     - name: Build with GCC
       run: scripts/build.sh pg docker gcc release
