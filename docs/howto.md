@@ -30,6 +30,12 @@ If you want to execute a query with no custom types or other advanced behavior t
 #include <ozo/shortcuts.h>
 #include <boost/asio.hpp>
 
+template<typename T>
+std::ostream& operator<<(std::ostream& os, std::optional<T> const& opt)
+{
+    return opt ? os << opt.value() : os;
+}
+
 int main() {
     // The boost io_context is the central management object for asyncronous operations.
     boost::asio::io_context io;
@@ -68,7 +74,7 @@ int main() {
 
         // We got results, let's do something with them, e.g. print them out
         std::cout << "id" << '\t' << "name" << std::endl;
-        for(auto& row: res) {
+        for(auto& row: rows) {
             std::cout << std::get<0>(row) << '\t' << std::get<1>(row) << std::endl;
         }
     });
